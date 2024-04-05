@@ -146,7 +146,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         return viewSegmentation;
     }
 
-    void autoCloseRequiredViews(boolean closeAllViews, Map<String, Object> customViewSegmentation) {
+    void autoCloseRequiredViews(boolean closeAllViews, @Nullable Map<String, Object> customViewSegmentation) {
         L.d("[ModuleViews] autoCloseRequiredViews");
         List<String> viewsToRemove = new ArrayList<>(1);
 

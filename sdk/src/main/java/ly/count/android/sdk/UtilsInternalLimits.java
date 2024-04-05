@@ -62,6 +62,10 @@ public class UtilsInternalLimits {
     }
 
     private static String truncateString(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        assert limit >= 1;
+        assert tag != null;
+        assert L != null;
+
         if (value == null) {
             L.w(tag + ", value is null, returning");
             return value;
@@ -71,6 +75,8 @@ public class UtilsInternalLimits {
             L.w(tag + ", value is empty, returning");
             return value;
         }
+
+        assert value != null;
 
         if (value.length() > limit) {
             String truncatedValue = value.substring(0, limit);
@@ -90,6 +96,10 @@ public class UtilsInternalLimits {
      * @param <T> type of map value
      */
     protected static <T> void truncateSegmentationKeys(@Nullable Map<String, T> map, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+        assert limit >= 1;
+        assert L != null;
+        assert tag != null;
+
         if (map == null) {
             L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
             return;
@@ -99,6 +109,8 @@ public class UtilsInternalLimits {
             L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
             return;
         }
+
+        assert map != null;
 
         L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map:[" + map + "]");
         // Replacing keys in a map is not safe, so we create a new map and put them after
@@ -123,6 +135,11 @@ public class UtilsInternalLimits {
     }
 
     protected static void truncateSegmentationKeysValues(@NonNull Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+        assert segmentation != null;
+        assert limitsConfig != null;
+        assert L != null;
+        assert tag != null;
+
         L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, segmentation:[" + segmentation + "]");
         // Replacing keys in a map is not safe, so we create a new map and put them after
         Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
@@ -163,16 +180,12 @@ public class UtilsInternalLimits {
      * @param L ModuleLog @NonNull - logger
      * @param tag String @NonNull - tag to use in logs
      */
-    protected static void applySdkInternalLimitsToSegmentation(@Nullable Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
+    protected static void applySdkInternalLimitsToSegmentation(@NonNull Map<String, Object> segmentation, @NonNull ConfigSdkInternalLimits limitsConfig, @NonNull ModuleLog L, @NonNull String tag) {
         assert limitsConfig != null;
         assert L != null;
         assert tag != null;
-
-        if (segmentation == null) {
-            L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is null, returning");
-            return;
-        }
-
+        assert segmentation != null;
+      
         if (segmentation.isEmpty()) {
             L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is empty, returning");
             return;
@@ -232,10 +245,11 @@ public class UtilsInternalLimits {
      * @param messagePrefix String @NonNull - name of the module this function was called
      * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
      */
-    static void truncateSegmentationValues(@Nullable final Map<String, Object> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
-        if (segmentation == null) {
-            return;
-        }
+    static void truncateSegmentationValues(@NonNull final Map<String, Object> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+        assert segmentation != null;
+        assert maxCount >= 1;
+        assert L != null;
+        assert messagePrefix != null;
 
         Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -258,10 +272,11 @@ public class UtilsInternalLimits {
      * @param messagePrefix
      * @param L
      */
-    static void removeReservedKeysFromSegmentation(@Nullable Map<String, Object> segmentation, @NonNull String[] reservedKeys, @NonNull String messagePrefix, @NonNull ModuleLog L) {
-        if (segmentation == null) {
-            return;
-        }
+    static void removeReservedKeysFromSegmentation(@NonNull Map<String, Object> segmentation, @NonNull String[] reservedKeys, @NonNull String messagePrefix, @NonNull ModuleLog L) {
+        assert segmentation != null;
+        assert reservedKeys != null;
+        assert L != null;
+        assert messagePrefix != null;
 
         for (String rKey : reservedKeys) {
             if (segmentation.containsKey(rKey)) {
@@ -277,10 +292,8 @@ public class UtilsInternalLimits {
      * @param data
      * @return returns true if any entry had been removed
      */
-    static boolean removeUnsupportedDataTypes(Map<String, Object> data) {
-        if (data == null) {
-            return false;
-        }
+    static boolean removeUnsupportedDataTypes(@NonNull Map<String, Object> data) {
+        assert data != null;
 
         boolean removed = false;
 
@@ -303,7 +316,7 @@ public class UtilsInternalLimits {
         return removed;
     }
 
-    static boolean isSupportedDataType(Object value) {
+    static boolean isSupportedDataType(@Nullable Object value) {
         return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float;
     }
 }
