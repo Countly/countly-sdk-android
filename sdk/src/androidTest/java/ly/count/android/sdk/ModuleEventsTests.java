@@ -462,16 +462,6 @@ public class ModuleEventsTests {
         validateEventInRQ("Te", segmentation, 0);
     }
 
-    protected static JSONObject validateEventInRQ(String eventName, int idx) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(idx + 1, RQ.length);
-        JSONArray events = new JSONArray(RQ[idx].get("events"));
-        Assert.assertEquals(1, events.length());
-        JSONObject event = events.getJSONObject(0);
-        Assert.assertEquals(eventName, event.get("key"));
-        return event;
-    }
-
     @Test
     public void recordEvent_validateFromRQ() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
@@ -503,14 +493,10 @@ public class ModuleEventsTests {
         validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
     }
 
-    protected static JSONObject validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
-        JSONObject event = validateEventInRQ(eventName, idx);
-              JSONObject segmentation = event.getJSONObject("segmentation");
-        Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
-        for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
-            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
-        }
-        return event;}
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
+        validateEventInRQ(eventName, expectedSegmentation, 1, 0.0d, 0.0d, idx);
+    }
+
     /**
      * Validate that only normal events' segmentation values are clipped to the maximum allowed values
      * EQ size is 1 to trigger request generation
@@ -570,15 +556,8 @@ public class ModuleEventsTests {
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
-        return event;
     }
 
-    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
-        JSONObject event = validateEventInRQ(eventName, expectedSegmentation, idx);
-        Assert.assertEquals(count, event.getInt("count"));
-        Assert.assertEquals(sum, event.getDouble("sum"), 0.0001);
-        Assert.assertEquals(duration, event.getDouble("dur"), 0.0001);
-    }
 
 /*
     //todo should be reworked
