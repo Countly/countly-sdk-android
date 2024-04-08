@@ -399,14 +399,14 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (viewSegmentation == null) {
             viewSegmentation = new HashMap<>();
         }
-        
+
         assert viewSegmentation != null;
         assert source != null;
         assert function != null;
 
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(segmentation, reservedSegmentationKeysViews, "[ModuleViews] " + function + ", ", L);
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] " + function);
-        source.putAll(segmentation);
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] " + function + ", ", L);
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(viewSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] " + function);
+        source.putAll(viewSegmentation);
         UtilsInternalLimits.truncateSegmentationValues(source, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] " + function, L);
     }
 
