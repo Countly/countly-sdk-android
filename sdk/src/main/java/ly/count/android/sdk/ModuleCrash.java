@@ -144,6 +144,16 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
+        //in case the exception needs to be recorded, truncate it
+        //String[] splitRes = exceptionString.split("\n");
+        //int totalAllowedLines = _cly.config_.maxStackTraceThreadCount * _cly.config_.maxStackTraceLinesPerThread;
+        //StringBuilder sb = new StringBuilder(exceptionString.length());
+        //
+        //for(int a = 0 ; a < splitRes.length && a < totalAllowedLines ; a++) {
+        //    sb.append(splitRes[a].substring(0, Math.min(splitRes[a].length(), _cly.config_.maxStackTraceLineLength)));
+        //}
+        //sendCrashReportToQueue(sb.toString(), itIsHandled, false, customSegmentation);
+
         UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
 
         return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !handled);
@@ -172,9 +182,9 @@ public class ModuleCrash extends ModuleBase {
 
         if (segments == null) {
             segments = new HashMap<>();
-        
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
+        }
 
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
         customCrashSegments = segments;
     }
 
@@ -303,15 +313,6 @@ public class ModuleCrash extends ModuleBase {
         if (crashFilterCheck(crashData)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
-            //in case the exception needs to be recorded, truncate it
-            //String[] splitRes = exceptionString.split("\n");
-            //int totalAllowedLines = _cly.config_.maxStackTraceThreadCount * _cly.config_.maxStackTraceLinesPerThread;
-            //StringBuilder sb = new StringBuilder(exceptionString.length());
-            //
-            //for(int a = 0 ; a < splitRes.length && a < totalAllowedLines ; a++) {
-            //    sb.append(splitRes[a].substring(0, Math.min(splitRes[a].length(), _cly.config_.maxStackTraceLineLength)));
-            //}
-            //sendCrashReportToQueue(sb.toString(), itIsHandled, false, customSegmentation);
             sendCrashReportToQueue(crashData, false);
         }
         return _cly;
