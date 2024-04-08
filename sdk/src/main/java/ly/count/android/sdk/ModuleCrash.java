@@ -151,14 +151,15 @@ public class ModuleCrash extends ModuleBase {
 
     private String prepareStackTrace(Throwable e) {
         StringWriter sw = new StringWriter();
-        AutoTruncatePrintWriter pw = new AutoTruncatePrintWriter(sw, _cly.config_.sdkInternalLimits.maxStackTraceLineLength, L, "[ModuleCrash] prepareStackTrace");
+        PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
 
         if (recordAllThreads) {
             addAllThreadInformationToCrash(pw, _cly.config_.sdkInternalLimits);
         }
 
-        return sw.toString();
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(sw.toString(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] prepareStackTrace", L);
+        return truncatedStackTrace;
     }
 
     public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
@@ -247,6 +248,8 @@ public class ModuleCrash extends ModuleBase {
 
         crashData.calculateChangedFields();
 
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
+        crashData.setStackTrace(truncatedStackTrace);
         UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(crashData.getBreadcrumbs(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
         UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics());
@@ -275,7 +278,7 @@ public class ModuleCrash extends ModuleBase {
 
             pw.println();
             pw.println("Thread " + thread.getName());
-            
+
             for (int i = 0; i < Math.min(val.length, sdkInternalLimits.maxStackTraceLinesPerThread); i++) {
                 pw.println(val[i].toString());
             }

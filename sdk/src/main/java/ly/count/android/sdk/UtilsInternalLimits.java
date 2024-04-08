@@ -315,6 +315,21 @@ public class UtilsInternalLimits {
         return removed;
     }
 
+    protected static String applyInternalLimitsToStackTraces(String stackTrace, int maxStackTraceLineLength, String tag, ModuleLog L) {
+        StringBuilder sb = new StringBuilder(stackTrace.length());
+
+        String[] stackTraceLines = stackTrace.split("\n");
+        for (int i = 0; i < stackTraceLines.length; i++) {
+            String truncatedLine = UtilsInternalLimits.truncateString(stackTraceLines[i], maxStackTraceLineLength, L, tag);
+            if (i != 0) {
+                sb.append("\n");
+            }
+            sb.append(truncatedLine);
+        }
+
+        return sb.toString();
+    }
+
     static boolean isSupportedDataType(@Nullable Object value) {
         return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float;
     }

@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -925,7 +926,7 @@ public class ModuleCrashTests {
 
     private String extractStackTrace(Throwable throwable, int lineLength, int maxLines) {
         StringWriter sw = new StringWriter();
-        AutoTruncatePrintWriter pw = new AutoTruncatePrintWriter(sw, lineLength, new ModuleLog(), "tag");
+        PrintWriter pw = new PrintWriter(sw);
         throwable.printStackTrace(pw);
         if (maxLines > 0) {
             Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
@@ -951,7 +952,23 @@ public class ModuleCrashTests {
                 threadCount++;
             }
         }
-        return sw.toString();
+
+        String stackTrace = sw.toString();
+        StringBuilder sb = new StringBuilder(stackTrace.length());
+
+        String[] stackTraceLines = stackTrace.split("\n");
+        for (int i = 0; i < stackTraceLines.length; i++) {
+            String stackTraceLine = stackTraceLines[i];
+            if (stackTraceLine.length() >= lineLength) {
+                stackTraceLine = stackTraceLine.substring(0, lineLength);
+            }
+            if (i != 0) {
+                sb.append("\n");
+            }
+            sb.append(stackTraceLine);
+        }
+
+        return sb.toString();
     }
 
     private String extractNativeCrash(String crash) {
