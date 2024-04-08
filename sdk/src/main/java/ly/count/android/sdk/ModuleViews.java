@@ -296,6 +296,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
         applyLimitsToViewSegmentation(customViewSegmentation, "recordViewEndEvent", accumulatedEventSegm);
 
+        UtilsInternalLimits.truncateSegmentationValues(accumulatedEventSegm, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] recordViewEndEvent", L);
+
         long viewDurationSeconds = lastElapsedDurationSeconds;
         Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, accumulatedEventSegm);
         eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, viewDurationSeconds, null, vd.viewID);
@@ -384,6 +386,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.e("[ModuleViews] addSegmentationToViewWithID, view id:[" + viewID + "] has a 'null' view data. This should not be happening");
             return;
         }
+
 
         if (vd.viewSegmentation == null) {
             vd.viewSegmentation = new HashMap<>();
