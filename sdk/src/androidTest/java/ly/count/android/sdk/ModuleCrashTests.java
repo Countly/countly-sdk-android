@@ -933,7 +933,7 @@ public class ModuleCrashTests {
             int threadCount = 0;
 
             for (Map.Entry<Thread, StackTraceElement[]> entry : allThreads.entrySet()) {
-                if (threadCount >= 50) {
+                if (threadCount >= TestUtils.MAX_THREAD_COUNT_PER_STACK_TRACE) {
                     break;
                 }
 
@@ -963,7 +963,7 @@ public class ModuleCrashTests {
                 stackTraceLine = stackTraceLine.substring(0, lineLength);
             }
             if (i != 0) {
-                sb.append("\n");
+                sb.append('\n');
             }
             sb.append(stackTraceLine);
         }
@@ -1031,7 +1031,8 @@ public class ModuleCrashTests {
         cConfig.sdkInternalLimits.setMaxStackTraceLineLength(10);
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             Assert.assertEquals(extractStackTrace(exception, 10, -1), crash.getStackTrace());
-            StringBuilder customStackTrace = new StringBuilder("123456789101112\n");
+            StringBuilder customStackTrace = new StringBuilder(57);
+            customStackTrace.append("123456789101112\n");
             String[] stackTraceLines = crash.getStackTrace().split("\n");
             for (int i = 0; i < stackTraceLines.length; i++) {
                 if (i == stackTraceLines.length / 2) {
@@ -1051,14 +1052,15 @@ public class ModuleCrashTests {
         countly.crashes().recordUnhandledException(exception);
 
         String extractedStackTrace = extractStackTrace(exception, 10, -1);
-        StringBuilder expectedStackTrace = new StringBuilder("1234567891\n");
+        StringBuilder expectedStackTrace = new StringBuilder(38);
+        expectedStackTrace.append("1234567891\n");
         String[] stackTraceLines = extractedStackTrace.split("\n");
         for (int i = 0; i < stackTraceLines.length; i++) {
             if (i == stackTraceLines.length / 2) {
                 expectedStackTrace.append("\nabcdefghij");
             }
             if (i != 0) {
-                expectedStackTrace.append("\n");
+                expectedStackTrace.append('\n');
             }
             expectedStackTrace.append(stackTraceLines[i]);
         }
