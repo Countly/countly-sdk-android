@@ -368,18 +368,12 @@ public class ModuleFeedbackTests {
     public void reportFeedbackWidgetManuallySurveyClosed() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
-        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.survey;
-        widgetInfo.widgetId = "1234";
-        widgetInfo.name = "someName";
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey);
 
         mCountly.feedback().reportFeedbackWidgetManually(widgetInfo, null, null);
 
-        final Map<String, Object> segm = new HashMap<>();
-        segm.put("platform", "android");
-        segm.put("app_version", "1.0");
-        segm.put("widget_id", widgetInfo.widgetId);
-        segm.put("closed", "1");
+        final Map<String, Object> segm = TestUtils.map("closed", "1");
+        fillFeedbackWidgetSegmentationParams(segm, widgetInfo.widgetId);
 
         verify(ep).recordEventInternal(ModuleFeedback.SURVEY_EVENT_KEY, segm, 1, 0, 0, null, null);
     }
@@ -394,18 +388,12 @@ public class ModuleFeedbackTests {
         config.sdkInternalLimits.setMaxKeyLength(2);
         Countly countly = new Countly().init(config);
 
-        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
-        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.survey;
-        widgetInfo.widgetId = "1234";
-        widgetInfo.name = "someName";
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey);
 
         countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("key1", "value1", "key2", "value2", "key3", "value3"));
 
-        final Map<String, Object> segm = new HashMap<>();
-        segm.put("platform", "android");
-        segm.put("app_version", "1.0");
-        segm.put("widget_id", widgetInfo.widgetId);
-        segm.putAll(TestUtils.map("key1", "value1", "key2", "value2", "key3", "value3"));
+        final Map<String, Object> segm = TestUtils.map("key1", "value1", "key2", "value2", "key3", "value3");
+        fillFeedbackWidgetSegmentationParams(segm, widgetInfo.widgetId);
 
         ModuleEventsTests.validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, segm, 0);
     }
@@ -421,18 +409,13 @@ public class ModuleFeedbackTests {
         config.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(config);
 
-        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
-        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.rating;
-        widgetInfo.widgetId = "1234";
-        widgetInfo.name = "someName";
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating);
 
         countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("rating", 10));
 
-        final Map<String, Object> segm = new HashMap<>();
-        segm.put("platform", "android");
-        segm.put("app_version", "1.0");
-        segm.put("widget_id", widgetInfo.widgetId);
-        segm.put("rating", 10);
+        final Map<String, Object> segm = TestUtils.map("rating", 10);
+        fillFeedbackWidgetSegmentationParams(segm, widgetInfo.widgetId);
+
         ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, segm, 0);
     }
 
@@ -447,20 +430,68 @@ public class ModuleFeedbackTests {
         config.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(config);
 
-        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
-        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
-        widgetInfo.widgetId = "1234";
-        widgetInfo.name = "someName";
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
 
         countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("rating", 10, "comment", "huhu"));
 
-        final Map<String, Object> segm = new HashMap<>();
-        segm.put("platform", "android");
-        segm.put("app_version", "1.0");
-        segm.put("widget_id", widgetInfo.widgetId);
-        segm.put("rating", 10);
-        segm.put("comment", "huhu");
+        final Map<String, Object> segm = TestUtils.map("rating", 10, "comment", "huhu");
+        fillFeedbackWidgetSegmentationParams(segm, widgetInfo.widgetId);
 
         ModuleEventsTests.validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, segm, 0);
+    }
+
+    /**
+     * Value size limit is applied to the all string values of widget results
+     * And validate while reporting a survey widget manually, value is truncated to the limit
+     * And unsupported types are removed
+     * All types of feedback widgets are tested NPS, RATING, SURVEY
+     */
+    @Test
+    public void internalLimit_reportFeedbackWidgetManually_setMaxValueSize() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxValueSize(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        //NPS
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
+        countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("rating", 10, "comment", "huhu", "extras", "sure_go_on", "map", TestUtils.map("key1", "value1", "key2", "value2"), "omg", Double.MAX_VALUE));
+
+        Map<String, Object> segm = TestUtils.map("rating", 10, "comment", "hu", "extras", "su", "omg", Double.MAX_VALUE);
+        fillFeedbackWidgetSegmentationParams(segm, widgetInfo.widgetId);
+
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, segm, 0);
+
+        //RATING
+        widgetInfo = createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.rating);
+        countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("rating", 10, "comment", "zoomzoom", "map", TestUtils.map("key1", "value1", "key2", "value2"), "omg", Double.MIN_VALUE));
+
+        segm = TestUtils.map("rating", 10, "comment", "zo", "omg", Double.MIN_VALUE);
+        fillFeedbackWidgetSegmentationParams(segm, widgetInfo.widgetId);
+
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, segm, 1);
+
+        //SURVEY
+        widgetInfo = createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.survey);
+        countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("key1", "value1", "key2", "value2", "key3", "value3", "map", TestUtils.map("key1", "value1", "key2", "value2"), "int", Integer.MAX_VALUE));
+
+        segm = TestUtils.map("key1", "va", "key2", "va", "key3", "va", "int", Integer.MAX_VALUE);
+        fillFeedbackWidgetSegmentationParams(segm, widgetInfo.widgetId);
+
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, segm, 2);
+    }
+
+    private ModuleFeedback.CountlyFeedbackWidget createFeedbackWidget(ModuleFeedback.FeedbackWidgetType type) {
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = type;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+        return widgetInfo;
+    }
+
+    private void fillFeedbackWidgetSegmentationParams(Map<String, Object> segmentation, String widgetId) {
+        segmentation.put("platform", "android");
+        segmentation.put("app_version", "1.0");
+        segmentation.put("widget_id", widgetId);
     }
 }

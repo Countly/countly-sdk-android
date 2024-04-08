@@ -202,6 +202,7 @@ public class ModuleEventsTests {
         ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
+
         ArgumentCaptor<Map> argS = ArgumentCaptor.forClass(Map.class);
         verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), argS.capture(), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
 
@@ -462,16 +463,6 @@ public class ModuleEventsTests {
         validateEventInRQ("Te", segmentation, 0);
     }
 
-    protected static JSONObject validateEventInRQ(String eventName, int idx) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(idx + 1, RQ.length);
-        JSONArray events = new JSONArray(RQ[idx].get("events"));
-        Assert.assertEquals(1, events.length());
-        JSONObject event = events.getJSONObject(0);
-        Assert.assertEquals(eventName, event.get("key"));
-        return event;
-    }
-
     @Test
     public void recordEvent_validateFromRQ() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
@@ -542,9 +533,47 @@ public class ModuleEventsTests {
         validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, threeSegmentation, 1, 0.0d, 0.0d, 7);
     }
 
+    /**
+     * "recordEvent" max value size limit
+     * Validate that all "String" values are clipped to the maximum allowed length
+     * EQ size is 1 to trigger request generation
+     */
+    @Test
+    public void internalLimits_recordEventInternal_maxValueSize() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "b", "bbb", "c", "ccc"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rnd_key", TestUtils.map("a", 1, "b", "bb", "c", "cc"), 1, 1.1d, 1.1d, 0);
+    }
+
+    /**
+     * "recordEvent" max value size limit and key length
+     * Validate that clipped values clashes with same keys and overridden each other
+     * "bb" key should have value from the second of the last value which is "dd"
+     */
+    @Test
+    public void internalLimits_recordEventInternal_maxValueSizeKeyLength() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2).setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "bbb", "bbb", "bbc", "ccc", "bbd", "ddd", "bbe", "eee"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
+    }
+
+
     protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(idx + 1, RQ.length);
+        TestUtils.validateRequiredParams(RQ[idx]);
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(1, events.length());
         JSONObject event = events.getJSONObject(0);
@@ -562,16 +591,13 @@ public class ModuleEventsTests {
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
+        Assert.assertEquals(count, event.getInt("count"));
+        Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
+        Assert.assertEquals(duration, event.optDouble("dur", 0.0d), 0.0001);
     }
 
-    protected static JSONObject validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
-        JSONObject event = validateEventInRQ(eventName, 1, 0.0, 0.0, idx);
-        JSONObject segmentation = event.getJSONObject("segmentation");
-        Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
-        for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
-            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
-        }
-        return event;
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
+        validateEventInRQ(eventName, expectedSegmentation, 1, 0.0d, 0.0d, idx);
     }
 
 /*

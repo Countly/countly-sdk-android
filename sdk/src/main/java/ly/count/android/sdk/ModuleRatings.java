@@ -70,6 +70,9 @@ public class ModuleRatings extends ModuleBase {
             L.d("[ModuleRatings] recordManualRatingInternal, given rating too high, defaulting to 5");
         }
 
+        email = UtilsInternalLimits.truncateValueSize(email, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+        comment = UtilsInternalLimits.truncateValueSize(comment, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+
         Map<String, Object> segm = new HashMap<>();
         segm.put("platform", "android");
         segm.put("app_version", deviceInfo.mp.getAppVersion(_cly.context_));

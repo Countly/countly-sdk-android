@@ -1,8 +1,10 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import org.json.JSONException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -135,6 +137,48 @@ public class ModuleRatingsTests {
         Assert.assertEquals("App rating", srp.dialogTextTitle);
         Assert.assertEquals("Please rate this app", srp.dialogTextMessage);
         Assert.assertEquals("Cancel", srp.dialogTextDismiss);
+    }
+
+    /**
+     * Value size limit is applied to the email and the comment of the manual rating
+     * "recordManualRating" and "recordRatingWidgetWithID" methods are tested
+     * Validate that events exist and contains the truncated values of the email and the comment
+     */
+    @Test
+    public void internalLimits_recordManualRating_maxValueSize() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxValueSize(1);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.ratings().recordManualRating("A", 3, "email", "comment", true);
+
+        Map<String, Object> ratingSegmentation = prepareRatingSegmentation("3", "A", "e", "c", true);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 0);
+
+        countly.ratings().recordRatingWidgetWithID("B", 5, "aaa@bbb.com", "very_good", false);
+
+        ratingSegmentation = prepareRatingSegmentation("5", "B", "a", "v", false);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 1);
+    }
+
+    private Map<String, Object> prepareRatingSegmentation(String rating, String widgetId, String email, String comment, boolean userCanBeContacted) {
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("rating", rating);
+        segm.put("widget_id", widgetId);
+        segm.put("contactMe", userCanBeContacted);
+
+        if (email != null && !email.isEmpty()) {
+            segm.put("email", email);
+        }
+
+        if (comment != null && !comment.isEmpty()) {
+            segm.put("comment", comment);
+        }
+
+        return segm;
     }
 
     /**
