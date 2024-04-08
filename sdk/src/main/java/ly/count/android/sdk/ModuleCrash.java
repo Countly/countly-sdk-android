@@ -7,8 +7,6 @@ import androidx.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -144,19 +142,21 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
-        //in case the exception needs to be recorded, truncate it
-        //String[] splitRes = exceptionString.split("\n");
-        //int totalAllowedLines = _cly.config_.maxStackTraceThreadCount * _cly.config_.maxStackTraceLinesPerThread;
-        //StringBuilder sb = new StringBuilder(exceptionString.length());
-        //
-        //for(int a = 0 ; a < splitRes.length && a < totalAllowedLines ; a++) {
-        //    sb.append(splitRes[a].substring(0, Math.min(splitRes[a].length(), _cly.config_.maxStackTraceLineLength)));
-        //}
-        //sendCrashReportToQueue(sb.toString(), itIsHandled, false, customSegmentation);
-
         UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
 
         return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !handled);
+    }
+
+    private String prepareStackTrace(Throwable e) {
+        StringBuilder sb = new StringBuilder();
+
+        UtilsInternalLimits.applySdkInternalLimitsToStackTraces(e.getStackTrace(), sb, _cly.config_.sdkInternalLimits.maxStackTraceLineLength, e.getStackTrace().length, L, "[ModuleCrash] prepareStackTrace");
+
+        if (recordAllThreads) {
+            addAllThreadInformationToCrash(sb, _cly.config_.sdkInternalLimits);
+        }
+
+        return sb.toString();
     }
 
     public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
@@ -200,17 +200,8 @@ public class ModuleCrash extends ModuleBase {
                 L.d("[ModuleCrash] Uncaught crash handler triggered");
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
 
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    e.printStackTrace(pw);
-
-                    //add other threads
-                    if (recordAllThreads) {
-                        addAllThreadInformationToCrash(pw);
-                    }
-
-                    //check if it passes the crash filter
-                    CrashData crashData = prepareCrashData(sw.toString(), false, false, null);
+                    String stackTrace = prepareStackTrace(e);
+                    CrashData crashData = prepareCrashData(stackTrace, false, false, null);
                     if (!crashFilterCheck(crashData)) {
                         sendCrashReportToQueue(crashData, false);
                     }
@@ -261,10 +252,18 @@ public class ModuleCrash extends ModuleBase {
         return false;
     }
 
-    void addAllThreadInformationToCrash(PrintWriter pw) {
+    void addAllThreadInformationToCrash(@NonNull StringBuilder sb, @NonNull ConfigSdkInternalLimits sdkInternalLimits) {
+        assert sb != null;
+        assert sdkInternalLimits != null;
+
         Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
+        int threadCount = 0;
 
         for (Map.Entry<Thread, StackTraceElement[]> entry : allThreads.entrySet()) {
+            if (threadCount >= sdkInternalLimits.maxStackTraceThreadCount) {
+                break;
+            }
+            
             StackTraceElement[] val = entry.getValue();
             Thread thread = entry.getKey();
 
@@ -272,11 +271,8 @@ public class ModuleCrash extends ModuleBase {
                 continue;
             }
 
-            pw.println();
-            pw.println("Thread " + thread.getName());
-            for (StackTraceElement stackTraceElement : val) {
-                pw.println(stackTraceElement.toString());
-            }
+            UtilsInternalLimits.applySdkInternalLimitsToStackTraces(val, sb, sdkInternalLimits.maxStackTraceLineLength, sdkInternalLimits.maxStackTraceLinesPerThread, L, "[ModuleCrash] addAllThreadInformationToCrash");
+            threadCount++;
         }
     }
 
@@ -299,15 +295,7 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        exception.printStackTrace(pw);
-
-        if (recordAllThreads) {
-            addAllThreadInformationToCrash(pw);
-        }
-
-        String exceptionString = sw.toString();
+        String exceptionString = prepareStackTrace(exception);
 
         CrashData crashData = prepareCrashData(exceptionString, itIsHandled, false, customSegmentation);
         if (crashFilterCheck(crashData)) {
