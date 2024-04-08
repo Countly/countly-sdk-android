@@ -6,7 +6,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -921,9 +920,37 @@ public class ModuleCrashTests {
     }
 
     private String extractStackTrace(Throwable throwable) {
+        return extractStackTrace(throwable, 1000, -1);
+    }
+
+    private String extractStackTrace(Throwable throwable, int lineLength, int maxLines) {
         StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
+        AutoTruncatePrintWriter pw = new AutoTruncatePrintWriter(sw, lineLength, new ModuleLog(), "tag");
         throwable.printStackTrace(pw);
+        if (maxLines > 0) {
+            Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
+            int threadCount = 0;
+
+            for (Map.Entry<Thread, StackTraceElement[]> entry : allThreads.entrySet()) {
+                if (threadCount >= 50) {
+                    break;
+                }
+
+                StackTraceElement[] val = entry.getValue();
+                Thread thread = entry.getKey();
+
+                if (val == null || thread == null) {
+                    continue;
+                }
+
+                pw.println();
+                pw.println("Thread " + thread.getName());
+                for (int i = 0; i < Math.min(val.length, maxLines); i++) {
+                    pw.println(val[i].toString());
+                }
+                threadCount++;
+            }
+        }
         return sw.toString();
     }
 
@@ -1143,16 +1170,42 @@ public class ModuleCrashTests {
             12, new HashMap<>(), new ArrayList<>());
     }
 
-    private void validateCrash(String error, Map<String, Object> segm, boolean handled) throws JSONException {
-        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(1, RQ.length);
-        JSONObject crashJson = new JSONObject(RQ[0].get("crash"));
-        JSONObject segmentation = crashJson.getJSONObject("_custom");
-        Assert.assertEquals(error, crashJson.getString("_error"));
-        Assert.assertEquals(segm.size(), segmentation.length());
-        for (Map.Entry<String, Object> entry : segm.entrySet()) {
-            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
-        }
-        Assert.assertEquals(handled, crashJson.getBoolean("_nonfatal"));
+    /**
+     * Validate that the stack trace is truncated to the maximum allowed length of 2
+     * Adding all thread information is disabled
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_stackTraceLimits_lineLength() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxStackTraceLineLength(2);
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception, 2, -1), "", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Validate that the stack trace is truncated to the maximum allowed length of 2
+     * Adding all thread information is disabled
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_stackTraceLimits_lineLength_lineCount() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxStackTraceLineLength(10).setMaxStackTraceLinesPerThread(3);
+        //cConfig.crashes.enableRecordAllThreadsWithCrash();
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception, 10, -3), "", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 }

@@ -151,7 +151,7 @@ public class ModuleCrash extends ModuleBase {
 
     private String prepareStackTrace(Throwable e) {
         StringWriter sw = new StringWriter();
-        AutoTruncatePrintWriter pw = new AutoTruncatePrintWriter(sw, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleCrash] prepareStackTrace");
+        AutoTruncatePrintWriter pw = new AutoTruncatePrintWriter(sw, _cly.config_.sdkInternalLimits.maxStackTraceLineLength, L, "[ModuleCrash] prepareStackTrace");
         e.printStackTrace(pw);
 
         if (recordAllThreads) {
@@ -273,6 +273,9 @@ public class ModuleCrash extends ModuleBase {
                 continue;
             }
 
+            pw.println();
+            pw.println("Thread " + thread.getName());
+            
             for (int i = 0; i < Math.min(val.length, sdkInternalLimits.maxStackTraceLinesPerThread); i++) {
                 pw.println(val[i].toString());
             }
