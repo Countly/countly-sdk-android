@@ -170,13 +170,16 @@ public class ModuleCrash extends ModuleBase {
             return;
         }
 
+        Map<String, Object> customSegments;
         if (segments == null) {
-            segments = new HashMap<>();
+            customSegments = new HashMap<>();
+        } else {
+            customSegments = segments;
         }
-        
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
 
-        customCrashSegments = segments;
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
+
+        customCrashSegments = customSegments;
     }
 
     void enableCrashReporting() {
