@@ -29,13 +29,13 @@ public class BreadcrumbHelper {
             return;
         }
 
-        breadcrumb = UtilsInternalLimits.truncateValueSize(breadcrumb, valueSize, L, "[BreadcrumbHelper] addBreadcrumb");
+        String truncatedBreadcrumb = UtilsInternalLimits.truncateValueSize(breadcrumb, valueSize, L, "[BreadcrumbHelper] addBreadcrumb");
 
         if (logs.size() >= maxBreadcrumbs) {
             L.d("[BreadcrumbHelper] addBreadcrumb, Breadcrumb amount limit exceeded, deleting the oldest one");
             logs.removeFirst();
         }
-        logs.add(breadcrumb);
+        logs.add(truncatedBreadcrumb);
 
         assert logs.size() <= maxBreadcrumbs;
     }

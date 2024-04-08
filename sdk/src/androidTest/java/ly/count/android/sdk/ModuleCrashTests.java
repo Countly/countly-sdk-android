@@ -959,7 +959,7 @@ public class ModuleCrashTests {
     @Test
     public void internalLimits_provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.sdkInternalLimits.setMaxKeyLength(10);
 
         Map<String, Object> segm = new HashMap<>();
