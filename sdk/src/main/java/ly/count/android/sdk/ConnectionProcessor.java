@@ -124,7 +124,12 @@ public class ConnectionProcessor implements Runnable {
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
 
-        long pccTsOpenURLConnection = UtilsTime.getNanoTime();
+        long pccTsOpenURLConnection = 0L;
+        long pccTsConfigureConnection = 0L;
+        long pccTsStartHeaderFieldSize = 0L;
+        if (pcc != null) {
+            pccTsOpenURLConnection = UtilsTime.getNanoTime();
+        }
 
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
             conn = (HttpURLConnection) url.openConnection();
@@ -134,13 +139,11 @@ public class ConnectionProcessor implements Runnable {
             conn = c;
         }
 
-        long openUrlConnectionTime = UtilsTime.getNanoTime() - pccTsOpenURLConnection;
-        L.d("[ConnectionProcessor] urlConnectionForServerRequest, TIMING Open URL connection took:[" + openUrlConnectionTime / 1000000.0d + "] ms");
         if (pcc != null) {
+            long openUrlConnectionTime = UtilsTime.getNanoTime() - pccTsOpenURLConnection;
             pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_01_OpenURLConnection", openUrlConnectionTime);
+            pccTsConfigureConnection = UtilsTime.getNanoTime();
         }
-
-        long pccTsConfigureConnection = UtilsTime.getNanoTime();
 
         conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
         conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
@@ -209,13 +212,10 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        long configureConnectionTime = UtilsTime.getNanoTime() - pccTsConfigureConnection;
-        L.d("[ConnectionProcessor] urlConnectionForServerRequest, TIMING Configure connection took:[" + configureConnectionTime / 1000000.0d + "] ms");
         if (pcc != null) {
-            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_02_ConfigureConnection", configureConnectionTime);
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_02_ConfigureConnection", UtilsTime.getNanoTime() - pccTsConfigureConnection);
+            pccTsStartHeaderFieldSize = UtilsTime.getNanoTime();
         }
-
-        long pccTsStartHeaderFieldSize = UtilsTime.getNanoTime();
 
         //calculating header field size
         try {
@@ -235,10 +235,8 @@ public class ConnectionProcessor implements Runnable {
             L.e("[Connection Processor] urlConnectionForServerRequest, exception while calculating header field size: " + e);
         }
 
-        long headerFieldSizeTime = UtilsTime.getNanoTime() - pccTsStartHeaderFieldSize;
-        L.d("[ConnectionProcessor] urlConnectionForServerRequest, TIMING Header field size calculation took:[" + headerFieldSizeTime / 1000000.0d + "] ms");
         if (pcc != null) {
-            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_03_HeaderFieldSize", headerFieldSizeTime);
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_03_HeaderFieldSize", UtilsTime.getNanoTime() - pccTsStartHeaderFieldSize);
         }
 
         L.v("[ConnectionProcessor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
@@ -340,8 +338,6 @@ public class ConnectionProcessor implements Runnable {
                 // currently no data to send, we are done for now
                 break;
             }
-
-            L.i("[Connection Processor] Starting to run, there are [" + storedRequestCount + "] requests stored");
 
             if (deviceIdProvider_.getDeviceId() == null) {
                 // When device ID is supplied by OpenUDID or by Google Advertising ID.
@@ -652,7 +648,7 @@ public class ConnectionProcessor implements Runnable {
             }
         }
         long wholeQueueTime = UtilsTime.getNanoTime() - wholeQueueStart;
-        L.d("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
+        L.v("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
     }
 
     String getServerURL() {
