@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.List;
@@ -381,5 +382,85 @@ public class ModuleFeedbackTests {
         segm.put("closed", "1");
 
         verify(ep).recordEventInternal(ModuleFeedback.SURVEY_EVENT_KEY, segm, 1, 0, 0, null, null);
+    }
+
+    /**
+     * Test that the internal limit for key length is working
+     * And validate while reporting a survey widget manually, key and segmentation is not truncated
+     */
+    @Test
+    public void internalLimit_reportFeedbackWidgetManuallySurvey() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        Countly countly = new Countly().init(config);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.survey;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("key1", "value1", "key2", "value2", "key3", "value3"));
+
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("widget_id", widgetInfo.widgetId);
+        segm.putAll(TestUtils.map("key1", "value1", "key2", "value2", "key3", "value3"));
+
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, segm, 0);
+    }
+
+    /**
+     * Test that the internal limit for key length is working
+     * And validate while reporting a rating widget manually, key and segmentation is not truncated
+     */
+    @Test
+    public void internalLimit_reportFeedbackWidgetManuallyRating() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.rating;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("rating", 10));
+
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("widget_id", widgetInfo.widgetId);
+        segm.put("rating", 10);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, segm, 0);
+    }
+
+    /**
+     * Test that the internal limit for key length is working
+     * And validate while reporting a nps widget manually, key and segmentation is not truncated
+     */
+    @Test
+    public void internalLimit_reportFeedbackWidgetManuallyNPS() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+
+        countly.feedback().reportFeedbackWidgetManually(widgetInfo, null, TestUtils.map("rating", 10, "comment", "huhu"));
+
+        final Map<String, Object> segm = new HashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("widget_id", widgetInfo.widgetId);
+        segm.put("rating", 10);
+        segm.put("comment", "huhu");
+
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, segm, 0);
     }
 }

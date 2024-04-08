@@ -140,6 +140,7 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
         if (customSegmentation != null) {
+            UtilsInternalLimits.truncateSegmentationKeys(customSegmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleCrash] sendCrashReportToQueue");
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
@@ -172,6 +173,7 @@ public class ModuleCrash extends ModuleBase {
 
         if (segments != null) {
             UtilsInternalLimits.removeUnsupportedDataTypes(segments);
+            UtilsInternalLimits.truncateSegmentationKeys(segments, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
         }
         customCrashSegments = segments;
     }
