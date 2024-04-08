@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.junit.After;
 import org.junit.Assert;
@@ -1451,7 +1452,7 @@ public class ModuleViewsTests {
      */
     @Test
     public void internalLimit_recordViewsWithSegmentation() throws JSONException {
-        Map<String, Object> globalSegm = new HashMap<>();
+        Map<String, Object> globalSegm = new ConcurrentHashMap<>();
         globalSegm.put("avu", 4);
         globalSegm.put("avi", "v1");
 
@@ -1460,11 +1461,11 @@ public class ModuleViewsTests {
         cc.setEventQueueSizeToSend(1);
         Countly mCountly = new Countly().init(cc);
 
-        Map<String, Object> givenStartSegm = new HashMap<>();
+        Map<String, Object> givenStartSegm = new ConcurrentHashMap<>();
         givenStartSegm.put("sop", 4);
         String viewID = mCountly.views().startView("VIEW", givenStartSegm);
 
-        Map<String, Object> expectedSegm = new HashMap<>();
+        Map<String, Object> expectedSegm = new ConcurrentHashMap<>();
         ClearFillSegmentationViewStart(expectedSegm, "VI", true);
         expectedSegm.putAll(TestUtils.map("av", "v1", "so", 4));
 
@@ -1472,7 +1473,7 @@ public class ModuleViewsTests {
 
         mCountly.views().setGlobalViewSegmentation(TestUtils.map("sunburn", true, "sunflower", "huh"));
 
-        Map<String, Object> endSegm = new HashMap<>();
+        Map<String, Object> endSegm = new ConcurrentHashMap<>();
         endSegm.put("satellite", "hoho");
         endSegm.put("avu", 25);
         mCountly.views().stopViewWithID(viewID, endSegm);
