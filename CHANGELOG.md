@@ -1,5 +1,5 @@
 ## XX.XX.XX
-- ! Minor breaking change! "maxSegmentationValues" limit will be applied by default now.
+- ! Minor breaking change! "maxSegmentationValues" limit will be applied by default now. This would limit the maximum amount of developer provided segmentation values when using features. Current limit is 100 entries.
 
 ## 24.4.0
 * ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
