@@ -4,6 +4,7 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.junit.After;
 import org.junit.Assert;
@@ -163,7 +164,7 @@ public class ModuleRatingsTests {
     }
 
     private Map<String, Object> prepareRatingSegmentation(String rating, String widgetId, String email, String comment, boolean userCanBeContacted) {
-        Map<String, Object> segm = new HashMap<>();
+        Map<String, Object> segm = new ConcurrentHashMap<>();
         segm.put("platform", "android");
         segm.put("app_version", "1.0");
         segm.put("rating", rating);
