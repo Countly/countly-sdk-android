@@ -291,12 +291,30 @@ public class ModuleCrashTests {
     }
 
     /**
+     * Validate that custom crash segmentation is truncated to the maximum allowed length
+     * Because length is 2 all global crash segmentation values are dropped and only the last 2
+     * of the custom segmentation values are kept
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.metricProviderOverride = mmp;
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.crashes.setCustomCrashSegmentation(TestUtils.map("a", "1", "b", "2", "c", "3"));
+        Countly countly = new Countly().init(config);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, TestUtils.map("d", "4", "e", "5", "f", "6"));
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("e", "5", "f", "6"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
      * "recordHandledException" with crash filter
      * Validate that first call to the "recordHandledException" is filtered out by the crash filter
      * Validate that second call to the "recordHandledException" is not filtered out by the crash filter
      * Validate second call creates a request in the queue and validate all crash data
-     *
-     * @throws JSONException if JSON parsing fails
      */
     @Test
     public void recordHandledException_crashFilter() throws JSONException {
@@ -583,6 +601,26 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception);
         validateCrash(extractStackTrace(exception), "", true, false, new ConcurrentHashMap<>(), 2, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Validate that custom crash segmentation is truncated to the maximum allowed length
+     * Because length is 2 all global crash segmentation values are dropped and only the last 2
+     * of the custom segmentation values are kept
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_maxSegmentationValues_global() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.metricProviderOverride = mmp;
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.crashes.setCustomCrashSegmentation(TestUtils.map("a", "1", "b", "2", "c", "3"));
+        Countly countly = new Countly().init(config);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception);
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("b", "2", "c", "3"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
