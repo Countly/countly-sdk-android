@@ -224,8 +224,6 @@ public class ModuleUserProfile extends ModuleBase {
                 return;
             }
 
-            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
-
             if (customMods == null) {
                 customMods = new HashMap<>();
             }
@@ -234,14 +232,14 @@ public class ModuleUserProfile extends ModuleBase {
                 ob = new JSONObject();
                 ob.put(mod, value);
             } else {
-                if (customMods.containsKey(truncatedKey)) {
-                    ob = customMods.get(truncatedKey);
+                if (customMods.containsKey(key)) {
+                    ob = customMods.get(key);
                 } else {
                     ob = new JSONObject();
                 }
                 ob.accumulate(mod, value);
             }
-            customMods.put(truncatedKey, ob);
+            customMods.put(key, ob);
             isSynced = false;
         } catch (JSONException e) {
             e.printStackTrace();
@@ -279,8 +277,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             if (!isNamed) {
-                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
-                dataCustomFields.put(truncatedKey, value.toString());
+                dataCustomFields.put(key, value.toString());
             }
         }
 
@@ -291,7 +288,6 @@ public class ModuleUserProfile extends ModuleBase {
         if (custom == null) {
             custom = new HashMap<>();
         }
-
         custom.putAll(dataCustomFields);
 
         isSynced = false;
