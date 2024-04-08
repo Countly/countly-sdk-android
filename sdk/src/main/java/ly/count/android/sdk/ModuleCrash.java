@@ -172,7 +172,6 @@ public class ModuleCrash extends ModuleBase {
 
         if (segments == null) {
             segments = new HashMap<>();
-        }
         
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
 

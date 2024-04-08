@@ -93,7 +93,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         L.d("[ModuleViews] Calling setGlobalViewSegmentationInternal with[" + (segmentation == null ? "null" : segmentation.size()) + "] entries");
 
         automaticViewSegmentation.clear();
-
         applyLimitsToViewSegmentation(segmentation, "setGlobalViewSegmentationInternal", automaticViewSegmentation);
     }
 
@@ -130,6 +129,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, Map<String, Object> customViewSegmentation) {
         Map<String, Object> viewSegmentation = new HashMap<>();
         if (customViewSegmentation != null) {
+            UtilsInternalLimits.truncateSegmentationKeys(customViewSegmentation, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleViews] CreateViewEventSegmentation");
             viewSegmentation.putAll(customViewSegmentation);
         }
 
@@ -212,6 +212,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         Map<String, Object> accumulatedEventSegm = new HashMap<>(automaticViewSegmentation);
 
         applyLimitsToViewSegmentation(customViewSegmentation, "startViewInternal", accumulatedEventSegm);
+
+        UtilsInternalLimits.truncateSegmentationValues(accumulatedEventSegm, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] startViewInternal", L);
 
         Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, accumulatedEventSegm);
 
@@ -298,6 +300,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             accumulatedEventSegm.putAll(vd.viewSegmentation);
         }
         applyLimitsToViewSegmentation(customViewSegmentation, "recordViewEndEvent", accumulatedEventSegm);
+
+        UtilsInternalLimits.truncateSegmentationValues(accumulatedEventSegm, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] recordViewEndEvent", L);
 
         long viewDurationSeconds = lastElapsedDurationSeconds;
         Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, accumulatedEventSegm);

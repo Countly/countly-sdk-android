@@ -1142,4 +1142,17 @@ public class ModuleCrashTests {
             TestUtils.map("be", "Mudru", "do", Double.MIN_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1),
             12, new HashMap<>(), new ArrayList<>());
     }
+
+    private void validateCrash(String error, Map<String, Object> segm, boolean handled) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(1, RQ.length);
+        JSONObject crashJson = new JSONObject(RQ[0].get("crash"));
+        JSONObject segmentation = crashJson.getJSONObject("_custom");
+        Assert.assertEquals(error, crashJson.getString("_error"));
+        Assert.assertEquals(segm.size(), segmentation.length());
+        for (Map.Entry<String, Object> entry : segm.entrySet()) {
+            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+        }
+        Assert.assertEquals(handled, crashJson.getBoolean("_nonfatal"));
+    }
 }

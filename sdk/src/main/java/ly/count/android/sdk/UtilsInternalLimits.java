@@ -185,7 +185,6 @@ public class UtilsInternalLimits {
         assert L != null;
         assert tag != null;
         assert segmentation != null;
-      
         if (segmentation.isEmpty()) {
             L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is empty, returning");
             return;

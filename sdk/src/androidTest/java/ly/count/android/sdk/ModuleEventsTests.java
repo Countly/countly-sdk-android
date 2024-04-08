@@ -202,11 +202,14 @@ public class ModuleEventsTests {
         ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), any(Map.class), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
+
+        ArgumentCaptor<Map> argS = ArgumentCaptor.forClass(Map.class);
+        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), argS.capture(), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
 
         Assert.assertEquals(startEvent.timestamp, (long) arg1.getValue());
         Assert.assertEquals(startEvent.hour, (int) arg2.getValue());
         Assert.assertEquals(startEvent.dow, (int) arg3.getValue());
+        Assert.assertTrue(argS.getValue().isEmpty());
 
         Double captD = argD.getValue();
         Assert.assertEquals(1, captD, 0.1d);
@@ -565,6 +568,7 @@ public class ModuleEventsTests {
         countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "bbb", "bbb", "bbc", "ccc", "bbd", "ddd", "bbe", "eee"), 1, 1.1d, 1.1d);
         validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
     }
+
 
     protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
