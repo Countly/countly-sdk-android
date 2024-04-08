@@ -1,3 +1,6 @@
+## XX.XX.XX
+* ! Minor breaking change ! key length default limit is applied by default
+
 ## 24.4.0
 * ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
 * ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "UpdateSession"

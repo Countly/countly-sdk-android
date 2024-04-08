@@ -184,13 +184,12 @@ public class UtilsInternalLimits {
         assert limitsConfig != null;
         assert L != null;
         assert tag != null;
+        assert segmentation != null;
 
         if (segmentation.isEmpty()) {
             L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is empty, returning");
             return;
         }
-
-        assert segmentation != null;
 
         truncateSegmentationKeysValues(segmentation, limitsConfig, L, tag);
         truncateSegmentationValues(segmentation, limitsConfig.maxSegmentationValues, tag, L);
