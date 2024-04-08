@@ -396,12 +396,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     }
 
     private void applyLimitsToViewSegmentation(@Nullable Map<String, Object> viewSegmentation, @NonNull String function, @NonNull Map<String, Object> source) {
-        Map<String, Object> segmentation;
         if (viewSegmentation == null) {
-            segmentation = new HashMap<>();
-        } else {
-            segmentation = viewSegmentation;
+            viewSegmentation = new HashMap<>();
         }
+        
         assert viewSegmentation != null;
         assert source != null;
         assert function != null;
