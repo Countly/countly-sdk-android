@@ -557,28 +557,21 @@ public class ModuleEventsTests {
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
         JSONObject event = validateEventInRQ(eventName, count, sum, duration, idx);
-              JSONObject segmentation = event.getJSONObject("segmentation");
+        JSONObject segmentation = event.getJSONObject("segmentation");
         Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
-        return event;
     }
+
     protected static JSONObject validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
-        JSONObject event = validateEventInRQ(eventName, idx, 1, 0.0, 0.0, 0);
+        JSONObject event = validateEventInRQ(eventName, 1, 0.0, 0.0, idx);
         JSONObject segmentation = event.getJSONObject("segmentation");
         Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
         return event;
-    }
-
-    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
-        JSONObject event = validateEventInRQ(eventName, expectedSegmentation, idx);
-        Assert.assertEquals(count, event.getInt("count"));
-        Assert.assertEquals(sum, event.getDouble("sum"), 0.0001);
-        Assert.assertEquals(duration, event.getDouble("dur"), 0.0001);
     }
 
 /*
