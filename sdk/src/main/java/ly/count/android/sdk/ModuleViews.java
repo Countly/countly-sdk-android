@@ -127,11 +127,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         firstView = true;
     }
 
-    Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, Map<String, Object> customViewSegmentation) {
-        Map<String, Object> viewSegmentation = new HashMap<>();
-        if (customViewSegmentation != null) {
-            viewSegmentation.putAll(customViewSegmentation);
-        }
+    Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, @NonNull Map<String, Object> customViewSegmentation) {
+        Map<String, Object> viewSegmentation = new HashMap<>(customViewSegmentation);
 
         String truncatedViewName = UtilsInternalLimits.truncateKeyLength(vd.viewName, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleViews] CreateViewEventSegmentation");
         viewSegmentation.put("name", truncatedViewName);
@@ -396,7 +393,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     }
 
     private void applyLimitsToViewSegmentation(@Nullable Map<String, Object> viewSegmentation, @NonNull String function, @NonNull Map<String, Object> source) {
-        if (viewSegmentation == null || viewSegmentation.isEmpty()) {
+        if (viewSegmentation == null) {
             viewSegmentation = new HashMap<>();
         }
         assert viewSegmentation != null;
