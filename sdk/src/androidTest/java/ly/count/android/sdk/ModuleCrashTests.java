@@ -1207,22 +1207,55 @@ public class ModuleCrashTests {
     }
 
     /**
-     * Validate that the stack trace is truncated to the maximum allowed length of 2
-     * Adding all thread information is disabled
+     * Validate that the stack trace is truncated to the maximum allowed length of 10
+     * After the crash filter is applied, the stack trace is modified
+     * The added traces to the beginning, middle and to the end of the stack trace
+     * must be truncated to the maximum allowed length
      *
      * @throws JSONException if JSON parsing fails
      */
     @Test
-    public void internalLimits_recordException_stackTraceLimits_lineLength_lineCount() throws JSONException {
+    public void internalLimits_recordException_stackTraceLimits_lineLength_afterCrashFilter() throws JSONException {
+        Exception exception = new Exception("Some message");
+
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.sdkInternalLimits.setMaxStackTraceLineLength(10).setMaxStackTraceLinesPerThread(3);
-        //cConfig.crashes.enableRecordAllThreadsWithCrash();
+        cConfig.sdkInternalLimits.setMaxStackTraceLineLength(10);
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            Assert.assertEquals(extractStackTrace(exception, 10, -1), crash.getStackTrace());
+            StringBuilder customStackTrace = new StringBuilder("123456789101112\n");
+            String[] stackTraceLines = crash.getStackTrace().split("\n");
+            for (int i = 0; i < stackTraceLines.length; i++) {
+                if (i == stackTraceLines.length / 2) {
+                    customStackTrace.append("\nabcdefghijklmnoprs");
+                }
+                if (i != 0) {
+                    customStackTrace.append("\n");
+                }
+                customStackTrace.append(stackTraceLines[i]);
+            }
+            customStackTrace.append("\nHaburayaHasuraya");
+            crash.setStackTrace(customStackTrace.toString());
+            return false;
+        });
 
         Countly countly = new Countly().init(cConfig);
-
-        Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception);
-        validateCrash(extractStackTrace(exception, 10, -3), "", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
+
+        String extractedStackTrace = extractStackTrace(exception, 10, -1);
+        StringBuilder expectedStackTrace = new StringBuilder("1234567891\n");
+        String[] stackTraceLines = extractedStackTrace.split("\n");
+        for (int i = 0; i < stackTraceLines.length; i++) {
+            if (i == stackTraceLines.length / 2) {
+                expectedStackTrace.append("\nabcdefghij");
+            }
+            if (i != 0) {
+                expectedStackTrace.append("\n");
+            }
+            expectedStackTrace.append(stackTraceLines[i]);
+        }
+        expectedStackTrace.append("\nHaburayaHa");
+
+        validateCrash(expectedStackTrace.toString(), "", true, false, new HashMap<>(), 16, new HashMap<>(), new ArrayList<>());
     }
 }
