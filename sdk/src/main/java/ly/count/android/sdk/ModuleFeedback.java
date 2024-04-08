@@ -452,14 +452,6 @@ public class ModuleFeedback extends ModuleBase {
                     L.w("[ModuleFeedback] provided feedback widget result contains a 'null' value, it will be removed, key[" + entry.getKey() + "]");
                     iter.remove();
                 }
-
-                if (entry.getValue() instanceof String) {
-                    // TODO, if applicable think about applying key and segmentation count limit for the widget result
-                    String truncatedValue = UtilsInternalLimits.truncateValueSize(entry.getValue().toString(), _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleFeedback] reportFeedbackWidgetManuallyInternal");
-                    if (!truncatedValue.equals(entry.getValue())) {
-                        entry.setValue(truncatedValue);
-                    }
-                }
             }
 
             if (widgetInfo.type == FeedbackWidgetType.nps) {
