@@ -224,9 +224,12 @@ public class ModuleUserProfile extends ModuleBase {
                 return;
             }
 
+            Object truncatedValue;
             String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
             if (value instanceof String) {
-                value = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+                truncatedValue = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            } else {
+                truncatedValue = value;
             }
 
             if (customMods == null) {
@@ -235,14 +238,14 @@ public class ModuleUserProfile extends ModuleBase {
             JSONObject ob;
             if (!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
-                ob.put(mod, value);
+                ob.put(mod, truncatedValue);
             } else {
                 if (customMods.containsKey(truncatedKey)) {
                     ob = customMods.get(truncatedKey);
                 } else {
                     ob = new JSONObject();
                 }
-                ob.accumulate(mod, value);
+                ob.accumulate(mod, truncatedValue);
             }
             customMods.put(truncatedKey, ob);
             isSynced = false;
@@ -273,7 +276,7 @@ public class ModuleUserProfile extends ModuleBase {
             boolean isNamed = false;
 
             // limit to the picture path is applied when request is being made in the ConnectionProcessor
-            if (!key.equals(PICTURE_PATH_KEY) && value instanceof String) {
+            if (value instanceof String && !key.equals(PICTURE_PATH_KEY)) {
                 value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
             }
 

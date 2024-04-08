@@ -609,7 +609,7 @@ public class ModuleUserProfileTests {
         mCountly.init(config);
 
         mCountly.userProfile().incrementBy("inc", 1);
-        mCountly.userProfile().multiply("mul", 2456789);
+        mCountly.userProfile().multiply("mul", 2_456_789);
         mCountly.userProfile().push("rem", "ORIELY");
         mCountly.userProfile().push("rem", "HUH");
         mCountly.userProfile().pull("pll", "PULL");
@@ -619,7 +619,7 @@ public class ModuleUserProfileTests {
         mCountly.userProfile().setOnce("stc", "ONCE");
 
         assertEquals(1, mCountly.moduleUserProfile.customMods.get("inc").getInt("$inc"));
-        assertEquals(2456789, mCountly.moduleUserProfile.customMods.get("mul").getInt("$mul"));
+        assertEquals(2_456_789, mCountly.moduleUserProfile.customMods.get("mul").getInt("$mul"));
         assertEquals(2, mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").length());
         assertEquals("OR", mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").getString(0));
         assertEquals("HU", mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").getString(1));
