@@ -7,6 +7,8 @@ import androidx.annotation.Nullable;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -148,15 +150,15 @@ public class ModuleCrash extends ModuleBase {
     }
 
     private String prepareStackTrace(Throwable e) {
-        StringBuilder sb = new StringBuilder();
-
-        UtilsInternalLimits.applySdkInternalLimitsToStackTraces(e.getStackTrace(), sb, _cly.config_.sdkInternalLimits.maxStackTraceLineLength, e.getStackTrace().length, L, "[ModuleCrash] prepareStackTrace");
+        StringWriter sw = new StringWriter();
+        AutoTruncatePrintWriter pw = new AutoTruncatePrintWriter(sw, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleCrash] prepareStackTrace");
+        e.printStackTrace(pw);
 
         if (recordAllThreads) {
-            addAllThreadInformationToCrash(sb, _cly.config_.sdkInternalLimits);
+            addAllThreadInformationToCrash(pw, _cly.config_.sdkInternalLimits);
         }
 
-        return sb.toString();
+        return sw.toString();
     }
 
     public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
@@ -252,8 +254,8 @@ public class ModuleCrash extends ModuleBase {
         return false;
     }
 
-    void addAllThreadInformationToCrash(@NonNull StringBuilder sb, @NonNull ConfigSdkInternalLimits sdkInternalLimits) {
-        assert sb != null;
+    void addAllThreadInformationToCrash(@NonNull PrintWriter pw, @NonNull ConfigSdkInternalLimits sdkInternalLimits) {
+        assert pw != null;
         assert sdkInternalLimits != null;
 
         Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
@@ -263,7 +265,7 @@ public class ModuleCrash extends ModuleBase {
             if (threadCount >= sdkInternalLimits.maxStackTraceThreadCount) {
                 break;
             }
-            
+
             StackTraceElement[] val = entry.getValue();
             Thread thread = entry.getKey();
 
@@ -271,7 +273,9 @@ public class ModuleCrash extends ModuleBase {
                 continue;
             }
 
-            UtilsInternalLimits.applySdkInternalLimitsToStackTraces(val, sb, sdkInternalLimits.maxStackTraceLineLength, sdkInternalLimits.maxStackTraceLinesPerThread, L, "[ModuleCrash] addAllThreadInformationToCrash");
+            for (int i = 0; i < Math.min(val.length, sdkInternalLimits.maxStackTraceLinesPerThread); i++) {
+                pw.println(val[i].toString());
+            }
             threadCount++;
         }
     }

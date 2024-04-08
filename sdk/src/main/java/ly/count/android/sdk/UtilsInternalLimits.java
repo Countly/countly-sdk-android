@@ -315,20 +315,6 @@ public class UtilsInternalLimits {
         return removed;
     }
 
-    static void applySdkInternalLimitsToStackTraces(@NonNull StackTraceElement[] stackTraces, @NonNull StringBuilder sb, final int stackTraceLineLength, final int stackTracePerThread, @NonNull ModuleLog L, @NonNull String tag) {
-        assert stackTraces != null;
-        assert sb != null;
-        assert stackTraceLineLength >= 1;
-        assert stackTracePerThread >= 1;
-        assert L != null;
-        assert tag != null;
-
-        for (int i = 0; i < Math.min(stackTraces.length, stackTracePerThread); i++) {
-            sb.append(truncateString(stackTraces[i].toString(), stackTraceLineLength, L, tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToStackTraces"));
-            sb.append("\n");
-        }
-    }
-
     static boolean isSupportedDataType(@Nullable Object value) {
         return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float;
     }
