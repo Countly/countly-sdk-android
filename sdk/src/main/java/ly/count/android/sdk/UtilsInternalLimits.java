@@ -245,16 +245,16 @@ public class UtilsInternalLimits {
      * @param messagePrefix String @NonNull - name of the module this function was called
      * @param segmentation Map<String, Object> @Nullable- segmentation that will be checked
      */
-    static void truncateSegmentationValues(@NonNull final Map<String, Object> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
+    static <T> void truncateSegmentationValues(@NonNull final Map<String, T> segmentation, final int maxCount, @NonNull final String messagePrefix, final @NonNull ModuleLog L) {
         assert segmentation != null;
         assert maxCount >= 1;
         assert L != null;
         assert messagePrefix != null;
 
-        Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
+        Iterator<Map.Entry<String, T>> iterator = segmentation.entrySet().iterator();
         while (iterator.hasNext()) {
             if (segmentation.size() > maxCount) {
-                Map.Entry<String, Object> value = iterator.next();
+                Map.Entry<String, T> value = iterator.next();
                 String key = value.getKey();
                 L.w(messagePrefix + ", Value exceeded the maximum segmentation count key:[" + key + "]");
                 iterator.remove();

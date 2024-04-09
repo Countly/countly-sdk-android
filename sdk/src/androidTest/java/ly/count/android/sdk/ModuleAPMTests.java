@@ -244,13 +244,14 @@ public class ModuleAPMTests {
 
     /**
      * Test that custom trace key is truncated to the correct length
+     * Max segmentation values limit is applied,
      * Validate custom metrics are merged and truncated to the correct length
      * Validate that the custom trace is sent to the server with correct values
      */
     @Test
-    public void internalLimits_customTrace_keyLength() {
+    public void internalLimits_customTrace_keyLength_segmentationValues() {
         CountlyConfig mConfig = TestUtils.createBaseConfig();
-        mConfig.sdkInternalLimits.setMaxKeyLength(5);
+        mConfig.sdkInternalLimits.setMaxKeyLength(5).setMaxSegmentationValues(3);
         mCountly = new Countly().init(mConfig);
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
@@ -263,13 +264,16 @@ public class ModuleAPMTests {
         customMetrics.put("a_trace_to_look", 1);
         customMetrics.put("a_trace_to_inspect", 2);
         customMetrics.put("look_here", 3);
+        customMetrics.put("microphone_show", 4);
+        customMetrics.put("berserk", 5);
 
         mCountly.apm().endTrace(key, customMetrics);
 
         customMetrics.clear();
         customMetrics.put("look_", 3);
         customMetrics.put("a_tra", 2);
-        verify(requestQueueProvider).sendAPMCustomTrace(eq("a_tra"), anyLong(), anyLong(), anyLong(), eq(ModuleAPM.customMetricsToString(customMetrics)));
+        customMetrics.put("micro", 4);
+        verify(requestQueueProvider).sendAPMCustomTrace(eq("a_tra"), anyLong(), anyLong(), anyLong(), eq(customMetricsToString(customMetrics)));
     }
 
     /**
@@ -349,5 +353,21 @@ public class ModuleAPMTests {
         Assert.assertEquals(responseCode, metrics.getInt("response_code"));
         Assert.assertEquals(requestPayloadSize, metrics.getInt("request_payload_size"));
         Assert.assertEquals(responsePayloadSize, metrics.getInt("response_payload_size"));
+    }
+
+    private String customMetricsToString(Map<String, Integer> customMetrics) {
+        StringBuilder ret = new StringBuilder();
+
+        for (Map.Entry<String, Integer> entry : customMetrics.entrySet()) {
+            String key = entry.getKey();
+            Integer value = entry.getValue();
+
+            ret.append(",\"");
+            ret.append(key);
+            ret.append("\":");
+            ret.append(value);
+        }
+
+        return ret.toString();
     }
 }
