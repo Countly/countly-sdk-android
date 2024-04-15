@@ -1011,7 +1011,7 @@ public class ModuleCrashTests {
     @Test
     public void internalLimits_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         cConfig.metricProviderOverride = mmp;
         cConfig.sdkInternalLimits.setMaxKeyLength(5);
         cConfig.setCustomCrashSegment(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
