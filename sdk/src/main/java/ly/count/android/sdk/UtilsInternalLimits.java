@@ -316,6 +316,35 @@ public class UtilsInternalLimits {
         return removed;
     }
 
+    /**
+     * Truncates the provided stack trace to the specified limit per line and returns the truncated stack trace.
+     *
+     * @param stackTrace the stack trace to truncate
+     * @param maxStackTraceLineLength the maximum length of each line in the stack trace
+     * @param tag the tag to use in logs
+     * @param L the logger
+     * @return the truncated stack trace
+     */
+    protected static String applyInternalLimitsToStackTraces(@NonNull String stackTrace, final int maxStackTraceLineLength, @NonNull String tag, @NonNull ModuleLog L) {
+        assert stackTrace != null;
+        assert maxStackTraceLineLength >= 1;
+        assert tag != null;
+        assert L != null;
+        
+        StringBuilder sb = new StringBuilder(stackTrace.length());
+
+        String[] stackTraceLines = stackTrace.split("\n");
+        for (int i = 0; i < stackTraceLines.length; i++) {
+            String truncatedLine = UtilsInternalLimits.truncateString(stackTraceLines[i], maxStackTraceLineLength, L, tag);
+            if (i != 0) {
+                sb.append("\n");
+            }
+            sb.append(truncatedLine);
+        }
+
+        return sb.toString();
+    }
+
     static boolean isSupportedDataType(@Nullable Object value) {
         return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float;
     }
