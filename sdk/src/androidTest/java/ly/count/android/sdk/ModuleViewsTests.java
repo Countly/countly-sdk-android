@@ -1526,7 +1526,7 @@ public class ModuleViewsTests {
         Map<String, Object> endSegm = new HashMap<>();
         endSegm.put("satellite", "hoho");
         endSegm.put("avu", 25);
-        endSegm.put("harakiri", true);
+        endSegm.put("kirin", true);
         endSegm.put("happy_life", false);
         endSegm.put("nope", 123);
         mCountly.views().stopViewWithID(viewID, endSegm);
