@@ -1526,12 +1526,12 @@ public class ModuleViewsTests {
         Map<String, Object> endSegm = new HashMap<>();
         endSegm.put("satellite", "hoho");
         endSegm.put("avu", 25);
-        endSegm.put("kirin", true);
+        endSegm.put("hara", true);
         endSegm.put("happy_life", false);
         endSegm.put("nope", 123);
         mCountly.views().stopViewWithID(viewID, endSegm);
         ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
-        expectedSegm.putAll(TestUtils.map("av", 25, "no", 123, "sa", "ho", "ki", true));
+        expectedSegm.putAll(TestUtils.map("av", 25, "no", 123, "sa", "ho", "ha", true));
 
         ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
     }
