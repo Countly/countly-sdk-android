@@ -1531,7 +1531,7 @@ public class ModuleViewsTests {
         endSegm.put("nope", 123);
         mCountly.views().stopViewWithID(viewID, endSegm);
         ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
-        expectedSegm.putAll(TestUtils.map("av", 25, "no", 123, "sa", "ho", "ha", true));
+        expectedSegm.putAll(TestUtils.map("av", 25, "no", 123, "sa", "ho", "ki", true));
 
         ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
     }
