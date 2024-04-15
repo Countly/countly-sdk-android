@@ -528,11 +528,15 @@ public class ModuleAPM extends ModuleBase {
                     return;
                 }
 
+                Map<String, Integer> customMetricsInternal;
+
                 if (customMetrics == null) {
-                    customMetrics = new ConcurrentHashMap<>();
+                    customMetricsInternal = new ConcurrentHashMap<>();
+                } else {
+                    customMetricsInternal = customMetrics;
                 }
 
-                endTraceInternal(traceKey, customMetrics);
+                endTraceInternal(traceKey, customMetricsInternal);
             }
         }
 
