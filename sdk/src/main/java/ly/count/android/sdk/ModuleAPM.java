@@ -2,10 +2,12 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleAPM extends ModuleBase {
 
@@ -81,16 +83,13 @@ public class ModuleAPM extends ModuleBase {
         codeTraces.put(traceKey, currentTimestamp);
     }
 
-    void endTraceInternal(String traceKey, Map<String, Integer> customMetrics) {
+    void endTraceInternal(@NonNull String traceKey, @NonNull Map<String, Integer> customMetrics) {
         //end time counting as fast as possible
         Long currentTimestamp = UtilsTime.currentTimestampMs();
+        assert traceKey != null && !traceKey.isEmpty();
+        assert customMetrics != null;
 
         L.d("[ModuleAPM] Calling 'endTraceInternal' with key:[" + traceKey + "]");
-
-        if (traceKey == null || traceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
-            return;
-        }
 
         if (codeTraces.containsKey(traceKey)) {
             Long startTimestamp = codeTraces.remove(traceKey);
@@ -100,17 +99,19 @@ public class ModuleAPM extends ModuleBase {
             } else {
                 Long durationMs = currentTimestamp - startTimestamp;
 
-                if (customMetrics != null) {
+                if (!customMetrics.isEmpty()) {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
+                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
                 }
 
                 String metricString = customMetricsToString(customMetrics);
+                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                String modifiedTraceKey = validateAndModifyTraceKey(truncatedTraceKey);
 
-                traceKey = validateAndModifyTraceKey(traceKey);
-
-                requestQueueProvider.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp, metricString);
+                requestQueueProvider.sendAPMCustomTrace(modifiedTraceKey, durationMs, startTimestamp, currentTimestamp, metricString);
             }
         } else {
             L.w("[ModuleAPM] endTraceInternal, trying to end trace which was not started");
@@ -139,12 +140,10 @@ public class ModuleAPM extends ModuleBase {
         codeTraces.clear();
     }
 
-    static String customMetricsToString(Map<String, Integer> customMetrics) {
-        StringBuilder ret = new StringBuilder();
+    static String customMetricsToString(@NonNull Map<String, Integer> customMetrics) {
+        assert customMetrics != null;
 
-        if (customMetrics == null) {
-            return ret.toString();
-        }
+        StringBuilder ret = new StringBuilder();
 
         for (Map.Entry<String, Integer> entry : customMetrics.entrySet()) {
             String key = entry.getKey();
@@ -520,11 +519,24 @@ public class ModuleAPM extends ModuleBase {
          *
          * @param traceKey key by which this action is identified
          */
-        public void endTrace(String traceKey, Map<String, Integer> customMetrics) {
+        public void endTrace(@Nullable String traceKey, @Nullable Map<String, Integer> customMetrics) {
             synchronized (_cly) {
                 L.i("[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
 
-                endTraceInternal(traceKey, customMetrics);
+                if (traceKey == null || traceKey.isEmpty()) {
+                    L.e("[Apm] Calling 'endTrace' with invalid traceKey");
+                    return;
+                }
+
+                Map<String, Integer> customMetricsInternal;
+
+                if (customMetrics == null) {
+                    customMetricsInternal = new ConcurrentHashMap<>();
+                } else {
+                    customMetricsInternal = customMetrics;
+                }
+
+                endTraceInternal(traceKey, customMetricsInternal);
             }
         }
 
