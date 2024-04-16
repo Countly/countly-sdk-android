@@ -70,6 +70,9 @@ public class ModuleRatings extends ModuleBase {
             L.d("[ModuleRatings] recordManualRatingInternal, given rating too high, defaulting to 5");
         }
 
+        String truncatedEmail = UtilsInternalLimits.truncateValueSize(email, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+        String truncatedComment = UtilsInternalLimits.truncateValueSize(comment, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+
         Map<String, Object> segm = new HashMap<>();
         segm.put("platform", "android");
         segm.put("app_version", deviceInfo.mp.getAppVersion(_cly.context_));
@@ -77,12 +80,12 @@ public class ModuleRatings extends ModuleBase {
         segm.put("widget_id", widgetId);
         segm.put("contactMe", userCanBeContacted);
 
-        if (email != null && !email.isEmpty()) {
-            segm.put("email", email);
+        if (truncatedEmail != null && !truncatedEmail.isEmpty()) {
+            segm.put("email", truncatedEmail);
         }
 
-        if (comment != null && !comment.isEmpty()) {
-            segm.put("comment", comment);
+        if (truncatedComment != null && !truncatedComment.isEmpty()) {
+            segm.put("comment", truncatedComment);
         }
 
         eventProvider.recordEventInternal(ModuleFeedback.RATING_EVENT_KEY, segm, 1, 0, 0, null, null);

@@ -493,6 +493,10 @@ public class ModuleEventsTests {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
     }
+
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
+        validateEventInRQ(eventName, expectedSegmentation, 1, 0.0d, 0.0d, idx);
+    }
 /*
     //todo should be reworked
     @Test
