@@ -503,4 +503,27 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(1, segmentation.get("a"));
         Assert.assertEquals("dd", segmentation.get("bb"));
     }
+
+    @Test
+    public void applyInternalLimitsToStackTraces() {
+        String stackTrace = "java.lang.Exception: test\n"
+            + "at ly.count.android.sdk.UtilsInternalLimitsTests.applyInternalLimitsToStackTraces(UtilsInternalLimitsTests.java:1)\n"
+            + "at ly.count.android.sdk.UtilsInternalLimitsTests.applyInternalLimitsToStackTraces(UtilsInternalLimitsTests.java:2)\n"
+            + "at ly.count.android.sdk.UtilsInternalLimitsTests.applyInternalLimitsToStackTraces(UtilsInternalLimitsTests.java:3)\n";
+
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(stackTrace, 2, "tag", new ModuleLog());
+        Assert.assertEquals("ja\nat\nat\nat", truncatedStackTrace);
+    }
+
+    @Test(expected = AssertionError.class)
+    public void applyInternalLimitsToStackTraces_null() {
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(null, 2, "tag", new ModuleLog());
+        Assert.assertNull(truncatedStackTrace);
+    }
+
+    @Test
+    public void applyInternalLimitsToStackTraces_empty() {
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces("", 2, "tag", new ModuleLog());
+        Assert.assertTrue(truncatedStackTrace.isEmpty());
+    }
 }
