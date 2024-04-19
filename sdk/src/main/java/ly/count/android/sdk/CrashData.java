@@ -1,12 +1,8 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 /**
  * This class is used to store crash data.
@@ -27,7 +23,7 @@ public class CrashData {
     private final String[] checksums = new String[5];
     private final boolean[] changedFields = new boolean[5];
 
-    protected CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull JSONObject crashMetrics, boolean fatal) {
+    protected CrashData(@NonNull String stackTrace, @NonNull Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @NonNull Map<String, Object> crashMetrics, boolean fatal) {
         assert stackTrace != null;
         assert crashSegmentation != null;
         assert breadcrumbs != null;
@@ -36,7 +32,7 @@ public class CrashData {
         this.stackTrace = stackTrace;
         this.crashSegmentation = crashSegmentation;
         this.breadcrumbs = breadcrumbs;
-        this.crashMetrics = convertJSONToMap(crashMetrics);
+        this.crashMetrics = crashMetrics;
         this.fatal = fatal;
 
         calculateChecksums(checksums);
@@ -161,30 +157,6 @@ public class CrashData {
         }
 
         this.breadcrumbs = breadcrumbs;
-    }
-
-    protected JSONObject getCrashMetricsJSON() {
-        JSONObject crashMetrics = new JSONObject();
-        for (Map.Entry<String, Object> entry : this.crashMetrics.entrySet()) {
-            try {
-                crashMetrics.put(entry.getKey(), entry.getValue());
-            } catch (JSONException ignored) {
-            }
-        }
-        return crashMetrics;
-    }
-
-    protected Map<String, Object> convertJSONToMap(JSONObject json) {
-        Map<String, Object> map = new HashMap<>();
-        Iterator<String> keys = json.keys();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            Object value = json.opt(key);
-            if (value != null) {
-                map.put(key, value);
-            }
-        }
-        return map;
     }
 
     /**

@@ -54,7 +54,7 @@ public class ModuleSessions extends ModuleBase {
         }
 
         //prepare metrics
-        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
+        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
 
         prevSessionDurationStartTime_ = System.nanoTime();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);

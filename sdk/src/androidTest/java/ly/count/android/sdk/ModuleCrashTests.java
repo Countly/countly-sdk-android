@@ -425,7 +425,7 @@ public class ModuleCrashTests {
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             try {
-                validateCrashMetrics(crash.getCrashMetricsJSON(), false, new HashMap<>(), new ArrayList<>());
+                validateCrashMetrics(new JSONObject(crash.getCrashMetrics()), false, new HashMap<>(), new ArrayList<>());
             } catch (JSONException e) {
                 Assert.fail(e.getMessage());
             }
