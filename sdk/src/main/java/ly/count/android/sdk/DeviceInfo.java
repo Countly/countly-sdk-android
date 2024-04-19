@@ -355,15 +355,10 @@ class DeviceInfo {
                 /**
                  * Returns the current device cpu.
                  */
-                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                 @NonNull
                 @Override
                 public String getCpu() {
-                    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                        return android.os.Build.CPU_ABI;
-                    } else {
-                        return Build.SUPPORTED_ABIS[0];
-                    }
+                    return Build.SUPPORTED_ABIS[0];
                 }
 
                 /**

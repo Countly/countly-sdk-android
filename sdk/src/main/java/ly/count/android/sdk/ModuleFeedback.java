@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ModuleFeedback extends ModuleBase {
@@ -240,14 +241,22 @@ public class ModuleFeedback extends ModuleBase {
         widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
         widgetListUrl.append("&platform=android");
 
+        // TODO: this will be the base for the custom segmentation users can send while presenting a widget
+        JSONObject customObjectToSendWithTheWidget = new JSONObject();
+        try {
+            customObjectToSendWithTheWidget.put("tc", 1);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        widgetListUrl.append("&custom=");
+        widgetListUrl.append(customObjectToSendWithTheWidget.toString());
+
         final String preparedWidgetUrl = widgetListUrl.toString();
 
         L.d("[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            //enable for chrome debugging
-            //WebView.setWebContentsDebuggingEnabled(true);
-        }
+        //enable for chrome debugging
+        //WebView.setWebContentsDebuggingEnabled(true);
 
         final boolean useAlertDialog = true;
         Handler handler = new Handler(Looper.getMainLooper());
