@@ -560,33 +560,29 @@ public class ModuleRatings extends ModuleBase {
     }
 
     static class FeedbackDialogWebViewClient extends WebViewClient {
-
         @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-
-            // Filter out outgoing calls
-            if (url.endsWith("cly_x_int=1")) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                view.getContext().startActivity(intent);
-                return null;
-            }
-            return super.shouldInterceptRequest(view, url);
-        }
-
-        @Override
-        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            // Get the URL of the request
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
 
             // Filter out outgoing calls
             if (url.endsWith("cly_x_int=1")) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 view.getContext().startActivity(intent);
-                return null;
+                return true;
             }
+            return false;
+        }
 
-            // If the URL doesn't need interception, return null to allow the request to proceed normally
-            return super.shouldInterceptRequest(view, request);
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+            // Countly.sharedInstance().L.i("attempting to load resource: " + url);
+            return null;
+        }
+
+        @Override
+        public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+            // Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
+            return null;
         }
     }
 
