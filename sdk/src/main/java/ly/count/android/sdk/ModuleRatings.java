@@ -565,7 +565,7 @@ public class ModuleRatings extends ModuleBase {
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
 
             // Filter out outgoing calls
-            if (url.endsWith("&cly_x_int=1")) {
+            if (url.endsWith("cly_x_int=1")) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 view.getContext().startActivity(intent);
                 return null;
@@ -579,7 +579,7 @@ public class ModuleRatings extends ModuleBase {
             String url = request.getUrl().toString();
 
             // Filter out outgoing calls
-            if (url.endsWith("&cly_x_int=1")) {
+            if (url.endsWith("cly_x_int=1")) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 view.getContext().startActivity(intent);
                 return null;
