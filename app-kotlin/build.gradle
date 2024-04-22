@@ -38,6 +38,7 @@ android {
   buildFeatures {
     viewBinding = true
   }
+  namespace 'ly.count.android.demo.kotlin'
 }
 
 dependencies {

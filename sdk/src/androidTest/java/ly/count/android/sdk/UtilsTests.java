@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(AndroidJUnit4.class)
 public class UtilsTests {
@@ -62,26 +62,27 @@ public class UtilsTests {
     @Test
     public void APITargeting() {
         //The version the SDK is targeting should be above these values
+        Assert.assertTrue(Utils.API(34));
         Assert.assertTrue(Utils.API(28));
         Assert.assertTrue(Utils.API(27));
         Assert.assertTrue(Utils.API(15));
 
         //The version the SDK is targeting should be below this value
-        Assert.assertFalse(Utils.API(34));
+        Assert.assertFalse(Utils.API(35));
     }
 
     @Test
     public void fillJSONIfValuesNotEmpty_noValues() {
         final JSONObject mockJSON = mock(JSONObject.class);
         Utils.fillJSONIfValuesNotEmpty(mockJSON);
-        verifyZeroInteractions(mockJSON);
+        verifyNoInteractions(mockJSON);
     }
 
     @Test
     public void fillJSONIfValuesNotEmpty_oddNumberOfValues() {
         final JSONObject mockJSON = mock(JSONObject.class);
         Utils.fillJSONIfValuesNotEmpty(mockJSON, "key1", "value1", "key2");
-        verifyZeroInteractions(mockJSON);
+        verifyNoInteractions(mockJSON);
     }
 
     @Test

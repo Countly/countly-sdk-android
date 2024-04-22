@@ -27,6 +27,7 @@ android {
     }
   }
   buildToolsVersion '33.0.0'
+  namespace 'ly.count.android.sdknative'
 }
 
 dependencies {
