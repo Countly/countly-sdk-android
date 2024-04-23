@@ -614,28 +614,6 @@ class DeviceInfo {
         }
     }
 
-    private void putOverriddenMetrics(@NonNull Map<String, Object> metrics, @NonNull final Map<String, String> metricOverride, @NonNull ModuleLog L) {
-        for (String k : metricOverride.keySet()) {
-            if (k == null || k.isEmpty()) {
-                L.w("[DeviceInfo] putOverriddenMetrics, Provided metric override key can't be null or empty");
-                continue;
-            }
-
-            String overrideValue = metricOverride.get(k);
-
-            if (overrideValue == null) {
-                L.w("[DeviceInfo] putOverriddenMetrics, Provided metric override value can't be null, key:[" + k + "]");
-                continue;
-            }
-
-            try {
-                metrics.put(k, overrideValue);
-            } catch (Exception ex) {
-                L.e("[DeviceInfo] putOverriddenMetrics, Could not set metric override, [" + ex + "]");
-            }
-        }
-    }
-
     /**
      * Returns url encoded metrics that would be used for "begin_session" requests and remote config
      *
@@ -655,7 +633,21 @@ class DeviceInfo {
         putIfNotNullEndNotEmpty(metrics, "_device_type", mp.getDeviceType(context));
 
         if (metricOverride != null) {
-            putOverriddenMetrics(metrics, metricOverride, L);
+            for (String k : metricOverride.keySet()) {
+                if (k == null || k.isEmpty()) {
+                    L.w("[DeviceInfo] getMetrics, Provided metric override key can't be null or empty");
+                    continue;
+                }
+
+                String overrideValue = metricOverride.get(k);
+
+                if (overrideValue == null) {
+                    L.w("[DeviceInfo] getMetrics, Provided metric override value can't be null, key:[" + k + "]");
+                    continue;
+                }
+
+                metrics.put(k, overrideValue);
+            }
         }
 
         String result = new JSONObject(metrics).toString();
