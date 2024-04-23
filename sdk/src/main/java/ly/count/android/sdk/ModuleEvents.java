@@ -165,12 +165,12 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
+                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
                     if (segmentation == null) {
                         segmentation = new HashMap<>();
                     }
-                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] recordEventInternal", L);
-
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
+                    UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
+                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }

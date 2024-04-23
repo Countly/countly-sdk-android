@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.messaging.ModulePush;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -202,6 +203,7 @@ public class ModuleEventsTests {
         ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Integer> arg3 = ArgumentCaptor.forClass(Integer.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
+
         ArgumentCaptor<Map> argS = ArgumentCaptor.forClass(Map.class);
         verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), argS.capture(), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
 
@@ -402,6 +404,66 @@ public class ModuleEventsTests {
         Assert.assertEquals(3, countly.countlyStore.getRequests().length);
     }
 
+    /**
+     * Try to record events with internal keys
+     * validate they are not truncated
+     * try one normal event with a key that is longer than the max allowed length
+     * except normal event, all other internal events should not be truncated
+     */
+    @Test
+    public void internalLimits_recordEvent_internalKeys() throws JSONException {
+        CountlyConfig config = TestUtils.getBaseConfig();
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map("action_event", "ACTION", "no_truncate", 7687)); //force sending
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map("action_event", "ACTION", "no_truncate", 7687), 0);
+
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map("nps_event", "NPS", "no_truncate", 555)); //force sending
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map("nps_event", "NPS", "no_truncate", 555), 1);
+
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map("survey_event", "SURVEY", "no_truncate", 567)); //force sending
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map("survey_event", "SURVEY", "no_truncate", 567), 2);
+
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map("rating_event", "RATING", "no_truncate", 7475));
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map("rating_event", "RATING", "no_truncate", 7475), 3);
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("view_event", "VIEW", "no_truncate", 124));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("view_event", "VIEW", "no_truncate", 124), 4);
+
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map("orientation_event", "ORIENTATION", "no_truncate", 23_523));
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map("orientation_event", "ORIENTATION", "no_truncate", 23_523), 5);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "PUSH", "no_truncate", 567));
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map("push_event", "PUSH", "no_truncate", 567), 6);
+
+        countly.events().recordEvent("ModuleEvents", TestUtils.map("normal_event", "boo", "no_truncate", 567));
+        validateEventInRQ("Mo", TestUtils.map("no", "boo"), 7);
+    }
+
+    /**
+     * record event with segmentation
+     * validate that the segmentation is truncated and two same start keys is merged to one
+     */
+    @Test
+    public void internalLimits_recordEvent_segmentation() throws JSONException {
+        CountlyConfig config = TestUtils.getBaseConfig();
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        segmentation.put("ModuleEvents", "ModuleEvents");
+        segmentation.put("ModuleFeedback", 567);
+
+        countly.events().recordEvent("TestMe", segmentation); //force sending
+
+        segmentation.clear();
+        segmentation.put("Mo", 567);
+        validateEventInRQ("Te", segmentation, 0);
+    }
+
     @Test
     public void recordEvent_validateFromRQ() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
@@ -472,9 +534,46 @@ public class ModuleEventsTests {
         validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, threeSegmentation, 1, 0.0d, 0.0d, 7);
     }
 
+    /**
+     * "recordEvent" max value size limit
+     * Validate that all "String" values are clipped to the maximum allowed length
+     * EQ size is 1 to trigger request generation
+     */
+    @Test
+    public void internalLimits_recordEventInternal_maxValueSize() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "b", "bbb", "c", "ccc"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rnd_key", TestUtils.map("a", 1, "b", "bb", "c", "cc"), 1, 1.1d, 1.1d, 0);
+    }
+
+    /**
+     * "recordEvent" max value size limit and key length
+     * Validate that clipped values clashes with same keys and overridden each other
+     * "bb" key should have value from the second of the last value which is "dd"
+     */
+    @Test
+    public void internalLimits_recordEventInternal_maxValueSizeKeyLength() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2).setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "bbb", "bbb", "bbc", "ccc", "bbd", "ddd", "bbe", "eee"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
+    }
+
     protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(idx + 1, RQ.length);
+        TestUtils.validateRequiredParams(RQ[idx]);
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(1, events.length());
         JSONObject event = events.getJSONObject(0);
@@ -492,11 +591,15 @@ public class ModuleEventsTests {
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
             Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
         }
+        Assert.assertEquals(count, event.getInt("count"));
+        Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
+        Assert.assertEquals(duration, event.optDouble("dur", 0.0d), 0.0001);
     }
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
         validateEventInRQ(eventName, expectedSegmentation, 1, 0.0d, 0.0d, idx);
     }
+
 /*
     //todo should be reworked
     @Test
