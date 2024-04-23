@@ -489,7 +489,8 @@ public class ModuleEventsTests {
             "double", 1.2,
             "string", "string",
             "boolean", true,
-            "float", 1.5
+            "float", 1.5,
+            "long", 1
         );
 
         validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);

@@ -330,7 +330,7 @@ public class UtilsInternalLimits {
         assert maxStackTraceLineLength >= 1;
         assert tag != null;
         assert L != null;
-        
+
         StringBuilder sb = new StringBuilder(stackTrace.length());
 
         String[] stackTraceLines = stackTrace.split("\n");
@@ -346,6 +346,6 @@ public class UtilsInternalLimits {
     }
 
     static boolean isSupportedDataType(@Nullable Object value) {
-        return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float;
+        return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float || value instanceof Long;
     }
 }
