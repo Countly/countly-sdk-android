@@ -337,7 +337,7 @@ public class UtilsInternalLimits {
         for (int i = 0; i < stackTraceLines.length; i++) {
             String truncatedLine = UtilsInternalLimits.truncateString(stackTraceLines[i], maxStackTraceLineLength, L, tag);
             if (i != 0) {
-                sb.append("\n");
+                sb.append('\n');
             }
             sb.append(truncatedLine);
         }

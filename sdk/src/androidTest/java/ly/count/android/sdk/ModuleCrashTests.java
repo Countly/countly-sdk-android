@@ -921,10 +921,54 @@ public class ModuleCrashTests {
     }
 
     private String extractStackTrace(Throwable throwable) {
+        return extractStackTrace(throwable, 1000, -1);
+    }
+
+    private String extractStackTrace(Throwable throwable, int lineLength, int maxLines) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         throwable.printStackTrace(pw);
-        return sw.toString();
+        if (maxLines > 0) {
+            Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
+            int threadCount = 0;
+
+            for (Map.Entry<Thread, StackTraceElement[]> entry : allThreads.entrySet()) {
+                if (threadCount >= TestUtils.MAX_THREAD_COUNT_PER_STACK_TRACE) {
+                    break;
+                }
+
+                StackTraceElement[] val = entry.getValue();
+                Thread thread = entry.getKey();
+
+                if (val == null || thread == null) {
+                    continue;
+                }
+
+                pw.println();
+                pw.println("Thread " + thread.getName());
+                for (int i = 0; i < Math.min(val.length, maxLines); i++) {
+                    pw.println(val[i].toString());
+                }
+                threadCount++;
+            }
+        }
+
+        String stackTrace = sw.toString();
+        StringBuilder sb = new StringBuilder(stackTrace.length());
+
+        String[] stackTraceLines = stackTrace.split("\n");
+        for (int i = 0; i < stackTraceLines.length; i++) {
+            String stackTraceLine = stackTraceLines[i];
+            if (stackTraceLine.length() >= lineLength) {
+                stackTraceLine = stackTraceLine.substring(0, lineLength);
+            }
+            if (i != 0) {
+                sb.append('\n');
+            }
+            sb.append(stackTraceLine);
+        }
+
+        return sb.toString();
     }
 
     private String extractNativeCrash(String crash) {
@@ -949,5 +993,79 @@ public class ModuleCrashTests {
     @Test(expected = NullPointerException.class)
     public void crashTest_5() {
         TestUtils.crashTest(4);
+    }
+
+    /**
+     * Validate that the stack trace is truncated to the maximum allowed length of 2
+     * Adding all thread information is disabled
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_stackTraceLimits_lineLength() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxStackTraceLineLength(2);
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception, 2, -1), "", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Validate that the stack trace is truncated to the maximum allowed length of 10
+     * After the crash filter is applied, the stack trace is modified
+     * The added traces to the beginning, middle and to the end of the stack trace
+     * must be truncated to the maximum allowed length
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_stackTraceLimits_lineLength_afterCrashFilter() throws JSONException {
+        Exception exception = new Exception("Some message");
+
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxStackTraceLineLength(10);
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            Assert.assertEquals(extractStackTrace(exception, 10, -1), crash.getStackTrace());
+            StringBuilder customStackTrace = new StringBuilder(57);
+            customStackTrace.append("123456789101112\n");
+            String[] stackTraceLines = crash.getStackTrace().split("\n");
+            for (int i = 0; i < stackTraceLines.length; i++) {
+                if (i == stackTraceLines.length / 2) {
+                    customStackTrace.append("\nabcdefghijklmnoprs");
+                }
+                if (i != 0) {
+                    customStackTrace.append("\n");
+                }
+                customStackTrace.append(stackTraceLines[i]);
+            }
+            customStackTrace.append("\nHaburayaHasuraya");
+            crash.setStackTrace(customStackTrace.toString());
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+        countly.crashes().recordUnhandledException(exception);
+
+        String extractedStackTrace = extractStackTrace(exception, 10, -1);
+        StringBuilder expectedStackTrace = new StringBuilder(38);
+        expectedStackTrace.append("1234567891\n");
+        String[] stackTraceLines = extractedStackTrace.split("\n");
+        for (int i = 0; i < stackTraceLines.length; i++) {
+            if (i == stackTraceLines.length / 2) {
+                expectedStackTrace.append("\nabcdefghij");
+            }
+            if (i != 0) {
+                expectedStackTrace.append('\n');
+            }
+            expectedStackTrace.append(stackTraceLines[i]);
+        }
+        expectedStackTrace.append("\nHaburayaHa");
+
+        validateCrash(expectedStackTrace.toString(), "", true, false, new HashMap<>(), 16, new HashMap<>(), new ArrayList<>());
     }
 }

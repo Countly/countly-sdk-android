@@ -1,6 +1,7 @@
 ## XX.XX.XX
+* ! Minor breaking change ! "maxStackTraceLinePerThread" and "maxStackTraceLineLength" limits will be applied by default now. This would limit the maximum lines of stack traces per thread and the maximum stack trace length, respectively. Default values are in order of 30 and 200.
+* ! Minor breaking change! "maxSegmentationValues" limit will be applied by default now. This would limit the maximum amount of developer provided segmentation values when using features. Current limit is 100 entries.
 * ! Minor breaking change ! "maxKeyLength" limit will be applied by default now. This would limit the maximum length of developer supplied keys and names. Current limit is 128 charachters.
-* ! Minor breaking change ! "maxSegmentationValues" limit will be applied by default now. This would limit the maximum amount of developer provided segmentation values when using features. Current limit is 100 entries.
 
 ## 24.4.0
 * ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
