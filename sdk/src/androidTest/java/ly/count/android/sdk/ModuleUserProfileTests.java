@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,11 +12,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.mock;
+import org.mockito.Mockito;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleUserProfileTests {
@@ -24,7 +21,7 @@ public class ModuleUserProfileTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().halt();
-        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
+        store = new CountlyStore(TestUtils.getContext(), Mockito.mock(ModuleLog.class));
         store.clear();
     }
 
@@ -56,7 +53,7 @@ public class ModuleUserProfileTests {
         mCountly.userProfile().setProperties(userProperties);
         mCountly.userProfile().save();
 
-        assertEquals(1, store.getRequests().length);
+        Assert.assertEquals(1, store.getRequests().length);
     }
 
     /**
@@ -68,104 +65,104 @@ public class ModuleUserProfileTests {
         CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
 
-        assertEquals(0, store.getEvents().length);
-        assertEquals(0, store.getRequests().length);
+        Assert.assertEquals(0, store.getEvents().length);
+        Assert.assertEquals(0, store.getRequests().length);
 
         mCountly.events().recordEvent("a");
-        assertEquals(1, store.getEvents().length);//todo test fails with this being 0
-        assertEquals(0, store.getRequests().length);
+        Assert.assertEquals(1, store.getEvents().length);//todo test fails with this being 0
+        Assert.assertEquals(0, store.getRequests().length);
 
         mCountly.userProfile().setProperty("name", "Test Test");
         mCountly.userProfile().save();
 
         String[] reqs = store.getRequests();
-        assertEquals(0, store.getEvents().length);
-        assertEquals(2, reqs.length);
+        Assert.assertEquals(0, store.getEvents().length);
+        Assert.assertEquals(2, reqs.length);
         Assert.assertTrue(reqs[0].contains("events"));
-        assertFalse(reqs[1].contains("events"));
+        Assert.assertFalse(reqs[1].contains("events"));
     }
 
     // BELLOW TESTS THAT NEED TO BE REWORKED
 
     void assertAllValuesNull(ModuleUserProfile mup) {
-        assertNull(mup.name);
-        assertNull(mup.username);
-        assertNull(mup.email);
-        assertNull(mup.org);
-        assertNull(mup.phone);
-        assertNull(mup.gender);
-        assertNull(mup.picture);
-        assertEquals(0, mup.byear);
-        assertNull(mup.custom);
-        assertNull(mup.customMods);
+        Assert.assertNull(mup.name);
+        Assert.assertNull(mup.username);
+        Assert.assertNull(mup.email);
+        Assert.assertNull(mup.org);
+        Assert.assertNull(mup.phone);
+        Assert.assertNull(mup.gender);
+        Assert.assertNull(mup.picture);
+        Assert.assertEquals(0, mup.byear);
+        Assert.assertNull(mup.custom);
+        Assert.assertNull(mup.customMods);
     }
 
     void assertGivenCustomValues(Map<String, Object> data, ModuleUserProfile mup) {
 
-        assertEquals(data.size(), mup.custom.size());
+        Assert.assertEquals(data.size(), mup.custom.size());
 
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             String value = (String) entry.getValue();//todo rework to support more types
 
-            assertEquals(value, mup.custom.get(key));
+            Assert.assertEquals(value, mup.custom.get(key));
         }
     }
 
     void assertGivenValues(Map<String, Object> data, ModuleUserProfile mup) {
 
         if (data.containsKey("name")) {
-            assertEquals(data.get("name"), mup.name);
+            Assert.assertEquals(data.get("name"), mup.name);
         } else {
-            assertNull(mup.name);
+            Assert.assertNull(mup.name);
         }
 
         if (data.containsKey("username")) {
-            assertEquals(data.get("username"), mup.username);
+            Assert.assertEquals(data.get("username"), mup.username);
         } else {
-            assertNull(mup.username);
+            Assert.assertNull(mup.username);
         }
 
         if (data.containsKey("email")) {
-            assertEquals(data.get("email"), mup.email);
+            Assert.assertEquals(data.get("email"), mup.email);
         } else {
-            assertNull(mup.email);
+            Assert.assertNull(mup.email);
         }
 
         if (data.containsKey("organization")) {
-            assertEquals(data.get("organization"), mup.org);
+            Assert.assertEquals(data.get("organization"), mup.org);
         } else {
-            assertNull(mup.org);
+            Assert.assertNull(mup.org);
         }
 
         if (data.containsKey("phone")) {
-            assertEquals(data.get("phone"), mup.phone);
+            Assert.assertEquals(data.get("phone"), mup.phone);
         } else {
-            assertNull(mup.phone);
+            Assert.assertNull(mup.phone);
         }
 
         if (data.containsKey("picture")) {
-            assertEquals(data.get("picture"), mup.picture);
+            Assert.assertEquals(data.get("picture"), mup.picture);
         } else {
-            assertNull(mup.picture);
+            Assert.assertNull(mup.picture);
         }
 
         if (data.containsKey("picturePath")) {
-            assertEquals(data.get("picturePath"), mup.picturePath);
+            Assert.assertEquals(data.get("picturePath"), mup.picturePath);
         } else {
-            assertNull(mup.picturePath);
+            Assert.assertNull(mup.picturePath);
         }
 
         if (data.containsKey("gender")) {
-            assertEquals(data.get("gender"), mup.gender);
+            Assert.assertEquals(data.get("gender"), mup.gender);
         } else {
-            assertNull(mup.gender);
+            Assert.assertNull(mup.gender);
         }
 
         if (data.containsKey("byear")) {
-            assertEquals(Integer.parseInt((String) data.get("byear")), mup.byear);
+            Assert.assertEquals(Integer.parseInt((String) data.get("byear")), mup.byear);
         } else {
-            assertEquals(0, mup.byear);
+            Assert.assertEquals(0, mup.byear);
         }
     }
 
@@ -216,18 +213,18 @@ public class ModuleUserProfileTests {
         data.put("key22", "value2");
         mCountly.userProfile().setProperties(data);
 
-        assertEquals("Test Test", mCountly.moduleUserProfile.name);
-        assertEquals("test", mCountly.moduleUserProfile.username);
-        assertEquals("test@gmail.com", mCountly.moduleUserProfile.email);
-        assertEquals("Tester", mCountly.moduleUserProfile.org);
-        assertEquals("+1234567890", mCountly.moduleUserProfile.phone);
-        assertEquals("M", mCountly.moduleUserProfile.gender);
-        assertEquals("http://domain.com/test.png", mCountly.moduleUserProfile.picture);
-        assertEquals(2000, mCountly.moduleUserProfile.byear);
-        assertEquals(false, mCountly.moduleUserProfile.isSynced);
-        assertEquals(2, mCountly.moduleUserProfile.custom.size());
-        assertEquals("value1", data.get("key12"));
-        assertEquals("value2", data.get("key22"));
+        Assert.assertEquals("Test Test", mCountly.moduleUserProfile.name);
+        Assert.assertEquals("test", mCountly.moduleUserProfile.username);
+        Assert.assertEquals("test@gmail.com", mCountly.moduleUserProfile.email);
+        Assert.assertEquals("Tester", mCountly.moduleUserProfile.org);
+        Assert.assertEquals("+1234567890", mCountly.moduleUserProfile.phone);
+        Assert.assertEquals("M", mCountly.moduleUserProfile.gender);
+        Assert.assertEquals("http://domain.com/test.png", mCountly.moduleUserProfile.picture);
+        Assert.assertEquals(2000, mCountly.moduleUserProfile.byear);
+        Assert.assertEquals(false, mCountly.moduleUserProfile.isSynced);
+        Assert.assertEquals(2, mCountly.moduleUserProfile.custom.size());
+        Assert.assertEquals("value1", data.get("key12"));
+        Assert.assertEquals("value2", data.get("key22"));
     }
 
     @Test
@@ -260,9 +257,9 @@ public class ModuleUserProfileTests {
         mCountly.userProfile().setProperties(data);
         mCountly.userProfile().setProperty("key_prop", "value_prop");
 
-        assertEquals("value1", mCountly.moduleUserProfile.custom.get("key1"));
-        assertEquals("value2", mCountly.moduleUserProfile.custom.get("key2"));
-        assertEquals("value_prop", mCountly.moduleUserProfile.custom.get("key_prop"));
+        Assert.assertEquals("value1", mCountly.moduleUserProfile.custom.get("key1"));
+        Assert.assertEquals("value2", mCountly.moduleUserProfile.custom.get("key2"));
+        Assert.assertEquals("value_prop", mCountly.moduleUserProfile.custom.get("key_prop"));
     }
 
     @Test
@@ -288,10 +285,10 @@ public class ModuleUserProfileTests {
         mCountly.moduleUserProfile.modifyCustomData("key_set", "test1", "$addToSet");
         mCountly.moduleUserProfile.modifyCustomData("key_set", "test2", "$addToSet");
 
-        assertEquals(1, mCountly.moduleUserProfile.customMods.get("key_inc").getInt("$inc"));
-        assertEquals(2, mCountly.moduleUserProfile.customMods.get("key_mul").getInt("$mul"));
-        assertEquals("test1", mCountly.moduleUserProfile.customMods.get("key_set").getJSONArray("$addToSet").getString(0));
-        assertEquals("test2", mCountly.moduleUserProfile.customMods.get("key_set").getJSONArray("$addToSet").getString(1));
+        Assert.assertEquals(1, mCountly.moduleUserProfile.customMods.get("key_inc").getInt("$inc"));
+        Assert.assertEquals(2, mCountly.moduleUserProfile.customMods.get("key_mul").getInt("$mul"));
+        Assert.assertEquals("test1", mCountly.moduleUserProfile.customMods.get("key_set").getJSONArray("$addToSet").getString(0));
+        Assert.assertEquals("test2", mCountly.moduleUserProfile.customMods.get("key_set").getJSONArray("$addToSet").getString(1));
     }
 
     @Test
@@ -309,16 +306,16 @@ public class ModuleUserProfileTests {
 
         mCountly.userProfile().clear();
 
-        assertNull(mCountly.moduleUserProfile.name);
-        assertNull(mCountly.moduleUserProfile.username);
-        assertNull(mCountly.moduleUserProfile.email);
-        assertNull(mCountly.moduleUserProfile.org);
-        assertNull(mCountly.moduleUserProfile.phone);
-        assertNull(mCountly.moduleUserProfile.gender);
-        assertNull(mCountly.moduleUserProfile.picture);
-        assertEquals(0, mCountly.moduleUserProfile.byear);
-        assertNull(mCountly.moduleUserProfile.custom);
-        assertNull(mCountly.moduleUserProfile.customMods);
+        Assert.assertNull(mCountly.moduleUserProfile.name);
+        Assert.assertNull(mCountly.moduleUserProfile.username);
+        Assert.assertNull(mCountly.moduleUserProfile.email);
+        Assert.assertNull(mCountly.moduleUserProfile.org);
+        Assert.assertNull(mCountly.moduleUserProfile.phone);
+        Assert.assertNull(mCountly.moduleUserProfile.gender);
+        Assert.assertNull(mCountly.moduleUserProfile.picture);
+        Assert.assertEquals(0, mCountly.moduleUserProfile.byear);
+        Assert.assertNull(mCountly.moduleUserProfile.custom);
+        Assert.assertNull(mCountly.moduleUserProfile.customMods);
     }
 
     @Test
@@ -350,21 +347,21 @@ public class ModuleUserProfileTests {
         mCountly.moduleUserProfile.modifyCustomData("key_set", "test2", "$addToSet");
 
         JSONObject json = mCountly.moduleUserProfile.toJSON();
-        assertEquals("Test Test", json.getString("name"));
-        assertEquals("test", json.getString("username"));
-        assertEquals("test@gmail.com", json.getString("email"));
-        assertEquals("Tester", json.getString("organization"));
-        assertEquals("+1234567890", json.getString("phone"));
-        assertEquals("M", json.getString("gender"));
-        assertEquals("http://domain.com/test.png", json.getString("picture"));
-        assertEquals(2000, json.getInt("byear"));
-        assertEquals("value1", json.getJSONObject("custom").getString("key1"));
-        assertEquals("value2", json.getJSONObject("custom").getString("key2"));
-        assertEquals("value_prop", json.getJSONObject("custom").getString("key_prop"));
-        assertEquals(1, json.getJSONObject("custom").getJSONObject("key_inc").getInt("$inc"));
-        assertEquals(2, json.getJSONObject("custom").getJSONObject("key_mul").getInt("$mul"));
-        assertEquals("test1", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(0));
-        assertEquals("test2", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(1));
+        Assert.assertEquals("Test Test", json.getString("name"));
+        Assert.assertEquals("test", json.getString("username"));
+        Assert.assertEquals("test@gmail.com", json.getString("email"));
+        Assert.assertEquals("Tester", json.getString("organization"));
+        Assert.assertEquals("+1234567890", json.getString("phone"));
+        Assert.assertEquals("M", json.getString("gender"));
+        Assert.assertEquals("http://domain.com/test.png", json.getString("picture"));
+        Assert.assertEquals(2000, json.getInt("byear"));
+        Assert.assertEquals("value1", json.getJSONObject("custom").getString("key1"));
+        Assert.assertEquals("value2", json.getJSONObject("custom").getString("key2"));
+        Assert.assertEquals("value_prop", json.getJSONObject("custom").getString("key_prop"));
+        Assert.assertEquals(1, json.getJSONObject("custom").getJSONObject("key_inc").getInt("$inc"));
+        Assert.assertEquals(2, json.getJSONObject("custom").getJSONObject("key_mul").getInt("$mul"));
+        Assert.assertEquals("test1", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(0));
+        Assert.assertEquals("test2", json.getJSONObject("custom").getJSONObject("key_set").getJSONArray("$addToSet").getString(1));
     }
 
     @Test
@@ -436,5 +433,213 @@ public class ModuleUserProfileTests {
         Assert.assertTrue(req.contains("gender"));
         Assert.assertTrue(req.contains("custom"));
         Assert.assertTrue(req.contains("byear"));
+    }
+
+    /**
+     * Test that custom data keys are truncated to the maximum allowed length (10)
+     * Due to truncation, the keys "hair_color_id" and "hair_color_tone" will be merged into "hair_color"
+     * The value of "hair_color" will be the value of "hair_color_tone" since it was set last
+     * The value of "hair_skin_tone" will be truncated to "hair_skin_"
+     * Tha last value of "hair_color" will be "black"
+     * And predefined key "picturePath" is not truncated
+     */
+    @Test
+    public void internalLimit_testCustomData() {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.sdkInternalLimits.setMaxKeyLength(10);
+        mCountly.init(config);
+
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("hair_color_id", 4567);
+        data.put("hair_color_tone", "bold");
+        mCountly.userProfile().setProperties(data);
+        Assert.assertEquals(1, mCountly.moduleUserProfile.custom.size());
+        Assert.assertEquals("bold", mCountly.moduleUserProfile.custom.get("hair_color"));
+
+        mCountly.userProfile().setProperty("hair_color", "black");
+        mCountly.userProfile().setProperty("hair_skin_tone", "yellow");
+        mCountly.userProfile().setProperty("picturePath", "Test Test");
+        Assert.assertEquals(2, mCountly.moduleUserProfile.custom.size());
+        Assert.assertNull(ModuleUserProfile.picturePath);
+        Assert.assertEquals("black", mCountly.moduleUserProfile.custom.get("hair_color"));
+        Assert.assertEquals("yellow", mCountly.moduleUserProfile.custom.get("hair_skin_"));
+    }
+
+    /**
+     * Test that custom data keys are truncated to the maximum allowed length (10)
+     * Due to truncation, for push keys, the keys "reminder" and "rock" will be merged into same key
+     */
+    @Test
+    public void internalLimit_testCustomModifiers() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.sdkInternalLimits.setMaxKeyLength(10);
+        mCountly.init(config);
+
+        mCountly.moduleUserProfile.modifyCustomData("key_inc_with", 1, "$inc");
+        mCountly.moduleUserProfile.modifyCustomData("key_mul_width", 2, "$mul");
+        mCountly.userProfile().push("key_push_reminder", "test1");
+        mCountly.userProfile().push("key_push_rock", "test3");
+
+        Assert.assertEquals(1, mCountly.moduleUserProfile.customMods.get("key_inc_wi").getInt("$inc"));
+        Assert.assertEquals(2, mCountly.moduleUserProfile.customMods.get("key_mul_wi").getInt("$mul"));
+        Assert.assertEquals(2, mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").length());
+        Assert.assertEquals("test1", mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").getString(0));
+        Assert.assertEquals("test3", mCountly.moduleUserProfile.customMods.get("key_push_r").getJSONArray("$push").getString(1));
+    }
+
+    /**
+     * "setProperties" with both custom and predefined properties
+     * custom properties should be truncated but predefined properties should not be truncated
+     * validate that the predefined properties are not truncated
+     */
+    @Test
+    public void internalLimit_setProperties() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config.sdkInternalLimits.setMaxKeyLength(2);
+        mCountly.init(config);
+
+        Countly.sharedInstance().userProfile().setProperties(TestUtils.map(
+            ModuleUserProfile.BYEAR_KEY, 2000,
+            ModuleUserProfile.EMAIL_KEY, "email",
+            ModuleUserProfile.GENDER_KEY, "Male",
+            ModuleUserProfile.PHONE_KEY, "phone",
+            ModuleUserProfile.ORG_KEY, "org",
+            ModuleUserProfile.USERNAME_KEY, "username",
+            ModuleUserProfile.NAME_KEY, "name",
+            ModuleUserProfile.PICTURE_KEY, "picture",
+            "custom1", "value1",
+            "custom2", 23,
+            "hair", "black"
+        ));
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(
+                ModuleUserProfile.BYEAR_KEY, 2000,
+                ModuleUserProfile.EMAIL_KEY, "email",
+                ModuleUserProfile.GENDER_KEY, "Male",
+                ModuleUserProfile.PHONE_KEY, "phone",
+                ModuleUserProfile.ORG_KEY, "org",
+                ModuleUserProfile.USERNAME_KEY, "username",
+                ModuleUserProfile.NAME_KEY, "name",
+                ModuleUserProfile.PICTURE_KEY, "picture"
+            ), TestUtils.map(
+                "cu", "23", // because in user profiles, all values are stored as strings
+                "ha", "black")
+        );
+    }
+
+    /**
+     * Given max value size truncates the values of the:
+     * - Custom user property values
+     * - user property values
+     * Validate all values are truncated to the max value size that is 2
+     * And validate non-String values are not clipped
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_setProperties_maxValueSize() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        mCountly.init(config);
+
+        Object obj = new Object();
+        Countly.sharedInstance().userProfile().setProperties(TestUtils.map(
+            ModuleUserProfile.BYEAR_KEY, 2000,
+            ModuleUserProfile.EMAIL_KEY, "email",
+            ModuleUserProfile.GENDER_KEY, "Male",
+            ModuleUserProfile.PHONE_KEY, "phone",
+            ModuleUserProfile.ORG_KEY, "org",
+            ModuleUserProfile.USERNAME_KEY, "username",
+            ModuleUserProfile.NAME_KEY, "name",
+            ModuleUserProfile.PICTURE_KEY, "picture",
+            ModuleUserProfile.PICTURE_PATH_KEY, "TestTest",
+            "custom1", "value1",
+            "custom2", 23,
+            "hair", "black",
+            "custom3", 1234,
+            "custom4", 1234.5,
+            "custom5", true,
+            "custom6", obj
+        ));
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(
+                ModuleUserProfile.BYEAR_KEY, 2000,
+                ModuleUserProfile.EMAIL_KEY, "em",
+                ModuleUserProfile.GENDER_KEY, "Ma",
+                ModuleUserProfile.PHONE_KEY, "ph",
+                ModuleUserProfile.ORG_KEY, "or",
+                ModuleUserProfile.USERNAME_KEY, "us",
+                ModuleUserProfile.NAME_KEY, "na",
+                ModuleUserProfile.PICTURE_KEY, "pi"
+            ), TestUtils.map(
+                "custom1", "va", // because in user profiles, all values are stored as strings
+                "custom2", "23",
+                "hair", "bl",
+                "custom3", "1234",
+                "custom4", "1234.5",
+                "custom5", "true",
+                "custom6", obj.toString()) // toString() is called on non-String values
+        );
+    }
+
+    /**
+     * Given max value size truncates the values of the:
+     * - Custom user property values
+     * - user property values
+     * Validate all values are truncated to the max value size that is 2
+     * And validate non-String values are not clipped
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_testCustomModifiers_setMaxValueSize() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        mCountly.init(config);
+
+        mCountly.userProfile().incrementBy("inc", 1);
+        mCountly.userProfile().multiply("mul", 2_456_789);
+        mCountly.userProfile().push("rem", "ORIELY");
+        mCountly.userProfile().push("rem", "HUH");
+        mCountly.userProfile().pull("pll", "PULL");
+        mCountly.userProfile().pushUnique("pshu", "PUSH");
+        mCountly.userProfile().saveMax("sm", 455);
+        mCountly.userProfile().saveMin("smi", 6789);
+        mCountly.userProfile().setOnce("stc", "ONCE");
+
+        Assert.assertEquals(1, mCountly.moduleUserProfile.customMods.get("inc").getInt("$inc"));
+        Assert.assertEquals(2_456_789, mCountly.moduleUserProfile.customMods.get("mul").getInt("$mul"));
+        Assert.assertEquals(2, mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").length());
+        Assert.assertEquals("OR", mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").getString(0));
+        Assert.assertEquals("HU", mCountly.moduleUserProfile.customMods.get("rem").getJSONArray("$push").getString(1));
+        Assert.assertEquals("PU", mCountly.moduleUserProfile.customMods.get("pll").getString("$pull"));
+        Assert.assertEquals("PU", mCountly.moduleUserProfile.customMods.get("pshu").getString("$addToSet"));
+        Assert.assertEquals("455", mCountly.moduleUserProfile.customMods.get("sm").getString("$max"));
+        Assert.assertEquals("6789", mCountly.moduleUserProfile.customMods.get("smi").getString("$min"));
+        Assert.assertEquals("ON", mCountly.moduleUserProfile.customMods.get("stc").getString("$setOnce"));
+    }
+
+    private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(1, RQ.length);
+        JSONObject userDetails = new JSONObject(RQ[0].get("user_details"));
+        Assert.assertEquals(userDetails.length(), predefined.size() + 1);
+        JSONObject customData = userDetails.getJSONObject("custom");
+        Assert.assertEquals(customData.length(), custom.size());
+        userDetails.remove("custom");
+        for (Map.Entry<String, Object> entry : predefined.entrySet()) {
+            Assert.assertEquals(entry.getValue(), userDetails.get(entry.getKey()));
+        }
+
+        for (Map.Entry<String, Object> entry : custom.entrySet()) {
+            Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
+        }
     }
 }
