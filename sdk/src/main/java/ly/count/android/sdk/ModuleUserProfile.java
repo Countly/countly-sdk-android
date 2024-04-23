@@ -224,22 +224,30 @@ public class ModuleUserProfile extends ModuleBase {
                 return;
             }
 
+            Object truncatedValue;
+            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            if (value instanceof String) {
+                truncatedValue = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            } else {
+                truncatedValue = value;
+            }
+
             if (customMods == null) {
                 customMods = new HashMap<>();
             }
             JSONObject ob;
             if (!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
-                ob.put(mod, value);
+                ob.put(mod, truncatedValue);
             } else {
-                if (customMods.containsKey(key)) {
-                    ob = customMods.get(key);
+                if (customMods.containsKey(truncatedKey)) {
+                    ob = customMods.get(truncatedKey);
                 } else {
                     ob = new JSONObject();
                 }
-                ob.accumulate(mod, value);
+                ob.accumulate(mod, truncatedValue);
             }
-            customMods.put(key, ob);
+            customMods.put(truncatedKey, ob);
             isSynced = false;
         } catch (JSONException e) {
             e.printStackTrace();
@@ -253,7 +261,7 @@ public class ModuleUserProfile extends ModuleBase {
      * @param data
      */
     void setPropertiesInternal(@NonNull Map<String, Object> data) {
-        if (data.size() == 0) {
+        if (data.isEmpty()) {
             Countly.sharedInstance().L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
             return;
         }
@@ -267,6 +275,11 @@ public class ModuleUserProfile extends ModuleBase {
             Object value = entry.getValue();
             boolean isNamed = false;
 
+            // limit to the picture path is applied when request is being made in the ConnectionProcessor
+            if (value instanceof String && !key.equals(PICTURE_PATH_KEY)) {
+                value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+            }
+
             for (String namedField : namedFields) {
                 if (namedField.equals(key)) {
                     //if it's a name field
@@ -277,7 +290,8 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             if (!isNamed) {
-                dataCustomFields.put(key, value.toString());
+                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                dataCustomFields.put(truncatedKey, value.toString());
             }
         }
 
@@ -288,6 +302,7 @@ public class ModuleUserProfile extends ModuleBase {
         if (custom == null) {
             custom = new HashMap<>();
         }
+
         custom.putAll(dataCustomFields);
 
         isSynced = false;
