@@ -44,7 +44,7 @@ public class TestUtils {
     public final static String SDK_NAME = "java-native-android";
     public final static String SDK_VERSION = "24.4.0";
     public static final int MAX_THREAD_COUNT_PER_STACK_TRACE = 50;
-    
+
     public static class Activity2 extends Activity {
     }
 
@@ -130,10 +130,6 @@ public class TestUtils {
             .enableCrashReporting();
 
         return cc;
-    }
-
-    protected static CountlyConfig getBaseConfig() {
-        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
     }
 
     public static String[] createStringArray(int count) {

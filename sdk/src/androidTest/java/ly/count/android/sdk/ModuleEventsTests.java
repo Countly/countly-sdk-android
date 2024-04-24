@@ -412,7 +412,7 @@ public class ModuleEventsTests {
      */
     @Test
     public void internalLimits_recordEvent_internalKeys() throws JSONException {
-        CountlyConfig config = TestUtils.getBaseConfig();
+        CountlyConfig config = TestUtils.createBaseConfig();
         config.sdkInternalLimits.setMaxKeyLength(2);
         config.setEventQueueSizeToSend(1);
 
@@ -449,7 +449,7 @@ public class ModuleEventsTests {
      */
     @Test
     public void internalLimits_recordEvent_segmentation() throws JSONException {
-        CountlyConfig config = TestUtils.getBaseConfig();
+        CountlyConfig config = TestUtils.createBaseConfig();
         config.sdkInternalLimits.setMaxKeyLength(2);
         config.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(config);
