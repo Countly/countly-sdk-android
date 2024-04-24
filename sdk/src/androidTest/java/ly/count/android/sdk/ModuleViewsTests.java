@@ -1098,6 +1098,7 @@ public class ModuleViewsTests {
         Map<String, Object> globalSegm = new HashMap<>();
         globalSegm.put("0", 4);
         globalSegm.put("1", "v1");
+        globalSegm.put("long", Long.MAX_VALUE);
 
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
         Countly mCountly = new Countly().init(cc);
