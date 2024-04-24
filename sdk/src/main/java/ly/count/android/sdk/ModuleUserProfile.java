@@ -166,7 +166,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
             json.put(CUSTOM_KEY, ob);
         } catch (JSONException e) {
-            Countly.sharedInstance().L.w("[UserData] Got exception converting an UserData to JSON", e);
+            L.w("[UserData] Got exception converting an UserData to JSON", e);
         }
 
         return json;
@@ -204,7 +204,7 @@ public class ModuleUserProfile extends ModuleBase {
                         }
                     }
                 } catch (JSONException e) {
-                    Countly.sharedInstance().L.w("[ModuleUserProfile] Got exception converting an Custom Json to Custom User data", e);
+                    L.w("[ModuleUserProfile] Got exception converting an Custom Json to Custom User data", e);
                 }
             }
         }
@@ -220,7 +220,7 @@ public class ModuleUserProfile extends ModuleBase {
     void modifyCustomData(String key, Object value, String mod) {
         try {
             if (!(value instanceof Double || value instanceof Integer || value instanceof String)) {
-                Countly.sharedInstance().L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
+                L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
                 return;
             }
 
@@ -262,7 +262,7 @@ public class ModuleUserProfile extends ModuleBase {
      */
     void setPropertiesInternal(@NonNull Map<String, Object> data) {
         if (data.isEmpty()) {
-            Countly.sharedInstance().L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
+            L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
             return;
         }
 
@@ -335,7 +335,7 @@ public class ModuleUserProfile extends ModuleBase {
         if (picturePath != null) {
             File sourceFile = new File(picturePath);
             if (!sourceFile.isFile()) {
-                Countly.sharedInstance().L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
+                L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
                 picturePath = null;
             }
         }
@@ -349,20 +349,20 @@ public class ModuleUserProfile extends ModuleBase {
             try {
                 byear = Integer.parseInt(data.get(ModuleUserProfile.BYEAR_KEY));
             } catch (NumberFormatException e) {
-                Countly.sharedInstance().L.w("[UserData] Incorrect byear number format");
+                L.w("[UserData] Incorrect byear number format");
                 byear = 0;
             }
         }
     }
 
     void saveInternal() {
-        Countly.sharedInstance().L.d("[ModuleUserProfile] saveInternal");
+        L.d("[ModuleUserProfile] saveInternal");
         requestQueueProvider.sendUserData(getDataForRequest());
         clearInternal();
     }
 
     void clearInternal() {
-        Countly.sharedInstance().L.d("[ModuleUserProfile] clearInternal");
+        L.d("[ModuleUserProfile] clearInternal");
 
         name = null;
         username = null;
