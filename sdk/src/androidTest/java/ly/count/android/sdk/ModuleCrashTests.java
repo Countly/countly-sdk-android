@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -401,7 +402,7 @@ public class ModuleCrashTests {
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
-            Assert.assertEquals(TestUtils.map("int", Integer.MAX_VALUE, "long", Long.MAX_VALUE), crash.getCrashSegmentation());
+            Assert.assertEquals(TestUtils.map("int", Integer.MAX_VALUE, "sphinx_no", 324), crash.getCrashSegmentation());
             crash.getCrashSegmentation().put("secret", "Minato");
             return false;
         });
@@ -411,7 +412,7 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
         validateCrash(extractStackTrace(exception), "", false, false,
-            TestUtils.map("int", Integer.MAX_VALUE, "long", Long.MAX_VALUE), 8, new HashMap<>(), new ArrayList<>());
+            TestUtils.map("int", Integer.MAX_VALUE, "secret", "Minato"), 8, new HashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -606,8 +607,7 @@ public class ModuleCrashTests {
 
     /**
      * Validate that custom crash segmentation is truncated to the maximum allowed length
-     * Because length is 2 all global crash segmentation values are dropped and only the last 2
-     * of the custom segmentation values are kept
+     * Because length is 2 only last 2 of the global crash segmentation values are kept
      *
      * @throws JSONException if JSON parsing fails
      */
@@ -693,7 +693,7 @@ public class ModuleCrashTests {
     }
 
     /**
-     * validate that adding breadcrumbs that exceeds max breadcrumb count greater than one should clip
+     * validate that adding breadcrumbs that exceeds max breadcrumb count greater than one should clip,
      * oldest breadcrumbs and keep the latest ones that is limited by the max breadcrumb count
      *
      * @throws JSONException if JSON parsing fails
@@ -839,7 +839,7 @@ public class ModuleCrashTests {
         validateCrash(error, breadcrumbs, fatal, nativeCrash, 1, 0, customSegmentation, changedBits, customMetrics, baseMetricsExclude);
     }
 
-    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, int rqSize, int idx,
+    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, final int rqSize, final int idx,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(rqSize, RQ.length);
@@ -995,6 +995,198 @@ public class ModuleCrashTests {
     @Test(expected = NullPointerException.class)
     public void crashTest_5() {
         TestUtils.crashTest(4);
+    }
+
+    /**
+     * Test that the segmentation given while initializing the SDK is truncated to the limit
+     * And that the segmentation given during the crash recording is also truncated to the limit
+     * One of the parameters are lost due to truncation because it has same key beginning as another parameter
+     */
+    @Test
+    public void internalLimits_provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
+        Countly countly = new Countly();
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.sdkInternalLimits.setMaxKeyLength(10);
+
+        Map<String, Object> segm = new HashMap<>();
+        segm.put("anr_log_id_key", "76atda76bsdtahs78dasyd8");
+        segm.put("abr_log_id", "87abdb687astdna8s7dynas897ndaysnd");
+        segm.put("arf_log_ver", 1_675_987);
+
+        cConfig.setCustomCrashSegment(segm);
+
+        countly.init(cConfig);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
+
+        //validating values set by init
+        Map<String, Object> segm2 = new HashMap<>();
+        segm2.put("anr_log_id", "76atda76bsdtahs78dasyd8");
+        segm2.put("abr_log_id", "87abdb687astdna8s7dynas897ndaysnd");
+        segm2.put("arf_log_ve", 1_675_987);
+        Assert.assertEquals(segm2, countly.moduleCrash.customCrashSegments);
+
+        //prepare new segm to be provided during recording
+        Map<String, Object> segm3 = new HashMap<>();
+        segm3.put("anr_log_id_secret", "SECRET");
+        segm3.put("battery_percentage", 1234.55d);
+        segm3.put("ftl", true);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, segm3);
+        ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
+        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
+
+        String argVal = arg.getValue();
+
+        JSONObject jobj = new JSONObject(argVal);
+        Assert.assertTrue(jobj.getString("_error").startsWith("java.lang.Exception: Some message"));
+        JSONObject jCus = jobj.getJSONObject("_custom");
+        Assert.assertEquals(5, jCus.length());
+        Assert.assertEquals("SECRET", jCus.get("anr_log_id"));
+        Assert.assertEquals("87abdb687astdna8s7dynas897ndaysnd", jCus.get("abr_log_id"));
+        Assert.assertEquals(1_675_987, jCus.get("arf_log_ve"));
+        Assert.assertEquals(1234.55d, jCus.get("battery_pe"));
+        Assert.assertEquals(true, jCus.get("ftl"));
+    }
+
+    /**
+     * Test that the segmentation given while initializing the SDK is truncated to the limit
+     * And that the segmentation given during the crash recording is also truncated to the limit
+     * Two of the parameters are lost due to truncation because it has same key beginning as another parameter
+     */
+    @Test
+    public void internalLimits_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
+        Countly countly = new Countly();
+        CountlyConfig cConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxKeyLength(5);
+        cConfig.setCustomCrashSegment(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
+
+        countly.init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception, TestUtils.map("below_one", false, "go_for_it", "go"));
+
+        validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("test_", 1234, "below", false, "go_fo", "go"), 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Given max value size truncates the values of the:
+     * - Crash segmentation
+     * - Custom crash segmentation
+     * - Breadcrumbs
+     * Validate all values are truncated to the max value size that is 5
+     * And validate non-String values are not clipped
+     * This also includes clipping unsupported data types
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_recordException_maxValueSize() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxValueSize(5);
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("test", "123456", "integer", Integer.MAX_VALUE, "arr", new int[] { 1, 2, 3, 4, 5 }, "double", Double.MAX_VALUE, "bool", true, "float", 1.1, "object", new Object()));
+        Countly countly = new Countly().init(cConfig);
+
+        countly.crashes().addCrashBreadcrumb("Surpass");
+        countly.crashes().addCrashBreadcrumb("YourLimits");
+        countly.crashes().addCrashBreadcrumb("RightNow");
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception, TestUtils.map("case", "o the great one", "have", "dinosaur", "int1", Integer.MIN_VALUE, "double1", Double.MIN_VALUE, "bool", false));
+
+        validateCrash(extractStackTrace(exception), "Surpa\nYourL\nRight\n", true, false, TestUtils.map("test", "12345", "integer", Integer.MAX_VALUE, "int1", Integer.MIN_VALUE, "double", Double.MAX_VALUE, "double1", Double.MIN_VALUE, "bool", false, "float", 1.1, "have", "dinos", "case", "o the"),
+            0, new HashMap<>(),
+            new ArrayList<>());
+    }
+
+    /**
+     * Validate all 4 limits are applied after crash filtering:
+     * - Max value size 5
+     * - Max key length 2
+     * - Max segmentation values 5
+     * - Max breadcrumb count 2
+     * Validate that all values are truncated to their limits
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_globalCrashFilter_sdkInternalLimits() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxValueSize(5).setMaxKeyLength(2).setMaxSegmentationValues(5).setMaxBreadcrumbCount(2);
+
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            Assert.assertTrue(crash.getCrashSegmentation().isEmpty());
+            Assert.assertTrue(crash.getBreadcrumbs().isEmpty());
+
+            crash.getCrashSegmentation().put("aftermath", "Snowrunner");
+            crash.getCrashSegmentation().put("beforemath", "Mudrunner");
+            crash.getCrashSegmentation().put("premath", "Spintires");
+            crash.getCrashSegmentation().put("postmath", "DirtRally");
+            crash.getCrashSegmentation().put("midmath", "WRCRally");
+            crash.getCrashSegmentation().put("oldmath", "AssettoCorsa");
+            crash.getCrashSegmentation().put("ancientmath", "EuroTruckSimulator2");
+            crash.getCrashSegmentation().put("invalid", new Object());
+            crash.getCrashSegmentation().put("invalid2", new int[] { 1, 2 });
+
+            crash.getBreadcrumbs().add("VolvoFH750");
+            crash.getBreadcrumbs().add("ScaniaR730");
+            crash.getBreadcrumbs().add("MercedesActros");
+            crash.getBreadcrumbs().add("VVolvoV90");
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception), "Merce\nVVolv\n", true, false, TestUtils.map("an", "EuroT", "ol", "Asset", "po", "DirtR", "af", "Snowr", "mi", "WRCRa"),
+            12, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Custom crash segmentation and segmentation while recording the crash is provided
+     * Also breadcrumbs are added before
+     * Validate all 4 limits are applied after crash filtering:
+     * - Max value size 5
+     * - Max key length 2
+     * - Max segmentation values 5
+     * - Max breadcrumb count 2
+     * Validate that all values are truncated to their limits
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_globalCrashFilter_sdkInternalLimits_withPreValues() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.sdkInternalLimits.setMaxValueSize(5).setMaxKeyLength(2).setMaxSegmentationValues(5).setMaxBreadcrumbCount(2);
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("arr", new int[] { 1, 2, 3, 4, 5 }, "double", Double.MAX_VALUE, "bool", true, "float", 1.1, "object", new Object(), "string", "string_to_become"));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            Assert.assertEquals(TestUtils.map("de", "no", "do", Double.MAX_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1), crash.getCrashSegmentation());
+            Assert.assertEquals("Volvo\nScani\n", crash.getBreadcrumbsAsString());
+
+            crash.getCrashSegmentation().put("beforemath", "Mudrunner");
+            crash.getCrashSegmentation().put("arr", new int[] { 1, 2 });
+            crash.getCrashSegmentation().put("obj", new Object());
+            crash.getCrashSegmentation().put("double", Double.MIN_VALUE);
+
+            crash.getBreadcrumbs().add("MercedesActros");
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+        countly.crashes().addCrashBreadcrumb("VolvoFH750");
+        countly.crashes().addCrashBreadcrumb("ScaniaR730");
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception, TestUtils.map("boolean", false, "star", "boom_boom", "integer", Integer.MIN_VALUE, "desire", "no"));
+        validateCrash(extractStackTrace(exception), "Scani\nMerce\n", true, false,
+            TestUtils.map("be", "Mudru", "do", Double.MIN_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1),
+            12, new HashMap<>(), new ArrayList<>());
     }
 
     /**
