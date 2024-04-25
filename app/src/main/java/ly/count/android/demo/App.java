@@ -19,9 +19,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.messaging.FirebaseMessaging;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashFilterCallback;
@@ -33,17 +33,15 @@ import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_BROADCAST_PERMI
 
 public class App extends Application {
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
-    final String COUNTLY_SERVER_URL = "https://your.server.ly";
-    final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
-    static long applicationStartTimestamp = System.currentTimeMillis();
-
-    private BroadcastReceiver messageReceiver;
+    private final static String COUNTLY_SERVER_URL = "https://your.server.ly";
+    private final static String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+    private final static long applicationStartTimestamp = System.currentTimeMillis();
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        if (COUNTLY_SERVER_URL.equals("https://your.server.ly") || COUNTLY_APP_KEY.equals("YOUR_APP_KEY")) {
+        if ("https://your.server.ly".equals(COUNTLY_SERVER_URL) || "YOUR_APP_KEY".equals(COUNTLY_APP_KEY)) {
             Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
             return;
         }
@@ -122,25 +120,25 @@ public class App extends Application {
                 + "PTJ7eeMmX9g/0h"
         };
 
-        HashMap<String, String> customHeaderValues = new HashMap<>();
+        Map<String, String> customHeaderValues = new ConcurrentHashMap<>();
         customHeaderValues.put("foo", "bar");
 
-        Map<String, Object> automaticViewSegmentation = new HashMap<>();
+        Map<String, Object> automaticViewSegmentation = new ConcurrentHashMap<>();
         automaticViewSegmentation.put("One", 2);
         automaticViewSegmentation.put("Three", 4.44d);
         automaticViewSegmentation.put("Five", "Six");
 
-        Map<String, String> metricOverride = new HashMap<>();
+        Map<String, String> metricOverride = new ConcurrentHashMap<>();
         metricOverride.put("SomeKey", "123");
         metricOverride.put("_carrier", "BoneyK");
 
         //add some custom segments, like dependency library versions
-        HashMap<String, Object> customCrashSegmentation = new HashMap<>();
+        Map<String, Object> customCrashSegmentation = new ConcurrentHashMap<>();
         customCrashSegmentation.put("EarBook", "3.5");
         customCrashSegmentation.put("AdGiver", "6.5");
 
         //properties that we want to sent at init time
-        Map<String, Object> customUserProperties = new HashMap<>();
+        Map<String, Object> customUserProperties = new ConcurrentHashMap<>();
         customUserProperties.put("A", 1);
 
         CountlyConfig config = new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)//.setDeviceId("67567")
@@ -163,6 +161,8 @@ public class App extends Application {
                             break;
                         case Error:
                             //Log.e("Countly Duplicate", logMessage);
+                            break;
+                        default:
                             break;
                     }
                 }
@@ -267,7 +267,7 @@ public class App extends Application {
             });
 
         /* Register for broadcast action if you need to be notified when Countly message clicked */
-        messageReceiver = new BroadcastReceiver() {
+        BroadcastReceiver messageReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
 
@@ -294,7 +294,7 @@ public class App extends Application {
         IntentFilter filter = new IntentFilter();
         filter.addAction(CountlyPush.SECURE_NOTIFICATION_BROADCAST);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null, Context.RECEIVER_NOT_EXPORTED);
+            registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null, Context.RECEIVER_VISIBLE_TO_INSTANT_APPS | Context.RECEIVER_NOT_EXPORTED);
         } else {
             registerReceiver(messageReceiver, filter, getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
         }
