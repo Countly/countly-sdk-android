@@ -626,6 +626,25 @@ public class ModuleUserProfileTests {
         Assert.assertEquals("ON", mCountly.moduleUserProfile.customMods.get("stc").getString("$setOnce"));
     }
 
+    /**
+     * Validate that null value is eliminated from the user profile data
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void setUserProperties_null() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        mCountly.init(TestUtils.createBaseConfig());
+
+        HashMap<String, Object> data = new HashMap<>();
+        data.put("null", null);
+
+        mCountly.userProfile().setProperties(data);
+        mCountly.userProfile().save();
+
+        validateUserProfileRequest(new HashMap<>(), new HashMap<>());
+    }
+
     private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);

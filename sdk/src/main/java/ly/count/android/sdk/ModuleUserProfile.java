@@ -273,6 +273,12 @@ public class ModuleUserProfile extends ModuleBase {
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
+
+            if (value == null) {
+                L.w("[ModuleUserProfile] setPropertiesInternal, provided value for key [" + key + "] is 'null'");
+                continue;
+            }
+
             boolean isNamed = false;
 
             // limit to the picture path is applied when request is being made in the ConnectionProcessor
