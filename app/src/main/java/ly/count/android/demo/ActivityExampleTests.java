@@ -23,7 +23,7 @@ public class ActivityExampleTests extends AppCompatActivity {
     public void onClickExperimentsPrintValues(View v) {
         Map<String, ExperimentInformation> values = Countly.sharedInstance().remoteConfig().testingGetAllExperimentInfo();
 
-        StringBuilder sb = new StringBuilder(28);
+        StringBuilder sb = new StringBuilder(120);
         sb.append("Experiment Information:\n");
 
         for (Map.Entry<String, ExperimentInformation> entry : values.entrySet()) {
