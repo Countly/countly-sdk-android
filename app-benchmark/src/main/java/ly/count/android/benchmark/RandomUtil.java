@@ -38,9 +38,7 @@ public class RandomUtil {
                 value = random.nextBoolean();
                 break;
             case 2:
-                //todo put back in when there is long support
-                //value = random.nextLong();
-                value = generateRandomImmutable();
+                value = random.nextLong();
                 break;
             case 3:
                 value = random.nextFloat();
@@ -53,6 +51,7 @@ public class RandomUtil {
                 break;
             default:
                 value = "default";
+                break;
         }
 
         return value;
