@@ -9,6 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 
 import ly.count.android.sdk.Countly
 
+/**
+ * Adapter for the second list
+ */
 class AdapterSecondList(private val titleId: String, context: Context) :
   RecyclerView.Adapter<AdapterSecondList.SecondViewHolder>() {
 
@@ -23,6 +26,9 @@ class AdapterSecondList(private val titleId: String, context: Context) :
       .sorted()
   }
 
+  /**
+   * View holder for the second list
+   */
   class SecondViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
     val button = view.findViewById<Button>(R.id.item_view)
   }

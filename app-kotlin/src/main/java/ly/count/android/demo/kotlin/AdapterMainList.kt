@@ -7,11 +7,17 @@ import android.widget.Button
 import androidx.navigation.findNavController
 import androidx.recyclerview.widget.RecyclerView
 
+/**
+ * Adapter for the main list
+ */
 class AdapterMainList :
   RecyclerView.Adapter<AdapterMainList.MainViewHolder>() {
 
   private val list = listOf("event", "sessions", "view", "remote config")
 
+  /**
+   * View holder for the main list
+   */
   class MainViewHolder(val view: View) : RecyclerView.ViewHolder(view) {
     val button: Button = view.findViewById(R.id.item_view)
   }
