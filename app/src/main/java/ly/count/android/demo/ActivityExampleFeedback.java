@@ -131,7 +131,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
             StringBuilder sb = new StringBuilder();
 
             for (CountlyFeedbackWidget widget : retrievedWidgets) {
-                sb.append("[").append(widget.widgetId).append(" ").append(widget.name).append(" ").append(widget.type).append("]\n");
+                sb.append('[').append(widget.widgetId).append(' ').append(widget.name).append(' ').append(widget.type).append("]\n");
             }
 
             Toast.makeText(this, sb.toString(), Toast.LENGTH_LONG).show();
@@ -240,7 +240,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                             if (b % 2 == 0) {//pick every other choice
                                 String gonnaPick = choices.optJSONObject(b).optString("key");
                                 if (b != 0) {
-                                    gonnaPick = ", " + gonnaPick;
+                                    sb.append(", ");
                                 }
                                 sb.append(gonnaPick);
                             }
