@@ -35,13 +35,16 @@ public class App extends Application {
     /** You should use try.count.ly instead of YOUR_SERVER for the line below if you are using Countly trial service */
     private final static String COUNTLY_SERVER_URL = "https://your.server.ly";
     private final static String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+    private final static String DEFAULT_URL = "https://your.server.ly";
+    private final static String DEFAULT_APP_KEY = "YOUR_APP_KEY";
+
     private final static long applicationStartTimestamp = System.currentTimeMillis();
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        if ("https://your.server.ly".equals(COUNTLY_SERVER_URL) || "YOUR_APP_KEY".equals(COUNTLY_APP_KEY)) {
+        if (DEFAULT_URL.equals(COUNTLY_SERVER_URL) || DEFAULT_APP_KEY.equals(COUNTLY_APP_KEY)) {
             Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
             return;
         }

@@ -13,7 +13,7 @@ import ly.count.android.sdk.Countly;
 
 @SuppressWarnings("UnusedParameters")
 public class MainActivity extends AppCompatActivity {
-    private final String demoTag = "CountlyDemo";
+    private final static String demoTag = "CountlyDemo";
     InstallReferrerClient referrerClient;
 
     @Override
