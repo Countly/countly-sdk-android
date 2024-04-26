@@ -88,7 +88,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
 
             //prepare metrics and request data
-            String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
+            String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
             String requestData;
 
             if (useLegacyAPI) {
