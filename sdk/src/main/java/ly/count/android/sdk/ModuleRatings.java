@@ -4,7 +4,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.Build;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -560,16 +561,27 @@ public class ModuleRatings extends ModuleBase {
 
     static class FeedbackDialogWebViewClient extends WebViewClient {
         @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            String url = request.getUrl().toString();
+
+            // Filter out outgoing calls
+            if (url.endsWith("cly_x_int=1")) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                view.getContext().startActivity(intent);
+                return true;
+            }
+            return false;
+        }
+
+        @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            //Countly.sharedInstance().L.i("attempting to load resource: " + url);
+            // Countly.sharedInstance().L.i("attempting to load resource: " + url);
             return null;
         }
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                //Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
-            }
+            // Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
             return null;
         }
     }
