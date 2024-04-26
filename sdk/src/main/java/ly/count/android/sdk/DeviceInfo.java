@@ -573,42 +573,47 @@ class DeviceInfo {
     Map<String, Object> getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
         final Map<String, Object> map = new ConcurrentHashMap<>();
 
-        putIfNotNullEndNotEmpty(map, "_device", mp.getDevice());
-        putIfNotNullEndNotEmpty(map, "_os", mp.getOS());
-        putIfNotNullEndNotEmpty(map, "_os_version", mp.getOSVersion());
-        putIfNotNullEndNotEmpty(map, "_resolution", mp.getResolution(context));
-        putIfNotNullEndNotEmpty(map, "_app_version", mp.getAppVersion(context));
-        putIfNotNullEndNotEmpty(map, "_manufacturer", mp.getManufacturer());
-        putIfNotNullEndNotEmpty(map, "_has_hinge", mp.hasHinge(context));
+        putIfNotNullAndNotEmpty(map, "_device", mp.getDevice());
+        putIfNotNullAndNotEmpty(map, "_os", mp.getOS());
+        putIfNotNullAndNotEmpty(map, "_os_version", mp.getOSVersion());
+        putIfNotNullAndNotEmpty(map, "_resolution", mp.getResolution(context));
+        putIfNotNullAndNotEmpty(map, "_app_version", mp.getAppVersion(context));
+        putIfNotNullAndNotEmpty(map, "_manufacturer", mp.getManufacturer());
+        putIfNotNullAndNotEmpty(map, "_has_hinge", mp.hasHinge(context));
 
         if (metricOverride != null) {
-            if (metricOverride.containsKey("_device")) {
-                map.put("_device", metricOverride.get("_device"));
-            }
-            if (metricOverride.containsKey("_os")) {
-                map.put("_os", metricOverride.get("_os"));
-            }
-            if (metricOverride.containsKey("_os_version")) {
-                map.put("_os_version", metricOverride.get("_os_version"));
-            }
-            if (metricOverride.containsKey("_resolution")) {
-                map.put("_resolution", metricOverride.get("_resolution"));
-            }
-            if (metricOverride.containsKey("_app_version")) {
-                map.put("_app_version", metricOverride.get("_app_version"));
-            }
-            if (metricOverride.containsKey("_manufacturer")) {
-                map.put("_manufacturer", metricOverride.get("_manufacturer"));
-            }
-            if (metricOverride.containsKey("_has_hinge")) {
-                map.put("_has_hinge", metricOverride.get("_has_hinge"));
+            try {
+
+                if (metricOverride.containsKey("_device")) {
+                    map.put("_device", metricOverride.get("_device"));
+                }
+                if (metricOverride.containsKey("_os")) {
+                    map.put("_os", metricOverride.get("_os"));
+                }
+                if (metricOverride.containsKey("_os_version")) {
+                    map.put("_os_version", metricOverride.get("_os_version"));
+                }
+                if (metricOverride.containsKey("_resolution")) {
+                    map.put("_resolution", metricOverride.get("_resolution"));
+                }
+                if (metricOverride.containsKey("_app_version")) {
+                    map.put("_app_version", metricOverride.get("_app_version"));
+                }
+                if (metricOverride.containsKey("_manufacturer")) {
+                    map.put("_manufacturer", metricOverride.get("_manufacturer"));
+                }
+                if (metricOverride.containsKey("_has_hinge")) {
+                    map.put("_has_hinge", metricOverride.get("_has_hinge"));
+                }
+            } catch (Exception e) {
+                L.e("[DeviceInfo] getCommonMetrics, SDK encountered failure while trying to apply metric override, " + e);
             }
         }
 
         return map;
     }
 
-    private void putIfNotNullEndNotEmpty(@NonNull Map<String, Object> metrics, String key, String value) {
+    private void putIfNotNullAndNotEmpty(@NonNull Map<String, Object> metrics, String key, String value) {
         if (value != null && !value.isEmpty()) {
             metrics.put(key, value);
         }
@@ -626,11 +631,11 @@ class DeviceInfo {
         //we set the override to null because all of the entries will be overwritten anyway
         Map<String, Object> metrics = getCommonMetrics(context, null, L);
 
-        putIfNotNullEndNotEmpty(metrics, "_carrier", mp.getCarrier(context));
-        putIfNotNullEndNotEmpty(metrics, "_density", mp.getDensity(context));
-        putIfNotNullEndNotEmpty(metrics, "_locale", mp.getLocale());
-        putIfNotNullEndNotEmpty(metrics, "_store", mp.getStore(context));
-        putIfNotNullEndNotEmpty(metrics, "_device_type", mp.getDeviceType(context));
+        putIfNotNullAndNotEmpty(metrics, "_carrier", mp.getCarrier(context));
+        putIfNotNullAndNotEmpty(metrics, "_density", mp.getDensity(context));
+        putIfNotNullAndNotEmpty(metrics, "_locale", mp.getLocale());
+        putIfNotNullAndNotEmpty(metrics, "_store", mp.getStore(context));
+        putIfNotNullAndNotEmpty(metrics, "_device_type", mp.getDeviceType(context));
 
         if (metricOverride != null) {
             for (String k : metricOverride.keySet()) {
@@ -698,8 +703,8 @@ class DeviceInfo {
         //setting this first so the followup are not picked up as "dev changes" in the change field
         crashDataMap.put("_ob", crashData.getChangedFieldsAsInt());
 
-        putIfNotNullEndNotEmpty(crashDataMap, "_error", crashData.getStackTrace());
-        putIfNotNullEndNotEmpty(crashDataMap, "_nonfatal", Boolean.toString(!crashData.getFatal()));
+        putIfNotNullAndNotEmpty(crashDataMap, "_error", crashData.getStackTrace());
+        putIfNotNullAndNotEmpty(crashDataMap, "_nonfatal", Boolean.toString(!crashData.getFatal()));
 
         if (!isNativeCrash) {
             String breadcrumbs = crashData.getBreadcrumbsAsString();
@@ -719,22 +724,22 @@ class DeviceInfo {
     Map<String, Object> getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
         Map<String, Object> metrics = getCommonMetrics(context, metricOverride, L);
 
-        putIfNotNullEndNotEmpty(metrics, "_cpu", mp.getCpu());
-        putIfNotNullEndNotEmpty(metrics, "_opengl", mp.getOpenGL(context));
-        putIfNotNullEndNotEmpty(metrics, "_root", mp.isRooted());
-        putIfNotNullEndNotEmpty(metrics, "_ram_total", mp.getRamTotal());
-        putIfNotNullEndNotEmpty(metrics, "_disk_total", mp.getDiskTotal());
+        putIfNotNullAndNotEmpty(metrics, "_cpu", mp.getCpu());
+        putIfNotNullAndNotEmpty(metrics, "_opengl", mp.getOpenGL(context));
+        putIfNotNullAndNotEmpty(metrics, "_root", mp.isRooted());
+        putIfNotNullAndNotEmpty(metrics, "_ram_total", mp.getRamTotal());
+        putIfNotNullAndNotEmpty(metrics, "_disk_total", mp.getDiskTotal());
 
         if (!isNativeCrash) {
             //if is not a native crash
-            putIfNotNullEndNotEmpty(metrics, "_ram_current", mp.getRamCurrent(context));
-            putIfNotNullEndNotEmpty(metrics, "_disk_current", mp.getDiskCurrent());
-            putIfNotNullEndNotEmpty(metrics, "_bat", mp.getBatteryLevel(context));
-            putIfNotNullEndNotEmpty(metrics, "_run", mp.getRunningTime());
-            putIfNotNullEndNotEmpty(metrics, "_orientation", mp.getOrientation(context));
-            putIfNotNullEndNotEmpty(metrics, "_online", mp.isOnline(context));
-            putIfNotNullEndNotEmpty(metrics, "_muted", mp.isMuted(context));
-            putIfNotNullEndNotEmpty(metrics, "_background", isInBackground());
+            putIfNotNullAndNotEmpty(metrics, "_ram_current", mp.getRamCurrent(context));
+            putIfNotNullAndNotEmpty(metrics, "_disk_current", mp.getDiskCurrent());
+            putIfNotNullAndNotEmpty(metrics, "_bat", mp.getBatteryLevel(context));
+            putIfNotNullAndNotEmpty(metrics, "_run", mp.getRunningTime());
+            putIfNotNullAndNotEmpty(metrics, "_orientation", mp.getOrientation(context));
+            putIfNotNullAndNotEmpty(metrics, "_online", mp.isOnline(context));
+            putIfNotNullAndNotEmpty(metrics, "_muted", mp.isMuted(context));
+            putIfNotNullAndNotEmpty(metrics, "_background", isInBackground());
         } else {
             //if is a native crash
             metrics.put("_native_cpp", true);
