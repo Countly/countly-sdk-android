@@ -476,7 +476,7 @@ public class ModuleEventsTests {
             "string", "string",
             "boolean", true,
             "float", 1.5f,
-            "long", 1L,
+            "long", Long.MAX_VALUE,
             "object", new Object(),
             "array", new int[] { 1, 2, 3 },
             "null", null
@@ -489,7 +489,8 @@ public class ModuleEventsTests {
             "double", 1.2,
             "string", "string",
             "boolean", true,
-            "float", 1.5
+            "float", 1.5,
+            "long", Long.MAX_VALUE
         );
 
         validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);

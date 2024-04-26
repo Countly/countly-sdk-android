@@ -387,6 +387,7 @@ public class ModuleCrashTests {
                 "double", Double.MAX_VALUE,
                 "bool", true,
                 "float", 1.1,
+                "long", Long.MAX_VALUE,
                 "sphinx_no", 324), 11, TestUtils.map("secret", "Minato"), Collections.singletonList("_ram_total"));
     }
 
@@ -401,7 +402,7 @@ public class ModuleCrashTests {
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
-            Assert.assertEquals(TestUtils.map("int", Integer.MAX_VALUE, "sphinx_no", 324), crash.getCrashSegmentation());
+            Assert.assertEquals(TestUtils.map("int", Integer.MAX_VALUE, "long", Long.MAX_VALUE), crash.getCrashSegmentation());
             crash.getCrashSegmentation().put("secret", "Minato");
             return false;
         });
@@ -411,7 +412,7 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
         validateCrash(extractStackTrace(exception), "", false, false,
-            TestUtils.map("int", Integer.MAX_VALUE, "secret", "Minato"), 8, new HashMap<>(), new ArrayList<>());
+            TestUtils.map("long", Long.MAX_VALUE, "secret", "Minato"), 8, new HashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -479,6 +480,7 @@ public class ModuleCrashTests {
                 "secret", "Minato",
                 "double", Double.MAX_VALUE,
                 "bool", true,
+                "long", Long.MAX_VALUE,
                 "float", 1.1,
                 "sphinx_no", 324), 0, new HashMap<>(), new ArrayList<>());
     }

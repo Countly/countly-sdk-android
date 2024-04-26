@@ -257,6 +257,7 @@ public class UtilsInternalLimitsTests {
         segm.put("2", 1234.55d);
         segm.put("3", true);
         segm.put("4", 45.4f);
+        segm.put("long", 123L);
         segm.put("41", new Object());
         segm.put("42", new int[] { 1, 2 });
 
@@ -265,6 +266,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertTrue(segm.containsKey("aa"));
         Assert.assertTrue(segm.containsKey("aa1"));
         Assert.assertTrue(segm.containsKey("1"));
+        Assert.assertTrue(segm.containsKey("long"));
         Assert.assertTrue(segm.containsKey("2"));
         Assert.assertTrue(segm.containsKey("3"));
         Assert.assertTrue(segm.containsKey("4"));
@@ -317,6 +319,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123.33f));
         Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(true));
         Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(false));
+        Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123L));
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new Object()));
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(new int[] { 1, 2 }));
         Assert.assertFalse(UtilsInternalLimits.isSupportedDataType(null));
