@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 24.4.1
 * ! Minor breaking change ! The "maxValueSize" limit will now be applied by default. This would limit the maximum size of developer-supplied values and breadcrumbs. The current limit is 256 characters.
 * ! Minor breaking change ! The "maxKeyLength" limit will now be applied by default. This limit would limit the maximum length of developer-supplied keys and names. The current limit is 128 characters.
 * ! Minor breaking change ! The "maxSegmentationValues" limit will now be applied by default. This limit would limit the maximum number of developer-provided segmentation values when using features. The current limit is 100 entries.
