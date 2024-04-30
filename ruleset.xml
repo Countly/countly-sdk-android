@@ -303,14 +303,14 @@
         </properties>
     </rule>
     -->
-  <!--
+  
     <rule ref="category/java/documentation.xml/CommentSize">
         <properties>
-            <property name="maxLines" value="10" />
-            <property name="maxLineLength" value="200" />
+            <property name="maxLines" value="100" />
+            <property name="maxLineLength" value="300" />
         </properties>
     </rule>
-  -->
+  
     <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor" />    
 
     <!--
