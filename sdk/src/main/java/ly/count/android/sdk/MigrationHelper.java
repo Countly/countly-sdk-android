@@ -18,7 +18,7 @@ class MigrationHelper {
      * 3 - removing messaging mode info
      * x - adding device ID to all requests
      */
-    static final int DATA_SCHEMA_VERSIONS = 3;
+    static final int DATA_SCHEMA_VERSIONS = 4;
 
     static final public String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
 
@@ -103,11 +103,18 @@ class MigrationHelper {
                 newVersion = newVersion + 1;
                 break;
             case 1:
+                L.w("[MigrationHelper] performMigrationStep, performing migration from version [1] -> [2]");
                 performMigration1To2(migrationParams);
                 newVersion = newVersion + 1;
                 break;
             case 2:
+                L.w("[MigrationHelper] performMigrationStep, performing migration from version [2] -> [3]");
                 performMigration2To3(migrationParams);
+                newVersion = newVersion + 1;
+                break;
+            case 3:
+                L.w("[MigrationHelper] performMigrationStep, performing migration from version [3] -> [4]");
+                performMigration3To4(migrationParams);
                 newVersion = newVersion + 1;
                 break;
             case DATA_SCHEMA_VERSIONS:
@@ -244,4 +251,75 @@ class MigrationHelper {
         SharedPreferences sp = CountlyStore.createPreferencesPush(cachedContext);
         sp.edit().remove(legacyCACHED_PUSH_MESSAGING_MODE).apply();
     }
+
+    /**
+     * Transitions the SDK to a state where all requests store the device ID with the request
+     * This way it does not need to tbe added at request time.
+     * This solves some race conditions and simplifies the SDK
+     *
+     * "&override_id=XXX" - this should be replaced with "&device_id=XXX" as it tries to specify what device ID should be used for the request
+     * "&device_id=XXX" - if this is encountered then that indicates a device ID change request. This is the new device ID. In addition to this, "&old_device_id=YYY" should be added which should get the value from the currently available device ID
+     *
+     * The migration process will start at the beginning
+     * And then will try to move into the future and reconstruct the device ID chain
+     * If there are merge requests then the device ID needs to be updated in the SDK
+     *
+     * Change requests without merging would happen instantly. if a session was recorded, it would record an end session request with a device ID override
+     * Change requests with merge would happen delayed with the new value being set as "&device_id=XXX"
+     *
+     *
+     * There can be 5 kinds of requests:
+     * 1) request with no device ID or override
+     * 2) request with device ID that is not temp
+     * 3) request with override that is not temp
+     * 4) request with device ID that is temp
+     * 5) request with override that is temp (this might show up)
+     *
+     * 12131451
+     * 131451
+     * 1451
+     *
+     * @param migrationParams
+     */
+    void performMigration3To4(@NonNull Map<String, Object> migrationParams) {
+        String currentPointDeviceID = storage.getDeviceID();
+        if (currentPointDeviceID == null) {
+            Countly.sharedInstance().L.e("performMigration3To4, can't perform this migration due to the device ID being 'null'");
+            return;
+        }
+
+        String[] requests = storage.getRequests();
+
+        for (int a = requests.length - 1; a >= 0; a--) {
+
+            Map<String, String> params = Utils.splitIntoParams(requests[a]);
+
+            boolean containsDeviceID = params.containsKey(param_key_device_id);
+            boolean containsOverrideID = params.containsKey(param_key_override_id);
+
+            if (!containsOverrideID && !containsDeviceID) {
+                //if there is no device ID or override tag, we just set the current device ID
+                params.put(param_key_device_id, currentPointDeviceID);
+            } else if (containsOverrideID && !containsDeviceID) {
+                //if there is a override tag, then we use it as the device ID and ignore the current point ID
+                params.put(param_key_device_id, params.get(param_key_override_id));//set it
+                params.remove(param_key_override_id);//use it
+            } else if (!containsOverrideID && containsDeviceID) {
+                // it contains a device ID value but no override
+                // this would be a merge request
+
+            } else if (containsOverrideID && containsDeviceID) {
+
+            } else {
+                Countly.sharedInstance().L.e("performMigration3To4, how did you even get here? " + containsDeviceID + " " + containsOverrideID);
+            }
+
+            requests[a] = Utils.combineParamsIntoRequest(params);
+        }
+
+        storage.replaceRequests(requests);
+    }
+
+    public static final String param_key_device_id = "device_id";
+    public static final String param_key_override_id = "override_id";
 }

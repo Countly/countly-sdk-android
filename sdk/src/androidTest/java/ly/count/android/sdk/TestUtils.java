@@ -568,4 +568,9 @@ public class TestUtils {
         } catch (JSONException ignored) {
         }
     }
+
+      public static void assertQueueSizes(int rqSize, int eqSize, CountlyStore cs) {
+        Assert.assertEquals(rqSize, cs.getRequests().length);
+        Assert.assertEquals(eqSize, cs.getEventQueueSize());
+    }
 }

@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.bluetooth.BluetoothClass;
 import android.content.SharedPreferences;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
@@ -25,7 +26,7 @@ public class MigrationHelperTests {
     ModuleLog mockLog;
     CountlyStore cs;
     StorageProvider sp;
-    final int latestSchemaVersion = 3;
+    final int latestSchemaVersion = 4;
 
     @Before
     public void setUp() {
@@ -531,5 +532,194 @@ public class MigrationHelperTests {
         }
 
         return ret.toString();
+    }
+
+    /**
+     * Empty queue, device ID not acquired
+     */
+    @Test
+    public void performMigration3To4_1() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+        Assert.assertNull(cs.getDeviceID());
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+    }
+
+    /**
+     * Empty queue, device ID acquired
+     */
+    @Test
+    public void performMigration3To4_2() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+        cs.setDeviceID("123");
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+    }
+
+    /**
+     * single requests in queue, no device ID
+     * nothing should change
+     */
+    @Test
+    public void performMigration3To4_3() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+        cs.addRequest(generateMockRequest(null, -1), true);
+        TestUtils.assertQueueSizes(1, 0, cs);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+
+        TestUtils.assertQueueSizes(1, 0, cs);
+        String[] reqs = cs.getRequests();
+        Assert.assertEquals(generateMockRequest(null, -1), reqs[0]);
+    }
+
+    /**
+     * 3 requests in queue, device ID acquired, not temp ID
+     * All should get that ID
+     */
+    @Test
+    public void performMigration3To4_4() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+        cs.setDeviceID("123");
+
+        cs.addRequest(generateMockRequest(null, -1), true);
+        cs.addRequest(generateMockRequest(null, -1), true);
+        cs.addRequest(generateMockRequest(null, -1), true);
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+        String[] reqs = cs.getRequests();
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[0]);
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[1]);
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[2]);
+    }
+
+    /**
+     * 3 requests in queue, temp ID
+     * probably all requests should get temp ID device ID
+     */
+    @Test
+    public void performMigration3To4_5() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+
+        cs.setDeviceID(DeviceId.temporaryCountlyDeviceId);
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(null, 1), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+        String[] reqs = cs.getRequests();
+        validateRequestsAreEqual(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 0), reqs[0]);
+        validateRequestsAreEqual(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 1), reqs[1]);
+        validateRequestsAreEqual(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 2), reqs[2]);
+    }
+
+    /**
+     * 3 requests in queue, device ID  merge request, 3 requests, another merge request, 3 requests
+     */
+    @Test
+    public void performMigration3To4_6() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+    }
+
+    /**
+     * 3 requests in queue, device ID  merge request, 2 requests with no ID 2 requests with temp ID
+     */
+    @Test
+    public void performMigration3To4_7() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+    }
+
+    /**
+     * 1 requests in queue, without device ID, 1 requests with temp id, 1 requests with no ID
+     * Device ID acquired
+     * At the end, all should get the current device ID
+     */
+    @Test
+    public void performMigration3To4_8() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+
+        cs.setDeviceID("123");
+
+        cs.addRequest(generateMockRequest(null, -1), true);
+        cs.addRequest(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 1), true);
+        cs.addRequest(generateMockRequest(null, -1), true);
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+        String[] reqs = cs.getRequests();
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[0]);
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[1]);
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[2]);
+    }
+
+    /**
+     * request, request with override, request request with override, request
+     */
+
+    /**
+     *
+     */
+
+    String[][] mockParams = new String[][] { new String[] { "app_key", "asdsad" }, new String[] { "sdk_version", "445" }, new String[] { "sdk_name", "dfdfs" }, new String[] { "timestamp", "24234" } };
+
+    String generateMockRequest(String deviceIDV, int deviceIDPos) {
+        return generateMockRequest(deviceIDV, deviceIDPos, null);
+    }
+
+    /**
+     * @param deviceIDV
+     * @param deviceIDPos 0 - start, 1 - mid, 2 - end
+     * @return
+     */
+    String generateMockRequest(String deviceIDV, int deviceIDPos, String oldId) {
+        StringBuilder sb = new StringBuilder(100);
+
+        if (deviceIDPos == 0 && deviceIDV != null) {
+            //put it at the start
+            sb.append("device_id=").append(deviceIDV);
+        }
+
+        for (int a = 0; a < mockParams.length; a++) {
+            if (sb.length() > 0) {
+                sb.append("&");
+            }
+            sb.append(mockParams[a][0]);
+            sb.append("=");
+            sb.append(mockParams[a][1]);
+
+            if (deviceIDPos == 1 && a == 1 && deviceIDV != null) {
+                //put it in the middle
+                sb.append("&device_id=").append(deviceIDV);
+            }
+        }
+
+        if (deviceIDPos == 2 && deviceIDV != null) {
+            //put it at the end
+            sb.append("&device_id=").append(deviceIDV);
+        }
+
+        return sb.toString();
+    }
+
+    void validateRequestsAreEqual(String required, String gotten) {
+        Assert.assertEquals(Utils.splitIntoParams(required), Utils.splitIntoParams(gotten));
     }
 }
