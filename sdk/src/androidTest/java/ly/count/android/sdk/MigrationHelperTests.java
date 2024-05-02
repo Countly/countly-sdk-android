@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import android.bluetooth.BluetoothClass;
 import android.content.SharedPreferences;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
@@ -41,7 +40,6 @@ public class MigrationHelperTests {
 
     @After
     public void tearDown() {
-
     }
 
     public Map<String, Object> GetMigrationParams_0_1(boolean customIdProvided) {
