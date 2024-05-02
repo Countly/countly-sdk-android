@@ -117,7 +117,7 @@ public class ModuleLog {
     }
 
     public boolean logEnabled() {
-        return (logListener != null) || Countly.sharedInstance().isLoggingEnabled();
+        return logListener != null || Countly.sharedInstance().isLoggingEnabled();
     }
 
     private void informListener(String msg, final Throwable t, final LogLevel level) {

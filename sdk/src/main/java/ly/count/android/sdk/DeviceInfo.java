@@ -47,13 +47,12 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -61,8 +60,6 @@ import org.json.JSONObject;
  * the current device and operating environment.
  */
 class DeviceInfo {
-    //crash related fields
-    private static final LinkedList<String> logs = new LinkedList<>();
     private final static int startTime = UtilsTime.currentTimestampSeconds();
     private boolean inBackground = true;
     private static long totalMemory = 0;
@@ -215,7 +212,7 @@ class DeviceInfo {
 
                 @Override
                 public int getTimezoneOffset() {
-                    return TimeZone.getDefault().getOffset(new Date().getTime()) / 60000;
+                    return TimeZone.getDefault().getOffset(new Date().getTime()) / 60_000;
                 }
 
                 /**
@@ -343,7 +340,7 @@ class DeviceInfo {
                     ActivityManager.MemoryInfo mi = new ActivityManager.MemoryInfo();
                     ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
                     activityManager.getMemoryInfo(mi);
-                    return Long.toString(getTotalRAM() - (mi.availMem / 1048576L));
+                    return Long.toString(getTotalRAM() - (mi.availMem / 1_048_576L));
                 }
 
                 /**
@@ -358,15 +355,10 @@ class DeviceInfo {
                 /**
                  * Returns the current device cpu.
                  */
-                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                 @NonNull
                 @Override
                 public String getCpu() {
-                    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                        return android.os.Build.CPU_ABI;
-                    } else {
-                        return Build.SUPPORTED_ABIS[0];
-                    }
+                    return Build.SUPPORTED_ABIS[0];
                 }
 
                 /**
@@ -401,13 +393,13 @@ class DeviceInfo {
                 public String getDiskCurrent() {
                     if (android.os.Build.VERSION.SDK_INT < 18) {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
-                        long free = ((long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize());
-                        return Long.toString((total - free) / 1048576L);
+                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
+                        long free = (long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize();
+                        return Long.toString((total - free) / 1_048_576L);
                     } else {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
-                        long free = (statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong());
+                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
+                        long free = statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong();
                         return Long.toString((total - free) / 1048576L);
                     }
                 }
@@ -421,11 +413,11 @@ class DeviceInfo {
                 public String getDiskTotal() {
                     if (android.os.Build.VERSION.SDK_INT < 18) {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = ((long) statFs.getBlockCount() * (long) statFs.getBlockSize());
+                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
                         return Long.toString(total / 1048576L);
                     } else {
                         StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (statFs.getBlockCountLong() * statFs.getBlockSizeLong());
+                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
                         return Long.toString(total / 1048576L);
                     }
                 }
@@ -433,15 +425,14 @@ class DeviceInfo {
                 /**
                  * Returns the current device battery level.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getBatteryLevel(Context context) {
                     try {
                         Intent batteryIntent;
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                             batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED), null, null, Context.RECEIVER_NOT_EXPORTED);
-                        }
-                        else {
+                        } else {
                             batteryIntent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
                         }
                         if (batteryIntent != null) {
@@ -463,7 +454,7 @@ class DeviceInfo {
                 /**
                  * Returns the current device orientation.
                  */
-                @NonNull
+                @Nullable
                 @Override
                 public String getOrientation(Context context) {
                     int orientation = context.getResources().getConfiguration().orientation;
@@ -501,7 +492,7 @@ class DeviceInfo {
                  * Checks if device is online.
                  */
                 @SuppressLint("MissingPermission")
-                @NonNull
+                @Nullable
                 @Override
                 public String isOnline(Context context) {
                     try {
@@ -539,6 +530,28 @@ class DeviceInfo {
                         return "false";
                     }
                 }
+
+                /**
+                 * Check if device is foldable
+                 * requires API level 30
+                 *
+                 * @param context to use
+                 * @return true if device is foldable
+                 */
+                @Override
+                public String hasHinge(Context context) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HINGE_ANGLE) + "";
+                    }
+                    return "false";
+                }
+
+                /**
+                 * Get app's running time before crashing.
+                 */
+                @Override public String getRunningTime() {
+                    return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
+                }
             };
         }
     }
@@ -552,43 +565,53 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    JSONObject getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = new JSONObject();
+    Map<String, Object> getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
+        final Map<String, Object> map = new ConcurrentHashMap<>();
 
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_device", mp.getDevice(),
-            "_os", mp.getOS(),
-            "_os_version", mp.getOSVersion(),
-            "_resolution", mp.getResolution(context),
-            "_app_version", mp.getAppVersion(context),
-            "_manufacturer", mp.getManufacturer());
+        putIfNotNullAndNotEmpty(map, "_device", mp.getDevice());
+        putIfNotNullAndNotEmpty(map, "_os", mp.getOS());
+        putIfNotNullAndNotEmpty(map, "_os_version", mp.getOSVersion());
+        putIfNotNullAndNotEmpty(map, "_resolution", mp.getResolution(context));
+        putIfNotNullAndNotEmpty(map, "_app_version", mp.getAppVersion(context));
+        putIfNotNullAndNotEmpty(map, "_manufacturer", mp.getManufacturer());
+        putIfNotNullAndNotEmpty(map, "_has_hinge", mp.hasHinge(context));
 
         if (metricOverride != null) {
             try {
+
                 if (metricOverride.containsKey("_device")) {
-                    json.put("_device", metricOverride.get("_device"));
+                    map.put("_device", metricOverride.get("_device"));
                 }
                 if (metricOverride.containsKey("_os")) {
-                    json.put("_os", metricOverride.get("_os"));
+                    map.put("_os", metricOverride.get("_os"));
                 }
                 if (metricOverride.containsKey("_os_version")) {
-                    json.put("_os_version", metricOverride.get("_os_version"));
+                    map.put("_os_version", metricOverride.get("_os_version"));
                 }
                 if (metricOverride.containsKey("_resolution")) {
-                    json.put("_resolution", metricOverride.get("_resolution"));
+                    map.put("_resolution", metricOverride.get("_resolution"));
                 }
                 if (metricOverride.containsKey("_app_version")) {
-                    json.put("_app_version", metricOverride.get("_app_version"));
+                    map.put("_app_version", metricOverride.get("_app_version"));
                 }
                 if (metricOverride.containsKey("_manufacturer")) {
-                    json.put("_manufacturer", metricOverride.get("_manufacturer"));
+                    map.put("_manufacturer", metricOverride.get("_manufacturer"));
                 }
-            } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[DeviceInfo] SDK encountered failure while trying to apply metric override, " + ex.toString());
+                if (metricOverride.containsKey("_has_hinge")) {
+                    map.put("_has_hinge", metricOverride.get("_has_hinge"));
+                }
+            } catch (Exception e) {
+                L.e("[DeviceInfo] getCommonMetrics, SDK encountered failure while trying to apply metric override, " + e);
             }
         }
 
-        return json;
+        return map;
+    }
+
+    private void putIfNotNullAndNotEmpty(@NonNull Map<String, Object> metrics, String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            metrics.put(key, value);
+        }
     }
 
     /**
@@ -599,41 +622,35 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+    String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
         //we set the override to null because all of the entries will be overwritten anyway
-        final JSONObject json = getCommonMetrics(context, null);
+        Map<String, Object> metrics = getCommonMetrics(context, null, L);
 
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_carrier", mp.getCarrier(context),
-            "_density", mp.getDensity(context),
-            "_locale", mp.getLocale(),
-            "_store", mp.getStore(context),
-            "_device_type", mp.getDeviceType(context));
+        putIfNotNullAndNotEmpty(metrics, "_carrier", mp.getCarrier(context));
+        putIfNotNullAndNotEmpty(metrics, "_density", mp.getDensity(context));
+        putIfNotNullAndNotEmpty(metrics, "_locale", mp.getLocale());
+        putIfNotNullAndNotEmpty(metrics, "_store", mp.getStore(context));
+        putIfNotNullAndNotEmpty(metrics, "_device_type", mp.getDeviceType(context));
 
-        //override metric values
         if (metricOverride != null) {
             for (String k : metricOverride.keySet()) {
-                if (k == null || k.length() == 0) {
-                    Countly.sharedInstance().L.w("Provided metric override key can't be null or empty");
+                if (k == null || k.isEmpty()) {
+                    L.w("[DeviceInfo] getMetrics, Provided metric override key can't be null or empty");
                     continue;
                 }
 
                 String overrideValue = metricOverride.get(k);
 
                 if (overrideValue == null) {
-                    Countly.sharedInstance().L.w("Provided metric override value can't be null, key:[" + k + "]");
+                    L.w("[DeviceInfo] getMetrics, Provided metric override value can't be null, key:[" + k + "]");
                     continue;
                 }
 
-                try {
-                    json.put(k, overrideValue);
-                } catch (Exception ex) {
-                    Countly.sharedInstance().L.e("Could not set metric override, [" + ex + "]");
-                }
+                metrics.put(k, overrideValue);
             }
         }
 
-        String result = json.toString();
+        String result = new JSONObject(metrics).toString();
 
         try {
             result = java.net.URLEncoder.encode(result, "UTF-8");
@@ -647,21 +664,19 @@ class DeviceInfo {
 
     @NonNull
     String getMetricsHealthCheck(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = new JSONObject();
+        Map<String, Object> metrics = new ConcurrentHashMap<>();
 
-        Utils.fillJSONIfValuesNotEmpty(json, "_app_version", mp.getAppVersion(context));
+        String appVersion = mp.getAppVersion(context);
 
         if (metricOverride != null) {
-            try {
-                if (metricOverride.containsKey("_app_version")) {
-                    json.put("_app_version", metricOverride.get("_app_version"));
-                }
-            } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[DeviceInfo] SDK encountered failure while trying to apply metric override, " + ex.toString());
+            if (metricOverride.containsKey("_app_version")) {
+                appVersion = metricOverride.get("_app_version");
             }
         }
 
-        String result = json.toString();
+        metrics.put("_app_version", appVersion);
+
+        String result = new JSONObject(metrics).toString();
 
         try {
             result = java.net.URLEncoder.encode(result, "UTF-8");
@@ -677,60 +692,55 @@ class DeviceInfo {
      * Returns a JSON object containing the device crash report
      */
     @NonNull
-    JSONObject getCrashDataStringJSON(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @Nullable final Map<String, String> metricOverride) {
+    JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
+        Map<String, Object> crashDataMap = crashData.getCrashMetrics();
 
-        final JSONObject json = getCommonMetrics(context, metricOverride);
+        //setting this first so the followup are not picked up as "dev changes" in the change field
+        crashDataMap.put("_ob", crashData.getChangedFieldsAsInt());
 
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_error", error,
-            "_nonfatal", Boolean.toString(nonfatal),
-            "_cpu", mp.getCpu(),
-            "_opengl", mp.getOpenGL(context),
-            "_root", mp.isRooted(),
-            "_ram_total", mp.getRamTotal(),
-            "_disk_total", mp.getDiskTotal()
-        );
+        putIfNotNullAndNotEmpty(crashDataMap, "_error", crashData.getStackTrace());
+        putIfNotNullAndNotEmpty(crashDataMap, "_nonfatal", Boolean.toString(!crashData.getFatal()));
 
         if (!isNativeCrash) {
-            //if is not a native crash
-            Utils.fillJSONIfValuesNotEmpty(json,
-                "_logs", crashBreadcrumbs,
-                "_ram_current", mp.getRamCurrent(context),
-                "_disk_current", mp.getDiskCurrent(),
-                "_bat", mp.getBatteryLevel(context),
-                "_run", getRunningTime(),
-                "_orientation", mp.getOrientation(context),
-                "_online", mp.isOnline(context),
-                "_muted", mp.isMuted(context),
-                "_background", isInBackground()
-            );
-        } else {
-            //if is a native crash
-            try {
-                json.put("_native_cpp", true);
-            } catch (JSONException ignored) {
+            String breadcrumbs = crashData.getBreadcrumbsAsString();
+            if (!breadcrumbs.isEmpty()) {
+                crashDataMap.put("_logs", breadcrumbs);
             }
         }
 
-        try {
-            json.put("_custom", getCustomSegmentsJson(customCrashSegmentation));
-        } catch (JSONException e) {
-            //no custom segments
+        if (!crashData.getCrashSegmentation().isEmpty()) {
+            crashDataMap.put("_custom", crashData.getCrashSegmentation());
         }
 
-        return json;
+        return new JSONObject(crashDataMap);
     }
 
-    /**
-     * Returns a JSON string containing the device crash report
-     */
     @NonNull
-    String getCrashDataString(@NonNull final Context context, @NonNull final String error, final Boolean nonfatal, boolean isNativeCrash,
-        @NonNull final String crashBreadcrumbs, @Nullable final Map<String, Object> customCrashSegmentation, @NonNull DeviceInfo deviceInfo, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = getCrashDataStringJSON(context, error, nonfatal, isNativeCrash, crashBreadcrumbs, customCrashSegmentation, metricOverride);
+    Map<String, Object> getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
+        Map<String, Object> metrics = getCommonMetrics(context, metricOverride, L);
 
-        return json.toString();
+        putIfNotNullAndNotEmpty(metrics, "_cpu", mp.getCpu());
+        putIfNotNullAndNotEmpty(metrics, "_opengl", mp.getOpenGL(context));
+        putIfNotNullAndNotEmpty(metrics, "_root", mp.isRooted());
+        putIfNotNullAndNotEmpty(metrics, "_ram_total", mp.getRamTotal());
+        putIfNotNullAndNotEmpty(metrics, "_disk_total", mp.getDiskTotal());
+
+        if (!isNativeCrash) {
+            //if is not a native crash
+            putIfNotNullAndNotEmpty(metrics, "_ram_current", mp.getRamCurrent(context));
+            putIfNotNullAndNotEmpty(metrics, "_disk_current", mp.getDiskCurrent());
+            putIfNotNullAndNotEmpty(metrics, "_bat", mp.getBatteryLevel(context));
+            putIfNotNullAndNotEmpty(metrics, "_run", mp.getRunningTime());
+            putIfNotNullAndNotEmpty(metrics, "_orientation", mp.getOrientation(context));
+            putIfNotNullAndNotEmpty(metrics, "_online", mp.isOnline(context));
+            putIfNotNullAndNotEmpty(metrics, "_muted", mp.isMuted(context));
+            putIfNotNullAndNotEmpty(metrics, "_background", isInBackground());
+        } else {
+            //if is a native crash
+            metrics.put("_native_cpp", true);
+        }
+
+        return metrics;
     }
 
     @NonNull
@@ -767,66 +777,5 @@ class DeviceInfo {
      */
     String isInBackground() {
         return Boolean.toString(inBackground);
-    }
-
-    /**
-     * Adds a record in the log
-     */
-    static void addLog(@NonNull String record, int maxBreadcrumbCount, int maxBreadcrumbLength) {
-        int recordLength = record.length();
-        if (recordLength > maxBreadcrumbLength) {
-            Countly.sharedInstance().L.d("Breadcrumb exceeds character limit: [" + recordLength + "], reducing it to: [" + maxBreadcrumbLength + "]");
-            record = record.substring(0, maxBreadcrumbLength);
-        }
-
-        logs.add(record);
-
-        if (logs.size() > maxBreadcrumbCount) {
-            Countly.sharedInstance().L.d("Breadcrumb amount limit exceeded, deleting the oldest one");
-            logs.removeFirst();
-        }
-    }
-
-    /**
-     * Returns the collected logs.
-     */
-    @NonNull
-    static String getLogs() {
-        StringBuilder allLogs = new StringBuilder();
-
-        for (String s : logs) {
-            allLogs.append(s).append("\n");
-        }
-        logs.clear();
-        return allLogs.toString();
-    }
-
-    /**
-     * Get custom segments json string from the provided map
-     */
-    static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {
-        if (customSegments == null || customSegments.isEmpty()) {
-            return null;
-        }
-
-        JSONObject returnedSegmentation = new JSONObject();
-        for (String k : customSegments.keySet()) {
-            if (k != null) {
-                try {
-                    returnedSegmentation.put(k, customSegments.get(k));
-                } catch (JSONException e) {
-                    Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
-                }
-            }
-        }
-
-        return returnedSegmentation;
-    }
-
-    /**
-     * Get app's running time before crashing.
-     */
-    static String getRunningTime() {
-        return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
     }
 }

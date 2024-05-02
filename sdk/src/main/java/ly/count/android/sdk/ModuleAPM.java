@@ -2,14 +2,16 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleAPM extends ModuleBase {
 
-    final static String[] reservedKeys = new String[] { "response_time", "response_payload_size", "response_code", "request_payload_size", "duration", "slow_rendering_frames", "frozen_frames" };
+    final static String[] reservedKeys = { "response_time", "response_payload_size", "response_code", "request_payload_size", "duration", "slow_rendering_frames", "frozen_frames" };
 
     Apm apmInterface = null;
 
@@ -24,11 +26,13 @@ public class ModuleAPM extends ModuleBase {
 
     int activitiesOpen;
 
-    boolean useManualAppLoadedTrigger = false;
+    boolean useManualAppLoadedTrigger;
     long appStartTimestamp;
-
-    boolean manualForegroundBackgroundTriggers = false;
+    boolean manualForegroundBackgroundTriggers;
+    boolean trackForegroundBackground;
     boolean manualOverrideInForeground = false;//app starts in background
+
+    boolean appStartRecorded = false;
 
     ModuleAPM(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -39,10 +43,10 @@ public class ModuleAPM extends ModuleBase {
 
         activitiesOpen = 0;
 
-        useManualAppLoadedTrigger = config.appLoadedManualTrigger;
-        if (config.appStartTimestampOverride != null) {
+        useManualAppLoadedTrigger = config.apm.appLoadedManualTrigger;
+        if (config.apm.appStartTimestampOverride != null) {
             //if there is a app start time override, use it
-            appStartTimestamp = config.appStartTimestampOverride;
+            appStartTimestamp = config.apm.appStartTimestampOverride;
 
             L.d("[ModuleAPM] Using app start timestamp override");
         } else {
@@ -50,13 +54,18 @@ public class ModuleAPM extends ModuleBase {
             appStartTimestamp = Countly.applicationStart;
         }
 
-        if (config.appLoadedManualTrigger) {
+        if (config.apm.appLoadedManualTrigger) {
             L.d("[ModuleAPM] Using manual app finished loading trigger for app start");
         }
 
-        manualForegroundBackgroundTriggers = config.manualForegroundBackgroundTrigger;
+        manualForegroundBackgroundTriggers = config.apm.manualForegroundBackgroundTrigger;
         if (manualForegroundBackgroundTriggers) {
             L.d("[ModuleAPM] Using manual foreground/background triggers");
+        }
+
+        trackForegroundBackground = config.apm.trackForegroundBackground;
+        if (trackForegroundBackground) {
+            L.d("[ModuleAPM] tracking foreground/background is enabled");
         }
 
         apmInterface = new Apm();
@@ -74,16 +83,13 @@ public class ModuleAPM extends ModuleBase {
         codeTraces.put(traceKey, currentTimestamp);
     }
 
-    void endTraceInternal(String traceKey, Map<String, Integer> customMetrics) {
+    void endTraceInternal(@NonNull String traceKey, @NonNull Map<String, Integer> customMetrics) {
         //end time counting as fast as possible
         Long currentTimestamp = UtilsTime.currentTimestampMs();
+        assert traceKey != null && !traceKey.isEmpty();
+        assert customMetrics != null;
 
         L.d("[ModuleAPM] Calling 'endTraceInternal' with key:[" + traceKey + "]");
-
-        if (traceKey == null || traceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
-            return;
-        }
 
         if (codeTraces.containsKey(traceKey)) {
             Long startTimestamp = codeTraces.remove(traceKey);
@@ -93,17 +99,19 @@ public class ModuleAPM extends ModuleBase {
             } else {
                 Long durationMs = currentTimestamp - startTimestamp;
 
-                if (customMetrics != null) {
+                if (!customMetrics.isEmpty()) {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
+                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
                 }
 
                 String metricString = customMetricsToString(customMetrics);
+                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                String modifiedTraceKey = validateAndModifyTraceKey(truncatedTraceKey);
 
-                traceKey = validateAndModifyTraceKey(traceKey);
-
-                requestQueueProvider.sendAPMCustomTrace(traceKey, durationMs, startTimestamp, currentTimestamp, metricString);
+                requestQueueProvider.sendAPMCustomTrace(modifiedTraceKey, durationMs, startTimestamp, currentTimestamp, metricString);
             }
         } else {
             L.w("[ModuleAPM] endTraceInternal, trying to end trace which was not started");
@@ -132,12 +140,10 @@ public class ModuleAPM extends ModuleBase {
         codeTraces.clear();
     }
 
-    static String customMetricsToString(Map<String, Integer> customMetrics) {
-        StringBuilder ret = new StringBuilder();
+    static String customMetricsToString(@NonNull Map<String, Integer> customMetrics) {
+        assert customMetrics != null;
 
-        if (customMetrics == null) {
-            return ret.toString();
-        }
+        StringBuilder ret = new StringBuilder();
 
         for (Map.Entry<String, Integer> entry : customMetrics.entrySet()) {
             String key = entry.getKey();
@@ -331,22 +337,32 @@ public class ModuleAPM extends ModuleBase {
     }
 
     void recordAppStart(long appLoadedTimestamp) {
-        L.d("[ModuleAPM] Calling 'recordAppStart'");
-        if (_cly.config_.recordAppStartTime) {
-            long durationMs = appLoadedTimestamp - appStartTimestamp;
-
-            if (durationMs <= 0) {
-                L.e("[ModuleAPM] Encountered negative app start duration:[" + durationMs + "] dropping app start duration request");
-                return;
-            }
-
-            requestQueueProvider.sendAPMAppStart(durationMs, appStartTimestamp, appLoadedTimestamp);
+        if (!_cly.config_.apm.trackAppStartTime) {
+            L.d("[ModuleAPM] Calling 'recordAppStart', call will be ignored due to app start tracking not being enabled");
+            return;
         }
+
+        if (appStartRecorded) {
+            L.w("[ModuleAPM] Calling 'recordAppStart', call will be ignored due to it already being registered before");
+            return;
+        }
+
+        L.d("[ModuleAPM] Calling 'recordAppStart' [" + appLoadedTimestamp + "] [" + appStartTimestamp + "]");
+
+        long durationMs = appLoadedTimestamp - appStartTimestamp;
+
+        if (durationMs <= 0) {
+            L.e("[ModuleAPM] Encountered negative app start duration:[" + durationMs + "] dropping app start duration request");
+            return;
+        }
+
+        requestQueueProvider.sendAPMAppStart(durationMs, appStartTimestamp, appLoadedTimestamp);
+        appStartRecorded = true;
     }
 
     void calculateAppRunningTimes(int previousCount, int newCount) {
-        boolean goingToBackground = (previousCount == 1 && newCount == 0);
-        boolean goingToForeground = (previousCount == 0 && newCount == 1);
+        boolean goingToBackground = previousCount == 1 && newCount == 0;
+        boolean goingToForeground = previousCount == 0 && newCount == 1;
 
         L.v("[ModuleAPM] calculateAppRunningTimes, going toBG[" + goingToBackground + "] going toFG[" + goingToForeground + "] | [" + previousCount + "][" + newCount + "]");
 
@@ -414,11 +430,16 @@ public class ModuleAPM extends ModuleBase {
      */
     @Override
     void callbackOnActivityResumed(Activity activity) {
-        L.d("[Apm] Calling 'callbackOnActivityResumed', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
+        L.d("[Apm] Calling 'callbackOnActivityResumed'");
+    }
+
+    @Override
+    void onActivityStarted(Activity activity, int updatedActivityCount) {
+        L.d("[Apm] Calling 'onActivityStarted', [" + activitiesOpen + "] -> [" + (activitiesOpen + 1) + "]");
 
         long currentTimestamp = System.currentTimeMillis();
 
-        if (!manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground && !manualForegroundBackgroundTriggers) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
         }
         activitiesOpen++;
@@ -440,7 +461,7 @@ public class ModuleAPM extends ModuleBase {
     void callbackOnActivityStopped(Activity activity) {
         L.d("[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
 
-        if (!manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground & !manualForegroundBackgroundTriggers) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
         }
         activitiesOpen--;
@@ -459,13 +480,23 @@ public class ModuleAPM extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        // we only do this adjustment if we track it automatically
-        if (!manualForegroundBackgroundTriggers && _cly.lifecycleStateAtLeastStarted()) {
+        if (_cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
 
-            calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
-
             activitiesOpen++;
+        }
+
+        // we only do this adjustment if we track it automatically
+        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+            L.d("[ModuleAPM] SDK detects that the app is in the foreground. Starting to track foreground time");
+
+            calculateAppRunningTimes(activitiesOpen - 1, activitiesOpen);
+        }
+
+        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+            L.d("[ModuleAPM] SDK detects that the app is in the foreground. Recording automatic app start duration");
+            long currentTimestamp = System.currentTimeMillis();
+            recordAppStart(currentTimestamp);
         }
     }
 
@@ -488,11 +519,24 @@ public class ModuleAPM extends ModuleBase {
          *
          * @param traceKey key by which this action is identified
          */
-        public void endTrace(String traceKey, Map<String, Integer> customMetrics) {
+        public void endTrace(@Nullable String traceKey, @Nullable Map<String, Integer> customMetrics) {
             synchronized (_cly) {
                 L.i("[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
 
-                endTraceInternal(traceKey, customMetrics);
+                if (traceKey == null || traceKey.isEmpty()) {
+                    L.e("[Apm] Calling 'endTrace' with invalid traceKey");
+                    return;
+                }
+
+                Map<String, Integer> customMetricsInternal;
+
+                if (customMetrics == null) {
+                    customMetricsInternal = new ConcurrentHashMap<>();
+                } else {
+                    customMetricsInternal = customMetrics;
+                }
+
+                endTraceInternal(traceKey, customMetricsInternal);
             }
         }
 
@@ -583,9 +627,19 @@ public class ModuleAPM extends ModuleBase {
             }
         }
 
+        /**
+         * Manually trigger that the app has gone to the foreground
+         *
+         * @deprecated this call is deprecated and will be removed in the future
+         */
         public void triggerForeground() {
             synchronized (_cly) {
                 L.i("[Apm] Calling 'triggerForeground'");
+
+                if (!trackForegroundBackground) {
+                    L.w("[Apm] triggerForeground, tracking foreground is disabled");
+                    return;
+                }
 
                 if (!manualForegroundBackgroundTriggers) {
                     L.w("[Apm] trying to use manual foreground triggers without enabling them");
@@ -596,12 +650,22 @@ public class ModuleAPM extends ModuleBase {
             }
         }
 
+        /**
+         * Manually trigger that the app has gone to the background
+         *
+         * @deprecated this call is deprecated and will be removed in the future
+         */
         public void triggerBackground() {
             synchronized (_cly) {
                 L.i("[Apm] Calling 'triggerBackground'");
 
+                if (!trackForegroundBackground) {
+                    L.w("[Apm] triggerBackground, tracking background is disabled");
+                    return;
+                }
+
                 if (!manualForegroundBackgroundTriggers) {
-                    L.w("[Apm] trying to use manual background triggers without enabling them");
+                    L.w("[Apm] triggerBackground, trying to use manual background triggers without enabling them");
                     return;
                 }
 

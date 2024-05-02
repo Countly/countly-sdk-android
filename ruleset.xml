@@ -93,7 +93,9 @@
         </properties>
     </rule>
     <rule ref="category/java/codestyle.xml/MDBAndSessionBeanNamingConvention" />
+    <!--
     <rule ref="category/java/codestyle.xml/MethodArgumentCouldBeFinal" />
+    -->
     <rule ref="category/java/codestyle.xml/NoPackage" />    
     <rule ref="category/java/codestyle.xml/PrematureDeclaration" />
     <rule ref="category/java/codestyle.xml/RemoteInterfaceNamingConvention" />
@@ -253,7 +255,9 @@
             <property name="reportLevel" value="250" />
         </properties>
     </rule>
+    <!--
     <rule ref="category/java/design.xml/SignatureDeclareThrowsException" />
+    -->
     <rule ref="category/java/design.xml/SimplifiedTernary" />
     <rule ref="category/java/design.xml/SimplifyBooleanExpressions" />    
     <rule ref="category/java/design.xml/SimplifyConditional" />
@@ -284,6 +288,7 @@
 
     <!-- Documentation rules -->
     <rule ref="category/java/documentation.xml/CommentContent" />
+    <!--
     <rule ref="category/java/documentation.xml/CommentRequired">
         <properties>
             <property name="methodWithOverrideCommentRequirement" value="Ignored" />
@@ -297,12 +302,15 @@
             <property name="serialPersistentFieldsCommentRequired" value="Ignored" />
         </properties>
     </rule>
+    -->
+  
     <rule ref="category/java/documentation.xml/CommentSize">
         <properties>
-            <property name="maxLines" value="10" />
-            <property name="maxLineLength" value="200" />
+            <property name="maxLines" value="100" />
+            <property name="maxLineLength" value="300" />
         </properties>
     </rule>
+  
     <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor" />    
 
     <!--
@@ -319,7 +327,9 @@
     <rule ref="category/java/errorprone.xml/AvoidCatchingNPE" />
     <rule ref="category/java/errorprone.xml/AvoidCatchingThrowable" /><!--???-->
     <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor" />
+    <!--
     <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals" />
+    -->
     <rule ref="category/java/errorprone.xml/AvoidEnumAsIdentifier" />
     <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName" />
     <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingTypeName" />

@@ -1,3 +1,46 @@
+## 24.4.1
+* ! Minor breaking change ! The "maxValueSize" limit will now be applied by default. This would limit the maximum size of developer-supplied values and breadcrumbs. The current limit is 256 characters.
+* ! Minor breaking change ! The "maxKeyLength" limit will now be applied by default. This limit would limit the maximum length of developer-supplied keys and names. The current limit is 128 characters.
+* ! Minor breaking change ! The "maxSegmentationValues" limit will now be applied by default. This limit would limit the maximum number of developer-provided segmentation values when using features. The current limit is 100 entries.
+* ! Minor breaking change ! "maxStackTraceLinePerThread" and "maxStackTraceLineLength" limits will be applied by default now. This would limit the maximum lines of stack traces per thread and the maximum stack trace length, respectively. Default values are in order of 30 and 200.
+
+## 24.4.0
+* ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "UpdateSession"
+* ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "EndSession"
+* ! Minor breaking change ! Setting for enabling/disabling for native crash dumps will be always enabled
+
+* Added an extended way of crash filtering
+* Added SDK internal limits configuration interface
+
+* Deprecated the following calls from "CountlyConfig":
+  * "setMaxSegmentationValues(maxSegmentationValues)" instead use "sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues)"
+  * "setMaxBreadcrumbCount(maxBreadcrumbCount)" instead use "sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount)"
+  * "setCrashFilterCallback(crashFilterCallback)" instead use "crashes.setGlobalCrashFilterCallback(globalCrashFilterCallback)"
+  * "enableCrashReporting()" instead use "crashes.enableCrashReporting()"
+  * "setCustomCrashSegment(crashSegmentation)" instead use "crashes.setCustomCrashSegmentation(crashSegmentation)"
+  * "setRecordAllThreadsWithCrash()" instead use "crashes.enableRecordAllThreadsWithCrash()"
+  * "checkForNativeCrashDumps(checkForDumps)", it will be removed in the future, there is no replacement
+
+## 24.1.1
+* Added a new metric for detecting whether or not a device has a hinge
+
+## 24.1.0
+* ! Minor breaking change ! Tracking of foreground and background reporting for APM is now disabled by default
+  
+* Added a way to enable tracking of foreground and background reporting for APM
+
+* Fixed a bug where sending a local picture with checksum was not possible
+  
+* Deprecated the following calls from "Apm" interface:
+    * "triggerBackground"
+    * "triggerForeground"
+* Deprecated following functions from "CountlyConfig":
+    * "setRecordAppStartTime(recordAppStartTime)" instead use "apm.enableAppStartTimeTracking()"
+    * "setAppStartTimestampOverride(appStartTimestampOverride)" instead use "apm.setAppStartTimestampOverride(appStartTimestampOverride)"
+    * "enableManualAppLoadedTrigger()" instead use "apm.enableManualAppLoadedTrigger()"
+    * "enableManualForegroundBackgroundTriggerAPM()" will be deleted in the future
+
 ## 23.12.0
 * Mitigated a rare issue related to handling request headers
 * Added 'addSegmentationToViewWithID' method for adding segmentation to an ongoing view

@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -21,7 +20,7 @@ public class RemoteConfigVariantControlTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
-        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
     }
 
@@ -183,7 +182,7 @@ public class RemoteConfigVariantControlTests {
     @Test
     public void testNormalFlow() {
         CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":\"variant\"}]}"));
-        Countly countly = (new Countly()).init(config);
+        Countly countly = new Countly().init(config);
 
         // Developer did not provide a callback
         countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
@@ -206,7 +205,7 @@ public class RemoteConfigVariantControlTests {
     @Test
     public void testNullVariant() {
         CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":null}]}"));
-        Countly countly = (new Countly()).init(config);
+        Countly countly = new Countly().init(config);
 
         // Developer did not provide a callback
         countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
@@ -223,7 +222,7 @@ public class RemoteConfigVariantControlTests {
     @Test
     public void testFilteringWrongKeys() {
         CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"noname\":\"variant1\"},{\"name\":\"variant2\"}]}"));
-        Countly countly = (new Countly()).init(config);
+        Countly countly = new Countly().init(config);
 
         // Developer did not provide a callback
         countly.moduleRemoteConfig.remoteConfigInterface.testingDownloadVariantInformation(null);
@@ -257,7 +256,7 @@ public class RemoteConfigVariantControlTests {
     @Test
     public void variantGetters_preDownload() {
         CountlyConfig config = TestUtils.createVariantConfig(null);
-        Countly countly = (new Countly()).init(config);
+        Countly countly = new Countly().init(config);
 
         //should return empty map of values
         Map<String, String[]> vals = countly.remoteConfig().testingGetAllVariants();

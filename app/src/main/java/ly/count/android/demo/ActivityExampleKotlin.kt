@@ -1,9 +1,11 @@
 package ly.count.android.demo
 
-import android.content.res.Configuration
 import androidx.appcompat.app.AppCompatActivity
 import ly.count.android.sdk.Countly
 
+/**
+ * Example of using Countly SDK in Kotlin
+ */
 class ActivityExampleKotlin : AppCompatActivity() {
   override fun onStart() {
     super.onStart()

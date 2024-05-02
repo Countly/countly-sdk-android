@@ -1,0 +1,19 @@
+name: "Validate Gradle Wrapper Checksum"
+
+on:
+  push:
+    branches:
+      - master
+      - staging
+  pull_request:
+    branches:
+      - master
+      - staging
+
+jobs:
+  validation:
+    name: "Validate Gradle Wrapper SHA-256 checksum"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/wrapper-validation-action@v2

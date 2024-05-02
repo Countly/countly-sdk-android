@@ -23,7 +23,7 @@ interface StorageProvider {
 
     void replaceRequestList(final List<String> newConns);
 
-    void removeEvents(final Collection<Event> eventsToRemove);
+    void removeEvents(final List<Event> eventsToRemove);
 
     int getEventQueueSize();
 
@@ -62,7 +62,7 @@ interface StorageProvider {
 
     boolean anythingSetInStorage();
 
-    String getHealthCheckCounterState();
+    @NonNull String getHealthCheckCounterState();
 
     void setHealthCheckCounterState(String counterState);
 }

@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -24,7 +23,7 @@ public class CountlyConfigTests {
 
     @Test
     public void constructor() {
-        Context ctx = getContext();
+        Context ctx = TestUtils.getContext();
         CountlyConfig config = new CountlyConfig(ctx, "Som345345", "fsdf7349374");
 
         Assert.assertEquals(ctx, config.context);
@@ -36,8 +35,8 @@ public class CountlyConfigTests {
 
     @Test
     public void settingAllValues() {
-        String[] s = new String[] { "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd" };
-        Context c = getContext();
+        String[] s = { "4234234234ff", "sssa2323", "sds", "sdfsdf232", "aa22", "xvcx", "hghn", "0gifg", "kfkfdd" };
+        Context c = TestUtils.getContext();
         CountlyConfig config = new CountlyConfig();
         CountlyStore cs = new CountlyStore(c, mock(ModuleLog.class));
 
@@ -63,7 +62,7 @@ public class CountlyConfigTests {
         hv.put("11", "22");
         hv.put("1331", "2332");
 
-        String[] fn = new String[] { "ds dsd", "434f", "ngfhg" };
+        String[] fn = { "ds dsd", "434f", "ngfhg" };
 
         CrashFilterCallback callback = new CrashFilterCallback() {
             @Override
@@ -75,20 +74,20 @@ public class CountlyConfigTests {
         Map<String, Object> vs = new HashMap<>();
         vs.put("ss", "fdf");
         vs.put("s22s", 2323);
-        vs.put("s44s", 33434.33d);
+        vs.put("s44s", 33_434.33d);
         vs.put("dds44s", true);
 
-        Class[] act = new Class[] { Activity.class };
+        Class[] act = { Activity.class };
 
-        String[] appCrawlerNames = new String[] { "Some", "Crazy", "name" };
+        String[] appCrawlerNames = { "Some", "Crazy", "name" };
 
-        String[] publicKeyCerts = new String[] { "ddd", "111", "ffd" };
-        String[] certificateCerts = new String[] { "ddsd", "vvcv", "mbnb" };
+        String[] publicKeyCerts = { "ddd", "111", "ffd" };
+        String[] certificateCerts = { "ddsd", "vvcv", "mbnb" };
 
         Map<String, Object> crashSegments = new HashMap<>();
         crashSegments.put("s2s", "fdf");
         crashSegments.put("s224s", 2323);
-        crashSegments.put("s434s", 33434.33d);
+        crashSegments.put("s434s", 33_434.33d);
         crashSegments.put("ddsa44s", true);
 
         Map<String, String> metricOverride = new HashMap<>();
@@ -161,7 +160,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(c, config.context);
         Assert.assertEquals(s[1], config.appKey);
         Assert.assertEquals(cs, config.countlyStore);
-        Assert.assertFalse(config.checkForNativeCrashDumps);
+        Assert.assertTrue(config.crashes.checkForNativeCrashDumps); // this will always be true, SDK will always check for native crash dumps
         Assert.assertEquals(s[2], config.deviceID);
         Assert.assertEquals(1335, config.starRatingSessionLimit);
         Assert.assertEquals(rc, config.starRatingCallback);
@@ -169,7 +168,7 @@ public class CountlyConfigTests {
         Assert.assertEquals(s[4], config.starRatingTextMessage);
         Assert.assertEquals(s[5], config.starRatingTextTitle);
         Assert.assertTrue(config.loggingEnabled);
-        Assert.assertTrue(config.enableUnhandledCrashReporting);
+        Assert.assertTrue(config.crashes.enableUnhandledCrashReporting);
         Assert.assertTrue(config.enableAutomaticViewTracking);
         Assert.assertTrue(config.autoTrackingUseShortName);
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
@@ -187,28 +186,28 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.trackOrientationChange);
         Assert.assertEquals(1337, config.eventQueueSizeThreshold.intValue());
         Assert.assertTrue(config.manualSessionControlEnabled);
-        Assert.assertTrue(config.recordAllThreadsWithCrash);
+        Assert.assertTrue(config.crashes.recordAllThreadsWithCrash);
         Assert.assertTrue(config.disableUpdateSessionRequests);
         Assert.assertTrue(config.shouldIgnoreAppCrawlers);
         Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
-        Assert.assertEquals(crashSegments, config.customCrashSegment);
+        Assert.assertEquals(crashSegments, config.crashes.customCrashSegment);
         Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
         Assert.assertTrue(config.starRatingDialogIsCancellable);
         Assert.assertTrue(config.starRatingShownAutomatically);
         Assert.assertTrue(config.starRatingDisableAskingForEachAppVersion);
         Assert.assertEquals(app, config.application);
-        Assert.assertTrue(config.recordAppStartTime);
+        Assert.assertTrue(config.apm.trackAppStartTime);
         Assert.assertTrue(config.disableLocation);
         Assert.assertEquals("CC", config.locationCountyCode);
         Assert.assertEquals("city", config.locationCity);
         Assert.assertEquals("loc", config.locationLocation);
         Assert.assertEquals("ip", config.locationIpAddress);
         Assert.assertEquals(metricOverride, config.metricOverride);
-        Assert.assertEquals((Long) 123l, config.appStartTimestampOverride);
-        Assert.assertTrue(config.appLoadedManualTrigger);
-        Assert.assertTrue(config.manualForegroundBackgroundTrigger);
+        Assert.assertEquals((Long) 123l, config.apm.appStartTimestampOverride);
+        Assert.assertTrue(config.apm.appLoadedManualTrigger);
+        Assert.assertTrue(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertEquals(logCallback, config.providedLogCallback);
 
         config.setLocation("CC", "city", "loc", "ip");
@@ -236,7 +235,7 @@ public class CountlyConfigTests {
         }
 
         Assert.assertNull(config.countlyStore);
-        Assert.assertTrue(config.checkForNativeCrashDumps);
+        Assert.assertTrue(config.crashes.checkForNativeCrashDumps);
         Assert.assertNull(config.deviceID);
         Assert.assertEquals(5, config.starRatingSessionLimit);
         Assert.assertNull(config.starRatingCallback);
@@ -244,7 +243,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.starRatingTextMessage);
         Assert.assertNull(config.starRatingTextTitle);
         Assert.assertFalse(config.loggingEnabled);
-        Assert.assertFalse(config.enableUnhandledCrashReporting);
+        Assert.assertFalse(config.crashes.enableUnhandledCrashReporting);
         Assert.assertFalse(config.enableAutomaticViewTracking);
         Assert.assertFalse(config.autoTrackingUseShortName);
         Assert.assertNull(config.customNetworkRequestHeaders);
@@ -255,33 +254,33 @@ public class CountlyConfigTests {
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);
         Assert.assertFalse(config.temporaryDeviceIdEnabled);
-        Assert.assertNull(config.crashFilterCallback);
+        Assert.assertNull(config.crashes.globalCrashFilterCallback);
         Assert.assertNull(config.tamperingProtectionSalt);
         Assert.assertNull(config.globalViewSegmentation);
         Assert.assertNull(config.eventQueueSizeThreshold);
         Assert.assertTrue(config.trackOrientationChange);
         Assert.assertFalse(config.manualSessionControlEnabled);
-        Assert.assertFalse(config.recordAllThreadsWithCrash);
+        Assert.assertFalse(config.crashes.recordAllThreadsWithCrash);
         Assert.assertFalse(config.disableUpdateSessionRequests);
         Assert.assertFalse(config.shouldIgnoreAppCrawlers);
         Assert.assertNull(config.appCrawlerNames);
         Assert.assertNull(config.publicKeyPinningCertificates);
         Assert.assertNull(config.certificatePinningCertificates);
-        Assert.assertNull(config.customCrashSegment);
+        Assert.assertNull(config.crashes.customCrashSegment);
         Assert.assertNull(config.sessionUpdateTimerDelay);
         Assert.assertFalse(config.starRatingDialogIsCancellable);
         Assert.assertFalse(config.starRatingShownAutomatically);
         Assert.assertFalse(config.starRatingDisableAskingForEachAppVersion);
-        Assert.assertFalse(config.recordAppStartTime);
+        Assert.assertFalse(config.apm.trackAppStartTime);
         Assert.assertFalse(config.disableLocation);
         Assert.assertNull(config.locationCountyCode);
         Assert.assertNull(config.locationCity);
         Assert.assertNull(config.locationLocation);
         Assert.assertNull(config.locationIpAddress);
         Assert.assertNull(config.metricOverride);
-        Assert.assertNull(config.appStartTimestampOverride);
-        Assert.assertFalse(config.appLoadedManualTrigger);
-        Assert.assertFalse(config.manualForegroundBackgroundTrigger);
+        Assert.assertNull(config.apm.appStartTimestampOverride);
+        Assert.assertFalse(config.apm.appLoadedManualTrigger);
+        Assert.assertFalse(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertNull(config.providedLogCallback);
     }
 }

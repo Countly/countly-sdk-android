@@ -1,10 +1,7 @@
 package ly.count.android.demo;
 
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
-
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import ly.count.android.sdk.Countly;
 
@@ -35,7 +32,7 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
     public void onClickOutOfBounds(View v) {
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Out of bounds crash");
         //noinspection MismatchedReadAndWriteOfArray
-        int[] data = new int[] {};
+        int[] data = {};
         data[0] = 9;
     }
 
@@ -61,13 +58,13 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
 
     public void onClickHandledException(View v) {
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Recording handled exception 1");
-        Countly.sharedInstance().crashes().recordHandledException(new Exception("A custom error text"));
+        Countly.sharedInstance().crashes().recordHandledException(new IllegalAccessException("A custom error text"));
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Recording handled exception 3");
     }
 
-    public void onClickUNhandledException(View v) throws Exception {
+    public void onClickUnhandledException(View v) throws Exception {
         Countly.sharedInstance().crashes().addCrashBreadcrumb("Unhandled exception info");
-        throw new Exception("A unhandled exception");
+        throw new IllegalAccessException("A unhandled exception");
     }
 
     public void onClickLargeBreadcrumb(View v) {
@@ -80,7 +77,7 @@ public class ActivityExampleCrashReporting extends AppCompatActivity {
         deepFunctionCall_1();
     }
 
-    public void onClickDeepHandled(View v) throws Exception {
+    public void onClickDeepHandled(View v) {
         recursiveDeepCall(3);
     }
 

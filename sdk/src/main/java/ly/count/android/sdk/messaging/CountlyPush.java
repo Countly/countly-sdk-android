@@ -68,7 +68,7 @@ public class CountlyPush {
     /**
      * Read & connection timeout for rich push media download
      */
-    static int MEDIA_DOWNLOAD_TIMEOUT = 15000;
+    static int MEDIA_DOWNLOAD_TIMEOUT = 15_000;
 
     /**
      * Maximum attempts to download a media for a rich push
@@ -247,7 +247,7 @@ public class CountlyPush {
      *
      * @return token string or null if no token is currently available.
      */
-    private static String getToken(@Nullable Context context, @Nullable Countly.CountlyMessagingProvider prov, @Nullable ModuleLog L) {
+    private static String getToken(@Nullable Context context, @Nullable Countly.CountlyMessagingProvider prov, @NonNull ModuleLog L) {
         //todo this seems to be broken
         if (prov == Countly.CountlyMessagingProvider.FCM) {
             try {
@@ -480,7 +480,7 @@ public class CountlyPush {
      * @param msg message to get information from
      * @return {@code Boolean.TRUE} if displayed successfully, {@code Boolean.FALSE} if cannot display now, {@code null} if message is not displayable as {@link Notification}
      */
-    public static Boolean displayDialog(@Nullable final Activity activity, @Nullable final Message msg) {
+    public static Boolean displayDialog(@NonNull final Activity activity, @NonNull final Message msg) {
         if (activity == null) {
             Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Provided Activity was null, execution will stop");
             return false;
@@ -786,8 +786,7 @@ public class CountlyPush {
             BroadcastReceiver consentReceiver = new ConsentBroadcastReceiver();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 countlyConfigPush.application.registerReceiver(consentReceiver, filter, countlyConfigPush.application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null, Context.RECEIVER_NOT_EXPORTED);
-            }
-            else {
+            } else {
                 countlyConfigPush.application.registerReceiver(consentReceiver, filter, countlyConfigPush.application.getPackageName() + COUNTLY_BROADCAST_PERMISSION_POSTFIX, null);
             }
         }
@@ -891,7 +890,7 @@ public class CountlyPush {
     private static void loadImage(@NonNull final Context context, @NonNull final Message msg, @NonNull final BitmapCallback callback, final int attempt) {
         Utils.runInBackground(new Runnable() {
             @Override public void run() {
-                final Bitmap[] bitmap = new Bitmap[] { null };
+                final Bitmap[] bitmap = { null };
 
                 if (msg.media() != null) {
                     HttpURLConnection connection = null;

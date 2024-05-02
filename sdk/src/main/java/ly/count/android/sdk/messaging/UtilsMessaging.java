@@ -1,6 +1,8 @@
 package ly.count.android.sdk.messaging;
 
 import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import ly.count.android.sdk.Countly;
@@ -42,11 +44,11 @@ public class UtilsMessaging {
      * @param args optional arguments to pass to that method
      * @return false in case of failure, method result otherwise
      */
-    static Object reflectiveCall(String className, Object instance, String methodName, ModuleLog L, Object... args) {
+    static Object reflectiveCall(@NonNull String className, @Nullable Object instance, @NonNull String methodName, @NonNull ModuleLog L, Object... args) {
         return utils._reflectiveCall(className, instance, methodName, L, args);
     }
 
-    public Object _reflectiveCall(String className, Object instance, String methodName, ModuleLog L, Object... args) {
+    public Object _reflectiveCall(@NonNull String className, @Nullable Object instance, @NonNull String methodName, @NonNull ModuleLog L, Object... args) {
         try {
             L.d("cls " + className + ", inst " + instance);
             className = className == null && instance != null ? instance.getClass().getName() : className;

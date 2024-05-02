@@ -22,10 +22,7 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.util.HashMap;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,7 +32,6 @@ import org.junit.runner.RunWith;
 import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -43,8 +39,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -59,13 +53,13 @@ public class CountlyTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         mUninitedCountly = new Countly();
 
         mCountly = new Countly();
-        mCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
     }
 
     @After
@@ -83,7 +77,7 @@ public class CountlyTests {
         assertNull(mUninitedCountly.moduleSessions);
         assertFalse(mUninitedCountly.getDisableUpdateSessionRequests());
         assertFalse(mUninitedCountly.isLoggingEnabled());
-        Assert.assertTrue(mCountly.isInitialized());
+        assertTrue(mCountly.isInitialized());
     }
 
     @Test
@@ -96,7 +90,7 @@ public class CountlyTests {
     @Test
     public void testInitWithNoDeviceID() {
         mUninitedCountly = spy(mUninitedCountly);
-        CountlyConfig cc = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly"));
+        CountlyConfig cc = new CountlyConfig(getContext(), "appkey", "http://test.count.ly");
         mUninitedCountly.init(cc);
         verify(mUninitedCountly).init(cc);
     }
@@ -114,7 +108,7 @@ public class CountlyTests {
     @Test
     public void testInit_nullServerURL() {
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", null)).setDeviceId("1234"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", null).setDeviceId("1234"));
             fail("expected null server URL to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -124,7 +118,7 @@ public class CountlyTests {
     @Test
     public void testInit_emptyServerURL() {
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "")).setDeviceId("1234"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "").setDeviceId("1234"));
             fail("expected empty server URL to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -134,7 +128,7 @@ public class CountlyTests {
     @Test
     public void testInit_invalidServerURL() {
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "not-a-valid-server-url")).setDeviceId("1234"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "not-a-valid-server-url").setDeviceId("1234"));
             fail("expected invalid server URL to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -144,7 +138,7 @@ public class CountlyTests {
     @Test
     public void testInit_nullAppKey() {
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), null, "http://test.count.ly")).setDeviceId("1234"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), null, "http://test.count.ly").setDeviceId("1234"));
             fail("expected null app key to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -154,7 +148,7 @@ public class CountlyTests {
     @Test
     public void testInit_emptyAppKey() {
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "", "http://test.count.ly")).setDeviceId("1234"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "", "http://test.count.ly").setDeviceId("1234"));
             fail("expected empty app key to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -164,13 +158,13 @@ public class CountlyTests {
     @Test
     public void testInit_nullDeviceID() {
         // null device ID is okay because it tells Countly to use OpenUDID
-        mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId(null));
+        mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId(null));
     }
 
     @Test
     public void testInit_emptyDeviceID() {
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId(""));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId(""));
             fail("expected empty device ID to throw IllegalArgumentException");
         } catch (IllegalArgumentException ignored) {
             // success!
@@ -183,7 +177,7 @@ public class CountlyTests {
         final String appKey = "appkey";
         final String serverURL = "http://test.count.ly";
 
-        mUninitedCountly.init((new CountlyConfig(getContext(), appKey, serverURL)).setDeviceId(deviceID));
+        mUninitedCountly.init(new CountlyConfig(getContext(), appKey, serverURL).setDeviceId(deviceID));
         final ConnectionQueue expectedConnectionQueue = mUninitedCountly.getConnectionQueue();
         final StorageProvider expectedCountlyStore = expectedConnectionQueue.getStorageProvider();
         Assert.assertTrue(mCountly.isInitialized());
@@ -191,7 +185,7 @@ public class CountlyTests {
         assertNotNull(expectedCountlyStore);
 
         // second call with same params should succeed, no exception thrown
-        mUninitedCountly.init((new CountlyConfig(getContext(), appKey, serverURL)).setDeviceId(deviceID));
+        mUninitedCountly.init(new CountlyConfig(getContext(), appKey, serverURL).setDeviceId(deviceID));
 
         Assert.assertTrue(mCountly.isInitialized());
         assertSame(expectedConnectionQueue, mUninitedCountly.getConnectionQueue());
@@ -215,9 +209,9 @@ public class CountlyTests {
 
     @Test
     public void testInit_twiceWithDifferentServerURL() {
-        mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test1.count.ly")).setDeviceId("1234"));
+        mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test1.count.ly").setDeviceId("1234"));
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test2.count.ly")).setDeviceId("1234"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test2.count.ly").setDeviceId("1234"));
             // success!
             // should not throw a exception anymore
         } catch (IllegalStateException ignored) {
@@ -227,9 +221,9 @@ public class CountlyTests {
 
     @Test
     public void testInit_twiceWithDifferentAppKey() {
-        mUninitedCountly.init((new CountlyConfig(getContext(), "appkey1", "http://test.count.ly")).setDeviceId("1234"));
+        mUninitedCountly.init(new CountlyConfig(getContext(), "appkey1", "http://test.count.ly").setDeviceId("1234"));
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey2", "http://test.count.ly")).setDeviceId("1234"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "appkey2", "http://test.count.ly").setDeviceId("1234"));
             // success!
             // should not throw a exception anymore
         } catch (IllegalStateException ignored) {
@@ -241,7 +235,7 @@ public class CountlyTests {
     public void testInit_twiceWithDifferentDeviceID() {
         mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234"));
         try {
-            mUninitedCountly.init((new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("4321"));
+            mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId("4321"));
             // success!
             // should not throw a exception anymore
         } catch (IllegalStateException ignored) {
@@ -255,13 +249,13 @@ public class CountlyTests {
         final String appKey = "appkey";
         final String serverURL = "http://test.count.ly";
 
-        mUninitedCountly.init((new CountlyConfig(getContext(), appKey, serverURL)).setDeviceId(deviceID));
+        mUninitedCountly.init(new CountlyConfig(getContext(), appKey, serverURL).setDeviceId(deviceID));
 
         assertSame(getContext().getApplicationContext(), mUninitedCountly.getConnectionQueue().getContext());
         assertEquals(serverURL, mUninitedCountly.getConnectionQueue().baseInfoProvider.getServerURL());
         assertEquals(appKey, mUninitedCountly.getConnectionQueue().baseInfoProvider.getAppKey());
         assertNotNull(mUninitedCountly.getConnectionQueue().getStorageProvider());
-        Assert.assertTrue(mCountly.isInitialized());
+        assertTrue(mCountly.isInitialized());
         assertSame(mUninitedCountly.getConnectionQueue().getStorageProvider(), mUninitedCountly.countlyStore);
     }
 
@@ -273,7 +267,7 @@ public class CountlyTests {
         assertNull(mUninitedCountly.getConnectionQueue().baseInfoProvider);
         assertNull(mUninitedCountly.getConnectionQueue().getStorageProvider());
         assertNotNull(mUninitedCountly.getTimerService());
-        Assert.assertTrue(mCountly.isInitialized());
+        assertTrue(mCountly.isInitialized());
         assertEquals(0, mUninitedCountly.getActivityCount());
         assertNull(mUninitedCountly.moduleSessions);
     }

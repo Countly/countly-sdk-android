@@ -1,9 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import ly.count.android.sdk.messaging.ModulePush;
 
 public class ModuleEvents extends ModuleBase implements EventProvider {
@@ -65,23 +65,30 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param instant
      * @param eventIdOverride
      */
-    public void recordEventInternal(@NonNull final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
+    public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
+        //assert key != null;
+        assert count >= 1;
+        assert _cly.isInitialized();
+
+        long pccTsStartRecordEventInternal = 0L;
+        if (pcc != null) {
+            pccTsStartRecordEventInternal = UtilsTime.getNanoTime();
+        }
+
         L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
-            throw new IllegalArgumentException("Valid Countly event key is required");
+            L.e("[ModuleEvents] recordEventInternal, Valid Countly event key is required. Event will be ignored.");
+            return;
         }
         if (count < 1) {
-            throw new IllegalArgumentException("Countly event count should be greater than zero");
+            L.e("[ModuleEvents] recordEventInternal, event count should be greater than zero. Key:[" + key + "] count:[" + count + "]");
+            count = 1;
         }
 
         L.d("[ModuleEvents] Recording event with key: [" + key + "] and provided event ID of:[" + eventIdOverride + "] and segmentation with:[" + (segmentation == null ? "null" : segmentation.size()) + "] keys");
 
-        if (!_cly.isInitialized()) {
-            throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
-        }
-
         if (segmentation != null) {
-            Utils.removeUnsupportedDataTypes(segmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
         }
 
         //record the current event timestamps
@@ -112,6 +119,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             pvid = viewIdProvider.getPreviousViewId();
         } else {
             cvid = viewIdProvider.getCurrentViewId();
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ModuleEvents_recordEventInternalGenID", UtilsTime.getNanoTime() - pccTsStartRecordEventInternal);
         }
 
         switch (key) {
@@ -154,11 +165,20 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
+                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
+                    if (segmentation == null) {
+                        segmentation = new HashMap<>();
+                    }
+                    UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
+                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ModuleEvents_recordEventInternal", UtilsTime.getNanoTime() - pccTsStartRecordEventInternal);
         }
     }
 
@@ -176,7 +196,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         return true;
     }
 
-    boolean endEventInternal(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
+    boolean endEventInternal(@Nullable final String key, @Nullable final Map<String, Object> segmentation, int count, final double sum) {
         L.d("[ModuleEvents] Ending event: [" + key + "]");
 
         if (key == null || key.length() == 0) {
@@ -192,7 +212,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             }
 
             if (count < 1) {
-                throw new IllegalArgumentException("Countly event count should be greater than zero");
+                L.e("[ModuleEvents] endEventInternal, event count should be greater than zero, key [" + key + "], dur:[" + count + "]. Count will be reset to '1'.");
+                count = 1;
             }
             L.d("[ModuleEvents] Ending event: [" + key + "]");
 
@@ -238,12 +259,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param segmentation custom segmentation you want to set, leave null if you don't want to add anything
          * @param timestamp unix timestamp in milliseconds of when the event occurred
          */
-        public void recordPastEvent(final String key, final Map<String, Object> segmentation, long timestamp) {
+        public void recordPastEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, long timestamp) {
             synchronized (_cly) {
-                if (timestamp == 0) {
-                    throw new IllegalStateException("Provided timestamp has to be greater that zero");
-                }
-
                 recordPastEvent(key, segmentation, 1, 0, 0, timestamp);
             }
         }
@@ -260,12 +277,13 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param dur duration of the event, default value is "0"
          * @param timestamp unix timestamp in milliseconds of when the event occurred
          */
-        public void recordPastEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
+        public void recordPastEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
             synchronized (_cly) {
                 L.i("[Events] Calling recordPastEvent: [" + key + "]");
 
-                if (timestamp == 0) {
-                    throw new IllegalStateException("Provided timestamp has to be greater that zero");
+                if (timestamp <= 0) {
+                    L.e("Provided timestamp has to be greater that zero. Replacing that timestamp with the current time");
+                    timestamp = UtilsTime.currentTimestampMs();
                 }
 
                 UtilsTime.Instant instant = UtilsTime.Instant.get(timestamp);
@@ -279,11 +297,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param key name of the custom event, required, must not be the empty string or null
          * @return true if no event with this key existed before and event is started, false otherwise
          */
-        public boolean startEvent(final String key) {
+        public boolean startEvent(@NonNull final String key) {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before startEvent");
-                }
+                L.i("[Events] Calling startEvent: [" + key + "]");
 
                 return startEventInternal(key);
             }
@@ -295,7 +311,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param key name of the custom event, required, must not be the empty string or null
          * @return true if event with this key has been previously started, false otherwise
          */
-        public boolean endEvent(final String key) {
+        public boolean endEvent(@NonNull final String key) {
             synchronized (_cly) {
                 return endEvent(key, null, 1, 0);
             }
@@ -309,14 +325,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param count count to associate with the event, should be more than zero, default value is 1
          * @param sum sum to associate with the event, default value is 0
          * @return true if event with this key has been previously started, false otherwise
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
          */
-        public boolean endEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
+        public boolean endEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum) {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before endEvent");
-                }
+                L.i("[Events] Calling endEvent: [" + key + "]");
 
                 return endEventInternal(key, segmentation, count, sum);
             }
@@ -327,7 +339,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          *
          * @return true if event with this key has been previously started, false otherwise
          **/
-        public boolean cancelEvent(final String key) {
+        public boolean cancelEvent(@NonNull final String key) {
             synchronized (_cly) {
                 L.i("[Events] Calling cancelEvent: [" + key + "]");
 
@@ -339,10 +351,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * Records a custom event with no segmentation values, a count of one and a sum of zero.
          *
          * @param key name of the custom event, required, must not be the empty string
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty
          */
-        public void recordEvent(final String key) {
+        public void recordEvent(@NonNull final String key) {
             synchronized (_cly) {
                 recordEvent(key, null, 1, 0);
             }
@@ -353,10 +363,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          *
          * @param key name of the custom event, required, must not be the empty string
          * @param count count to associate with the event, should be more than zero
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty
          */
-        public void recordEvent(final String key, final int count) {
+        public void recordEvent(@NonNull final String key, final int count) {
             synchronized (_cly) {
                 recordEvent(key, null, count, 0);
             }
@@ -368,10 +376,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param key name of the custom event, required, must not be the empty string
          * @param count count to associate with the event, should be more than zero
          * @param sum sum to associate with the event
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty
          */
-        public void recordEvent(final String key, final int count, final double sum) {
+        public void recordEvent(@NonNull final String key, final int count, final double sum) {
             synchronized (_cly) {
                 recordEvent(key, null, count, sum);
             }
@@ -382,10 +388,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          *
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty
          */
-        public void recordEvent(final String key, final Map<String, Object> segmentation) {
+        public void recordEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation) {
             synchronized (_cly) {
                 recordEvent(key, segmentation, 1, 0);
             }
@@ -397,10 +401,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param key name of the custom event, required, must not be the empty string
          * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
          * @param count count to associate with the event, should be more than zero
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty
          */
-        public void recordEvent(final String key, final Map<String, Object> segmentation, final int count) {
+        public void recordEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count) {
             synchronized (_cly) {
                 recordEvent(key, segmentation, count, 0);
             }
@@ -413,10 +415,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param segmentation segmentation dictionary to associate with the event, can be null. Allowed values are String, int, double, boolean
          * @param count count to associate with the event, should be more than zero
          * @param sum sum to associate with the event
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
          */
-        public void recordEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum) {
+        public void recordEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum) {
             synchronized (_cly) {
                 recordEvent(key, segmentation, count, sum, 0);
             }
@@ -430,18 +430,14 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
          * @param count count to associate with the event, should be more than zero
          * @param sum sum to associate with the event
          * @param dur duration of an event
-         * @throws IllegalStateException if Countly SDK has not been initialized
-         * @throws IllegalArgumentException if key is null or empty, count is less than 1, or if segmentation contains null or empty keys or values
          */
-        public void recordEvent(final String key, final Map<String, Object> segmentation, final int count, final double sum, final double dur) {
+        public void recordEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur) {
             synchronized (_cly) {
-                if (!_cly.isInitialized()) {
-                    throw new IllegalStateException("Countly.sharedInstance().init must be called before recordEvent");
-                }
-
                 L.i("[Events] Calling recordEvent: [" + key + "]");
 
-                Utils.truncateSegmentationValues(segmentation, _cly.config_.maxSegmentationValues, "[Events] recordEvent,", L);
+                if (segmentation != null) {
+                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                }
 
                 eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null, null);
             }

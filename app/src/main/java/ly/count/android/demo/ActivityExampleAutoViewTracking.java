@@ -6,8 +6,6 @@ import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.RCVariantCallback;
-import ly.count.android.sdk.RequestResult;
 
 public class ActivityExampleAutoViewTracking extends AppCompatActivity {
 

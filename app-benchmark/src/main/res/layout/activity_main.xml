@@ -15,6 +15,7 @@
       android:layout_height="wrap_content"
       android:layout_alignBottom="@+id/wait"
       android:layout_marginBottom="-46dp"
+      android:checked="true"
       android:minHeight="48dp"
       android:text="Generate Events in place of requests"
       />
@@ -22,6 +23,7 @@
       android:id="@+id/wait"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
+      android:checked="true"
       android:minHeight="48dp"
       android:text="Wait"
       />
@@ -34,35 +36,62 @@
       tools:ignore="UselessParent"
       >
 
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Segmentation Values Per Event:"
+        />
     <EditText
         android:id="@+id/segmentSize"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:autofillHints=""
         android:ems="10"
         android:inputType="number"
         android:minHeight="48dp"
-        android:text="SegmentationValuesPerEvent"
-        android:autofillHints=""
+        android:text="6"
+        />
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Generated Request Count:"
         />
     <EditText
         android:id="@+id/loop"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:autofillHints=""
         android:ems="10"
         android:inputType="number"
         android:minHeight="48dp"
-        android:text="GeneratedRequestCount"
-        android:autofillHints=""
+        android:text="1"
+        />
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Event Count:"
         />
     <EditText
         android:id="@+id/eventSize"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
+        android:importantForAutofill="no"
         android:inputType="number"
         android:minHeight="48dp"
-        android:text="EventCount"
-        android:importantForAutofill="no"
+        android:text="24000"
+        />
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onGenerateBenchmarkData"
+        android:text="Generate benchmark Data"
+        android:visibility="visible"
+        tools:visibility="visible"
         />
     <Button
         android:id="@+id/button9"
@@ -109,6 +138,13 @@
         android:layout_height="wrap_content"
         android:onClick="onPrintCounters"
         android:text="Print Counter"
+        />
+    <Button
+        android:id="@+id/button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClearStorage"
+        android:text="Clear Storage"
         />
 
   </LinearLayout>

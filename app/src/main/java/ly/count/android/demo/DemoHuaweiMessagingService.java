@@ -1,14 +1,12 @@
 package ly.count.android.demo;
 
 import android.annotation.SuppressLint;
-import android.app.Service;
 import android.content.Intent;
 import android.util.Log;
-import ly.count.android.sdk.Countly;
-import ly.count.android.sdk.messaging.CountlyPush;
-
 import com.huawei.hms.push.HmsMessageService;
 import com.huawei.hms.push.RemoteMessage;
+import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.messaging.CountlyPush;
 
 public class DemoHuaweiMessagingService extends HmsMessageService {
     private static final String TAG = "DemoHuaweiMessagingService";
@@ -36,7 +34,7 @@ public class DemoHuaweiMessagingService extends HmsMessageService {
 
         if (message.has("typ")) {
             // custom handling only for messages with specific "typ" keys
-            if (message.data("typ").equals("download")) {
+            if ("download".equals(message.data("typ"))) {
                 // Some bg download case.
                 // We want to know how much devices started downloads after this particular message,
                 // so we report Actioned metric back to server:
@@ -44,7 +42,7 @@ public class DemoHuaweiMessagingService extends HmsMessageService {
                 // AppDownloadManager.initiateBackgroundDownload(message.link());
                 message.recordAction(getApplicationContext());
                 return;
-            } else if (message.data("typ").equals("promo")) {
+            } else if ("promo".equals(message.data("typ"))) {
                 // Now we want to override default Countly UI for a promo message type.
                 // We know that it should contain 2 buttons, so we start Activity
                 // which would handle UI and report Actioned metric back to the server.

@@ -12,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -22,7 +21,7 @@ public class RemoteConfigValueStoreTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
-        countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
     }
 
     /**
@@ -87,7 +86,7 @@ public class RemoteConfigValueStoreTests {
         JSONArray jArrI = new JSONArray("[3,\"44\",5.1,7.7]");
         JSONObject jObjI = new JSONObject("{\"q\":6,\"w\":\"op\"}");
 
-        String[] rcArr = new String[] { rcEStr("321", 123, false), rcEStr("😀", "😁"), rcEStr("c", jArrI), rcEStr("d", 6.5), rcEStr("e", jObjI) };
+        String[] rcArr = { rcEStr("321", 123, false), rcEStr("😀", "😁"), rcEStr("c", jArrI), rcEStr("d", 6.5), rcEStr("e", jObjI) };
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true);
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
@@ -106,7 +105,7 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals(4, jArr.length());
         Assert.assertEquals(3, jArr.getInt(0));
         Assert.assertEquals("44", jArr.getString(1));
-        Assert.assertEquals(5.1, jArr.getDouble(2), 0.000001);
+        Assert.assertEquals(5.1, jArr.getDouble(2), 0.000_001);
         Assert.assertEquals(7.7, jArr.get(3));
 
         JSONObject jObj = (JSONObject) v2;
@@ -130,7 +129,7 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals(4, jArr2.length());
         Assert.assertEquals(3, jArr2.getInt(0));
         Assert.assertEquals("44", jArr2.getString(1));
-        Assert.assertEquals(5.1, jArr2.getDouble(2), 0.000001);
+        Assert.assertEquals(5.1, jArr2.getDouble(2), 0.000_001);
         Assert.assertEquals(7.7, jArr2.get(3));
 
         JSONObject jObj2 = (JSONObject) v4;
@@ -141,7 +140,7 @@ public class RemoteConfigValueStoreTests {
 
     @Test
     public void dataFromString_CurrentStructure() {
-        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "ccx", false) };
+        String[] rcArr = { rcEStr("a", 123), rcEStr("b", "ccx", false) };
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
 
         Assert.assertEquals(123, rcvs.getValue("a").value);
@@ -156,7 +155,7 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsMergeValues_1() throws JSONException {
-        String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
+        String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
         RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
         JSONObject obj = new JSONObject("{\"b\": 123.3,\"c\": \"uio\"}");
 

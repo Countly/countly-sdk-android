@@ -3,9 +3,7 @@ package ly.count.android.sdk;
 import android.annotation.SuppressLint;
 import android.os.Build;
 import android.util.Log;
-import java.sql.Array;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,10 +16,12 @@ public class PerformanceCounterCollector {
     }
 
     public void TrackCounterTimeNs(String key, long valueNs) {
-        TrackCounter(key, valueNs / 1000000000.0);
+        TrackCounter(key, valueNs / 1_000_000_000.0);
     }
 
     public void TrackCounter(String key, double value) {
+        assert Utils.isNotNullOrEmpty(key);
+
         if (value < 0) {
             Log.w("Countly", "Problem, we should only log positive values");
         }

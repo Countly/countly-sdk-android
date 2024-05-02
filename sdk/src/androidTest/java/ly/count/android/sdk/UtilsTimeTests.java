@@ -21,19 +21,16 @@ public class UtilsTimeTests {
     public void tearDown() {
     }
 
-    /**
-     * Test an improper get usage
-     */
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = AssertionError.class)
     public void invalidGet() {
         UtilsTime.Instant.get(-1L);
     }
 
     @Test
     public void testInstant() {
-        UtilsTime.Instant i1 = UtilsTime.Instant.get(1579463653876L);
+        UtilsTime.Instant i1 = UtilsTime.Instant.get(1_579_463_653_876L);
         Assert.assertEquals(0, i1.dow); // TODO: "expected:<0> but was:<1>"
-        Assert.assertEquals(1579463653876L, i1.timestampMs);
+        Assert.assertEquals(1_579_463_653_876L, i1.timestampMs);
 
         //weird stuff to account for timezones and daylight saving
         int diff = Math.abs((int) (i1.hour - (18 + TimeUnit.HOURS.convert(Calendar.getInstance().getTimeZone().getRawOffset(), TimeUnit.MILLISECONDS))));

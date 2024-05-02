@@ -3,8 +3,6 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -23,7 +21,7 @@ public class ModuleUserProfile extends ModuleBase {
     static final String BYEAR_KEY = "byear";
     static final String CUSTOM_KEY = "custom";
 
-    String[] namedFields = new String[] { NAME_KEY, USERNAME_KEY, EMAIL_KEY, ORG_KEY, PHONE_KEY, PICTURE_KEY, PICTURE_PATH_KEY, GENDER_KEY, BYEAR_KEY };
+    String[] namedFields = { NAME_KEY, USERNAME_KEY, EMAIL_KEY, ORG_KEY, PHONE_KEY, PICTURE_KEY, PICTURE_PATH_KEY, GENDER_KEY, BYEAR_KEY };
 
     boolean isSynced = true;
 
@@ -49,37 +47,6 @@ public class ModuleUserProfile extends ModuleBase {
         L.v("[ModuleUserProfile] Initialising");
 
         userProfileInterface = new UserProfile();
-    }
-
-    //todo refactor these calls after UserData.java has been removed
-
-    //for url query parsing
-    //this looks to be for internal use only
-    //used when performing requests to get the set picture path
-    static String getPicturePathFromQuery(URL url) {
-        String query = url.getQuery();
-
-        if (query == null) {
-            //assume no query part in url
-            return "";
-        }
-
-        String[] pairs = query.split("&");
-        String ret = "";
-        if (url.getQuery().contains(PICTURE_PATH_KEY)) {
-            for (String pair : pairs) {
-                int idx = pair.indexOf("=");
-                if (pair.substring(0, idx).equals(PICTURE_PATH_KEY)) {
-                    try {
-                        ret = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        ret = "";
-                    }
-                    break;
-                }
-            }
-        }
-        return ret;
     }
 
     /**
@@ -199,7 +166,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
             json.put(CUSTOM_KEY, ob);
         } catch (JSONException e) {
-            Countly.sharedInstance().L.w("[UserData] Got exception converting an UserData to JSON", e);
+            L.w("[UserData] Got exception converting an UserData to JSON", e);
         }
 
         return json;
@@ -237,7 +204,7 @@ public class ModuleUserProfile extends ModuleBase {
                         }
                     }
                 } catch (JSONException e) {
-                    Countly.sharedInstance().L.w("[ModuleUserProfile] Got exception converting an Custom Json to Custom User data", e);
+                    L.w("[ModuleUserProfile] Got exception converting an Custom Json to Custom User data", e);
                 }
             }
         }
@@ -253,8 +220,16 @@ public class ModuleUserProfile extends ModuleBase {
     void modifyCustomData(String key, Object value, String mod) {
         try {
             if (!(value instanceof Double || value instanceof Integer || value instanceof String)) {
-                Countly.sharedInstance().L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
+                L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
                 return;
+            }
+
+            Object truncatedValue;
+            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            if (value instanceof String) {
+                truncatedValue = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            } else {
+                truncatedValue = value;
             }
 
             if (customMods == null) {
@@ -263,16 +238,16 @@ public class ModuleUserProfile extends ModuleBase {
             JSONObject ob;
             if (!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
-                ob.put(mod, value);
+                ob.put(mod, truncatedValue);
             } else {
-                if (customMods.containsKey(key)) {
-                    ob = customMods.get(key);
+                if (customMods.containsKey(truncatedKey)) {
+                    ob = customMods.get(truncatedKey);
                 } else {
                     ob = new JSONObject();
                 }
-                ob.accumulate(mod, value);
+                ob.accumulate(mod, truncatedValue);
             }
-            customMods.put(key, ob);
+            customMods.put(truncatedKey, ob);
             isSynced = false;
         } catch (JSONException e) {
             e.printStackTrace();
@@ -286,8 +261,8 @@ public class ModuleUserProfile extends ModuleBase {
      * @param data
      */
     void setPropertiesInternal(@NonNull Map<String, Object> data) {
-        if (data.size() == 0) {
-            Countly.sharedInstance().L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
+        if (data.isEmpty()) {
+            L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
             return;
         }
 
@@ -298,7 +273,18 @@ public class ModuleUserProfile extends ModuleBase {
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
+
+            if (value == null) {
+                L.w("[ModuleUserProfile] setPropertiesInternal, provided value for key [" + key + "] is 'null'");
+                continue;
+            }
+
             boolean isNamed = false;
+
+            // limit to the picture path is applied when request is being made in the ConnectionProcessor
+            if (value instanceof String && !key.equals(PICTURE_PATH_KEY)) {
+                value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+            }
 
             for (String namedField : namedFields) {
                 if (namedField.equals(key)) {
@@ -310,7 +296,8 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             if (!isNamed) {
-                dataCustomFields.put(key, value.toString());
+                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                dataCustomFields.put(truncatedKey, value.toString());
             }
         }
 
@@ -321,6 +308,7 @@ public class ModuleUserProfile extends ModuleBase {
         if (custom == null) {
             custom = new HashMap<>();
         }
+
         custom.putAll(dataCustomFields);
 
         isSynced = false;
@@ -353,7 +341,7 @@ public class ModuleUserProfile extends ModuleBase {
         if (picturePath != null) {
             File sourceFile = new File(picturePath);
             if (!sourceFile.isFile()) {
-                Countly.sharedInstance().L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
+                L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
                 picturePath = null;
             }
         }
@@ -367,20 +355,20 @@ public class ModuleUserProfile extends ModuleBase {
             try {
                 byear = Integer.parseInt(data.get(ModuleUserProfile.BYEAR_KEY));
             } catch (NumberFormatException e) {
-                Countly.sharedInstance().L.w("[UserData] Incorrect byear number format");
+                L.w("[UserData] Incorrect byear number format");
                 byear = 0;
             }
         }
     }
 
     void saveInternal() {
-        Countly.sharedInstance().L.d("[ModuleUserProfile] saveInternal");
+        L.d("[ModuleUserProfile] saveInternal");
         requestQueueProvider.sendUserData(getDataForRequest());
         clearInternal();
     }
 
     void clearInternal() {
-        Countly.sharedInstance().L.d("[ModuleUserProfile] clearInternal");
+        L.d("[ModuleUserProfile] clearInternal");
 
         name = null;
         username = null;

@@ -1,26 +1,19 @@
 package ly.count.android.demo;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
 import com.android.installreferrer.api.InstallReferrerClient;
 import com.android.installreferrer.api.InstallReferrerStateListener;
 import com.android.installreferrer.api.ReferrerDetails;
 import java.net.URLDecoder;
-import java.util.HashMap;
-
 import ly.count.android.sdk.Countly;
-import org.json.JSONObject;
 
 @SuppressWarnings("UnusedParameters")
 public class MainActivity extends AppCompatActivity {
-    private String demoTag = "CountlyDemo";
+    private final static String demoTag = "CountlyDemo";
     InstallReferrerClient referrerClient;
 
     @Override
@@ -32,7 +25,8 @@ public class MainActivity extends AppCompatActivity {
         To send Referrer follow these steps.
         Steps:
         1. Start Google Play on the device using campaign link,
-        for example, https://play.google.com/store/apps/details?id=ly.count.android.demo&referrer=utm_source%3Dtest_source%26utm_medium%3Dtest_medium%26utm_term%3Dtest-term%26utm_content%3Dtest_content%26utm_campaign%3Dtest_name
+        for example, https://play.google.com/store/apps/details?id=ly.count.android.demo&referrer=utm_source%3Dtest_source%26utm_medium%3Dtest_medium%26
+        utm_term%3Dtest-term%26utm_content%3Dtest_content%26utm_campaign%3Dtest_name
         (You can use google play generator: https://developers.google.com/analytics/devguides/collection/android/v3/campaigns#google-play-url-builder)
         2. DON'T TAP ON INSTALL BUTTON
         3. Install your test build using adb.
@@ -78,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
 
                             referrerClient.endConnection();
                         } catch (Exception e) {
-                            e.printStackTrace();
+                            Log.e(demoTag, "Error while parsing referrer", e);
                         }
                         break;
                     case InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED:
@@ -86,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
                         break;
                     case InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE:
                         // Connection couldn't be established.
+                        break;
+                    default:
                         break;
                 }
             }
@@ -118,7 +114,9 @@ public class MainActivity extends AppCompatActivity {
         startActivity(new Intent(this, ActivityExampleViewTracking.class));
     }
 
-    public void onClickButtonAutoViewTracking(View v) { startActivity(new Intent(this, ActivityExampleAutoViewTracking.class)); }
+    public void onClickButtonAutoViewTracking(View v) {
+        startActivity(new Intent(this, ActivityExampleAutoViewTracking.class));
+    }
 
     public void onClickButtonMultiThreading(View v) {
         //

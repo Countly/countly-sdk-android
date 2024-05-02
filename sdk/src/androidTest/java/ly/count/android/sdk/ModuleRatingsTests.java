@@ -1,15 +1,17 @@
 package ly.count.android.sdk;
 
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -22,11 +24,11 @@ public class ModuleRatingsTests {
 
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(getContext(), mock(ModuleLog.class));
+        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 
         mCountly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         mCountly.init(config);
     }
 
@@ -38,7 +40,7 @@ public class ModuleRatingsTests {
     public void recordManualRating() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        String[] vals = new String[] { "aa", "bb", "cc" };
+        String[] vals = { "aa", "bb", "cc" };
         mCountly.ratings().recordManualRating(vals[0], 3, vals[1], vals[2], true);
 
         final Map<String, Object> segm = new HashMap<>();
@@ -86,7 +88,7 @@ public class ModuleRatingsTests {
     @Test
     public void getAutomaticSessionLimit() {
         Countly countly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
+        CountlyConfig config = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
         countly.init(config);
         Assert.assertEquals(44, countly.ratings().getAutomaticStarRatingSessionLimit());
     }
@@ -97,8 +99,8 @@ public class ModuleRatingsTests {
 
         Assert.assertEquals(0, mCountly.ratings().getCurrentVersionsSessionCount());
 
-        mCountly.moduleRatings.registerAppSession(getContext(), null);
-        mCountly.moduleRatings.registerAppSession(getContext(), null);
+        mCountly.moduleRatings.registerAppSession(TestUtils.getContext(), null);
+        mCountly.moduleRatings.registerAppSession(TestUtils.getContext(), null);
 
         Assert.assertEquals(2, mCountly.ratings().getCurrentVersionsSessionCount());
 
@@ -112,7 +114,7 @@ public class ModuleRatingsTests {
         Assert.assertFalse(mCountly.moduleRatings.getIfStarRatingShouldBeShownAutomatically());
 
         Countly countly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setIfStarRatingShownAutomatically(true);
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setIfStarRatingShownAutomatically(true);
         countly.init(config);
 
         Assert.assertTrue(countly.moduleRatings.getIfStarRatingShouldBeShownAutomatically());
@@ -139,11 +141,53 @@ public class ModuleRatingsTests {
     }
 
     /**
+     * Value size limit is applied to the email and the comment of the manual rating
+     * "recordManualRating" and "recordRatingWidgetWithID" methods are tested
+     * Validate that events exist and contains the truncated values of the email and the comment
+     */
+    @Test
+    public void internalLimits_recordManualRating_maxValueSize() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.sdkInternalLimits.setMaxValueSize(1);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.ratings().recordManualRating("A", 3, "email", "comment", true);
+
+        Map<String, Object> ratingSegmentation = prepareRatingSegmentation("3", "A", "e", "c", true);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 0);
+
+        countly.ratings().recordRatingWidgetWithID("B", 5, "aaa@bbb.com", "very_good", false);
+
+        ratingSegmentation = prepareRatingSegmentation("5", "B", "a", "v", false);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 1);
+    }
+
+    private Map<String, Object> prepareRatingSegmentation(String rating, String widgetId, String email, String comment, boolean userCanBeContacted) {
+        Map<String, Object> segm = new ConcurrentHashMap<>();
+        segm.put("platform", "android");
+        segm.put("app_version", "1.0");
+        segm.put("rating", rating);
+        segm.put("widget_id", widgetId);
+        segm.put("contactMe", userCanBeContacted);
+
+        if (email != null && !email.isEmpty()) {
+            segm.put("email", email);
+        }
+
+        if (comment != null && !comment.isEmpty()) {
+            segm.put("comment", comment);
+        }
+
+        return segm;
+    }
+
+    /**
      * Manually initialize the rating module and then make sure that the star rating preferences return the correct values
      */
     //@Test
     //public void setAllFieldsDuringInit() {
-    //    CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
+    //    CountlyConfig config = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().setStarRatingSessionLimit(44);
     //    config.setStarRatingDisableAskingForEachAppVersion(true);
     //    config.setStarRatingSessionLimit(445);
     //    config.setIfStarRatingShownAutomatically(true);

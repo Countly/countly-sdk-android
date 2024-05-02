@@ -48,11 +48,13 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (sessionIsRunning()) {
-            L.d("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
+            L.w("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
+            healthTracker.logSessionStartedWhileRunning();
+            return;
         }
 
         //prepare metrics
-        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
+        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
 
         prevSessionDurationStartTime_ = System.nanoTime();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
@@ -66,7 +68,9 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!sessionIsRunning()) {
-            L.d("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
+            L.w("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
+            healthTracker.logSessionUpdatedWhileNotRunning();
+            return;
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
@@ -85,7 +89,9 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!sessionIsRunning()) {
-            L.d("[ModuleSessions] No session is running, this 'endSessionInternal' will be ignored");
+            L.w("[ModuleSessions] No session is running, this 'endSessionInternal' will be ignored");
+            healthTracker.logSessionEndedWhileNotRunning();
+            return;
         }
 
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
@@ -113,7 +119,7 @@ public class ModuleSessions extends ModuleBase {
         final long currentTimestampInNanoseconds = System.nanoTime();
         final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
         prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        return (int) Math.round(unsentSessionLengthInNanoseconds / 1000000000.0d);
+        return (int) Math.round(unsentSessionLengthInNanoseconds / 1_000_000_000.0d);
     }
 
     @Override
@@ -121,7 +127,7 @@ public class ModuleSessions extends ModuleBase {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if (newConsent) {
                 //if consent was just given and manual sessions sessions are not enabled, start a session if we are in the foreground
-                if (!manualSessionControlEnabled && _cly.lifecycleStateAtLeastStarted()) {
+                if (!manualSessionControlEnabled && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
                     beginSessionInternal();
                 }
             } else {
@@ -145,7 +151,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (!manualSessionControlEnabled && _cly.lifecycleStateAtLeastStarted()) {
+        if (!manualSessionControlEnabled && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             //start a session if we initialized in the foreground
             beginSessionInternal();
         }

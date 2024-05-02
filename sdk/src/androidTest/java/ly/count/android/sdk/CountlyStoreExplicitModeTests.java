@@ -11,13 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static androidx.test.InstrumentationRegistry.getContext;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
@@ -50,7 +44,7 @@ public class CountlyStoreExplicitModeTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().setLoggingEnabled(true);
-        store = new CountlyStore(getContext(), mock(ModuleLog.class), false);
+        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), false);
         sp = store;
         store.clear();
     }
@@ -72,7 +66,7 @@ public class CountlyStoreExplicitModeTests {
 
     @Test
     public void rqAddRequestSetGetWriteCache() {
-        CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
+        CountlyStore emStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), true);
 
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
@@ -95,7 +89,7 @@ public class CountlyStoreExplicitModeTests {
         store.addRequest("b", false);
         store.addRequest("c", false);
 
-        CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
+        CountlyStore emStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), true);
 
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
@@ -121,7 +115,7 @@ public class CountlyStoreExplicitModeTests {
         store.addRequest("b", false);
         store.addRequest("c", false);
 
-        CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
+        CountlyStore emStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), true);
 
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
@@ -143,7 +137,7 @@ public class CountlyStoreExplicitModeTests {
         store.addRequest("b", false);
         store.addRequest("c", false);
 
-        CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
+        CountlyStore emStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), true);
 
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
@@ -201,7 +195,7 @@ public class CountlyStoreExplicitModeTests {
             sb.append(events[a]);
         }
 
-        store.setEventData(sb.toString());
+        store.writeEventDataToStorage(sb.toString());
     }
 
     void validateEQArrays(String[] targetRegArray, String[] targetESArray, CountlyStore storeRegular, CountlyStore storeExplicit) {
@@ -213,7 +207,7 @@ public class CountlyStoreExplicitModeTests {
     public void eqGetEvents() {
         populateEvents(new String[] { "1", "2", "3" }, store);
 
-        CountlyStore emStore = new CountlyStore(getContext(), mock(ModuleLog.class), true);
+        CountlyStore emStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), true);
 
         validateEQArrays(new String[] { "1", "2", "3" }, new String[] { "1", "2", "3" }, store, emStore);
 
@@ -228,7 +222,7 @@ public class CountlyStoreExplicitModeTests {
         assertEquals(0, store.getRequests().length);
 
         Countly countly = new Countly();
-        CountlyConfig config = (new CountlyConfig(getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableExplicitStorageMode();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableExplicitStorageMode();
         countly.init(config);
 
         esWriteCachesToPersistenceValidateWrite(countly, false);//this should perform no write

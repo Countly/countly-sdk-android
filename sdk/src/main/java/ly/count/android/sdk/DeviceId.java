@@ -21,6 +21,10 @@ public class DeviceId {
     OpenUDIDProvider openUDIDProvider;
 
     protected DeviceId(@Nullable String providedId, @NonNull StorageProvider givenStorageProvider, @NonNull ModuleLog moduleLog, @NonNull OpenUDIDProvider openUDIDProvider) {
+        assert givenStorageProvider != null;
+        assert moduleLog != null;
+        assert openUDIDProvider != null;
+
         if ("".equals(providedId)) {
             throw new IllegalStateException("Empty device ID is not a valid value, [" + providedId + "]");
         }
@@ -98,6 +102,9 @@ public class DeviceId {
     }
 
     protected String getCurrentId() {
+        assert id != null;
+        assert type != null;
+
         if (id == null && type == DeviceIdType.OPEN_UDID) {
             //using openUDID as a fallback
             id = openUDIDProvider.getOpenUDID();
@@ -108,14 +115,17 @@ public class DeviceId {
     /**
      * Used only for tests
      *
-     * @param type
-     * @param id
+     * @param setType
+     * @param setId
      */
     @SuppressWarnings("SameParameterValue")
-    protected void setId(DeviceIdType type, String id) {
-        L.v("[DeviceId-int] setId, Device ID is " + id + " (type " + type + ")");
-        this.type = type;
-        this.id = id;
+    protected void setId(@NonNull DeviceIdType setType, @NonNull String setId) {
+        assert setId != null;
+        assert setType != null;
+
+        L.v("[DeviceId-int] setId, Device ID is " + setId + " (type " + setType + ")");
+        this.type = setType;
+        this.id = setId;
     }
 
     /**
@@ -124,6 +134,8 @@ public class DeviceId {
      * @param deviceId
      */
     protected void changeToCustomId(@NonNull String deviceId) {
+        assert deviceId != null;
+
         L.v("[DeviceId-int] changeToCustomId, current Device ID is [" + id + "] new ID is[" + deviceId + "]");
         setAndStoreId(DeviceIdType.DEVELOPER_SUPPLIED, deviceId);
     }
@@ -133,12 +145,15 @@ public class DeviceId {
         setAndStoreId(DeviceIdType.DEVELOPER_SUPPLIED, ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
     }
 
-    void setAndStoreId(DeviceIdType type, String deviceId) {
-        this.id = deviceId;
-        this.type = type;
+    void setAndStoreId(@NonNull DeviceIdType setType, @NonNull String setDeviceId) {
+        assert setType != null;
+        assert setDeviceId != null;
 
-        storageProvider.setDeviceID(deviceId);
-        storageProvider.setDeviceIDType(type.toString());
+        this.id = setDeviceId;
+        this.type = setType;
+
+        storageProvider.setDeviceID(setDeviceId);
+        storageProvider.setDeviceIDType(setType.toString());
     }
 
     /**
@@ -147,6 +162,8 @@ public class DeviceId {
      * @return Currently used device ID type
      */
     protected DeviceIdType getType() {
+        assert type != null;
+
         if (isTemporaryIdModeEnabled()) {
             return DeviceIdType.TEMPORARY_ID;
         }
