@@ -84,6 +84,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     int maxRequestQueueSize = 1000;
     int dropAgeHours = 0;
+    private final static int requestRemovalLoopLimit = 100;
 
     //explicit storage fields
     boolean explicitStorageModeEnabled;
@@ -463,6 +464,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         final List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
 
         L.v("[CountlyStore] addRequest, s:[" + writeInSync + "] new q size:[" + (requests.size() + 1) + "] r:[" + requestStr + "]");
+        System.out.println(requests);
+        System.out.println(requests.size());
         if (requests.size() < maxRequestQueueSize) {
             //request under max requests, add as normal
             requests.add(requestStr);
@@ -473,8 +476,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
             // TODO: too much I/O?
             int removedRequests = checkAndRemoveTooOldRequests(); // remove too old requests
-            if (removedRequests == 0) { // remove oldest if nothing is too old
-                deleteOldestRequest();
+            if (removedRequests == 0 || requests.size() >= maxRequestQueueSize) { // remove oldest if nothing is too old
+                deleteOldestRequests();
             }
             addRequest(requestStr, writeInSync);
         }
@@ -485,22 +488,27 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     /**
-     * Removes the oldest request:
+     * Removes the oldest requests:
      * 1. Gets the current requests from storage
      * 2. Copies it to a List
-     * 3. Removes the first entry
+     * 3. Removes the first X entry
      * 4. Saves the list to the storage
      */
-    synchronized void deleteOldestRequest() {
+    synchronized void deleteOldestRequests() {
         long tsStart = 0L;
         if (pcc != null) {
             tsStart = UtilsTime.getNanoTime();
         }
 
         final List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
+        if (requests.size() < maxRequestQueueSize) {
+            L.i("[CountlyStore] deleteOldestRequests, Request queue is already under the limit, no need to remove anything");
+            return;
+        }
 
-        L.i("[CountlyStore] deleteOldestRequest, Will remove the oldest request");
-        requests.remove(0);
+        int requestsToRemove = Math.min(requestRemovalLoopLimit, (requests.size() - maxRequestQueueSize) + 1); // +1 because it should open a new place for newcomer
+        L.i("[CountlyStore] deleteOldestRequests, Will remove the oldest " + requestsToRemove + " request");
+        requests.subList(0, requestsToRemove).clear(); // sublist reflects all changes to the main list
 
         storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), false);
 

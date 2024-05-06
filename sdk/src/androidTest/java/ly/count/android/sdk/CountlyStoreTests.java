@@ -496,12 +496,17 @@ public class CountlyStoreTests {
      */
     @Test
     public void deleteOldestRequest() {
+        store.maxRequestQueueSize = 5;
         store.addRequest(requestEntries[0], false);
         store.addRequest(requestEntries[1], false);
         store.addRequest(requestEntries[2], false);
-        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1], requestEntries[2] }, store.getRequests());
-        store.deleteOldestRequest();
-        assertArrayEquals(new String[] { requestEntries[1], requestEntries[2] }, store.getRequests());
+        store.addRequest(requestEntries[3], false);
+        store.addRequest(requestEntries[4], false);
+        assertArrayEquals(new String[] { requestEntries[0], requestEntries[1], requestEntries[2], requestEntries[3], requestEntries[4] }, store.getRequests());
+        store.maxRequestQueueSize = 3;
+        store.deleteOldestRequests(); // now a new place opened for new request
+        store.addRequest(requestEntries[5], false);
+        assertArrayEquals(new String[] { requestEntries[3], requestEntries[4], requestEntries[5] }, store.getRequests());
     }
 
     /**
