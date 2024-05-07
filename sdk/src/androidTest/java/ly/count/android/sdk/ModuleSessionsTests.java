@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -51,8 +50,7 @@ public class ModuleSessionsTests {
         verify(requestQueueProvider, times(1)).updateSession(1);
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        verify(requestQueueProvider, times(1)).endSession(2, null);
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        verify(requestQueueProvider, times(1)).endSession(2);
     }
 
     @Test
@@ -70,7 +68,7 @@ public class ModuleSessionsTests {
         verify(requestQueueProvider, never()).updateSession(anyInt());
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
         verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
@@ -87,7 +85,7 @@ public class ModuleSessionsTests {
 
         mCountly.onStopInternal();
 
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
         verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
@@ -104,8 +102,7 @@ public class ModuleSessionsTests {
 
         mCountly.onStopInternal();
 
-        verify(requestQueueProvider, times(1)).endSession(1, null);
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        verify(requestQueueProvider, times(1)).endSession(1);
     }
 
     /**
@@ -126,7 +123,7 @@ public class ModuleSessionsTests {
 
         TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
         verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
         verify(requestQueueProvider, never()).endSession(anyInt());
     }
 
@@ -143,7 +140,7 @@ public class ModuleSessionsTests {
 
         TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
         verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
         verify(requestQueueProvider, never()).endSession(anyInt());
 
         mCountly.sessions().updateSession();
@@ -151,7 +148,7 @@ public class ModuleSessionsTests {
 
         TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
         verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
+        verify(requestQueueProvider, never()).endSession(anyInt());
         verify(requestQueueProvider, never()).endSession(anyInt());
     }
 

@@ -88,11 +88,9 @@ public class ModuleRemoteConfigTests {
             }
 
             countly.deviceId().changeWithMerge("dd");
-            Assert.assertEquals(intendedCount, triggerCounter[0]);//changing device ID with merging should not create a request
+            Assert.assertEquals(++intendedCount, triggerCounter[0]);//changing device ID with merging should create a request
 
             countly.deviceId().changeWithoutMerge("dd11");
-            //todo the current behaviour is slightly out of spec as it would download RC after the RQ would have executed that request
-            //todo this should be updated once the RQ is reworked
             Assert.assertEquals(intendedCount, triggerCounter[0]);//changing device ID without merging should create a request
 
             countly.deviceId().enableTemporaryIdMode();

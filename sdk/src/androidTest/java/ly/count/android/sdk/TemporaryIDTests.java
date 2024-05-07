@@ -29,7 +29,6 @@ public class TemporaryIDTests {
         store.clear();
     }
 
-    //String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
     //String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
 
     @NonNull String[] CreateInitialTmpIDState(@NonNull String did, @NonNull DeviceIdType dType, @NonNull String replaceDid, @NonNull CountlyStore cStore) {
