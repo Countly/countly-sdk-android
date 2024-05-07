@@ -6,13 +6,16 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -369,5 +372,60 @@ public class Utils {
 
         // if startStr does not exist just return empty string[]
         return new String[] { data, null };
+    }
+
+    /**
+     * Splits a given request into key-value pairs
+     *
+     * @param request - request string to be split
+     * @return - returns a map of key-value pairs
+     */
+    public static @NonNull Map<String, String> splitIntoParams(@Nullable String request, @NonNull ModuleLog L) {
+        assert L != null;
+
+        Map<String, String> params = new HashMap<>();
+
+        if (request == null || request.isEmpty()) {
+            return params;
+        }
+
+        String[] entries = request.split("&");
+
+        for (String entry : entries) {
+            String[] parts = entry.split("=");
+            if (parts.length != 2) {
+                L.w("splitIntoParams, Param entry can't be split: [" + entry + "]");
+                continue;
+            }
+
+            params.put(parts[0], parts[1]);
+        }
+
+        return params;
+    }
+
+    /**
+     * Combines a map of key-value pairs into a request string
+     * reversed version of {@link #splitIntoParams}
+     *
+     * @param params - map of key-value pairs
+     * @return - returns a request string
+     */
+    public static @NonNull String combineParamsIntoRequest(@NonNull Map<String, String> params) {
+        assert params != null;
+
+        StringBuilder sb = new StringBuilder(100);
+
+        for (Map.Entry<String, String> pair : params.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append('&');
+            }
+
+            sb.append(pair.getKey());
+            sb.append('=');
+            sb.append(pair.getValue());
+        }
+
+        return sb.toString();
     }
 }
