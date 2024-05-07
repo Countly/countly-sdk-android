@@ -860,6 +860,132 @@ public class MigrationHelperTests {
         validateRequestsAreEqual(generateMockRequest("456", 2), reqs[10]);
     }
 
+    /**
+     * 3 requests and device id given, at the end all request should contain device id
+     */
+    @Test
+    public void performMigration3To4_11() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+
+        cs.setDeviceID("NEW_ID");
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(null, 1), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+
+        TestUtils.assertQueueSizes(3, 0, cs);
+        String[] reqs = cs.getRequests();
+
+        validateRequestsAreEqual(generateMockRequest("NEW_ID", 0), reqs[0]);
+        validateRequestsAreEqual(generateMockRequest("NEW_ID", 1), reqs[1]);
+        validateRequestsAreEqual(generateMockRequest("NEW_ID", 2), reqs[2]);
+    }
+
+    /**
+     * 1 request, 1 temp, 1 request, 1 without merge, 1 request, 1 temp, 1 request, 1 without merge, 1 request, 1 temp, 1 request
+     */
+    @Test
+    public void performMigration3To4_12() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+
+        cs.setDeviceID("789");
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 1), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        cs.addRequest(generateMockRequest(0, "123"), true);
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 0), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        cs.addRequest(generateMockRequest(0, "456"), true);
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 2), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        TestUtils.assertQueueSizes(11, 0, cs);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+
+        TestUtils.assertQueueSizes(11, 0, cs);
+        String[] reqs = cs.getRequests();
+
+        validateRequestsAreEqual(generateMockRequest("123", 0), reqs[0]);
+        validateRequestsAreEqual(generateMockRequest("123", 1), reqs[1]);
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[2]);
+
+        validateRequestsAreEqual(generateMockRequest("123", 0), reqs[3]);
+
+        validateRequestsAreEqual(generateMockRequest("456", 0), reqs[4]);
+        validateRequestsAreEqual(generateMockRequest("456", 1), reqs[5]);
+        validateRequestsAreEqual(generateMockRequest("456", 2), reqs[6]);
+
+        validateRequestsAreEqual(generateMockRequest("456", 0), reqs[7]);
+
+        validateRequestsAreEqual(generateMockRequest("789", 0), reqs[8]);
+        validateRequestsAreEqual(generateMockRequest("789", 1), reqs[9]);
+        validateRequestsAreEqual(generateMockRequest("789", 2), reqs[10]);
+    }
+
+    /**
+     * 1 request, 1 temp, 1 request, 1 merge, 1 request, 1 temp, 1 request, 1 without merge, 1 request, 1 temp, 1 request
+     */
+    @Test
+    public void performMigration3To4_13() {
+        TestUtils.assertQueueSizes(0, 0, cs);
+
+        cs.setDeviceID("789");
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 1), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        cs.addRequest(generateMockRequest("123", 0), true);
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 0), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        cs.addRequest(generateMockRequest(2, "456"), true);
+
+        cs.addRequest(generateMockRequest(null, 0), true);
+        cs.addRequest(generateMockRequest(DeviceId.temporaryCountlyDeviceId, 2), true);
+        cs.addRequest(generateMockRequest(null, 2), true);
+
+        TestUtils.assertQueueSizes(11, 0, cs);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.performMigration3To4(new HashMap<>());
+
+        TestUtils.assertQueueSizes(11, 0, cs);
+        String[] reqs = cs.getRequests();
+
+        validateRequestsAreEqual(generateMockRequest("456", 0), reqs[0]);
+        validateRequestsAreEqual(generateMockRequest("456", 1), reqs[1]);
+        validateRequestsAreEqual(generateMockRequest("456", 2), reqs[2]);
+
+        validateRequestsAreEqual(generateMockRequest("123", 0, "456"), reqs[3]);
+
+        validateRequestsAreEqual(generateMockRequest("123", 0), reqs[4]);
+        validateRequestsAreEqual(generateMockRequest("123", 1), reqs[5]);
+        validateRequestsAreEqual(generateMockRequest("123", 2), reqs[6]);
+
+        validateRequestsAreEqual(generateMockRequest("123", 0), reqs[7]);
+
+        validateRequestsAreEqual(generateMockRequest("789", 0), reqs[8]);
+        validateRequestsAreEqual(generateMockRequest("789", 1), reqs[9]);
+        validateRequestsAreEqual(generateMockRequest("789", 2), reqs[10]);
+    }
+
     String[][] mockParams = { { "app_key", "asdsad" }, { "sdk_version", "445" }, { "sdk_name", "dfdfs" }, { "timestamp", "24234" } };
 
     String generateMockRequest(String deviceIDV, int deviceIDPos) {
@@ -882,7 +1008,7 @@ public class MigrationHelperTests {
     String generateMockRequest(String deviceIDV, int deviceIDPos, String oldId, String overrideId) {
         StringBuilder sb = new StringBuilder(100);
 
-        if (deviceIDPos == 0 && deviceIDV != null) {
+        if (deviceIDPos == 0) {
             //put it at the start
             appendIfNotNull(sb, "device_id", deviceIDV);
             appendIfNotNull(sb, "&old_device_id", oldId);
