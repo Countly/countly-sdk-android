@@ -33,7 +33,7 @@ public class TemporaryIDTests {
 
     @NonNull String[] CreateInitialTmpIDState(@NonNull String did, @NonNull DeviceIdType dType, @NonNull String replaceDid, @NonNull CountlyStore cStore) {
         String req1 = "aa=45&device_id=" + DeviceId.temporaryCountlyDeviceId;
-        String req2 = "12=qw&device_id=55";
+        String req2 = "12=qw&device_id=55"; // this is a merge request and because of migration 9 that parameter is added
         String req3 = "68=45&device_id=" + DeviceId.temporaryCountlyDeviceId + "&ff=bb";
 
         cStore.addRequest(req1, false);
@@ -49,13 +49,11 @@ public class TemporaryIDTests {
         assertEquals(req2, reqs1[1]);
         assertEquals(req3, reqs1[2]);
 
-        String[] ret = { req1, req2, req3 };
+        req3 = "ff=bb&68=45&device_id=55";
+        req2 += "&old_device_id=" + did;
+        req1 = req1.replace("&device_id=" + DeviceId.temporaryCountlyDeviceId, "&device_id=" + replaceDid);
 
-        for (int a = 0; a < ret.length; a++) {
-            ret[a] = ret[a].replace("&device_id=" + DeviceId.temporaryCountlyDeviceId, "&device_id=" + replaceDid);
-        }
-
-        return ret;
+        return new String[] { req1, req2, req3 };
     }
 
     @Test

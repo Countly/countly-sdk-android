@@ -65,7 +65,19 @@ public class ConnectionQueueTests {
         CountlyStore cs = mock(CountlyStore.class);
         when(cs.getCachedAdvertisingId()).thenReturn("");
         connQ.storageProvider = cs;
-        connQ.setDeviceId(mock(DeviceIdProvider.class));
+        connQ.setDeviceId(new DeviceIdProvider() {
+            @Override public String getDeviceId() {
+                return TestUtils.commonDeviceId;
+            }
+
+            @Override public DeviceId getDeviceIdInstance() {
+                return null;
+            }
+
+            @Override public boolean isTemporaryIdEnabled() {
+                return false;
+            }
+        });
         connQ.setExecutor(mock(ExecutorService.class));
     }
 
@@ -465,7 +477,6 @@ public class ConnectionQueueTests {
                 Countly.sharedInstance().COUNTLY_SDK_NAME = "someBigNew123-+name";
                 Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING = "123sdf.v-213";
             }
-
             UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
             String commonR = connQ.prepareCommonRequestData();
             Assert.assertTrue(commonR.contains("app_key="));
@@ -475,6 +486,7 @@ public class ConnectionQueueTests {
             Assert.assertTrue(commonR.contains("&tz="));
             Assert.assertTrue(commonR.contains("&sdk_version="));
             Assert.assertTrue(commonR.contains("&sdk_name="));
+            Assert.assertTrue(commonR.contains("&device_id="));
 
             String[] parts = commonR.split("&");
 
@@ -506,6 +518,9 @@ public class ConnectionQueueTests {
                         break;
                     case "dow":
                         assertEquals(pair[1], "" + instant.dow);
+                        break;
+                    case "device_id":
+                        assertEquals(pair[1], TestUtils.commonDeviceId);
                         break;
                 }
             }

@@ -121,10 +121,11 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void rcValueCaching() {
+        boolean valuesAreCached = false;
         for (int a = 0; a < 4; a++) {
             countlyStore.clear();
 
-            CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+            CountlyConfig config = TestUtils.createBaseConfig();
             config.enableRemoteConfigAutomaticTriggers();
 
             if (a == 0 || a == 1) {
@@ -134,6 +135,7 @@ public class ModuleRemoteConfigTests {
 
             if (a == 0 || a == 2) {
                 config.enableRemoteConfigValueCaching();
+                valuesAreCached = true;
             }
 
             Countly countly = new Countly().init(config);
@@ -145,12 +147,12 @@ public class ModuleRemoteConfigTests {
             Assert.assertEquals(2, countly.remoteConfig().getValues().size());
             assertCValueCachedState(countly.remoteConfig().getValues(), false);
 
-            //changing with merging should leave no impact on this
+            //changing with merging should trigger caching
             countly.deviceId().changeWithMerge("dd");
-            Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+            assertCValueCachedState(countly.remoteConfig().getValues(), valuesAreCached);
 
             //changing without merging should trigger caching. Lack of consent should leave no impact on this
-            assertCValueCachedState(countly.remoteConfig().getValues(), false);
+            assertCValueCachedState(countly.remoteConfig().getValues(), valuesAreCached);
             countly.deviceId().changeWithoutMerge("dd11");
 
             for (int b = 0; b < 2; b++) {
@@ -185,6 +187,8 @@ public class ModuleRemoteConfigTests {
                     Assert.assertEquals(0, countly.remoteConfig().getValues().size());
                 }
             }
+
+            valuesAreCached = false;
         }
     }
 
