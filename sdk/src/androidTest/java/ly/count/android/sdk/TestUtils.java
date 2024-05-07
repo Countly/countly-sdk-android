@@ -546,7 +546,7 @@ public class TestUtils {
         int tz = Integer.parseInt(params.get("tz"));
 
         validateSdkIdentityParams(params);
-        //Assert.assertEquals(deviceId, params.get("device_id"));
+        Assert.assertEquals(deviceId, params.get("device_id"));
         Assert.assertEquals(commonAppKey, params.get("app_key"));
         Assert.assertEquals(Countly.DEFAULT_APP_VERSION, params.get("av"));
         Assert.assertTrue(Long.parseLong(params.get("timestamp")) > 0);

@@ -128,7 +128,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //update remote config_ values after id change if automatic update is enabled
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(true);
 
-        _cly.moduleSessions.endSessionInternal(getDeviceId());
+        _cly.moduleSessions.endSessionInternal();
 
         //remove all consent
         _cly.moduleConsent.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
@@ -152,17 +152,16 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
      * @param deviceId new device id
      */
     void changeDeviceIdWithMergeInternal(@NonNull String deviceId) {
-        if ("".equals(deviceId)) {
+        if (deviceId.isEmpty()) {
             L.e("changeDeviceIdWithMergeInternal, provided device ID can't be empty string");
             return;
         }
 
-        //todo finish implementing remaining changes and uncomment this
-        //if(deviceIdInstance.getCurrentId().equals(deviceId)) {
-        //    //if we are attempting to change the device ID to the same ID, do nothing
-        //    L.w("[ModuleDeviceId] changeDeviceIdWithMergeInternal, We are attempting to change the device ID to the same ID, request will be ignored");
-        //    return;
-        //}
+        if (deviceIdInstance.getCurrentId().equals(deviceId)) {
+            //if we are attempting to change the device ID to the same ID, do nothing
+            L.w("[ModuleDeviceId] changeDeviceIdWithMergeInternal, We are attempting to change the device ID to the same ID, request will be ignored");
+            return;
+        }
 
         if (isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
             //if we are in temporary ID mode or
@@ -187,8 +186,9 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
             //update remote config_ values after id change if automatic update is enabled
             _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(false);
-
-            requestQueueProvider.changeDeviceId(deviceId, _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
+            requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId(), _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
+            deviceIdInstance.changeToCustomId(deviceId);
+            _cly.notifyDeviceIdChange();
         }
     }
 

@@ -78,10 +78,7 @@ public class ModuleSessions extends ModuleBase {
         }
     }
 
-    /**
-     * @param deviceIdOverride used when switching deviceID to a different one and ending the previous session
-     */
-    void endSessionInternal(String deviceIdOverride) {
+    void endSessionInternal() {
         L.d("[ModuleSessions] 'endSessionInternal'");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
@@ -96,7 +93,7 @@ public class ModuleSessions extends ModuleBase {
 
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
-        requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
+        requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate());
         prevSessionDurationStartTime_ = 0;
 
         _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
@@ -140,7 +137,7 @@ public class ModuleSessions extends ModuleBase {
 
                 //if a session was running (manual or automatic), stop it
                 if (sessionIsRunning()) {
-                    endSessionInternal(null);
+                    endSessionInternal();
                 } else {
                     //reset the first view counter even if there was no session
                     _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
@@ -203,7 +200,7 @@ public class ModuleSessions extends ModuleBase {
                     return;
                 }
 
-                endSessionInternal(null);
+                endSessionInternal();
             }
         }
     }
