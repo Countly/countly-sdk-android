@@ -95,17 +95,14 @@ public class CountlyStoreExplicitModeTests {
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "a", "b", "c" }, store, emStore);
+        emStore.addRequest("d", false);
 
-        emStore.deleteOldestRequests(); // this will empty the RQ for newcomer
-
-        validateRQArrays(new String[] { "a", "b", "c" }, new String[] {}, store, emStore);
+        validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "d" }, store, emStore);
 
         esWriteCacheToStorageValidateWrite(emStore, true);
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
-        store.addRequest("d", false);
-        emStore.addRequest("e", false);
-        validateRQArrays(new String[] { "d" }, new String[] { "e" }, store, emStore);
+        validateRQArrays(new String[] { "d" }, new String[] { "d" }, store, emStore);
     }
 
     @Test

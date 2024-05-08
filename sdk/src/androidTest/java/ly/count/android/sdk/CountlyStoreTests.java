@@ -33,6 +33,7 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -504,7 +505,6 @@ public class CountlyStoreTests {
         store.addRequest(requestEntries[4], false);
         assertArrayEquals(new String[] { requestEntries[0], requestEntries[1], requestEntries[2], requestEntries[3], requestEntries[4] }, store.getRequests());
         store.maxRequestQueueSize = 3;
-        store.deleteOldestRequests(); // now a new place opened for new request
         store.addRequest(requestEntries[5], false);
         assertArrayEquals(new String[] { requestEntries[3], requestEntries[4], requestEntries[5] }, store.getRequests());
     }
@@ -522,21 +522,25 @@ public class CountlyStoreTests {
 
         // nothing erased as no age limit set
         assertArrayEquals(new String[] { oldRequestEntries[0], requestEntries[0], oldRequestEntries[1], oldRequestEntries[2] }, store.getRequests());
-        int removedReqs = store.checkAndRemoveTooOldRequests();
-        assertEquals(0, removedReqs);
-        assertArrayEquals(new String[] { oldRequestEntries[0], requestEntries[0], oldRequestEntries[1], oldRequestEntries[2] }, store.getRequests());
+        List<String> requests = new ArrayList<>(Arrays.asList(store.getRequests()));
+        int beforeQueueSize = requests.size();
+        store.checkAndRemoveTooOldRequests(requests);
+        assertEquals(beforeQueueSize, requests.size());
+        assertArrayEquals(new String[] { oldRequestEntries[0], requestEntries[0], oldRequestEntries[1], oldRequestEntries[2] }, requests.toArray());
 
         // with age limit, all but weird/new one removed
         store.setRequestAgeLimit(1);
-        int removedReqsWithLimit = store.checkAndRemoveTooOldRequests();
-        assertEquals(3, removedReqsWithLimit);
-        assertArrayEquals(new String[] { requestEntries[0] }, store.getRequests());
+        store.checkAndRemoveTooOldRequests(requests);
+        assertEquals(3 + requests.size(), beforeQueueSize);
+        assertArrayEquals(new String[] { requestEntries[0] }, requests.toArray());
     }
 
     @Test
     public void deleteOldRequests_emptyQueue() {
-        int removedReqs = store.checkAndRemoveTooOldRequests();
-        assertEquals(0, removedReqs);
+        List<String> queue = Arrays.asList(store.getRequests());
+        int beforeQueueSize = queue.size();
+        store.checkAndRemoveTooOldRequests(queue);
+        assertEquals(beforeQueueSize, queue.size());
     }
 
     @Test
@@ -786,5 +790,54 @@ public class CountlyStoreTests {
         assertNull(sp.getServerConfig());
         sp.setServerConfig("qwe");
         assertEquals("qwe", sp.getServerConfig());
+    }
+
+    /**
+     * <pre>
+     * 1- Init countly with the limit of 250 requests
+     *  - Check RQ is empty
+     * 2- Add 300 requests
+     *  - Check if the first 50 requests are removed
+     *  - Check size is 250
+     * 3- Stop the countly
+     * 4 - Init countly with the limit of 10 requests
+     *  - Check RQ is 250
+     * 5- Add 20 requests
+     *  - On every request addition queue should be dropped to the limit of 10
+     *  - On first one queue should be dropped to the 150
+     *  - On second one queue should be dropped to the 50
+     *  - On third one queue should be dropped to the 10
+     *  - On the last one queue should be size of 10
+     *  </pre>
+     */
+    @Test
+    public void addRequest_maxQueueSizeLimit_Scenario() throws InterruptedException {
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().setMaxRequestQueueSize(250));
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        addRequests(300, countly.countlyStore);
+        Thread.sleep(1000);
+        Assert.assertEquals(250, TestUtils.getCurrentRQ().length);
+
+        countly = new Countly().init(TestUtils.createBaseConfig().setMaxRequestQueueSize(10));
+        Assert.assertEquals(250, TestUtils.getCurrentRQ().length);
+
+        addRequests(1, countly.countlyStore);
+        Assert.assertEquals(150, TestUtils.getCurrentRQ().length);
+
+        addRequests(1, countly.countlyStore);
+        Assert.assertEquals(50, TestUtils.getCurrentRQ().length);
+
+        addRequests(1, countly.countlyStore);
+        Assert.assertEquals(10, TestUtils.getCurrentRQ().length);
+
+        addRequests(17, countly.countlyStore);
+        Assert.assertEquals(10, TestUtils.getCurrentRQ().length);
+    }
+
+    private void addRequests(int count, CountlyStore countlyStore) {
+        for (int i = 0; i < count; i++) {
+            countlyStore.addRequest("request" + i, false);
+        }
     }
 }
