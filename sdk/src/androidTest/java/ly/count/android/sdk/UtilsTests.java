@@ -158,6 +158,10 @@ public class UtilsTests {
         Assert.assertEquals("", extractResult[1]);
     }
 
+    /**
+     * "splitIntoParams" with null, empty, and junk values
+     * Returned maps should be empty
+     */
     @Test
     public void splitIntoParams_badValues() {
         Assert.assertTrue(Utils.splitIntoParams(null, new ModuleLog()).isEmpty());
@@ -165,6 +169,10 @@ public class UtilsTests {
         Assert.assertTrue(Utils.splitIntoParams(" ", new ModuleLog()).isEmpty());
     }
 
+    /**
+     * "splitIntoParams" with garbage params
+     * Returned maps should contain only valid params
+     */
     @Test
     public void splitIntoParams_junkValues() {
         Assert.assertTrue(Utils.splitIntoParams("aa,bbb", new ModuleLog()).isEmpty());
@@ -176,6 +184,10 @@ public class UtilsTests {
         Assert.assertEquals("eee", result.get("ddd"));
     }
 
+    /**
+     * "splitIntoParams" with valid params
+     * Returned maps should contain all expected params
+     */
     @Test
     public void splitIntoParams_validValues() {
         Map<String, String> result = Utils.splitIntoParams("aaa=bbb", new ModuleLog());
@@ -188,18 +200,30 @@ public class UtilsTests {
         Assert.assertEquals("ddd", result.get("ccc"));
     }
 
+    /**
+     * "combineParamsIntoRequest" with null
+     * It gives an assertion error because function is not accepting null values
+     */
     @Test(expected = AssertionError.class)
     public void combineParamsIntoRequest_badValues_assertionError() {
         Assert.assertNull(Utils.combineParamsIntoRequest(null));
     }
 
+    /**
+     * "combineParamsIntoRequest" with empty map
+     * Returned string should be empty
+     */
     @Test
     public void combineParamsIntoRequest_badValues() {
         Assert.assertTrue(Utils.combineParamsIntoRequest(new HashMap<>()).isEmpty());
     }
 
+    /**
+     * "combineParamsIntoRequest" with valid maps
+     * Returned string should be constructed as expected
+     */
     @Test
-    public void combineParamsIntoRequest() {
+    public void combineParamsIntoRequest_validValues() {
         Map<String, String> params = new HashMap<>();
         params.put("aaa", "bbb");
 
