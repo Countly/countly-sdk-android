@@ -26,6 +26,7 @@ public class MigrationHelperTests {
     CountlyStore cs;
     StorageProvider sp;
     final int latestSchemaVersion = 4;
+    String[][] mockParams = { { "app_key", "asdsad" }, { "sdk_version", "445" }, { "sdk_name", "dfdfs" }, { "timestamp", "24234" } };
 
     @Before
     public void setUp() {
@@ -60,7 +61,7 @@ public class MigrationHelperTests {
     @Test
     public void validateDataSchemaVersion() {
         MigrationHelper mh = new MigrationHelper(sp, mockLog, getApplicationContext());
-        Assert.assertEquals(latestSchemaVersion, mh.DATA_SCHEMA_VERSIONS);
+        Assert.assertEquals(latestSchemaVersion, MigrationHelper.DATA_SCHEMA_VERSIONS);
     }
 
     /**
@@ -75,7 +76,7 @@ public class MigrationHelperTests {
         mh.setInitialSchemaVersion();
 
         verify(spMock).anythingSetInStorage();
-        verify(spMock).setDataSchemaVersion(mh.DATA_SCHEMA_VERSIONS);
+        verify(spMock).setDataSchemaVersion(MigrationHelper.DATA_SCHEMA_VERSIONS);
     }
 
     /**
@@ -101,10 +102,10 @@ public class MigrationHelperTests {
     @Test
     public void getCurrentSchemaVersionEmpty() {
         MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
-        Assert.assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(MigrationHelper.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
 
         //verify a rerun
-        Assert.assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(MigrationHelper.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
     }
 
     /**
@@ -130,7 +131,7 @@ public class MigrationHelperTests {
     @Test
     public void getCurrentSchemaVersionMisc() {
         MigrationHelper mh = new MigrationHelper(sp, mockLog, getApplicationContext());
-        Assert.assertEquals(mh.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
+        Assert.assertEquals(MigrationHelper.DATA_SCHEMA_VERSIONS, mh.getCurrentSchemaVersion());
 
         sp.setDataSchemaVersion(123);
         Assert.assertEquals(123, mh.getCurrentSchemaVersion());
@@ -532,6 +533,13 @@ public class MigrationHelperTests {
         return ret.toString();
     }
 
+
+    /*
+     * Migration from schema version 3 to 4
+     *
+     * Migration 4 adds the device ID to the requests
+     */
+
     /**
      * Empty queue, device ID not acquired
      */
@@ -626,7 +634,16 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 3 requests in queue, device ID  merge request, 3 requests, another merge request, 3 requests
+     * Given or SDK generated id = 789
+     * 3 requests, 1 merge (HAS DEVICE ID 123),
+     * 3 requests, 1 merge (HAS DEVICE ID 456),
+     * 3 requests
+     * ---
+     * This queue must contain below respected ids
+     * ---
+     * 3 requests (device_id=789), 1 merge (device_id=123&old_device_id=789),
+     * 3 requests (device_id=123), 1 merge (device_id=456&old_device_id=123),
+     * 3 requests (device_id=456)
      */
     @Test
     public void performMigration3To4_6() {
@@ -745,8 +762,18 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 3 requests, 1 without merge, 3 requests, 1 with merge, 3 requests, 1 without merge, 3 requests, 1 temp id
-     * Device ID acquired
+     * Given or SDK generated id = NEW_ID
+     * 3 requests, 1 without merge (HAS OVERRIDE ID 123),
+     * 3 requests, 1 merge (HAS DEVICE ID 456),
+     * 3 requests, 1 without merge (HAS OVERRIDE ID 789),
+     * 1 temp id
+     * ---
+     * This queue must contain below respected ids
+     * ---
+     * 3 requests (device_id=123), 1 without merge (device_id=123),
+     * 3 requests (device_id=789), 1 merge (device_id=456&old_device_id=789),
+     * 3 requests (device_id=456), 1 without merge (device_id=456),
+     * 1 temp id (device_id=NEW_ID)
      */
     @Test
     public void performMigration3To4_9() {
@@ -811,7 +838,16 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 3 requests, 1 without merge, 3 requests, 1 with merge, 3 requests
+     * Given or SDK generated id = NEW_ID
+     * 3 requests, 1 without merge (HAS OVERRIDE ID 123),
+     * 3 requests, 1 merge (HAS DEVICE ID 456),
+     * 3 requests
+     * ---
+     * This queue must contain below respected ids
+     * ---
+     * 3 requests (device_id=123), 1 without merge (device_id=123),
+     * 3 requests (device_id=NEW_ID), 1 merge (device_id=456&old_device_id=NEW_ID),
+     * 3 requests (device_id=456)
      */
     @Test
     public void performMigration3To4_10() {
@@ -887,7 +923,16 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 1 request, 1 temp, 1 request, 1 without merge, 1 request, 1 temp, 1 request, 1 without merge, 1 request, 1 temp, 1 request
+     * Given or SDK generated id = 789
+     * 1 request, 1 temp, 1 request, 1 without merge (HAS OVERRIDE ID 123),
+     * 1 request, 1 temp, 1 request, 1 without merge (HAS OVERRIDE ID 456),
+     * 1 request, 1 temp, 1 request
+     * ---
+     * This queue must contain below respected ids
+     * ---
+     * 1 request (device_id=123), 1 temp (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
+     * 1 request (device_id=456), 1 temp (device_id=456), 1 request (device_id=456), 1 without merge (device_id=456),
+     * 1 request (device_id=789), 1 temp (device_id=789), 1 request (device_id=789)
      */
     @Test
     public void performMigration3To4_12() {
@@ -937,7 +982,16 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 1 request, 1 temp, 1 request, 1 merge, 1 request, 1 temp, 1 request, 1 without merge, 1 request, 1 temp, 1 request
+     * Given or SDK generated id = 789
+     * 1 request, 1 temp, 1 request, 1 merge (HAS DEVICE ID 123),
+     * 1 request, 1 temp, 1 request, 1 without merge (HAS OVERRIDE ID 456),
+     * 1 request, 1 temp, 1 request
+     * ---
+     * This queue must contain below respected ids
+     * ---
+     * 1 request (device_id=456), 1 temp (device_id=456), 1 request (device_id=456), 1 merge (device_id=123&old_device_id=456),
+     * 1 request (device_id=123), 1 temp (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
+     * 1 request (device_id=789), 1 temp (device_id=789), 1 request (device_id=789)
      */
     @Test
     public void performMigration3To4_13() {
@@ -987,10 +1041,18 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 1 request, 1 temp, 1 request, 1 merge,
-     * 1 request, 1 temp, 1 request, 1 without merge,
-     * 1 request, 1 temp, 1 request, 1 merge,
+     * Given or SDK generated id = NEW_ID
+     * 1 request, 1 temp, 1 request, 1 merge (HAS DEVICE ID 123),
+     * 1 request, 1 temp, 1 request, 1 without merge (HAS OVERRIDE ID 456),
+     * 1 request, 1 temp, 1 request, 1 merge (HAS DEVICE ID 789),
      * 1 request, 1 temp, 1 request
+     * ---
+     * This queue must contain below respected ids
+     * ---
+     * 1 request (device_id=456), 1 temp (device_id=456), 1 request (device_id=456), 1 merge (device_id=123&old_device_id=456),
+     * 1 request (device_id=123), 1 temp (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
+     * 1 request (device_id=NEW_ID), 1 temp (device_id=NEW_ID), 1 request (device_id=NEW_ID), 1 merge (device_id=789&old_device_id=NEW_ID),
+     * 1 request (device_id=789), 1 temp (device_id=789), 1 request (device_id=789)
      */
     @Test
     public void performMigration3To4_14() {
@@ -1050,8 +1112,6 @@ public class MigrationHelperTests {
         validateRequestsAreEqual(generateMockRequest("789", 1), reqs[13]);
         validateRequestsAreEqual(generateMockRequest("789", 2), reqs[14]);
     }
-
-    String[][] mockParams = { { "app_key", "asdsad" }, { "sdk_version", "445" }, { "sdk_name", "dfdfs" }, { "timestamp", "24234" } };
 
     String generateMockRequest(String deviceIDV, int deviceIDPos) {
         return generateMockRequest(deviceIDV, deviceIDPos, null, null);
