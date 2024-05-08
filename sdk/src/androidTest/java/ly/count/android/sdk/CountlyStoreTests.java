@@ -33,7 +33,6 @@ import java.util.List;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -811,28 +810,27 @@ public class CountlyStoreTests {
      *  </pre>
      */
     @Test
-    public void addRequest_maxQueueSizeLimit_Scenario() throws InterruptedException {
+    public void addRequest_maxQueueSizeLimit_Scenario() {
         Countly countly = new Countly().init(TestUtils.createBaseConfig().setMaxRequestQueueSize(250));
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        assertEquals(0, TestUtils.getCurrentRQ().length);
 
         addRequests(300, countly.countlyStore);
-        Thread.sleep(1000);
-        Assert.assertEquals(250, TestUtils.getCurrentRQ().length);
+        assertEquals(250, TestUtils.getCurrentRQ().length);
 
         countly = new Countly().init(TestUtils.createBaseConfig().setMaxRequestQueueSize(10));
-        Assert.assertEquals(250, TestUtils.getCurrentRQ().length);
+        assertEquals(250, TestUtils.getCurrentRQ().length);
 
         addRequests(1, countly.countlyStore);
-        Assert.assertEquals(150, TestUtils.getCurrentRQ().length);
+        assertEquals(150, TestUtils.getCurrentRQ().length);
 
         addRequests(1, countly.countlyStore);
-        Assert.assertEquals(50, TestUtils.getCurrentRQ().length);
+        assertEquals(50, TestUtils.getCurrentRQ().length);
 
         addRequests(1, countly.countlyStore);
-        Assert.assertEquals(10, TestUtils.getCurrentRQ().length);
+        assertEquals(10, TestUtils.getCurrentRQ().length);
 
         addRequests(17, countly.countlyStore);
-        Assert.assertEquals(10, TestUtils.getCurrentRQ().length);
+        assertEquals(10, TestUtils.getCurrentRQ().length);
     }
 
     private void addRequests(int count, CountlyStore countlyStore) {

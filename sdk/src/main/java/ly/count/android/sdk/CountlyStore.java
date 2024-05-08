@@ -497,7 +497,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return;
         }
 
-        int requestsToRemove = Math.min(requestRemovalLoopLimit, (requests.size() - maxRequestQueueSize)) + 1; // +1 because it should open a new place for newcomer
+        int requestsToRemove = Math.min(requestRemovalLoopLimit, requests.size() - maxRequestQueueSize) + 1; // +1 because it should open a new place for newcomer
         L.i("[CountlyStore] deleteOldestRequests, Will remove the oldest " + requestsToRemove + " request");
         requests.subList(0, requestsToRemove).clear(); // sublist reflects all changes to the main list
 
