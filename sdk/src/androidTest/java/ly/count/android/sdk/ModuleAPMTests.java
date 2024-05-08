@@ -301,8 +301,8 @@ public class ModuleAPMTests {
     }
 
     /**
-     * Test that tracing network keys are not affected by key length truncation
-     * Validate that the truncated version of the key is not present because it is not truncated
+     * Test that tracing network keys are affected by key length truncation
+     * Validate that the truncated version of the key is present because it is truncated
      */
     @Test
     public void internalLimits_recordNetworkTrace_keyLength() throws JSONException {
@@ -314,11 +314,11 @@ public class ModuleAPMTests {
 
         mCountly.apm().recordNetworkTrace(key, 234, 123, 456, 7654, 8765);
         Assert.assertFalse(mCountly.moduleAPM.networkTraces.containsKey(key)); // because it is sent to the request queue
+        Assert.assertFalse(mCountly.moduleAPM.networkTraces.containsKey("a_tra")); // because it is sent to the request queue
 
         Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(key));
-        // also validate that the truncated version of the key is not present because it is not truncated
-        Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey(UtilsInternalLimits.truncateKeyLength(key, 5, new ModuleLog(), "tag")));
-        validateNetworkRequest(0, key, 8765 - 7654, 234, 123, 456);
+        Assert.assertFalse(mCountly.moduleAPM.codeTraces.containsKey("a_tra"));
+        validateNetworkRequest(0, "a_tra", 8765 - 7654, 234, 123, 456);
     }
 
     /**
@@ -336,7 +336,7 @@ public class ModuleAPMTests {
         mCountly.apm().startNetworkRequest(key, "ID");
         mCountly.apm().endNetworkRequest(key, "ID", 200, 123, 456);
 
-        validateNetworkRequest(0, key, -1, 200, 123, 456);
+        validateNetworkRequest(0, "a_tra", -1, 200, 123, 456);
     }
 
     private void validateNetworkRequest(int rqIdx, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {

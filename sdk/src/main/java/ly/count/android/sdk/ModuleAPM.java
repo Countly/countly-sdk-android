@@ -324,6 +324,7 @@ public class ModuleAPM extends ModuleBase {
         }
 
         //validate trace key
+        networkTraceKey = UtilsInternalLimits.truncateKeyLength(networkTraceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] recordNetworkRequestInternal");
         networkTraceKey = validateAndModifyTraceKey(networkTraceKey);
 
         Long responseTimeMs = endTimestamp - startTimestamp;
