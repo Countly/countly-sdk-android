@@ -282,8 +282,12 @@ public class ModuleUserProfile extends ModuleBase {
             boolean isNamed = false;
 
             // limit to the picture path is applied when request is being made in the ConnectionProcessor
-            if (value instanceof String && !key.equals(PICTURE_PATH_KEY)) {
-                value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+            if (value instanceof String) {
+                if (key.equals(PICTURE_PATH_KEY) || key.equals(PICTURE_KEY)) {
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSizePicture, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                } else {
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                }
             }
 
             for (String namedField : namedFields) {
