@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Added a new function "setID(newDeviceId)" for managing device id changes according to the device ID Type.
+
 ## 24.4.1
 * ! Minor breaking change ! The "maxValueSize" limit will now be applied by default. This would limit the maximum size of developer-supplied values and breadcrumbs. The current limit is 256 characters.
 * ! Minor breaking change ! The "maxKeyLength" limit will now be applied by default. This limit would limit the maximum length of developer-supplied keys and names. The current limit is 128 characters.
