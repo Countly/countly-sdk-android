@@ -464,8 +464,6 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         final List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
 
         L.v("[CountlyStore] addRequest, s:[" + writeInSync + "] new q size:[" + (requests.size() + 1) + "] r:[" + requestStr + "]");
-        System.out.println(requests);
-        System.out.println(requests.size());
         if (requests.size() < maxRequestQueueSize) {
             //request under max requests, add as normal
             requests.add(requestStr);
