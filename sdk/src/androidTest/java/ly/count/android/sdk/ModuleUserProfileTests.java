@@ -616,6 +616,45 @@ public class ModuleUserProfileTests {
     }
 
     /**
+     * Given max segmentation values will truncate custom user properties to the correct length
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_setProperties_maxSegmentationValues() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        mCountly.init(config);
+
+        Countly.sharedInstance().userProfile().setProperties(TestUtils.map("a", "b", "c", "d", "f", 5, "level", 45, "age", 101));
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(), TestUtils.map("f", "5", "age", "101"));
+    }
+
+    /**
+     * Given max segmentation values won't truncate custom mods
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_customMods_maxSegmentationValues() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        mCountly.init(config);
+
+        Countly.sharedInstance().userProfile().incrementBy("inc", 1);
+        Countly.sharedInstance().userProfile().multiply("mul", 2_456_789);
+        Countly.sharedInstance().userProfile().push("rem", "ORIELY");
+        Countly.sharedInstance().userProfile().push("rem", "HUH");
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(), TestUtils.map("mul", json("$mul", 2_456_789), "rem", json("$push", new String[] { "ORIELY", "HUH" }), "inc", json("$inc", 1)));
+    }
+
+    /**
      * Given max value size truncates the values of the:
      * - Custom user property values
      * - user property values
@@ -672,6 +711,14 @@ public class ModuleUserProfileTests {
         validateUserProfileRequest(new HashMap<>(), new HashMap<>());
     }
 
+    private JSONObject json(Object... args) {
+        return new JSONObject(TestUtils.map(args));
+    }
+
+    private void assertJsonsEquals(Object expected, Object actual) {
+        Assert.assertEquals(expected.toString(), actual.toString());
+    }
+
     private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
@@ -685,7 +732,11 @@ public class ModuleUserProfileTests {
         }
 
         for (Map.Entry<String, Object> entry : custom.entrySet()) {
-            Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
+            if (entry.getValue() instanceof JSONObject) {
+                assertJsonsEquals(entry.getValue(), customData.get(entry.getKey()));
+            } else {
+                Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
+            }
         }
     }
 }

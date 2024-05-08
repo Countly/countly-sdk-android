@@ -155,6 +155,7 @@ public class ModuleUserProfile extends ModuleBase {
 
             JSONObject ob;
             if (custom != null) {
+                UtilsInternalLimits.truncateSegmentationValues(custom, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleUserProfile] toJSON", _cly.L);
                 ob = new JSONObject(custom);
             } else {
                 ob = new JSONObject();
@@ -235,6 +236,7 @@ public class ModuleUserProfile extends ModuleBase {
             if (customMods == null) {
                 customMods = new HashMap<>();
             }
+
             JSONObject ob;
             if (!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
