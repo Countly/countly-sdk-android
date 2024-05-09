@@ -143,6 +143,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         //clear automated star rating session values because now we have a new user
         _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal();
+        _cly.notifyDeviceIdChange();
     }
 
     /**
