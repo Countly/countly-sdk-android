@@ -568,4 +568,11 @@ public class TestUtils {
         } catch (JSONException ignored) {
         }
     }
+
+    protected static String generateRandomString(int length) {
+        byte[] array = new byte[length];
+        new Random().nextBytes(array);
+
+        return new String(array, java.nio.charset.StandardCharsets.UTF_8);
+    }
 }
