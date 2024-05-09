@@ -91,7 +91,11 @@ public class ModuleRemoteConfigTests {
             Assert.assertEquals(++intendedCount, triggerCounter[0]);//changing device ID with merging should create a request
 
             countly.deviceId().changeWithoutMerge("dd11");
-            Assert.assertEquals(++intendedCount, triggerCounter[0]);//changing device ID without merging should create a request
+            if (a == 0) {
+                Assert.assertEquals(intendedCount, triggerCounter[0]);//changing device ID without merging won't create a request because all consents are revoked
+            } else {
+                Assert.assertEquals(++intendedCount, triggerCounter[0]);//changing device ID without merging would create a request because consent is not required
+            }
 
             countly.deviceId().enableTemporaryIdMode();
             Assert.assertEquals(intendedCount, triggerCounter[0]);//entering tempID mode should not create a request
