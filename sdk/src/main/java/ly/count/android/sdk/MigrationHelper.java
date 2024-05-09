@@ -284,28 +284,28 @@ class MigrationHelper {
      */
     void performMigration3To4(@NonNull Map<String, Object> migrationParams) {
         String currentPointDeviceID = storage.getDeviceID();
-        String oldDeviceId = "";
-        String overrideCache = currentPointDeviceID;
+
         if (currentPointDeviceID == null) {
             L.e("performMigration3To4, can't perform this migration due to the device ID being 'null'");
             return;
         }
 
+        String oldDeviceId = "";
+        String overrideCache = currentPointDeviceID;
+
         String[] requests = storage.getRequests();
         // this is for the looking for last merge request id, because last merge request id is not saved yet so latest device id should be it
         DeviceIdWithMerge deviceId = searchForDeviceIdInRequests(requests, requests.length - 1);
 
-        if (deviceId.deviceId != null) {
-            if (deviceId.withMerge) {
-                // if we have a merge request, then the last merge request is the latest device id and save it also
-                // because merge is not saved yet, also current one is the old device id
-                oldDeviceId = currentPointDeviceID;
-                currentPointDeviceID = deviceId.deviceId;
+        if (deviceId.deviceId != null && deviceId.withMerge) {
+            // if we have a merge request, then the last merge request is the latest device id and save it also
+            // because merge is not saved yet, also current one is the old device id
+            oldDeviceId = currentPointDeviceID;
+            currentPointDeviceID = deviceId.deviceId;
 
-                // this is saved because it was not saved before
-                storage.setDeviceID(currentPointDeviceID);
-                storage.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
-            }
+            // this is saved because it was not saved before
+            storage.setDeviceID(currentPointDeviceID);
+            storage.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
         }
 
         for (int a = requests.length - 1; a >= 0; a--) {
