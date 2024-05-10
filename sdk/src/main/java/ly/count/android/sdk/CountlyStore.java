@@ -749,10 +749,6 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             tsStart = UtilsTime.getNanoTime();
         }
 
-        if (segmentation != null) {
-            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
-        }
-
         final Event event = new Event();
         event.key = key;
         event.segmentation = segmentation;

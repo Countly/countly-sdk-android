@@ -159,6 +159,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             case ACTION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.clicks) || consentProvider.getConsent(Countly.CountlyFeatureNames.scrolls)) {
+                    if (segmentation != null) {
+                        UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
+                    }
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
