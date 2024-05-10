@@ -744,6 +744,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      */
     public void recordEventToEventQueue(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
         final @Nullable String currentViewId, final @Nullable String previousEventId) {
+
+        L.d("[CountlyStore] recordEventToEventQueue, key[" + key + "], segmentation[" + segmentation + "], count[" + count + "], sum[" + sum + "], dur[" + dur + "], timestamp[" + timestamp + "], hour[" + hour + "], dow[" + dow + "]");
+        L.d("[CountlyStore] recordEventToEventQueue, eventID[" + eventID + "], previousViewId[" + previousViewId + "], currentViewId[" + currentViewId + "], previousEventId[" + previousEventId + "]");
+
         long tsStart = 0L;
         if (pcc != null) {
             tsStart = UtilsTime.getNanoTime();
