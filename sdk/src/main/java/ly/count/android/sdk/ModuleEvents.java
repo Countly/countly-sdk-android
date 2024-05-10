@@ -85,7 +85,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             count = 1;
         }
 
-        L.d("[ModuleEvents] Recording event with key: [" + key + "] and provided event ID of:[" + eventIdOverride + "] and segmentation with:[" + (segmentation == null ? "null" : segmentation.size()) + "] keys");
+        L.d("[ModuleEvents] recordEventInternal, key:[" + key + "] eventIdOverride:[" + eventIdOverride + "] segmentation:[" + segmentation + "] count:[" + count + "] sum:[" + sum + "] dur:[" + dur + "] instant:[" + instant + "]");
 
         if (segmentation != null) {
             UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
