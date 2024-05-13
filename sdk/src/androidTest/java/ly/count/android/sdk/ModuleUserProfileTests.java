@@ -534,7 +534,7 @@ public class ModuleUserProfileTests {
     /**
      * Given max value size truncates the values of the:
      * - Custom user property values
-     * - user property values
+     * - user property values except picture
      * Validate all values are truncated to the max value size that is 2
      * And validate non-String values are not clipped
      *
@@ -576,7 +576,7 @@ public class ModuleUserProfileTests {
                 ModuleUserProfile.ORG_KEY, "or",
                 ModuleUserProfile.USERNAME_KEY, "us",
                 ModuleUserProfile.NAME_KEY, "na",
-                ModuleUserProfile.PICTURE_KEY, "pi"
+                ModuleUserProfile.PICTURE_KEY, "picture"
             ), TestUtils.map(
                 "custom1", "va", // because in user profiles, all values are stored as strings
                 "custom2", "23",
@@ -586,6 +586,67 @@ public class ModuleUserProfileTests {
                 "custom5", "true",
                 "custom6", obj.toString()) // toString() is called on non-String values
         );
+    }
+
+    /**
+     * Given max value size for pictures 4096 truncates the value of the picture
+     * and is not affected by the general max value size
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_setProperties_maxValueSizePicture() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxValueSize(2);
+        mCountly.init(config);
+
+        String picture = TestUtils.generateRandomString(6000);
+
+        Countly.sharedInstance().userProfile().setProperties(TestUtils.map(ModuleUserProfile.PICTURE_KEY, picture));
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(ModuleUserProfile.PICTURE_KEY, picture.substring(0, 4096)), TestUtils.map()
+        );
+    }
+
+    /**
+     * Given max segmentation values will truncate custom user properties to the correct length
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_setProperties_maxSegmentationValues() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        mCountly.init(config);
+
+        Countly.sharedInstance().userProfile().setProperties(TestUtils.map("a", "b", "c", "d", "f", 5, "level", 45, "age", 101));
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(), TestUtils.map("f", "5", "age", "101"));
+    }
+
+    /**
+     * Given max segmentation values won't truncate custom mods
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_customMods_maxSegmentationValues() throws JSONException {
+        Countly mCountly = Countly.sharedInstance();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        mCountly.init(config);
+
+        Countly.sharedInstance().userProfile().incrementBy("inc", 1);
+        Countly.sharedInstance().userProfile().multiply("mul", 2_456_789);
+        Countly.sharedInstance().userProfile().push("rem", "ORIELY");
+        Countly.sharedInstance().userProfile().push("rem", "HUH");
+        Countly.sharedInstance().userProfile().save();
+
+        validateUserProfileRequest(TestUtils.map(), TestUtils.map("mul", json("$mul", 2_456_789), "rem", json("$push", new String[] { "ORIELY", "HUH" }), "inc", json("$inc", 1)));
     }
 
     /**
@@ -645,6 +706,14 @@ public class ModuleUserProfileTests {
         validateUserProfileRequest(new HashMap<>(), new HashMap<>());
     }
 
+    private JSONObject json(Object... args) {
+        return new JSONObject(TestUtils.map(args));
+    }
+
+    private void assertJsonsEquals(Object expected, Object actual) {
+        Assert.assertEquals(expected.toString(), actual.toString());
+    }
+
     private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(1, RQ.length);
@@ -658,7 +727,11 @@ public class ModuleUserProfileTests {
         }
 
         for (Map.Entry<String, Object> entry : custom.entrySet()) {
-            Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
+            if (entry.getValue() instanceof JSONObject) {
+                assertJsonsEquals(entry.getValue(), customData.get(entry.getKey()));
+            } else {
+                Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -374,12 +375,14 @@ public class Utils {
     }
 
     /**
-     * todo, test this
+     * Splits a given request into key-value pairs
      *
-     * @param request
-     * @return
+     * @param request - request string to be split
+     * @return - returns a map of key-value pairs
      */
-    public static Map<String, String> splitIntoParams(String request) {
+    public static @NonNull Map<String, String> splitIntoParams(@Nullable String request, @NonNull ModuleLog L) {
+        assert L != null;
+
         Map<String, String> params = new HashMap<>();
 
         if (request == null || request.isEmpty()) {
@@ -391,7 +394,7 @@ public class Utils {
         for (String entry : entries) {
             String[] parts = entry.split("=");
             if (parts.length != 2) {
-                Countly.sharedInstance().L.w("splitIntoParams, Param entry can't be split: [" + entry + "]");
+                L.w("splitIntoParams, Param entry can't be split: [" + entry + "]");
                 continue;
             }
 
@@ -402,21 +405,24 @@ public class Utils {
     }
 
     /**
-     * todo, test this
+     * Combines a map of key-value pairs into a request string
+     * reversed version of {@link #splitIntoParams}
      *
-     * @param params
-     * @return
+     * @param params - map of key-value pairs
+     * @return - returns a request string
      */
-    public static String combineParamsIntoRequest(Map<String, String> params) {
+    public static @NonNull String combineParamsIntoRequest(@NonNull Map<String, String> params) {
+        assert params != null;
+
         StringBuilder sb = new StringBuilder(100);
 
         for (Map.Entry<String, String> pair : params.entrySet()) {
             if (sb.length() > 0) {
-                sb.append("&");
+                sb.append('&');
             }
 
             sb.append(pair.getKey());
-            sb.append("=");
+            sb.append('=');
             sb.append(pair.getValue());
         }
 
