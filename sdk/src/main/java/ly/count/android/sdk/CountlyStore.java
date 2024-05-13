@@ -84,6 +84,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     int maxRequestQueueSize = 1000;
     int dropAgeHours = 0;
+    private final static int requestRemovalLoopLimit = 100;
 
     //explicit storage fields
     boolean explicitStorageModeEnabled;
@@ -460,24 +461,18 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return;
         }
 
-        final List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
+        List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
 
         L.v("[CountlyStore] addRequest, s:[" + writeInSync + "] new q size:[" + (requests.size() + 1) + "] r:[" + requestStr + "]");
-        if (requests.size() < maxRequestQueueSize) {
-            //request under max requests, add as normal
-            requests.add(requestStr);
-            storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), writeInSync);
-        } else {
-            //reached the limit, start deleting oldest requests
-            L.w("[CountlyStore] Store reached it's limit, deleting oldest request(s)");
-
-            // TODO: too much I/O?
-            int removedRequests = checkAndRemoveTooOldRequests(); // remove too old requests
-            if (removedRequests == 0) { // remove oldest if nothing is too old
-                deleteOldestRequest();
+        if (requests.size() >= maxRequestQueueSize) {
+            checkAndRemoveTooOldRequests(requests); // remove too old requests
+            if (requests.size() >= maxRequestQueueSize) { // remove oldest if nothing is too old
+                deleteOldestRequests(requests);
             }
-            addRequest(requestStr, writeInSync);
         }
+
+        requests.add(requestStr);
+        storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), writeInSync);
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_addRequest", UtilsTime.getNanoTime() - tsStart);
@@ -485,24 +480,26 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     /**
-     * Removes the oldest request:
+     * Removes the oldest requests:
      * 1. Gets the current requests from storage
      * 2. Copies it to a List
-     * 3. Removes the first entry
+     * 3. Removes the first X entry
      * 4. Saves the list to the storage
      */
-    synchronized void deleteOldestRequest() {
+    synchronized void deleteOldestRequests(List<String> requests) {
         long tsStart = 0L;
         if (pcc != null) {
             tsStart = UtilsTime.getNanoTime();
         }
 
-        final List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
+        if (requests.size() < maxRequestQueueSize) {
+            L.i("[CountlyStore] deleteOldestRequests, Request queue is already under the limit, no need to remove anything");
+            return;
+        }
 
-        L.i("[CountlyStore] deleteOldestRequest, Will remove the oldest request");
-        requests.remove(0);
-
-        storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), false);
+        int requestsToRemove = Math.min(requestRemovalLoopLimit, requests.size() - maxRequestQueueSize) + 1; // +1 because it should open a new place for newcomer
+        L.i("[CountlyStore] deleteOldestRequests, Will remove the oldest " + requestsToRemove + " request");
+        requests.subList(0, requestsToRemove).clear(); // sublist reflects all changes to the main list
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_deleteOldestRequest", UtilsTime.getNanoTime() - tsStart);
@@ -538,7 +535,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * 4. Saves the list to the storage
      * 5. Returns the number of removed requests
      */
-    synchronized int checkAndRemoveTooOldRequests() {
+    synchronized void checkAndRemoveTooOldRequests(List<String> requestList) {
         long tsStart = 0L;
         if (pcc != null) {
             tsStart = UtilsTime.getNanoTime();
@@ -548,13 +545,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 pcc.TrackCounterTimeNs("CountlyStore_checkAndRemoveTooOldRequests", UtilsTime.getNanoTime() - tsStart);
             }
 
-            return 0;
+            return;
         }
 
         int removedRequests = 0;
 
-        // if there is a request age limit set, check the whole queue for older requests
-        final List<String> requestList = new ArrayList<>(Arrays.asList(getRequests()));
         L.i("[CountlyStore] checkAndRemoveTooOldRequests, will remove outdated requests from the queue");
         Iterator<String> iterator = requestList.iterator();
         while (iterator.hasNext()) {
@@ -570,14 +565,12 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         // save the new request queue
         if (removedRequests > 0) {
-            storageWriteRequestQueue(Utils.joinCountlyStore(requestList, DELIMITER), false);
+            L.i("[CountlyStore] checkAndRemoveTooOldRequests, removed " + removedRequests + " outdated requests");
         }
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_checkAndRemoveTooOldRequests", UtilsTime.getNanoTime() - tsStart);
         }
-
-        return removedRequests;
     }
 
     /**
