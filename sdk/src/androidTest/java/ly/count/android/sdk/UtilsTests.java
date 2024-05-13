@@ -2,7 +2,9 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -154,5 +156,82 @@ public class UtilsTests {
         extractResult = Utils.extractValueFromString("&new_end_point=", "&new_end_point=", "&");
         Assert.assertEquals("", extractResult[0]);
         Assert.assertEquals("", extractResult[1]);
+    }
+
+    /**
+     * "splitIntoParams" with null, empty, and junk values
+     * Returned maps should be empty
+     */
+    @Test
+    public void splitIntoParams_badValues() {
+        Assert.assertTrue(Utils.splitIntoParams(null, new ModuleLog()).isEmpty());
+        Assert.assertTrue(Utils.splitIntoParams("", new ModuleLog()).isEmpty());
+        Assert.assertTrue(Utils.splitIntoParams(" ", new ModuleLog()).isEmpty());
+    }
+
+    /**
+     * "splitIntoParams" with garbage params
+     * Returned maps should contain only valid params
+     */
+    @Test
+    public void splitIntoParams_junkValues() {
+        Assert.assertTrue(Utils.splitIntoParams("aa,bbb", new ModuleLog()).isEmpty());
+        Assert.assertTrue(Utils.splitIntoParams("aaa=", new ModuleLog()).isEmpty());
+        Assert.assertTrue(Utils.splitIntoParams("bbb&", new ModuleLog()).isEmpty());
+
+        Map<String, String> result = Utils.splitIntoParams("aaa=bbb=ccc&ddd=eee", new ModuleLog());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals("eee", result.get("ddd"));
+    }
+
+    /**
+     * "splitIntoParams" with valid params
+     * Returned maps should contain all expected params
+     */
+    @Test
+    public void splitIntoParams_validValues() {
+        Map<String, String> result = Utils.splitIntoParams("aaa=bbb", new ModuleLog());
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals("bbb", result.get("aaa"));
+
+        result = Utils.splitIntoParams("aaa=bbb&ccc=ddd", new ModuleLog());
+        Assert.assertEquals(2, result.size());
+        Assert.assertEquals("bbb", result.get("aaa"));
+        Assert.assertEquals("ddd", result.get("ccc"));
+    }
+
+    /**
+     * "combineParamsIntoRequest" with null
+     * It gives an assertion error because function is not accepting null values
+     */
+    @Test(expected = AssertionError.class)
+    public void combineParamsIntoRequest_badValues_assertionError() {
+        Assert.assertNull(Utils.combineParamsIntoRequest(null));
+    }
+
+    /**
+     * "combineParamsIntoRequest" with empty map
+     * Returned string should be empty
+     */
+    @Test
+    public void combineParamsIntoRequest_badValues() {
+        Assert.assertTrue(Utils.combineParamsIntoRequest(new HashMap<>()).isEmpty());
+    }
+
+    /**
+     * "combineParamsIntoRequest" with valid maps
+     * Returned string should be constructed as expected
+     */
+    @Test
+    public void combineParamsIntoRequest_validValues() {
+        Map<String, String> params = new HashMap<>();
+        params.put("aaa", "bbb");
+
+        Assert.assertEquals("aaa=bbb", Utils.combineParamsIntoRequest(params));
+        params.clear();
+
+        params.put("aaa", "bbb");
+        params.put("ccc", "ddd");
+        Assert.assertEquals("aaa=bbb&ccc=ddd", Utils.combineParamsIntoRequest(params));
     }
 }
