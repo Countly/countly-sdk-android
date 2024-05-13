@@ -1,11 +1,10 @@
-## XX.XX.XX
-* Added a new function "setID(newDeviceId)" for managing device id changes according to the device ID Type.
-
 ## 24.4.1
 * ! Minor breaking change ! The "maxValueSize" limit will now be applied by default. This would limit the maximum size of developer-supplied values and breadcrumbs. The current limit is 256 characters.
 * ! Minor breaking change ! The "maxKeyLength" limit will now be applied by default. This limit would limit the maximum length of developer-supplied keys and names. The current limit is 128 characters.
 * ! Minor breaking change ! The "maxSegmentationValues" limit will now be applied by default. This limit would limit the maximum number of developer-provided segmentation values when using features. The current limit is 100 entries.
 * ! Minor breaking change ! "maxStackTraceLinePerThread" and "maxStackTraceLineLength" limits will be applied by default now. This would limit the maximum lines of stack traces per thread and the maximum stack trace length, respectively. Default values are in order of 30 and 200.
+
+* Added a new function "setID(newDeviceId)" for managing device id changes according to the device ID Type.
 
 ## 24.4.0
 * ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
