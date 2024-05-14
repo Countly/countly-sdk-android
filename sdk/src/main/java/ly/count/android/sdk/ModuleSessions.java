@@ -115,6 +115,10 @@ public class ModuleSessions extends ModuleBase {
      * Calculates the unsent session duration in seconds, rounded to the nearest int.
      */
     int roundedSecondsSinceLastSessionDurationUpdate() {
+        if (prevSessionDurationStartTime_ < 1) {
+            L.e("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, called with prevSessionDurationStartTime_ being less than 1, returning 0, values was:[" + prevSessionDurationStartTime_ + "]");
+            return 0;
+        }
         final long currentTimestampInNanoseconds = System.nanoTime();
         final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
         prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
