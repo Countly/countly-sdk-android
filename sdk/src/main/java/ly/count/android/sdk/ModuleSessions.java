@@ -124,7 +124,7 @@ public class ModuleSessions extends ModuleBase {
         prevSessionDurationStartTime_ = currentTimestampInMilliseconds;
         int seconds = (int) Math.round(unsentSessionLengthInMilliseconds / 1_000.0d);
 
-        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctim:[" + currentTimestampInMilliseconds + "], uslim:[" + unsentSessionLengthInNanoseconds + "], uslim_s:[" + seconds + "]");
+        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctim:[" + currentTimestampInMilliseconds + "], uslim:[" + unsentSessionLengthInMilliseconds + "], uslim_s:[" + seconds + "]");
         return seconds;
     }
 
