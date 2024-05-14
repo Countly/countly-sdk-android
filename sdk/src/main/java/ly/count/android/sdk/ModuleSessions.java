@@ -8,7 +8,7 @@ import java.util.Map;
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
     boolean manualSessionControlHybridModeEnabled = false;
-    long prevSessionDurationStartTime_ = System.nanoTime();
+    long prevSessionDurationStartTime_ = System.currentTimeMillis();
     boolean sessionRunning = false;
     final Sessions sessionInterface;
 
@@ -55,7 +55,7 @@ public class ModuleSessions extends ModuleBase {
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
         sessionRunning = true;
-        prevSessionDurationStartTime_ = System.nanoTime();
+        prevSessionDurationStartTime_ = System.currentTimeMillis();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
     }
 
@@ -119,12 +119,12 @@ public class ModuleSessions extends ModuleBase {
             L.e("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, called with prevSessionDurationStartTime_ being less than 1, returning 0, values was:[" + prevSessionDurationStartTime_ + "]");
             return 0;
         }
-        final long currentTimestampInNanoseconds = System.nanoTime();
-        final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
-        prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        int seconds = (int) Math.round(unsentSessionLengthInNanoseconds / 1_000_000_000.0d);
+        final long currentTimestampInMilliseconds = System.currentTimeMillis();
+        final long unsentSessionLengthInMilliseconds = currentTimestampInMilliseconds - prevSessionDurationStartTime_;
+        prevSessionDurationStartTime_ = currentTimestampInMilliseconds;
+        int seconds = (int) Math.round(unsentSessionLengthInMilliseconds / 1_000.0d);
 
-        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctin:[" + currentTimestampInNanoseconds + "], uslin:[" + unsentSessionLengthInNanoseconds + "], uslin_s:[" + seconds + "]");
+        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctim:[" + currentTimestampInMilliseconds + "], uslim:[" + unsentSessionLengthInNanoseconds + "], uslim_s:[" + seconds + "]");
         return seconds;
     }
 
