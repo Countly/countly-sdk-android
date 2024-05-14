@@ -565,8 +565,12 @@ public class MigrationHelperTests {
     }
 
     /**
-     * single requests in queue, no device ID
+     * single requests in queue, no device ID given
+     * ---
      * nothing should change
+     * ---
+     * This is because countly is not initialized yet
+     * So device id is empty that it could not generate a device id
      */
     @Test
     public void performMigration3To4_3() {
@@ -583,8 +587,12 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 3 requests in queue, device ID acquired, not temp ID
+     * Given or SDK generated id = 123
+     * 3 requests in queue
+     * ---
      * All should get that ID
+     * ---
+     * 3 requests (device_id=123)
      */
     @Test
     public void performMigration3To4_4() {
@@ -608,8 +616,12 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 3 requests in queue, temp ID
-     * probably all requests should get temp ID device ID
+     * Given or SDK generated id = TEMPORARY_COUNTLY_DEVICE_ID
+     * 3 requests
+     * ---
+     * At the all request should get the temp ID device ID
+     * ---
+     * 3 requests (device_id=TEMPORARY_COUNTLY_DEVICE_ID)
      */
     @Test
     public void performMigration3To4_5() {
@@ -694,7 +706,14 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 3 requests in queue, device ID  merge request, 2 requests with no ID 2 requests with temp ID
+     * Given or SDK generated id = 456
+     * 3 requests, 1 merge request,
+     * 2 requests, 2 temp id requests
+     * ---
+     * At the end queue should look like this
+     * ---
+     * 3 requests (device_id=456), 1 merge (device_id=123&old_device_id=456),
+     * 2 requests (device_id=123), 2 temp id requests (device_id=123)
      */
     @Test
     public void performMigration3To4_7() {
@@ -735,9 +754,14 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 1 requests in queue, without device ID, 1 requests with temp id, 1 requests with no ID
-     * Device ID acquired
+     * Given or SDK generated id = 123
+     * 1 request, 1 temp id, 1 request
+     * ---
      * At the end, all should get the current device ID
+     * ---
+     * 1 request (device_id=123)
+     * 1 former temp request (device_id=123)
+     * 1 request (device_id=123)
      */
     @Test
     public void performMigration3To4_8() {
@@ -773,7 +797,7 @@ public class MigrationHelperTests {
      * 3 requests (device_id=123), 1 without merge (device_id=123),
      * 3 requests (device_id=789), 1 merge (device_id=456&old_device_id=789),
      * 3 requests (device_id=456), 1 without merge (device_id=456),
-     * 1 temp id (device_id=NEW_ID)
+     * 1 former temp request (device_id=NEW_ID)
      */
     @Test
     public void performMigration3To4_9() {
@@ -897,7 +921,9 @@ public class MigrationHelperTests {
     }
 
     /**
-     * 3 requests and device id given, at the end all request should contain device id
+     * Given or SDK generated id = NEW_ID
+     * 3 requests with no device id
+     * All should get the current device ID with parameter "device_id"
      */
     @Test
     public void performMigration3To4_11() {
@@ -930,9 +956,9 @@ public class MigrationHelperTests {
      * ---
      * This queue must contain below respected ids
      * ---
-     * 1 request (device_id=123), 1 temp (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
-     * 1 request (device_id=456), 1 temp (device_id=456), 1 request (device_id=456), 1 without merge (device_id=456),
-     * 1 request (device_id=789), 1 temp (device_id=789), 1 request (device_id=789)
+     * 1 request (device_id=123), 1 former temp request (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
+     * 1 request (device_id=456), 1 former temp request (device_id=456), 1 request (device_id=456), 1 without merge (device_id=456),
+     * 1 request (device_id=789), 1 former temp request (device_id=789), 1 request (device_id=789)
      */
     @Test
     public void performMigration3To4_12() {
@@ -989,9 +1015,9 @@ public class MigrationHelperTests {
      * ---
      * This queue must contain below respected ids
      * ---
-     * 1 request (device_id=456), 1 temp (device_id=456), 1 request (device_id=456), 1 merge (device_id=123&old_device_id=456),
-     * 1 request (device_id=123), 1 temp (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
-     * 1 request (device_id=789), 1 temp (device_id=789), 1 request (device_id=789)
+     * 1 request (device_id=456), 1 former temp request (device_id=456), 1 request (device_id=456), 1 merge (device_id=123&old_device_id=456),
+     * 1 request (device_id=123), 1 former temp request (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
+     * 1 request (device_id=789), 1 former temp request (device_id=789), 1 request (device_id=789)
      */
     @Test
     public void performMigration3To4_13() {
@@ -1049,10 +1075,10 @@ public class MigrationHelperTests {
      * ---
      * This queue must contain below respected ids
      * ---
-     * 1 request (device_id=456), 1 temp (device_id=456), 1 request (device_id=456), 1 merge (device_id=123&old_device_id=456),
-     * 1 request (device_id=123), 1 temp (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
-     * 1 request (device_id=NEW_ID), 1 temp (device_id=NEW_ID), 1 request (device_id=NEW_ID), 1 merge (device_id=789&old_device_id=NEW_ID),
-     * 1 request (device_id=789), 1 temp (device_id=789), 1 request (device_id=789)
+     * 1 request (device_id=456), 1 former temp request (device_id=456), 1 request (device_id=456), 1 merge (device_id=123&old_device_id=456),
+     * 1 request (device_id=123), 1 former temp request (device_id=123), 1 request (device_id=123), 1 without merge (device_id=123),
+     * 1 request (device_id=NEW_ID), 1 former temp request (device_id=NEW_ID), 1 request (device_id=NEW_ID), 1 merge (device_id=789&old_device_id=NEW_ID),
+     * 1 request (device_id=789), 1 former temp request (device_id=789), 1 request (device_id=789)
      */
     @Test
     public void performMigration3To4_14() {
