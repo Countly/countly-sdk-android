@@ -7,17 +7,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
+import org.mockito.Mockito;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleSessionsTests {
     @Before
     public void setUp() {
-        final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
-        countlyStore.clear();
+        TestUtils.getCountyStore().clear();
     }
 
     @After
@@ -119,7 +115,7 @@ public class ModuleSessionsTests {
         TestUtils.validateRequiredParams(RQ[1]); // this is location request
         Assert.assertEquals("", RQ[1].get("location"));
 
-        mCountly.onStart(mock(TestUtils.Activity2.class));
+        mCountly.onStart(Mockito.mock(TestUtils.Activity2.class));
         mCountly.onStopInternal();
 
         for (Map<String, String> request : TestUtils.getCurrentRQ()) {
@@ -184,13 +180,13 @@ public class ModuleSessionsTests {
         }
 
         if (endSession) {
-            assertTrue(request.containsKey("end_session"));
+            Assert.assertTrue(request.containsKey("end_session"));
         }
 
         if (duration != null) {
-            assertEquals(duration, Integer.valueOf(request.get("session_duration")));
+            Assert.assertEquals(duration, Integer.valueOf(request.get("session_duration")));
         } else {
-            assertTrue(request.containsKey("begin_session"));
+            Assert.assertTrue(request.containsKey("begin_session"));
         }
     }
 
