@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -286,7 +285,7 @@ public class DeviceIdTests {
         config.lifecycleObserver = () -> true;
 
         Countly countly = new Countly().init(config);
-        validateSessionRequest(0, null, null, false);
+        ModuleSessionsTests.validateSessionRequest(0, null, null, false);
 
         countly.userProfile().setProperty("prop1", "string");
         countly.userProfile().setProperty("prop2", 123);
@@ -301,8 +300,8 @@ public class DeviceIdTests {
 
         countly.deviceId().changeWithoutMerge("ff"); // this will generate a request with "end_session", "session_duration" fields and reset duration
         assertEquals(4, TestUtils.getCurrentRQ().length);
-        validateSessionRequest(1, 1, "ff_merge", false);
-        validateSessionRequest(3, 2, null, true);
+        ModuleSessionsTests.validateSessionRequest(1, 1, "ff_merge", false);
+        ModuleSessionsTests.validateSessionRequest(3, 2, null, true);
 
         Thread.sleep(1000);
 
@@ -331,26 +330,6 @@ public class DeviceIdTests {
         countly.deviceId().changeWithMerge("ff_merge"); // this will generate a request with "session_duration" field and reset duration
 
         assertEquals(8, TestUtils.getCurrentRQ().length);
-        validateSessionRequest(7, 4, "ff_merge", false);
-    }
-
-    void validateSessionRequest(int idx, Integer duration, String deviceId, boolean endSession) {
-        Map<String, String> request = TestUtils.getCurrentRQ()[idx];
-
-        if (deviceId != null) {
-            TestUtils.validateRequiredParams(request, deviceId);
-        } else {
-            TestUtils.validateRequiredParams(request);
-        }
-
-        if (endSession) {
-            assertTrue(request.containsKey("end_session"));
-        }
-
-        if (duration != null) {
-            assertEquals(duration, Integer.valueOf(request.get("session_duration")));
-        } else {
-            assertTrue(request.containsKey("begin_session"));
-        }
+        ModuleSessionsTests.validateSessionRequest(7, 4, "ff_merge", false);
     }
 }

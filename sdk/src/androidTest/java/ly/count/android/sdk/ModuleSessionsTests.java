@@ -1,17 +1,16 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Map;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleSessionsTests {
@@ -29,83 +28,77 @@ public class ModuleSessionsTests {
     public void manualSessionBegin() {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
-
         mCountly.sessions().beginSession();
 
-        TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
+        validateSessionRequest(0, null, null, false);
     }
 
     @Test
     public void manualSessionBeginUpdateEnd() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
         mCountly.sessions().beginSession();
-        TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
+        validateSessionRequest(0, null, null, false);
 
         Thread.sleep(1000);
         mCountly.sessions().updateSession();
+        validateSessionRequest(1, 1, null, false);
 
-        verify(requestQueueProvider, times(1)).updateSession(1);
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        verify(requestQueueProvider, times(1)).endSession(2, null);
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        validateSessionRequest(2, 2, null, true);
     }
 
     @Test
     public void manualSessionBeginUpdateEndManualDisabled() throws InterruptedException {
-        CountlyConfig config = TestUtils.createBaseConfig().enableCrashReporting();
+        CountlyConfig config = TestUtils.createBaseConfig();
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
         mCountly.sessions().beginSession();
-        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
         Thread.sleep(1000);
         mCountly.sessions().updateSession();
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
-        verify(requestQueueProvider, never()).updateSession(anyInt());
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
     }
 
     @Test
     public void automaticSessionBeginEndWithManualEnabled() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
         mCountly.onStart(null);
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
-        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
         Thread.sleep(1000);
 
         mCountly.onStopInternal();
-
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
     }
 
     @Test
     public void automaticSessionBeginEndWithManualDisabled() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig();
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
         mCountly.onStartInternal(null);
+        validateSessionRequest(0, null, null, false);
 
-        TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
         Thread.sleep(1000);
 
         mCountly.onStopInternal();
-
-        verify(requestQueueProvider, times(1)).endSession(1, null);
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        validateSessionRequest(1, 1, null, true);
     }
 
     /**
@@ -116,18 +109,30 @@ public class ModuleSessionsTests {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.setRequiresConsent(true);
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+
+        Assert.assertEquals(2, RQ.length);
+        TestUtils.validateRequiredParams(RQ[0]); // this is consent request
+        Assert.assertEquals("{\"sessions\":false,\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"
+            , RQ[0].get("consent"));
+        TestUtils.validateRequiredParams(RQ[1]); // this is location request
+        Assert.assertEquals("", RQ[1].get("location"));
 
         mCountly.onStart(mock(TestUtils.Activity2.class));
         mCountly.onStopInternal();
-        mCountly.sessions().beginSession();
-        mCountly.sessions().updateSession();
-        mCountly.sessions().endSession();
 
-        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
-        verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
+            System.out.println(request);
+        }
+
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        mCountly.sessions().beginSession();
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        mCountly.sessions().updateSession();
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        mCountly.sessions().endSession();
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
     }
 
     /**
@@ -139,20 +144,14 @@ public class ModuleSessionsTests {
     public void manualSessionsNoUpdateStopWithoutBegin() {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
-        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
-        verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length); // validate that no requests have been recorded
 
         mCountly.sessions().updateSession();
-        mCountly.sessions().endSession();
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
-        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
-        verify(requestQueueProvider, never()).updateSession(anyInt());
-        verify(requestQueueProvider, never()).endSession(anyInt(), anyString());
-        verify(requestQueueProvider, never()).endSession(anyInt());
+        mCountly.sessions().endSession();
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
     }
 
     /**
@@ -164,14 +163,35 @@ public class ModuleSessionsTests {
     public void manualSessionsNoReactionStartingSessionAgain() {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
         Countly mCountly = new Countly().init(config);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
 
-        TestUtils.verifyBeginSessionNotCalled(requestQueueProvider);
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
         mCountly.sessions().beginSession();
+
+        validateSessionRequest(0, null, null, false);
         mCountly.sessions().beginSession();
 
-        TestUtils.verifyBeginSessionTimes(requestQueueProvider, 1);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+    }
+
+    static void validateSessionRequest(int idx, Integer duration, String deviceId, boolean endSession) {
+        Map<String, String> request = TestUtils.getCurrentRQ()[idx];
+
+        if (deviceId != null) {
+            TestUtils.validateRequiredParams(request, deviceId);
+        } else {
+            TestUtils.validateRequiredParams(request);
+        }
+
+        if (endSession) {
+            assertTrue(request.containsKey("end_session"));
+        }
+
+        if (duration != null) {
+            assertEquals(duration, Integer.valueOf(request.get("session_duration")));
+        } else {
+            assertTrue(request.containsKey("begin_session"));
+        }
     }
 
     //TODO add tests that make sure that init time consent is handled correctly
