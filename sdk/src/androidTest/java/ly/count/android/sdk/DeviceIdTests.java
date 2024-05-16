@@ -1,10 +1,8 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -302,7 +300,7 @@ public class DeviceIdTests {
         Thread.sleep(2000);
 
         countly.deviceId().changeWithoutMerge("ff"); // this will generate a request with "end_session", "session_duration" fields and reset duration
-        Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
+        assertEquals(4, TestUtils.getCurrentRQ().length);
         validateSessionRequest(1, 1, "ff_merge", false);
         validateSessionRequest(3, 2, null, true);
 
@@ -311,15 +309,9 @@ public class DeviceIdTests {
         countly.userProfile().setProperty("prop4", new String[] { "sd" });
         countly.userProfile().save();
         countly.deviceId().changeWithoutMerge("ff"); // this will not affect the session duration
-        countly.userProfile().setProperty("prop5", new HashMap<String, Object>() {{
-            put("key", "value");
-        }});
-        countly.userProfile().setProperty("prop6", new HashMap<String, Object>() {{
-            put("key", 123);
-        }});
-        countly.userProfile().setProperty("prop7", new HashMap<String, Object>() {{
-            put("key", false);
-        }});
+        countly.userProfile().setProperty("prop5", TestUtils.map("key", "value"));
+        countly.userProfile().setProperty("prop6", TestUtils.map("key", 123));
+        countly.userProfile().setProperty("prop7", TestUtils.map("key", false));
 
         Thread.sleep(1000);
 
@@ -338,7 +330,7 @@ public class DeviceIdTests {
 
         countly.deviceId().changeWithMerge("ff_merge"); // this will generate a request with "session_duration" field and reset duration
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+        assertEquals(8, TestUtils.getCurrentRQ().length);
         validateSessionRequest(7, 4, "ff_merge", false);
     }
 
