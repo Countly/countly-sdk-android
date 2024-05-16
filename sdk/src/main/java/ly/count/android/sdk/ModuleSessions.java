@@ -124,6 +124,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        L.d("[ModuleSessions] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if (newConsent) {
                 //if consent was just given and manual sessions sessions are not enabled, start a session if we are in the foreground
@@ -131,20 +132,20 @@ public class ModuleSessions extends ModuleBase {
                     beginSessionInternal();
                 }
             } else {
+                L.d("[ModuleSessions] Ending session due to consent change");
                 if (!_cly.isBeginSessionSent) {
                     //if session consent was removed and first begins session was not sent
                     //that means that we might not have sent the initially given location information
-
                     _cly.moduleLocation.sendCurrentLocationIfValid();
                 }
 
-                //if a session was running (manual or automatic), stop it
                 if (sessionIsRunning()) {
-                    endSessionInternal(null);
-                } else {
-                    //reset the first view counter even if there was no session
-                    _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                    requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), null);
+                    // sessionRunning = false; TODO uncomment after session time fix
                 }
+
+                _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
             }
         }
     }
