@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebView;
@@ -448,6 +447,8 @@ public class ModuleFeedback extends ModuleBase {
 
         if (widgetResult != null) {
             //removing broken values first
+            UtilsInternalLimits.removeUnsupportedDataTypes(widgetResult);
+
             Iterator<Map.Entry<String, Object>> iter = widgetResult.entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry<String, Object> entry = iter.next();

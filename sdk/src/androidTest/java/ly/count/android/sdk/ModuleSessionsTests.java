@@ -110,17 +110,13 @@ public class ModuleSessionsTests {
 
         Assert.assertEquals(2, RQ.length);
         TestUtils.validateRequiredParams(RQ[0]); // this is consent request
-        Assert.assertEquals("{\"sessions\":false,\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"
-            , RQ[0].get("consent"));
+        Assert.assertEquals(consentForSession(false), RQ[0].get("consent"));
         TestUtils.validateRequiredParams(RQ[1]); // this is location request
         Assert.assertEquals("", RQ[1].get("location"));
 
         mCountly.onStart(Mockito.mock(TestUtils.Activity2.class));
         mCountly.onStopInternal();
 
-        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
-            System.out.println(request);
-        }
 
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
         mCountly.sessions().beginSession();
@@ -170,6 +166,60 @@ public class ModuleSessionsTests {
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
     }
 
+    @Test
+    public void sessionBeginEndConsentChanges() throws InterruptedException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.lifecycleObserver = () -> true;
+        config.setRequiresConsent(true);
+        Countly mCountly = new Countly().init(config);
+
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(2, RQ.length);
+        TestUtils.validateRequiredParams(RQ[0]); // this is consent request
+        Assert.assertEquals(consentForSession(false), RQ[0].get("consent"));
+        TestUtils.validateRequiredParams(RQ[1]); // this is location request
+        Assert.assertEquals("", RQ[1].get("location"));
+
+        mCountly.sessions().beginSession();
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+
+        mCountly.sessions().endSession();
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+
+        mCountly.sessions().endSession();
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+
+        mCountly.consent().giveConsent(new String[] { "sessions" });
+        RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(4, RQ.length);
+
+        validateSessionRequest(2, null, null, false);
+
+        TestUtils.validateRequiredParams(RQ[3]);
+        Assert.assertEquals(consentForSession(true), RQ[3].get("consent"));
+
+        mCountly.sessions().beginSession();
+        Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
+
+        mCountly.sessions().endSession();
+        Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
+
+        Thread.sleep(1000);
+
+        mCountly.consent().removeConsent(new String[] { "sessions" });
+
+        RQ = TestUtils.getCurrentRQ();
+        Assert.assertEquals(6, RQ.length);
+
+        validateSessionRequest(4, 1, null, true);
+        TestUtils.validateRequiredParams(RQ[5]); // this is consent request
+        Assert.assertEquals(consentForSession(false), RQ[0].get("consent"));
+    }
+
+    private String consentForSession(boolean consent) {
+        return "{\"sessions\":" + consent + ",\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}";
+    }
+  
     static void validateSessionRequest(int idx, Integer duration, String deviceId, boolean endSession) {
         Map<String, String> request = TestUtils.getCurrentRQ()[idx];
 
