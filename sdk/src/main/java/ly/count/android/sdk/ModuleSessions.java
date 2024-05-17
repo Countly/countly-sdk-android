@@ -7,10 +7,9 @@ import java.util.Map;
 
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
-
     boolean manualSessionControlHybridModeEnabled = false;
-    long prevSessionDurationStartTime_ = 0;
-
+    long prevSessionDurationStartTime_ = System.currentTimeMillis();
+    boolean sessionRunning = false;
     final Sessions sessionInterface;
 
     @Nullable
@@ -55,8 +54,8 @@ public class ModuleSessions extends ModuleBase {
 
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
-
-        prevSessionDurationStartTime_ = System.nanoTime();
+        sessionRunning = true;
+        prevSessionDurationStartTime_ = System.currentTimeMillis();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
     }
 
@@ -97,7 +96,7 @@ public class ModuleSessions extends ModuleBase {
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
         requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
-        prevSessionDurationStartTime_ = 0;
+        sessionRunning = false;
 
         _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
     }
@@ -109,17 +108,24 @@ public class ModuleSessions extends ModuleBase {
      */
     public boolean sessionIsRunning() {
         //if the start timestamp is set then assume that the session is running
-        return prevSessionDurationStartTime_ > 0;
+        return sessionRunning;
     }
 
     /**
      * Calculates the unsent session duration in seconds, rounded to the nearest int.
      */
     int roundedSecondsSinceLastSessionDurationUpdate() {
-        final long currentTimestampInNanoseconds = System.nanoTime();
-        final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
-        prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        return (int) Math.round(unsentSessionLengthInNanoseconds / 1_000_000_000.0d);
+        if (prevSessionDurationStartTime_ < 1) {
+            L.e("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, called with prevSessionDurationStartTime_ being less than 1, returning 0, values was:[" + prevSessionDurationStartTime_ + "]");
+            return 0;
+        }
+        final long currentTimestampInMilliseconds = System.currentTimeMillis();
+        final long unsentSessionLengthInMilliseconds = currentTimestampInMilliseconds - prevSessionDurationStartTime_;
+        prevSessionDurationStartTime_ = currentTimestampInMilliseconds;
+        int seconds = (int) Math.round(unsentSessionLengthInMilliseconds / 1_000.0d);
+
+        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctim:[" + currentTimestampInMilliseconds + "], uslim:[" + unsentSessionLengthInMilliseconds + "], uslim_s:[" + seconds + "]");
+        return seconds;
     }
 
     @Override
@@ -161,6 +167,7 @@ public class ModuleSessions extends ModuleBase {
     @Override
     void halt() {
         prevSessionDurationStartTime_ = 0;
+        sessionRunning = false;
     }
 
     public class Sessions {
