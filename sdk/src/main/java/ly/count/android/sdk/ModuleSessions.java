@@ -148,7 +148,7 @@ public class ModuleSessions extends ModuleBase {
                 if (sessionIsRunning()) {
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                     requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), null);
-                    // sessionRunning = false; TODO uncomment after session time fix
+                    sessionRunning = false;
                 }
 
                 _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
