@@ -124,6 +124,7 @@ public class ScenarioSessionTests {
 
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
         validateConsentRequest(0, false);
+        validateRequest(TestUtils.map("location", ""), 1);
     }
 
     /**
