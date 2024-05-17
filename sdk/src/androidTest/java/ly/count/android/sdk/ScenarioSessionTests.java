@@ -3,13 +3,14 @@ package ly.count.android.sdk;
 import android.content.Intent;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
+import org.json.JSONException;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * <pre>
  * Init options:
  * M:Manual Sessions enabled
  * A:Automatic sessions enabled
@@ -18,38 +19,17 @@ import org.junit.runner.RunWith;
  * CNR:Consent not Required
  * CG:Session Consent given
  * CNG:Session Consent not given
- *
- * Automatic
- * - 204_CNR_A_id_change
- *          wait (seconds: 1);
- *     changeIDwithMerge('newID');
- *          wait (seconds: 1);
- *     changeIDwithoutMerge('newID_2');
- *          wait (seconds: 1);
- *     changeIDwithMerge('newID');
- *          wait (seconds: 1);
- *     changeIDwithoutMerge('newID_2');
- *          wait (seconds: 1);
- *     *go to background*
- *          wait (seconds: 1);
- *     *back to foreground*
- *     changeIDwithMerge('newID');
- *     *go to background*
- *          wait (seconds: 1);
- *     *back to foreground*
- *     Check request queue and verify:
- *     1. too lazy to calculate just let us know and lets verify together
- * - 205_CR_CG_A_id_change
- *     same as 204_CNR_A_id_change
- * - 206_CR_CNG_A_id_change
- *     same as 204_CNR_A_id_change
- *     </pre>
  */
-
 @RunWith(AndroidJUnit4.class)
 public class ScenarioSessionTests {
+
     @Before
     public void setUp() {
+        TestUtils.getCountyStore().clear();
+    }
+
+    @After
+    public void tearDown() {
         TestUtils.getCountyStore().clear();
     }
 
@@ -89,31 +69,15 @@ public class ScenarioSessionTests {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" });
         Countly countly = new Countly().init(config);
 
-        countly.sessions().endSession();
-        countly.sessions().endSession();
-        countly.sessions().updateSession();
-        countly.sessions().updateSession();
+        flowManualSessions(countly);
 
-        Thread.sleep(2000);
-        countly.sessions().beginSession();
-        Thread.sleep(2000);
-        countly.sessions().beginSession();
-        countly.sessions().updateSession();
-        Thread.sleep(2000);
-        countly.sessions().updateSession();
-        Thread.sleep(2000);
-        countly.sessions().endSession();
-        Thread.sleep(2000);
-        countly.sessions().endSession();
-        countly.sessions().updateSession();
-        countly.sessions().updateSession();
-
-        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
         validateConsentRequest(0, true);
-        validateSessionBeginRequest(1);
-        validateSessionUpdateRequest(2, 2);
+        validateRequest(TestUtils.map("location", ""), 1);
+        validateSessionBeginRequest(2);
         validateSessionUpdateRequest(3, 2);
-        validateSessionEndRequest(4, 2);
+        validateSessionUpdateRequest(4, 2);
+        validateSessionEndRequest(5, 2);
     }
 
     /**
@@ -131,24 +95,7 @@ public class ScenarioSessionTests {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().setRequiresConsent(false);
         Countly countly = new Countly().init(config);
 
-        countly.sessions().endSession();
-        countly.sessions().endSession();
-        countly.sessions().updateSession();
-        countly.sessions().updateSession();
-
-        Thread.sleep(2000);
-        countly.sessions().beginSession();
-        Thread.sleep(2000);
-        countly.sessions().beginSession();
-        countly.sessions().updateSession();
-        Thread.sleep(2000);
-        countly.sessions().updateSession();
-        Thread.sleep(2000);
-        countly.sessions().endSession();
-        Thread.sleep(2000);
-        countly.sessions().endSession();
-        countly.sessions().updateSession();
-        countly.sessions().updateSession();
+        flowManualSessions(countly);
 
         Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0);
@@ -173,24 +120,7 @@ public class ScenarioSessionTests {
         CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().setRequiresConsent(true);
         Countly countly = new Countly().init(config);
 
-        countly.sessions().endSession();
-        countly.sessions().endSession();
-        countly.sessions().updateSession();
-        countly.sessions().updateSession();
-
-        Thread.sleep(2000);
-        countly.sessions().beginSession();
-        Thread.sleep(2000);
-        countly.sessions().beginSession();
-        countly.sessions().updateSession();
-        Thread.sleep(2000);
-        countly.sessions().updateSession();
-        Thread.sleep(2000);
-        countly.sessions().endSession();
-        Thread.sleep(2000);
-        countly.sessions().endSession();
-        countly.sessions().updateSession();
-        countly.sessions().updateSession();
+        flowManualSessions(countly);
 
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
         validateConsentRequest(0, false);
@@ -217,9 +147,8 @@ public class ScenarioSessionTests {
      * Check request queue and verify:
      * 1. consent status req (session consent given)
      * 2. begin session req
-     * 3. end session req (no duration)
+     * 3. end session req 2 seconds
      * 4. consent status req (session consent not given)
-     * 5. device ID change req
      */
     @Test
     public void SE_203_CR_CG_M_id_change() throws InterruptedException {
@@ -243,16 +172,15 @@ public class ScenarioSessionTests {
         countly.sessions().beginSession();
         countly.sessions().endSession();
 
-        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
-            System.out.println(request);
-        }
-
-        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
         validateConsentRequest(0, true);
-        validateSessionBeginRequest(1);
-        validateSessionEndRequest(2, 0);
-        validateConsentRequest(3, false);
+        validateRequest(TestUtils.map("location", ""), 1);
+        validateRequest(TestUtils.map("device_id", "newID", "session_duration", "2"), 2);
+        validateSessionBeginRequest(3);
+        validateSessionEndRequest(4, 2);
+        validateConsentRequest(5, false);
         // TODO when RQ migration added add validation for device id change request
+
     }
 
     /**
@@ -280,15 +208,140 @@ public class ScenarioSessionTests {
      * 1. too lazy to calculate just let us know and lets verify together
      */
     @Test
-    public void SE_204_CNR_A_id_change() {
+    public void SE_204_CNR_A_id_change() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig();
         Countly countly = new Countly().init(config);
 
+        flowAutomaticSessions(countly);
+
+        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
+        validateSessionBeginRequest(0);
+        validateRequest(TestUtils.map("device_id", "newID", "session_duration", "1"), 1);
+        validateSessionEndRequest(2, 1);
+        validateRequest(TestUtils.map("device_id", "newID", "session_duration", "1"), 3);
+        validateRequest(TestUtils.map("device_id", "newID", "session_duration", "3"), 4);
+    }
+
+    /**
+     * In the configuration below configs are given:
+     * Consent is required
+     * Session consent is given
+     * --- Scenario Flow ---
+     * wait (seconds: 1);
+     * changeIDwithMerge('newID');
+     * wait (seconds: 1);
+     * changeIDwithoutMerge('newID_2');
+     * wait (seconds: 1);
+     * changeIDwithMerge('newID');
+     * wait (seconds: 1);
+     * changeIDwithoutMerge('newID_2');
+     * wait (seconds: 1);
+     * *go to background*
+     * wait (seconds: 1);
+     * *back to foreground*
+     * changeIDwithMerge('newID');
+     * *go to background*
+     * wait (seconds: 1);
+     * *back to foreground*
+     * --- Expected Requests ---
+     * Check request queue and verify:
+     * 1. too lazy to calculate just let us know and lets verify together
+     */
+    @Test
+    public void SE_205_CR_CG_A_id_change() throws InterruptedException, JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig().setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" });
+        Countly countly = new Countly().init(config);
+
+        flowAutomaticSessions(countly);
+
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
+        validateConsentRequest(0, true);
+        validateRequest(TestUtils.map("location", ""), 1);
+        validateRequest(TestUtils.map("device_id", "newID", "session_duration", "1"), 2);
+        validateConsentRequest(3, false);
+        validateRequest(TestUtils.map("device_id", "newID"), 4);
+        validateRequest(TestUtils.map("device_id", "newID"), 5);
+    }
+
+    /**
+     * In the configuration below configs are given:
+     * Consent is required
+     * Session consent is not given
+     * --- Scenario Flow ---
+     * wait (seconds: 1);
+     * changeIDwithMerge('newID');
+     * wait (seconds: 1);
+     * changeIDwithoutMerge('newID_2');
+     * wait (seconds: 1);
+     * changeIDwithMerge('newID');
+     * wait (seconds: 1);
+     * changeIDwithoutMerge('newID_2');
+     * wait (seconds: 1);
+     * *go to background*
+     * wait (seconds: 1);
+     * *back to foreground*
+     * changeIDwithMerge('newID');
+     * *go to background*
+     * wait (seconds: 1);
+     * *back to foreground*
+     * --- Expected Requests ---
+     * Check request queue and verify:
+     * 1. too lazy to calculate just let us know and lets verify together
+     */
+    @Test
+    public void SE_206_CR_CNG_A_id_change() throws InterruptedException {
+        CountlyConfig config = TestUtils.createBaseConfig().setRequiresConsent(true);
+        Countly countly = new Countly().init(config);
+
+        flowAutomaticSessions(countly);
+
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
+        validateConsentRequest(0, false);
+        validateRequest(TestUtils.map("location", ""), 1);
+        validateRequest(TestUtils.map("device_id", "newID"), 2);
+        validateConsentRequest(3, false);
+        validateRequest(TestUtils.map("device_id", "newID"), 4);
+        validateRequest(TestUtils.map("device_id", "newID"), 5);
+    }
+
+    private void flowManualSessions(Countly countly) throws InterruptedException {
+        countly.sessions().endSession();
+        countly.sessions().endSession();
+        countly.sessions().updateSession();
+        countly.sessions().updateSession();
+
+        Thread.sleep(2000);
+        countly.sessions().beginSession();
+        Thread.sleep(2000);
+        countly.sessions().beginSession();
+        countly.sessions().updateSession();
+        Thread.sleep(2000);
+        countly.sessions().updateSession();
+        Thread.sleep(2000);
+        countly.sessions().endSession();
+        Thread.sleep(2000);
+        countly.sessions().endSession();
+        countly.sessions().updateSession();
+        countly.sessions().updateSession();
+    }
+
+    private void flowAutomaticSessions(Countly countly) throws InterruptedException {
+        Thread.sleep(1000);
+        countly.deviceId().changeWithMerge("newID");
+        Thread.sleep(1000);
+        countly.deviceId().changeWithoutMerge("newID_2");
+        Thread.sleep(1000);
+        countly.deviceId().changeWithMerge("newID");
+        Thread.sleep(1000);
+        countly.deviceId().changeWithoutMerge("newID_2");
+        Thread.sleep(1000);
         sendAppToBackground();
-
+        Thread.sleep(1000);
         bringAppToForeground();
-
-        // TODO
+        countly.deviceId().changeWithMerge("newID");
+        sendAppToBackground();
+        Thread.sleep(1000);
+        bringAppToForeground();
     }
 
     private void validateSessionBeginRequest(int idx) {
@@ -336,11 +389,11 @@ public class ScenarioSessionTests {
         TestUtils.getApplication().startActivity(intent);
     }
 
-    private void validateRequest(Map<String, String> expectedExtras, int idx) {
+    private void validateRequest(Map<String, Object> expectedExtras, int idx) {
         Map<String, String> request = TestUtils.getCurrentRQ()[idx];
 
         TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx]);
-        for (Map.Entry<String, String> entry : expectedExtras.entrySet()) {
+        for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
             Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
         }
     }
