@@ -80,10 +80,10 @@ public class ModuleSessions extends ModuleBase {
     /**
      * @param deviceIdOverride used when switching deviceID to a different one and ending the previous session
      */
-    void endSessionInternal(String deviceIdOverride) {
-        L.d("[ModuleSessions] 'endSessionInternal'");
+    void endSessionInternal(String deviceIdOverride, boolean checkConsent) {
+        L.d("[ModuleSessions] endSessionInternal, deviceIdOverride:[" + deviceIdOverride + "], checkConsent:[" + checkConsent + "]");
 
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (checkConsent && !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             return;
         }
 
@@ -99,6 +99,13 @@ public class ModuleSessions extends ModuleBase {
         sessionRunning = false;
 
         _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+    }
+
+    /**
+     * @param deviceIdOverride used when switching deviceID to a different one and ending the previous session
+     */
+    void endSessionInternal(String deviceIdOverride) {
+        endSessionInternal(deviceIdOverride, true);
     }
 
     /**
@@ -146,12 +153,10 @@ public class ModuleSessions extends ModuleBase {
                 }
 
                 if (sessionIsRunning()) {
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
-                    requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), null);
-                    sessionRunning = false;
+                    endSessionInternal(null, false);
+                } else {
+                    _cly.moduleViews.resetFirstView();
                 }
-
-                _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
             }
         }
     }
