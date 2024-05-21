@@ -6,6 +6,9 @@
 
 * Added a new function "setID(newDeviceId)" for managing device id changes according to the device ID Type.
 
+* Fixed a bug where session duration might be calculated wrong for after device id without merge.
+* Fixed a bug where ending a session was not possible due to consent changes related to device id without merge.
+
 ## 24.4.0
 * ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 
 * ! Minor breaking change ! If a manual session has not been started, it will not be possible to call "UpdateSession"
