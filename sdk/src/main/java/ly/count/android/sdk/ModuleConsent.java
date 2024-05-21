@@ -234,9 +234,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             module.onConsentChanged(consentThatWillChange, isConsentGiven, changeSource);
         }
 
-        //send consent changes
-        String formattedConsentState = formatConsentState(featureConsentValues);
-        requestQueueProvider.sendConsentChanges(formattedConsentState);
+        if (isConsentGiven || !changeSource.equals(ConsentChangeSource.DeviceIDChangedNotMerged)) {
+            String formattedConsentState = formatConsentState(featureConsentValues);
+            requestQueueProvider.sendConsentChanges(formattedConsentState);
+        }
     }
 
     /**
