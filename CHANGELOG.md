@@ -1,6 +1,7 @@
 ## 24.4.1
 * ! Minor breaking change ! Mitigated an issue where internal SDK limits did not apply
 
+* Added support for Feedback Widget terms and conditions
 * Added a new function "setID(newDeviceId)" which internally handles merge/non-merge selection while changing the device ID
 
 * Mitigated an issue where the session duration could have been calculated wrongly after a device ID change without merge
