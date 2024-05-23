@@ -1,8 +1,11 @@
 ## 24.4.1
-* ! Minor breaking change ! The "maxValueSize" limit will now be applied by default. This would limit the maximum size of developer-supplied values and breadcrumbs. The current limit is 256 characters.
-* ! Minor breaking change ! The "maxKeyLength" limit will now be applied by default. This limit would limit the maximum length of developer-supplied keys and names. The current limit is 128 characters.
-* ! Minor breaking change ! The "maxSegmentationValues" limit will now be applied by default. This limit would limit the maximum number of developer-provided segmentation values when using features. The current limit is 100 entries.
-* ! Minor breaking change ! "maxStackTraceLinePerThread" and "maxStackTraceLineLength" limits will be applied by default now. This would limit the maximum lines of stack traces per thread and the maximum stack trace length, respectively. Default values are in order of 30 and 200.
+* ! Minor breaking change ! Mitigated an issue where internal SDK limits did not apply
+
+* Added support for Feedback Widget terms and conditions
+* Added a new function "setID(newDeviceId)" which internally handles merge/non-merge selection while changing the device ID
+
+* Mitigated an issue where the session duration could have been calculated wrongly after a device ID change without merge
+* Mitigated an issue where a session could have continued after a device ID change without merge
 
 ## 24.4.0
 * ! Minor breaking change ! If a manual session is already started, it will not be possible to call "BeginSession" without stopping the previous one 

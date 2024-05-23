@@ -7,10 +7,9 @@ import java.util.Map;
 
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
-
     boolean manualSessionControlHybridModeEnabled = false;
-    long prevSessionDurationStartTime_ = 0;
-
+    long prevSessionDurationStartTime_ = System.currentTimeMillis();
+    boolean sessionRunning = false;
     final Sessions sessionInterface;
 
     @Nullable
@@ -55,8 +54,8 @@ public class ModuleSessions extends ModuleBase {
 
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
-
-        prevSessionDurationStartTime_ = System.nanoTime();
+        sessionRunning = true;
+        prevSessionDurationStartTime_ = System.currentTimeMillis();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
     }
 
@@ -78,10 +77,13 @@ public class ModuleSessions extends ModuleBase {
         }
     }
 
-    void endSessionInternal() {
-        L.d("[ModuleSessions] 'endSessionInternal'");
+    /**
+     * @param deviceIdOverride used when switching deviceID to a different one and ending the previous session
+     */
+    void endSessionInternal(String deviceIdOverride, boolean checkConsent) {
+        L.d("[ModuleSessions] endSessionInternal, deviceIdOverride:[" + deviceIdOverride + "], checkConsent:[" + checkConsent + "]");
 
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (checkConsent && !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             return;
         }
 
@@ -93,10 +95,17 @@ public class ModuleSessions extends ModuleBase {
 
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
-        requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate());
-        prevSessionDurationStartTime_ = 0;
+        requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate(), deviceIdOverride);
+        sessionRunning = false;
 
         _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+    }
+
+    /**
+     * @param deviceIdOverride used when switching deviceID to a different one and ending the previous session
+     */
+    void endSessionInternal(String deviceIdOverride) {
+        endSessionInternal(deviceIdOverride, true);
     }
 
     /**
@@ -106,21 +115,29 @@ public class ModuleSessions extends ModuleBase {
      */
     public boolean sessionIsRunning() {
         //if the start timestamp is set then assume that the session is running
-        return prevSessionDurationStartTime_ > 0;
+        return sessionRunning;
     }
 
     /**
      * Calculates the unsent session duration in seconds, rounded to the nearest int.
      */
     int roundedSecondsSinceLastSessionDurationUpdate() {
-        final long currentTimestampInNanoseconds = System.nanoTime();
-        final long unsentSessionLengthInNanoseconds = currentTimestampInNanoseconds - prevSessionDurationStartTime_;
-        prevSessionDurationStartTime_ = currentTimestampInNanoseconds;
-        return (int) Math.round(unsentSessionLengthInNanoseconds / 1_000_000_000.0d);
+        if (prevSessionDurationStartTime_ < 1) {
+            L.e("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, called with prevSessionDurationStartTime_ being less than 1, returning 0, values was:[" + prevSessionDurationStartTime_ + "]");
+            return 0;
+        }
+        final long currentTimestampInMilliseconds = System.currentTimeMillis();
+        final long unsentSessionLengthInMilliseconds = currentTimestampInMilliseconds - prevSessionDurationStartTime_;
+        prevSessionDurationStartTime_ = currentTimestampInMilliseconds;
+        int seconds = (int) Math.round(unsentSessionLengthInMilliseconds / 1_000.0d);
+
+        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctim:[" + currentTimestampInMilliseconds + "], uslim:[" + unsentSessionLengthInMilliseconds + "], uslim_s:[" + seconds + "]");
+        return seconds;
     }
 
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        L.d("[ModuleSessions] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if (newConsent) {
                 //if consent was just given and manual sessions sessions are not enabled, start a session if we are in the foreground
@@ -128,19 +145,17 @@ public class ModuleSessions extends ModuleBase {
                     beginSessionInternal();
                 }
             } else {
+                L.d("[ModuleSessions] Ending session due to consent change");
                 if (!_cly.isBeginSessionSent) {
                     //if session consent was removed and first begins session was not sent
                     //that means that we might not have sent the initially given location information
-
                     _cly.moduleLocation.sendCurrentLocationIfValid();
                 }
 
-                //if a session was running (manual or automatic), stop it
                 if (sessionIsRunning()) {
-                    endSessionInternal();
+                    endSessionInternal(null, false);
                 } else {
-                    //reset the first view counter even if there was no session
-                    _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+                    _cly.moduleViews.resetFirstView();
                 }
             }
         }
@@ -157,6 +172,7 @@ public class ModuleSessions extends ModuleBase {
     @Override
     void halt() {
         prevSessionDurationStartTime_ = 0;
+        sessionRunning = false;
     }
 
     public class Sessions {

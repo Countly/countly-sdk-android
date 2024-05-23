@@ -347,11 +347,6 @@ class ConnectionQueue implements RequestQueueProvider {
         }
         L.d("[Connection Queue] endSession");
 
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            L.d("[Connection Queue] request ignored, 'sessions' consent not given");
-            return;
-        }
-
         String data = prepareCommonRequestData();
 
         data += "&end_session=1";

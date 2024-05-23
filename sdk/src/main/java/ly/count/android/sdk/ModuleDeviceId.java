@@ -193,6 +193,31 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         }
     }
 
+    private void setIDInternal(String newDeviceID) {
+        if (Utils.isNullOrEmpty(newDeviceID)) {
+            L.w("[ModuleDeviceId] setID, Empty id passed to setID method");
+            return;
+        }
+
+        if (deviceIdInstance.getCurrentId() != null && deviceIdInstance.getCurrentId().equals(newDeviceID)) {
+            L.w("[ModuleDeviceId] setID, Same id passed to setID method, ignoring");
+            return;
+        }
+
+        DeviceIdType currentType = deviceIdInstance.getType();
+
+        if (currentType.equals(DeviceIdType.DEVELOPER_SUPPLIED)) {
+            // an ID was provided by the host app previously
+            // we can assume that a device ID change with merge was executed previously
+            // now we change it without merging
+            changeDeviceIdWithoutMergeInternal(newDeviceID);
+        } else {
+            // SDK generated ID
+            // we change device ID with merge so that data is combined
+            changeDeviceIdWithMergeInternal(newDeviceID);
+        }
+    }
+
     @Override
     public void initFinished(@NonNull CountlyConfig config) {
         if (exitTempIdAfterInit) {
@@ -307,6 +332,20 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
                 L.d("[DeviceId] Calling 'getDeviceID'");
 
                 return getDeviceId();
+            }
+        }
+
+        /**
+         * Sets device ID according to the device ID Type.
+         * If previous ID was Developer Supplied sets it without merge, otherwise with merge.
+         *
+         * @param newDeviceID device id to set
+         */
+        public void setID(String newDeviceID) {
+            synchronized (_cly) {
+                L.d("[DeviceId] Calling 'setID'");
+
+                setIDInternal(newDeviceID);
             }
         }
 
