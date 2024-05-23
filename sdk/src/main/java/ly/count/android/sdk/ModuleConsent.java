@@ -139,7 +139,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             sb.append("Feature named [").append(key).append("], consent value: [").append(featureConsentValues.get(key)).append("]\n");
         }
 
-        L.d("[ModuleConsent] checkAllConsentInternal, Current consent state: " + sb);
+        L.d("[ModuleConsent] checkAllConsentInternal, Current consent state: [" + sb + "]");
     }
 
     /**
