@@ -285,17 +285,13 @@ class ConnectionQueue implements RequestQueueProvider {
         }
     }
 
-    public void changeDeviceId(String deviceId, String oldDeviceId, final int duration) {
+    public void changeDeviceId(String deviceId, String oldDeviceId) {
         if (!checkInternalState()) {
             return;
         }
         L.d("[Connection Queue] changeDeviceId");
 
         String data = prepareCommonRequestData(deviceId);
-
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            data += "&session_duration=" + duration;
-        }
 
         data += "&old_device_id=" + UtilsNetworking.urlEncodeString(oldDeviceId);
 

@@ -9,12 +9,12 @@ interface RequestQueueProvider {
 
     void updateSession(final int duration);
 
-    void changeDeviceId(String deviceId, String oldDeviceId, final int duration);
+    void changeDeviceId(String deviceId, String oldDeviceId);
 
     void tokenSession(String token, Countly.CountlyMessagingProvider provider);
 
     void endSession(final int duration);
-    
+
     void sendLocation(boolean locationDisabled, String locationCountryCode, String locationCity, String locationGpsCoordinates, String locationIpAddress);
 
     void sendUserData(String userdata);

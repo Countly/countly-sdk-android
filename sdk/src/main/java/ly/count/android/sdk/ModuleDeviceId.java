@@ -187,7 +187,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
             //update remote config_ values after id change if automatic update is enabled
             _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(false);
-            requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId(), _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
+            requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId());
             deviceIdInstance.changeToCustomId(deviceId);
             _cly.notifyDeviceIdChange();
         }

@@ -584,4 +584,13 @@ public class TestUtils {
 
         return new String(array, java.nio.charset.StandardCharsets.UTF_8);
     }
+
+    protected static void validateRequest(String deviceId, Map<String, Object> expectedExtras, int idx) {
+        Map<String, String> request = TestUtils.getCurrentRQ()[idx];
+
+        TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
+        for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
+            Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
+        }
+    }
 }

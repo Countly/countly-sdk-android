@@ -1201,6 +1201,6 @@ public class MigrationHelperTests {
     }
 
     void validateRequestsAreEqual(String required, String gotten) {
-        Assert.assertEquals(Utils.splitIntoParams(required), Utils.splitIntoParams(gotten));
+        Assert.assertEquals(Utils.splitIntoParams(required, mockLog), Utils.splitIntoParams(gotten, mockLog));
     }
 }

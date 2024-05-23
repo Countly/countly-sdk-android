@@ -310,7 +310,7 @@ class MigrationHelper {
 
         for (int a = requests.length - 1; a >= 0; a--) {
 
-            Map<String, String> params = Utils.splitIntoParams(requests[a]);
+            Map<String, String> params = Utils.splitIntoParams(requests[a], L);
 
             boolean containsDeviceID = params.containsKey(param_key_device_id);
             boolean containsOverrideID = params.containsKey(param_key_override_id);
@@ -404,7 +404,7 @@ class MigrationHelper {
         String deviceID = null;
         boolean withMerge = true;
         for (int a = index; a >= 0; a--) {
-            Map<String, String> params = Utils.splitIntoParams(requests[a]);
+            Map<String, String> params = Utils.splitIntoParams(requests[a], L);
             if (params.containsKey(param_key_device_id)) {
                 deviceID = params.get(param_key_device_id);
                 assert deviceID != null;
