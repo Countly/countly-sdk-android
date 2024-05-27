@@ -586,11 +586,15 @@ public class TestUtils {
     }
 
     protected static void validateRequest(String deviceId, Map<String, Object> expectedExtras, int idx) {
-        Map<String, String> request = TestUtils.getCurrentRQ()[idx];
+        Map<String, String> request = getCurrentRQ()[idx];
 
-        TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
+        validateRequiredParams(getCurrentRQ()[idx], deviceId);
         for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
             Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
         }
+    }
+
+    protected static void assertRQSize(int size) {
+        Assert.assertEquals(size, getCurrentRQ().length);
     }
 }

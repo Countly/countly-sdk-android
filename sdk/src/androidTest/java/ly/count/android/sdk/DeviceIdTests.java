@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Collections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -307,7 +308,7 @@ public class DeviceIdTests {
 
         Thread.sleep(1000);
 
-        countly.userProfile().setProperty("prop4", new String[] { "sd" });
+        countly.userProfile().setProperty("prop4", Collections.singletonList("sd"));
         countly.userProfile().save();
         countly.deviceId().changeWithoutMerge("ff"); // this will not affect the session duration
         countly.userProfile().setProperty("prop5", TestUtils.map("key", "value"));
@@ -333,7 +334,7 @@ public class DeviceIdTests {
 
         assertEquals(8, TestUtils.getCurrentRQ().length);
 
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":\"[Ljava.lang.String;@f500e8a\"}}"), 4);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":\"[sd]\"}}"), 4);
         TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop6\":\"{key=123}\",\"prop5\":\"{key=value}\",\"prop7\":\"{key=false}\"}}"), 5);
         TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"456\",\"prop1\":\"string_a\",\"prop3\":\"true\"}}"), 6);
 

@@ -57,29 +57,19 @@ public class ModuleUserProfileTests {
     }
 
     /**
-     * When saving user profile changes, it empties EQ into RQ
+     * When recording an event, already not synced user profile data should be sent
+     * before event sent, so event save will not be triggered
      */
     @Test
-    public void SavingWritesEQIntoRQ() {
-        Countly mCountly = Countly.sharedInstance();//todo move away from static init after static user profile has been removed
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        mCountly.init(config);
+    public void SavingWritesEQIntoRQ() throws JSONException {
+        Countly mCountly = new Countly().init(TestUtils.createBaseConfig());
 
-        Assert.assertEquals(0, store.getEvents().length);
-        Assert.assertEquals(0, store.getRequests().length);
+        TestUtils.assertRQSize(0);
+        mCountly.userProfile().setProperty("name", "Test Test");
+        TestUtils.assertRQSize(0);
 
         mCountly.events().recordEvent("a");
-        Assert.assertEquals(1, store.getEvents().length);//todo test fails with this being 0
-        Assert.assertEquals(0, store.getRequests().length);
-
-        mCountly.userProfile().setProperty("name", "Test Test");
-        mCountly.userProfile().save();
-
-        String[] reqs = store.getRequests();
-        Assert.assertEquals(0, store.getEvents().length);
-        Assert.assertEquals(2, reqs.length);
-        Assert.assertTrue(reqs[0].contains("events"));
-        Assert.assertFalse(reqs[1].contains("events"));
+        validateUserProfileRequest(TestUtils.map("name", "Test Test"), TestUtils.map());
     }
 
     // BELLOW TESTS THAT NEED TO BE REWORKED
