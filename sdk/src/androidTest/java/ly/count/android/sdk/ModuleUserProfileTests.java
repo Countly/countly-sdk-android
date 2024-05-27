@@ -696,6 +696,34 @@ public class ModuleUserProfileTests {
         validateUserProfileRequest(new HashMap<>(), new HashMap<>());
     }
 
+    /**
+     * Related user properties should be saved before event recordings
+     * call order, begin session, user property with "dark_mode", event, user property with "light_mode", end session
+     * generated request order  begin_session + first user property request + 3 events + user property request with light_mode + end_session
+     */
+    @Test
+    public void eventSaveScenario_manualSessions() throws JSONException {
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl());
+        TestUtils.assertRQSize(0);
+
+        countly.sessions().beginSession();
+        TestUtils.assertRQSize(1); // begin session request
+        countly.userProfile().setProperty("theme", "dark_mode");
+
+        countly.events().recordEvent("test_event1");
+        TestUtils.assertRQSize(2); // begin session request + user property request with dark_mode
+        countly.events().recordEvent("test_event2");
+        countly.events().recordEvent("test_event3");
+
+        countly.userProfile().setProperty("theme", "light_mode");
+        TestUtils.assertRQSize(2); // no request is generated on the way
+
+        countly.sessions().endSession();
+        // begin_session + first user property request + 3 events + end_session + user property request with light_mode
+        validateUserProfileRequest(1, 5, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        validateUserProfileRequest(3, 5, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+    }
+
     private JSONObject json(Object... args) {
         return new JSONObject(TestUtils.map(args));
     }
@@ -704,10 +732,10 @@ public class ModuleUserProfileTests {
         Assert.assertEquals(expected.toString(), actual.toString());
     }
 
-    private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+    private void validateUserProfileRequest(int idx, int size, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(1, RQ.length);
-        JSONObject userDetails = new JSONObject(RQ[0].get("user_details"));
+        Assert.assertEquals(size, RQ.length);
+        JSONObject userDetails = new JSONObject(RQ[idx].get("user_details"));
         Assert.assertEquals(userDetails.length(), predefined.size() + 1);
         JSONObject customData = userDetails.getJSONObject("custom");
         Assert.assertEquals(customData.length(), custom.size());
@@ -723,5 +751,9 @@ public class ModuleUserProfileTests {
                 Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
             }
         }
+    }
+
+    private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+        validateUserProfileRequest(0, 1, predefined, custom);
     }
 }
