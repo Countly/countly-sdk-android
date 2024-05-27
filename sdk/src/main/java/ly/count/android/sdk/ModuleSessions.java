@@ -92,6 +92,8 @@ public class ModuleSessions extends ModuleBase {
 
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
+        _cly.moduleUserProfile.saveInternal();
+
         requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate());
         sessionRunning = false;
 

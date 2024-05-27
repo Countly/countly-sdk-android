@@ -20,15 +20,9 @@ public class ModuleUserProfile extends ModuleBase {
     static final String GENDER_KEY = "gender";
     static final String BYEAR_KEY = "byear";
     static final String CUSTOM_KEY = "custom";
-
     String[] namedFields = { NAME_KEY, USERNAME_KEY, EMAIL_KEY, ORG_KEY, PHONE_KEY, PICTURE_KEY, PICTURE_PATH_KEY, GENDER_KEY, BYEAR_KEY };
-
     boolean isSynced = true;
-
-    JSONObject dataStore = new JSONObject();
-
     UserProfile userProfileInterface;
-
     //fields from the old object
     String name;
     String username;
@@ -369,7 +363,12 @@ public class ModuleUserProfile extends ModuleBase {
 
     void saveInternal() {
         L.d("[ModuleUserProfile] saveInternal");
-        requestQueueProvider.sendUserData(getDataForRequest());
+        String userRequest = getDataForRequest();
+        if (userRequest.isEmpty()) {
+            L.d("[ModuleUserProfile] saveInternal, no user data to save");
+            return;
+        }
+        requestQueueProvider.sendUserData(userRequest);
         clearInternal();
     }
 

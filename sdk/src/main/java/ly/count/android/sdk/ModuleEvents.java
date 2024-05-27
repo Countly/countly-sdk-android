@@ -125,6 +125,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             pcc.TrackCounterTimeNs("ModuleEvents_recordEventInternalGenID", UtilsTime.getNanoTime() - pccTsStartRecordEventInternal);
         }
 
+        //before each event is recorded, check if user profile data needs to be saved
+        _cly.moduleUserProfile.saveInternal();
+
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
