@@ -550,7 +550,7 @@ public class TestUtils {
         int tz = Integer.parseInt(params.get("tz"));
 
         validateSdkIdentityParams(params);
-        //Assert.assertEquals(deviceId, params.get("device_id"));
+        Assert.assertEquals(deviceId, params.get("device_id"));
         Assert.assertEquals(commonAppKey, params.get("app_key"));
         Assert.assertEquals(Countly.DEFAULT_APP_VERSION, params.get("av"));
         Assert.assertTrue(Long.parseLong(params.get("timestamp")) > 0);
@@ -573,10 +573,24 @@ public class TestUtils {
         }
     }
 
+    public static void assertQueueSizes(int rqSize, int eqSize, CountlyStore cs) {
+        Assert.assertEquals(rqSize, cs.getRequests().length);
+        Assert.assertEquals(eqSize, cs.getEventQueueSize());
+    }
+
     protected static String generateRandomString(int length) {
         byte[] array = new byte[length];
         new Random().nextBytes(array);
 
         return new String(array, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    protected static void validateRequest(String deviceId, Map<String, Object> expectedExtras, int idx) {
+        Map<String, String> request = TestUtils.getCurrentRQ()[idx];
+
+        TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
+        for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
+            Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
+        }
     }
 }

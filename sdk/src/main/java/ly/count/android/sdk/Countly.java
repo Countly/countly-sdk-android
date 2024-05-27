@@ -926,7 +926,7 @@ public class Countly {
             // if we don't use manual session control
             // Called when final Activity is stopped.
             // Sends an end session event to the server, also sends any unsent custom events.
-            moduleSessions.endSessionInternal(null);
+            moduleSessions.endSessionInternal();
         }
 
         config_.deviceInfo.inBackground();

@@ -311,7 +311,6 @@ public class ConnectionProcessor implements Runnable {
             long pccTsStartEndpointCheck = 0L;
             long pccTsStartOldRCheck = 0L;
             long pccTsStartGetURLConnection;
-            long pccTsStartDeviceIDOverride = 0L;
             long pccTsStartRemainingRequests = 0L;
             long pccTsReadingStream;
             long pccTsStartHandlingResponse;
@@ -373,16 +372,14 @@ public class ConnectionProcessor implements Runnable {
                 pccTsStartTempIdCheck = UtilsTime.getNanoTime();
             }
             // temp ID checks
-            String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            boolean containsTemporaryIdOverride = requestData.contains(temporaryIdOverrideTag);
             boolean containsTemporaryId = requestData.contains(temporaryIdTag);
-            if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
+            if (containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
 
                 //abort and wait for exiting temporary mode
-                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
+                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests. tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
                 break;
             }
             if (pcc != null) {
@@ -410,58 +407,6 @@ public class ConnectionProcessor implements Runnable {
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_04_NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartEndpointCheck);
-            }
-
-            //------------------------
-
-            if (pcc != null) {
-                pccTsStartDeviceIDOverride = UtilsTime.getNanoTime();
-            }
-
-            //add the device_id to the created request
-            boolean deviceIdOverride = requestData.contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = requestData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
-
-            final String newId;
-
-            if (deviceIdOverride) {
-                // if the override tag is used, it means that the device_id will be changed
-                // to finish the session of the previous device_id, we have cache it into the request
-                // this is indicated by having the "override_id" tag. This just means that we
-                // don't use the id provided in the deviceId variable as this might have changed already.
-
-                requestData = requestData.replace("&override_id=", "&device_id=");
-                newId = null;
-            } else {
-                if (deviceIdChange) {
-                    // this branch will be used if a new device_id is provided
-                    // and a device_id merge on server has to be performed
-
-                    final int endOfDeviceIdTag = requestData.indexOf("&device_id=") + "&device_id=".length();
-                    newId = UtilsNetworking.urlDecodeString(requestData.substring(endOfDeviceIdTag));
-
-                    if (newId.equals(deviceIdProvider_.getDeviceId())) {
-                        // If the new device_id is the same as previous,
-                        // we don't do anything to change it
-
-                        deviceIdChange = false;
-
-                        L.d("[ConnectionProcessor] Provided device_id is the same as the previous one used, nothing will be merged");
-                    } else {
-                        //new device_id provided, make sure it will be merged
-                        requestData = requestData + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-                    }
-                } else {
-                    // this branch will be used in almost all requests.
-                    // This just adds the device_id to them
-
-                    newId = null;
-                    requestData = requestData + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-                }
-            }
-
-            if (pcc != null) {
-                pcc.TrackCounterTimeNs("ConnectionProcessorRun_05_NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartDeviceIDOverride);
             }
 
             //------------------------
@@ -581,19 +526,6 @@ public class ConnectionProcessor implements Runnable {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
                         storageProvider_.removeRequest(originalRequest);
-
-                        if (deviceIdChange) {
-                            if (newId != null && !newId.isEmpty()) {
-                                deviceIdProvider_.getDeviceIdInstance().changeToCustomId(newId);//todo needs to be refactored
-                            } else {
-                                L.e("[ConnectionProcessor] Failed to change device ID with merging because the new ID was empty or null. [" + newId + "]");
-                            }
-                        }
-
-                        if (deviceIdChange || deviceIdOverride) {
-                            L.v("[ConnectionProcessor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
-                            Countly.sharedInstance().notifyDeviceIdChange();//todo needs to be removed at some point
-                        }
                     } else {
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying

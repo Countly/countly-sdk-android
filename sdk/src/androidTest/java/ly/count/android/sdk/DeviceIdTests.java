@@ -285,7 +285,7 @@ public class DeviceIdTests {
         config.lifecycleObserver = () -> true;
 
         Countly countly = new Countly().init(config);
-        ModuleSessionsTests.validateSessionRequest(0, null, null, false);
+        ModuleSessionsTests.validateSessionRequest(0, null, null, false, true);
 
         countly.userProfile().setProperty("prop1", "string");
         countly.userProfile().setProperty("prop2", 123);
@@ -300,8 +300,10 @@ public class DeviceIdTests {
 
         countly.deviceId().changeWithoutMerge("ff"); // this will generate a request with "end_session", "session_duration" fields and reset duration
         assertEquals(4, TestUtils.getCurrentRQ().length);
-        ModuleSessionsTests.validateSessionRequest(1, 1, "ff_merge", false);
-        ModuleSessionsTests.validateSessionRequest(3, 2, null, true);
+
+        TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
+        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"123\",\"prop1\":\"string\",\"prop3\":\"false\"}}"), 2);
+        ModuleSessionsTests.validateSessionRequest(3, 3, "ff_merge", true, false);
 
         Thread.sleep(1000);
 
@@ -330,6 +332,11 @@ public class DeviceIdTests {
         countly.deviceId().changeWithMerge("ff_merge"); // this will generate a request with "session_duration" field and reset duration
 
         assertEquals(8, TestUtils.getCurrentRQ().length);
-        ModuleSessionsTests.validateSessionRequest(7, 4, "ff_merge", false);
+
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":\"[Ljava.lang.String;@f500e8a\"}}"), 4);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop6\":\"{key=123}\",\"prop5\":\"{key=value}\",\"prop7\":\"{key=false}\"}}"), 5);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"456\",\"prop1\":\"string_a\",\"prop3\":\"true\"}}"), 6);
+
+        TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 7);
     }
 }

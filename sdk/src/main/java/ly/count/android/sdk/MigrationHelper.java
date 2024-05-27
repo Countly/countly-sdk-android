@@ -18,13 +18,13 @@ class MigrationHelper {
      * 3 - removing messaging mode info
      * x - adding device ID to all requests
      */
-    static final int DATA_SCHEMA_VERSIONS = 3;
-
-    static final public String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
-
+    static final int DATA_SCHEMA_VERSIONS = 4;
+    static final String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
+    static final String param_key_device_id = "device_id";
+    static final String param_key_override_id = "override_id";
+    static final String param_key_old_device_id = "old_device_id";
     StorageProvider storage;
     ModuleLog L;
-
     Context cachedContext;
 
     static final public String legacyDeviceIDTypeValue_AdvertisingID = "ADVERTISING_ID";
@@ -103,11 +103,18 @@ class MigrationHelper {
                 newVersion = newVersion + 1;
                 break;
             case 1:
+                L.w("[MigrationHelper] performMigrationStep, performing migration from version [1] -> [2]");
                 performMigration1To2(migrationParams);
                 newVersion = newVersion + 1;
                 break;
             case 2:
+                L.w("[MigrationHelper] performMigrationStep, performing migration from version [2] -> [3]");
                 performMigration2To3(migrationParams);
+                newVersion = newVersion + 1;
+                break;
+            case 3:
+                L.w("[MigrationHelper] performMigrationStep, performing migration from version [3] -> [4]");
+                performMigration3To4(migrationParams);
                 newVersion = newVersion + 1;
                 break;
             case DATA_SCHEMA_VERSIONS:
@@ -228,7 +235,7 @@ class MigrationHelper {
                 migratedValue.put(RemoteConfigValueStore.keyCacheFlag, RemoteConfigValueStore.cacheValFresh);
                 newStructure.put(key, migratedValue);
             } catch (Exception e) {
-                Countly.sharedInstance().L.e("[MigrationHelper] performMigration1To2, transforming remote config values, " + e.toString());
+                L.e("[MigrationHelper] performMigration1To2, transforming remote config values, " + e.toString());
             }
         }
 
@@ -243,5 +250,187 @@ class MigrationHelper {
     void performMigration2To3(@NonNull Map<String, Object> migrationParams) {
         SharedPreferences sp = CountlyStore.createPreferencesPush(cachedContext);
         sp.edit().remove(legacyCACHED_PUSH_MESSAGING_MODE).apply();
+    }
+
+    /**
+     * <pre>
+     * Transitions the SDK to a state where all requests store the device ID with the request
+     * This way it does not need to be added at request time.
+     * This solves some race conditions and simplifies the SDK
+     * -
+     * "&override_id=XXX" - this should be replaced with "&device_id=XXX" as it tries to specify what device ID should be used for the request
+     * "&device_id=XXX" - if this is encountered then that indicates a device ID change request. This is the new device ID. In addition to this, "&old_device_id=YYY" should be added which should get the value from the currently available device ID
+     * -
+     * The migration process will start at the beginning
+     * And then will try to move into the future and reconstruct the device ID chain
+     * If there are merge requests then the device ID needs to be updated in the SDK
+     * -
+     * Change requests without merging would happen instantly. if a session was recorded, it would record an end session request with a device ID override
+     * Change requests with merge would happen delayed with the new value being set as "&device_id=XXX"
+     * -
+     * There can be 5 kinds of requests:
+     * 1) request with no device ID or override
+     * 2) request with device ID that is not temp
+     * 3) request with override that is not temp
+     * 4) request with device ID that is temp
+     * 5) request with override that is temp (this might show up)
+     * -
+     * 12131451
+     * 131451
+     * 1451
+     * </pre>
+     *
+     * @param migrationParams
+     */
+    void performMigration3To4(@NonNull Map<String, Object> migrationParams) {
+        String currentPointDeviceID = storage.getDeviceID();
+
+        if (currentPointDeviceID == null) {
+            L.e("performMigration3To4, can't perform this migration due to the device ID being 'null'");
+            return;
+        }
+
+        String oldDeviceId = "";
+        String overrideCache = currentPointDeviceID;
+
+        String[] requests = storage.getRequests();
+        // this is for the looking for last merge request id, because last merge request id is not saved yet so latest device id should be it
+        DeviceIdWithMerge deviceId = searchForDeviceIdInRequests(requests, requests.length - 1);
+
+        if (deviceId.deviceId != null && deviceId.withMerge) {
+            // if we have a merge request, then the last merge request is the latest device id and save it also
+            // because merge is not saved yet, also current one is the old device id
+            oldDeviceId = currentPointDeviceID;
+            currentPointDeviceID = deviceId.deviceId;
+
+            // this is saved because it was not saved before
+            storage.setDeviceID(currentPointDeviceID);
+            storage.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
+        }
+
+        for (int a = requests.length - 1; a >= 0; a--) {
+
+            Map<String, String> params = Utils.splitIntoParams(requests[a], L);
+
+            boolean containsDeviceID = params.containsKey(param_key_device_id);
+            boolean containsOverrideID = params.containsKey(param_key_override_id);
+
+            if (containsOverrideID) {
+                // if we have a without merge request
+                String paramDeviceId = params.remove(param_key_override_id);
+                assert paramDeviceId != null;
+
+                // if it is not a temporary device id
+                if (!paramDeviceId.equals(DeviceId.temporaryCountlyDeviceId)) {
+                    // update current device id to the oldest id
+                    currentPointDeviceID = paramDeviceId;
+                    // and cache it for possible old merge requests to use it as old device id
+                    overrideCache = currentPointDeviceID;
+
+                    // if we have without merge request, we should search for the last merge request if exists
+                    // because latest merge request id is not saved to the storage yet, so we should use the latest device id as the old device id,
+                    // and also we should update the current device id to the merge request id
+                    deviceId = searchForDeviceIdInRequests(requests, a - 1);
+                    if (deviceId.deviceId != null) {
+                        if (deviceId.withMerge) {
+                            oldDeviceId = overrideCache; // make current device id the old device id
+                            currentPointDeviceID = deviceId.deviceId;
+                        }
+                    }
+                }
+                params.put(param_key_device_id, currentPointDeviceID);
+            } else if (containsDeviceID) { // if we have a with merge request
+                String paramDeviceId = params.get(param_key_device_id);
+                assert paramDeviceId != null;
+
+                if (paramDeviceId.equals(DeviceId.temporaryCountlyDeviceId)) {
+                    params.put(param_key_device_id, currentPointDeviceID);
+                } else {
+                    // if it is not a temporary device id
+                    // search for the older merge request, if exists old device id will be the older merge request's device id
+                    // if not, old device id will be cached override id
+                    deviceId = searchForDeviceIdInRequests(requests, a - 1);
+                    if (deviceId.deviceId != null) {
+                        if (deviceId.withMerge) {
+                            oldDeviceId = deviceId.deviceId;
+                        }
+                    } else {
+                        oldDeviceId = overrideCache;
+                    }
+
+                    currentPointDeviceID = oldDeviceId; // update current as old
+                    // we did not add device_id param because it already exists
+                    params.put(param_key_old_device_id, oldDeviceId);
+                }
+            } else {
+                params.put(param_key_device_id, currentPointDeviceID);
+            }
+
+            requests[a] = Utils.combineParamsIntoRequest(params);
+        }
+
+        storage.replaceRequests(requests);
+    }
+
+    private static class DeviceIdWithMerge {
+        String deviceId;
+        boolean withMerge;
+
+        public DeviceIdWithMerge(String deviceId, boolean withMerge) {
+            this.deviceId = deviceId;
+            this.withMerge = withMerge;
+        }
+    }
+
+    private final DeviceIdWithMerge reusableDeviceIdWithMerge = new DeviceIdWithMerge(null, false); // to reduce object creation
+
+    /**
+     * Search for any device id request that is not a temporary device id
+     * looks for "device_id" or "override_id" in the requests
+     * return null if not found
+     *
+     * @param requests array of requests
+     * @param index to start searching from
+     * @return device id and if it is a merge request
+     */
+    private DeviceIdWithMerge searchForDeviceIdInRequests(String[] requests, int index) {
+        assert requests != null;
+        if (index < 0) {
+            reusableDeviceIdWithMerge.deviceId = null;
+            reusableDeviceIdWithMerge.withMerge = false;
+            return reusableDeviceIdWithMerge;
+        }
+
+        String deviceID = null;
+        boolean withMerge = true;
+        for (int a = index; a >= 0; a--) {
+            Map<String, String> params = Utils.splitIntoParams(requests[a], L);
+            if (params.containsKey(param_key_device_id)) {
+                deviceID = params.get(param_key_device_id);
+                assert deviceID != null;
+
+                if (deviceID.equals(DeviceId.temporaryCountlyDeviceId)) {
+                    deviceID = null;
+                    continue;
+                }
+                deviceID = params.get(param_key_device_id);
+                break;
+            } else if (params.containsKey(param_key_override_id)) {
+                deviceID = params.get(param_key_override_id);
+                assert deviceID != null;
+
+                if (deviceID.equals(DeviceId.temporaryCountlyDeviceId)) {
+                    deviceID = null;
+                    continue;
+                }
+                deviceID = params.get(param_key_override_id);
+                withMerge = false;
+                break;
+            }
+        }
+
+        reusableDeviceIdWithMerge.deviceId = deviceID;
+        reusableDeviceIdWithMerge.withMerge = withMerge;
+        return reusableDeviceIdWithMerge;
     }
 }
