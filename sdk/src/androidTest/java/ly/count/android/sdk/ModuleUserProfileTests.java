@@ -699,6 +699,7 @@ public class ModuleUserProfileTests {
     /**
      * Related user properties should be saved before event recordings
      * call order, begin session, user property with "dark_mode", event, user property with "light_mode", end session
+     * Manual sessions are enabled
      * generated request order  begin_session + first user property request + 3 events + user property request with light_mode + end_session
      */
     @Test
@@ -719,9 +720,69 @@ public class ModuleUserProfileTests {
         TestUtils.assertRQSize(2); // no request is generated on the way
 
         countly.sessions().endSession();
-        // begin_session + first user property request + 3 events + end_session + user property request with light_mode
+        // begin_session + first user property request + 3 events + user property request with light_mode + end_session
         validateUserProfileRequest(1, 5, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
         validateUserProfileRequest(3, 5, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+    }
+
+    /**
+     * Related user properties should be saved before event recordings
+     * call order, user property with "dark_mode", event, user property with "light_mode"
+     * No consent for sessions
+     * generated request order consent request + location request + first user property request + 3 events + user property request with light_mode
+     */
+    //@Test
+    public void eventSaveScenario_onTimer() throws InterruptedException, JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sessionUpdateTimerDelay = 2; // trigger update call for property save
+        Countly countly = new Countly().init(config);
+
+        TestUtils.assertRQSize(2); // no begin session because of no consent
+        //0 is the consent request
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
+
+        countly.userProfile().setProperty("theme", "dark_mode");
+
+        countly.events().recordEvent("test_event1");
+        TestUtils.assertRQSize(3); // user property request with dark_mode
+        countly.events().recordEvent("test_event2");
+        countly.events().recordEvent("test_event3");
+
+        countly.userProfile().setProperty("theme", "light_mode");
+        TestUtils.assertRQSize(3); // no request is generated on the way
+
+        Thread.sleep(2000);
+
+        // first user property request + 3 events + user property request with light_mode
+        validateUserProfileRequest(2, 5, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        validateUserProfileRequest(4, 5, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+    }
+
+    /**
+     * Related user properties should be saved before event recordings
+     * call order, user property with "dark_mode", event, user property with "light_mode"
+     * generated request order first user property request + 3 events + user property request with light_mode
+     */
+    @Test
+    public void eventSaveScenario_changeDeviceIDWithoutMerge() throws JSONException {
+        Countly countly = new Countly().init(TestUtils.createBaseConfig());
+
+        TestUtils.assertRQSize(0);
+        countly.userProfile().setProperty("theme", "dark_mode");
+
+        countly.events().recordEvent("test_event1");
+        TestUtils.assertRQSize(1); // user property request with dark_mode
+        countly.events().recordEvent("test_event2");
+        countly.events().recordEvent("test_event3");
+
+        countly.userProfile().setProperty("theme", "light_mode");
+        TestUtils.assertRQSize(1); // no request is generated on the way
+
+        countly.deviceId().changeWithoutMerge("new_device_id");
+
+        // first user property request + 3 events + user property request with light_mode
+        validateUserProfileRequest(0, 3, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        validateUserProfileRequest(2, 3, TestUtils.map(), TestUtils.map("theme", "light_mode"));
     }
 
     private JSONObject json(Object... args) {
