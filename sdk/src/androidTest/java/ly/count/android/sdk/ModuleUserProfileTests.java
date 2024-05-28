@@ -729,33 +729,31 @@ public class ModuleUserProfileTests {
      * Related user properties should be saved before event recordings
      * call order, user property with "dark_mode", event, user property with "light_mode"
      * No consent for sessions
-     * generated request order consent request + location request + first user property request + 3 events + user property request with light_mode
+     * generated request order first user property request + 3 events + user property request with light_mode
      */
-    //@Test
+    @Test
     public void eventSaveScenario_onTimer() throws InterruptedException, JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.sessionUpdateTimerDelay = 2; // trigger update call for property save
         Countly countly = new Countly().init(config);
 
-        TestUtils.assertRQSize(2); // no begin session because of no consent
-        //0 is the consent request
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
+        TestUtils.assertRQSize(0); // no begin session because of no consent
 
         countly.userProfile().setProperty("theme", "dark_mode");
 
         countly.events().recordEvent("test_event1");
-        TestUtils.assertRQSize(3); // user property request with dark_mode
+        TestUtils.assertRQSize(1); // user property request with dark_mode
         countly.events().recordEvent("test_event2");
         countly.events().recordEvent("test_event3");
 
         countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(3); // no request is generated on the way
+        TestUtils.assertRQSize(1); // no request is generated on the way
 
-        Thread.sleep(2000);
+        Thread.sleep(3000);
 
         // first user property request + 3 events + user property request with light_mode
-        validateUserProfileRequest(2, 5, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        validateUserProfileRequest(4, 5, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+        validateUserProfileRequest(0, 3, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        validateUserProfileRequest(2, 3, TestUtils.map(), TestUtils.map("theme", "light_mode"));
     }
 
     /**
