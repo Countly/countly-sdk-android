@@ -368,6 +368,9 @@ public class ModuleUserProfile extends ModuleBase {
             L.d("[ModuleUserProfile] saveInternal, no user data to save");
             return;
         }
+
+        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+
         requestQueueProvider.sendUserData(userRequest);
         clearInternal();
     }
@@ -475,8 +478,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and add value to array
+        /**
+         * Create array property, if property does not exist and add value to array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to add to array
          */
@@ -486,8 +491,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and add value to array, only if value is not yet in the array
+        /**
+         * Create array property, if property does not exist and add value to array, only if value is not yet in the array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to add to array
          */
@@ -497,8 +504,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and remove value from array
+        /**
+         * Create array property, if property does not exist and remove value from array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to remove from array
          */
@@ -550,7 +559,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /*
+        /**
          * Send provided values to server
          */
         public void save() {
