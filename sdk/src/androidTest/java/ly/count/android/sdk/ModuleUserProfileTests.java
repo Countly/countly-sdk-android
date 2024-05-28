@@ -5,6 +5,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -12,7 +13,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mockito;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleUserProfileTests {
@@ -21,24 +21,22 @@ public class ModuleUserProfileTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().halt();
-        store = new CountlyStore(TestUtils.getContext(), Mockito.mock(ModuleLog.class));
-        store.clear();
+        TestUtils.getCountyStore().clear();
     }
 
     @After
     public void tearDown() {
+        TestUtils.getCountyStore().clear();
     }
 
     /**
      * Testing basic flow
      */
     @Test
-    public void setAndSaveValues() {
-        Countly mCountly = Countly.sharedInstance();//todo move away from static init after static user profile has been removed
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        mCountly.init(config);
+    public void setAndSaveValues() throws JSONException {
+        Countly mCountly = new Countly().init(TestUtils.createBaseConfig());
 
-        HashMap<String, Object> userProperties = new HashMap<>();
+        Map<String, Object> userProperties = new ConcurrentHashMap<>();
         userProperties.put("name", "Test Test");
         userProperties.put("username", "test");
         userProperties.put("email", "test@gmail.com");
@@ -46,14 +44,16 @@ public class ModuleUserProfileTests {
         userProperties.put("phone", "+1234567890");
         userProperties.put("gender", "M");
         userProperties.put("picture", "http://domain.com/test.png");
-        userProperties.put("byear", "2000");
+        userProperties.put("byear", 2000);
         userProperties.put("key1", "value1");
         userProperties.put("key2", "value2");
 
         mCountly.userProfile().setProperties(userProperties);
         mCountly.userProfile().save();
+        userProperties.remove("key1");
+        userProperties.remove("key2");
 
-        Assert.assertEquals(1, store.getRequests().length);
+        validateUserProfileRequest(userProperties, TestUtils.map("key1", "value1", "key2", "value2"));
     }
 
     /**
