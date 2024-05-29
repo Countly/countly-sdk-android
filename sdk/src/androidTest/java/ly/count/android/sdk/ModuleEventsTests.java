@@ -571,13 +571,15 @@ public class ModuleEventsTests {
         validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
     }
 
-    protected static JSONObject validateEventInRQ(String eventName, int count, double sum, double duration, int idx) throws JSONException {
+    protected static JSONObject validateEventInRQ(String deviceId, String eventName, int count, double sum, double duration, int idx, int eventIdx, int eventCount, int rqCount) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(idx + 1, RQ.length);
-        TestUtils.validateRequiredParams(RQ[idx]);
+        if (rqCount > -1) {
+            Assert.assertEquals(rqCount, RQ.length);
+        }
+        TestUtils.validateRequiredParams(RQ[idx], deviceId);
         JSONArray events = new JSONArray(RQ[idx].get("events"));
-        Assert.assertEquals(1, events.length());
-        JSONObject event = events.getJSONObject(0);
+        Assert.assertEquals(eventCount, events.length());
+        JSONObject event = events.getJSONObject(eventIdx);
         Assert.assertEquals(eventName, event.get("key"));
         Assert.assertEquals(count, event.getInt("count"));
         Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
@@ -586,7 +588,7 @@ public class ModuleEventsTests {
     }
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
-        JSONObject event = validateEventInRQ(eventName, count, sum, duration, idx);
+        JSONObject event = validateEventInRQ(TestUtils.commonDeviceId, eventName, count, sum, duration, idx, 0, 1, idx + 1);
         JSONObject segmentation = event.getJSONObject("segmentation");
         Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
         for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
@@ -599,6 +601,10 @@ public class ModuleEventsTests {
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
         validateEventInRQ(eventName, expectedSegmentation, 1, 0.0d, 0.0d, idx);
+    }
+
+    protected static void validateEventInRQ(String eventName, int rqIdx, int eventIdx, int eventCount) throws JSONException {
+        validateEventInRQ(TestUtils.commonDeviceId, eventName, 1, 0.0d, 0.0d, rqIdx, eventIdx, eventCount, -1);
     }
 
 /*
