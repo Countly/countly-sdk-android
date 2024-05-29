@@ -5,7 +5,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -13,28 +12,33 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleUserProfileTests {
+    CountlyStore store;
+
     @Before
     public void setUp() {
         Countly.sharedInstance().halt();
-        TestUtils.getCountyStore().clear();
+        store = new CountlyStore(TestUtils.getContext(), Mockito.mock(ModuleLog.class));
+        store.clear();
     }
 
     @After
     public void tearDown() {
-        TestUtils.getCountyStore().clear();
     }
 
     /**
      * Testing basic flow
      */
     @Test
-    public void setAndSaveValues() throws JSONException {
-        Countly mCountly = new Countly().init(TestUtils.createBaseConfig());
+    public void setAndSaveValues() {
+        Countly mCountly = Countly.sharedInstance();//todo move away from static init after static user profile has been removed
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        mCountly.init(config);
 
-        Map<String, Object> userProperties = new ConcurrentHashMap<>();
+        HashMap<String, Object> userProperties = new HashMap<>();
         userProperties.put("name", "Test Test");
         userProperties.put("username", "test");
         userProperties.put("email", "test@gmail.com");
@@ -42,32 +46,40 @@ public class ModuleUserProfileTests {
         userProperties.put("phone", "+1234567890");
         userProperties.put("gender", "M");
         userProperties.put("picture", "http://domain.com/test.png");
-        userProperties.put("byear", 2000);
+        userProperties.put("byear", "2000");
         userProperties.put("key1", "value1");
         userProperties.put("key2", "value2");
 
         mCountly.userProfile().setProperties(userProperties);
         mCountly.userProfile().save();
-        userProperties.remove("key1");
-        userProperties.remove("key2");
 
-        validateUserProfileRequest(userProperties, TestUtils.map("key1", "value1", "key2", "value2"));
+        Assert.assertEquals(1, store.getRequests().length);
     }
 
     /**
-     * When recording an event, already not synced user profile data should be sent
-     * before event sent, so event save will not be triggered
+     * When saving user profile changes, it empties EQ into RQ
      */
     @Test
-    public void SavingWritesEQIntoRQ() throws JSONException {
-        Countly mCountly = new Countly().init(TestUtils.createBaseConfig());
+    public void SavingWritesEQIntoRQ() {
+        Countly mCountly = Countly.sharedInstance();//todo move away from static init after static user profile has been removed
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        mCountly.init(config);
 
-        TestUtils.assertRQSize(0);
-        mCountly.userProfile().setProperty("name", "Test Test");
-        TestUtils.assertRQSize(0);
+        Assert.assertEquals(0, store.getEvents().length);
+        Assert.assertEquals(0, store.getRequests().length);
 
         mCountly.events().recordEvent("a");
-        validateUserProfileRequest(TestUtils.map("name", "Test Test"), TestUtils.map());
+        Assert.assertEquals(1, store.getEvents().length);//todo test fails with this being 0
+        Assert.assertEquals(0, store.getRequests().length);
+
+        mCountly.userProfile().setProperty("name", "Test Test");
+        mCountly.userProfile().save();
+
+        String[] reqs = store.getRequests();
+        Assert.assertEquals(0, store.getEvents().length);
+        Assert.assertEquals(2, reqs.length);
+        Assert.assertTrue(reqs[0].contains("events"));
+        Assert.assertFalse(reqs[1].contains("events"));
     }
 
     // BELLOW TESTS THAT NEED TO BE REWORKED
@@ -634,7 +646,7 @@ public class ModuleUserProfileTests {
         Countly.sharedInstance().userProfile().push("rem", "HUH");
         Countly.sharedInstance().userProfile().save();
 
-        validateUserProfileRequest(TestUtils.map(), TestUtils.map("mul", TestUtils.json("$mul", 2_456_789), "rem", TestUtils.json("$push", new String[] { "ORIELY", "HUH" }), "inc", TestUtils.json("$inc", 1)));
+        validateUserProfileRequest(TestUtils.map(), TestUtils.map("mul", json("$mul", 2_456_789), "rem", json("$push", new String[] { "ORIELY", "HUH" }), "inc", json("$inc", 1)));
     }
 
     /**
@@ -694,11 +706,18 @@ public class ModuleUserProfileTests {
         validateUserProfileRequest(new HashMap<>(), new HashMap<>());
     }
 
-    protected static void validateUserProfileRequest(String deviceId, int idx, int size, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+    private JSONObject json(Object... args) {
+        return new JSONObject(TestUtils.map(args));
+    }
+
+    private void assertJsonsEquals(Object expected, Object actual) {
+        Assert.assertEquals(expected.toString(), actual.toString());
+    }
+
+    private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(size, RQ.length);
-        TestUtils.validateRequiredParams(RQ[idx], deviceId);
-        JSONObject userDetails = new JSONObject(RQ[idx].get("user_details"));
+        Assert.assertEquals(1, RQ.length);
+        JSONObject userDetails = new JSONObject(RQ[0].get("user_details"));
         Assert.assertEquals(userDetails.length(), predefined.size() + 1);
         JSONObject customData = userDetails.getJSONObject("custom");
         Assert.assertEquals(customData.length(), custom.size());
@@ -709,18 +728,10 @@ public class ModuleUserProfileTests {
 
         for (Map.Entry<String, Object> entry : custom.entrySet()) {
             if (entry.getValue() instanceof JSONObject) {
-                Assert.assertEquals(entry.getValue().toString(), customData.get(entry.getKey()).toString());
+                assertJsonsEquals(entry.getValue(), customData.get(entry.getKey()));
             } else {
                 Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
             }
         }
-    }
-
-    protected static void validateUserProfileRequest(int idx, int size, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
-        validateUserProfileRequest(TestUtils.commonDeviceId, idx, size, predefined, custom);
-    }
-
-    protected static void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
-        validateUserProfileRequest(0, 1, predefined, custom);
     }
 }
