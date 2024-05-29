@@ -136,15 +136,6 @@ public class TestUtils {
         return cc;
     }
 
-    public static CountlyConfig createBaseConfig(Context context) {
-        CountlyConfig cc = new CountlyConfig(context, commonAppKey, commonURL)
-            .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
-
-        return cc;
-    }
-
     public static String[] createStringArray(int count) {
         String[] sArr = new String[count];
         Random rnd = new Random();
