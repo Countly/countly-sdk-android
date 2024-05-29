@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.util.Collections;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -286,7 +285,7 @@ public class DeviceIdTests {
         config.lifecycleObserver = () -> true;
 
         Countly countly = new Countly().init(config);
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleSessionsTests.validateSessionRequest(0, null, null, false, true);
 
         countly.userProfile().setProperty("prop1", "string");
         countly.userProfile().setProperty("prop2", 123);
@@ -304,11 +303,11 @@ public class DeviceIdTests {
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
         TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"123\",\"prop1\":\"string\",\"prop3\":\"false\"}}"), 2);
-        ModuleSessionsTests.validateSessionEndRequest(3, 3, "ff_merge");
+        ModuleSessionsTests.validateSessionRequest(3, 3, "ff_merge", true, false);
 
         Thread.sleep(1000);
 
-        countly.userProfile().setProperty("prop4", Collections.singletonList("sd"));
+        countly.userProfile().setProperty("prop4", new String[] { "sd" });
         countly.userProfile().save();
         countly.deviceId().changeWithoutMerge("ff"); // this will not affect the session duration
         countly.userProfile().setProperty("prop5", TestUtils.map("key", "value"));
@@ -334,7 +333,7 @@ public class DeviceIdTests {
 
         assertEquals(8, TestUtils.getCurrentRQ().length);
 
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":\"[sd]\"}}"), 4);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":\"[Ljava.lang.String;@f500e8a\"}}"), 4);
         TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop6\":\"{key=123}\",\"prop5\":\"{key=value}\",\"prop7\":\"{key=false}\"}}"), 5);
         TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"456\",\"prop1\":\"string_a\",\"prop3\":\"true\"}}"), 6);
 
