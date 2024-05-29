@@ -8,7 +8,6 @@
         android:excludeFromRecents="true"
         android:noHistory="true"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
-        android:launchMode="singleTop"
         android:exported="false"/>
     <uses-library android:name="android.test.runner"/>
   </application>
