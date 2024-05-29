@@ -247,6 +247,16 @@ public class ModuleConsentTests {
         TestUtils.verifyLocationValuesInRQMockValues(cc.locationCountyCode, cc.locationCity, cc.locationLocation, cc.locationIpAddress, rqp);
     }
 
+    protected static void validateConsentRequest(String deviceId, int idx, boolean[] consents) {
+        String consentParam = "{\"sessions\":%b,\"crashes\":%b,\"users\":%b,\"push\":%b,\"feedback\":%b,\"scrolls\":%b,\"remote-config\":%b,\"attribution\":%b,\"clicks\":%b,\"location\":%b,\"star-rating\":%b,\"events\":%b,\"views\":%b,\"apm\":%b}";
+        String consentsStr = String.format(consentParam, consents[0], consents[1], consents[2], consents[3], consents[4], consents[5], consents[6], consents[7], consents[8], consents[9], consents[10], consents[11], consents[12], consents[13]);
+        TestUtils.validateRequest(deviceId, TestUtils.map("consent", consentsStr), idx);
+    }
+    
+    protected static void validateAllConsentRequest(String deviceId, int idx) {
+        validateConsentRequest(deviceId, idx, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, true, true });
+    }
+
     // TODO test that makes sure that the consent change request is created correctly
     // TODO test that makes sure that the consent change request is not created for duplicate triggers
     // TODO make sure that the consent request is correctly created after init

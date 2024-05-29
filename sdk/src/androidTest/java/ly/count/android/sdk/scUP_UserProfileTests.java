@@ -149,7 +149,7 @@ public class scUP_UserProfileTests {
         sendUserData(countly);
 
         TestUtils.assertRQSize(1);
-        ValidationUtils.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
     }
 
     /**
@@ -163,7 +163,7 @@ public class scUP_UserProfileTests {
         sendUserData(countly);
 
         TestUtils.assertRQSize(2);
-        ModuleSessionsTests.validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
+        ModuleConsentTests.validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
     }
 
@@ -236,7 +236,7 @@ public class scUP_UserProfileTests {
         countly.events().recordEvent("E");
 
         TestUtils.assertRQSize(7);
-        ValidationUtils.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
 
         ModuleEventsTests.validateEventInRQ("A", 1, 0, 2);
         ModuleEventsTests.validateEventInRQ("B", 1, 1, 2);
@@ -269,7 +269,7 @@ public class scUP_UserProfileTests {
         countly.events().recordEvent("E");
 
         TestUtils.assertRQSize(2);
-        ModuleSessionsTests.validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
+        ModuleConsentTests.validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
     }
 
@@ -322,14 +322,14 @@ public class scUP_UserProfileTests {
         countly.events().recordEvent("D");
 
         TestUtils.assertRQSize(8);
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleConsentTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
 
         ModuleEventsTests.validateEventInRQ("A", 1, 0, 2);
         ModuleEventsTests.validateEventInRQ("B", 1, 1, 2);
 
         ModuleUserProfileTests.validateUserProfileRequest(2, 8, TestUtils.map(), TestUtils.map("a12345", "4"));
 
-        ModuleSessionsTests.validateSessionEndRequest(3, null, TestUtils.commonDeviceId);
+        ModuleConsentTests.validateSessionEndRequest(3, null, TestUtils.commonDeviceId);
 
         TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 4);
 
@@ -374,7 +374,7 @@ public class scUP_UserProfileTests {
         countly.events().recordEvent("D");
 
         TestUtils.assertRQSize(9);
-        ValidationUtils.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
         ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
 
         ModuleEventsTests.validateEventInRQ("A", 2, 0, 2);
