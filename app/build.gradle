@@ -92,15 +92,15 @@ dependencies {
   //implementation 'ly.count.android:sdk-plugin:21.11.0'
 
   //required for FCM push
-  implementation 'com.google.firebase:firebase-messaging:22.0.0'
+  implementation 'com.google.firebase:firebase-messaging:24.0.0'
   //required for huawei push
   implementation 'com.huawei.hms:push:6.3.0.304'
 
-  implementation 'com.google.android.material:material:1.6.0-alpha02'
+  implementation 'com.google.android.material:material:1.12.0'
   implementation 'androidx.appcompat:appcompat:1.6.1'
-  implementation 'androidx.constraintlayout:constraintlayout:2.1.3'
-  implementation 'androidx.annotation:annotation:1.3.0'
-  implementation 'androidx.core:core-ktx:1.7.0'
+  implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+  implementation 'androidx.annotation:annotation:1.8.0'
+  implementation 'androidx.core:core-ktx:1.13.1'
 
   //required for the install referrer
   implementation 'com.android.installreferrer:installreferrer:2.2'
@@ -109,7 +109,7 @@ dependencies {
   testImplementation 'junit:junit:4.13.2'
   //    androidTestImplementation 'androidx.test:runner:1.3.0'
   //    androidTestImplementation 'androidx.test:core:1.3.0'
-  androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+  androidTestImplementation 'androidx.test.ext:junit:1.1.5'
   //    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 }
 
