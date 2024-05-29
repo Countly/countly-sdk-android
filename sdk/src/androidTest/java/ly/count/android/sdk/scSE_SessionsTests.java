@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.content.Intent;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Map;
 import org.junit.After;
@@ -19,11 +20,10 @@ import org.junit.runner.RunWith;
  * CNG:Session Consent not given
  */
 @RunWith(AndroidJUnit4.class)
-public class scSE_SessionsTests {
+public class ScenarioSessionTests {
 
     @Before
     public void setUp() {
-        Countly.sharedInstance().halt();
         TestUtils.getCountyStore().clear();
     }
 
@@ -71,7 +71,7 @@ public class scSE_SessionsTests {
         flowManualSessions(countly);
 
         Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
-        validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
+        validateConsentRequest(0, true, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         validateSessionBeginRequest(2, TestUtils.commonDeviceId);
         validateSessionUpdateRequest(3, 2, TestUtils.commonDeviceId);
@@ -122,7 +122,7 @@ public class scSE_SessionsTests {
         flowManualSessions(countly);
 
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
-        validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
+        validateConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
     }
 
@@ -172,12 +172,15 @@ public class scSE_SessionsTests {
         countly.sessions().beginSession();
         countly.sessions().endSession();
 
-        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
-        validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
+        validateConsentRequest(0, true, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 2);
+        TestUtils.validateRequest("newID", TestUtils.map("session_duration", "2"), 2);
         validateSessionBeginRequest(3, "newID");
         validateSessionEndRequest(4, 2, "newID");
+        validateConsentRequest(5, false, TestUtils.commonDeviceId);
+        // TODO when RQ migration added add validation for device id change request
+
     }
 
     /**
@@ -206,20 +209,18 @@ public class scSE_SessionsTests {
      */
     @Test
     public void SE_204_CNR_A_id_change() throws InterruptedException {
-        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        CountlyConfig config = TestUtils.createBaseConfig();
         Countly countly = new Countly().init(config);
 
         flowAutomaticSessions(countly);
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
-        validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 1);
-        validateSessionEndRequest(2, 2, "newID");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 3);
-        validateSessionBeginRequest(4, "newID_2");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 5);
-        validateSessionEndRequest(6, null, "newID");
-        validateSessionBeginRequest(7, "newID");
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 0);
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 1);
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 2);
+        validateSessionBeginRequest(3, "newID");
+        // 4 is orientation change
+        validateSessionEndRequest(5, null, "newID");
     }
 
     /**
@@ -249,18 +250,18 @@ public class scSE_SessionsTests {
      */
     @Test
     public void SE_205_CR_CG_A_id_change() throws InterruptedException {
-        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" });
+        CountlyConfig config = TestUtils.createBaseConfig().setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" });
         Countly countly = new Countly().init(config);
 
         flowAutomaticSessions(countly);
 
         Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
-        validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
+        validateConsentRequest(0, true, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
-        validateSessionBeginRequest(2, TestUtils.commonDeviceId);
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 3);
-        validateSessionEndRequest(4, 2, "newID");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 5);
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 2);
+        validateConsentRequest(3, false, "newID");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 4);
+        validateConsentRequest(5, false, "newID");
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 6);
     }
 
@@ -291,17 +292,19 @@ public class scSE_SessionsTests {
      */
     @Test
     public void SE_206_CR_CNG_A_id_change() throws InterruptedException {
-        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setRequiresConsent(true);
+        CountlyConfig config = TestUtils.createBaseConfig().setRequiresConsent(true);
         Countly countly = new Countly().init(config);
 
         flowAutomaticSessions(countly);
 
-        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
-        validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
+        validateConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 2);
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 3);
+        validateConsentRequest(3, false, "newID");
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 4);
+        validateConsentRequest(5, false, "newID");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 6);
     }
 
     private void flowManualSessions(Countly countly) throws InterruptedException {
@@ -326,9 +329,6 @@ public class scSE_SessionsTests {
     }
 
     private void flowAutomaticSessions(Countly countly) throws InterruptedException {
-
-        countly.onStart(null);
-
         Thread.sleep(1000);
         countly.deviceId().changeWithMerge("newID");
         Thread.sleep(1000);
@@ -338,29 +338,25 @@ public class scSE_SessionsTests {
         Thread.sleep(1000);
         countly.deviceId().changeWithoutMerge("newID_2");
         Thread.sleep(1000);
-
-        countly.onStop();
-
+        sendAppToBackground();
         Thread.sleep(1000);
-
-        countly.onStart(null);
-
+        bringAppToForeground();
         countly.deviceId().changeWithMerge("newID");
-        countly.onStop();
+        sendAppToBackground();
         Thread.sleep(1000);
-        countly.onStart(null);
+        bringAppToForeground();
     }
 
-    protected static void validateSessionBeginRequest(int idx, String deviceId) {
+    private void validateSessionBeginRequest(int idx, String deviceId) {
         TestUtils.validateRequest(deviceId, TestUtils.map("begin_session", "1"), idx);
     }
 
-    protected static void validateSessionEndRequest(int idx, Integer duration, String deviceId) {
+    private void validateSessionEndRequest(int idx, Integer duration, String deviceId) {
         Map<String, String> request = validateSessionUpdateRequest(idx, duration, deviceId);
         Assert.assertEquals("1", request.get("end_session"));
     }
 
-    protected static Map<String, String> validateSessionUpdateRequest(int idx, Integer duration, String deviceId) {
+    private Map<String, String> validateSessionUpdateRequest(int idx, Integer duration, String deviceId) {
         Map<String, String> request = TestUtils.getCurrentRQ()[idx];
 
         TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
@@ -371,9 +367,22 @@ public class scSE_SessionsTests {
         return request;
     }
 
-    private void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
+    private void validateConsentRequest(int idx, boolean consentForSession, String deviceId) {
         TestUtils.validateRequest(deviceId, TestUtils.map("consent",
             "{\"sessions\":" + consentForSession + ",\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"), idx);
+    }
+
+    private void sendAppToBackground() {
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        TestUtils.getApplication().startActivity(intent);
+    }
+
+    private void bringAppToForeground() {
+        Intent intent = new Intent(TestUtils.getApplication(), TestUtils.Activity2.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        TestUtils.getApplication().startActivity(intent);
     }
 
     private void validateRequest(Map<String, Object> expectedExtras, int idx) {
