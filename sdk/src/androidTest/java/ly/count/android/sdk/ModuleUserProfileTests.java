@@ -16,8 +16,6 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleUserProfileTests {
-    CountlyStore store;
-
     @Before
     public void setUp() {
         Countly.sharedInstance().halt();
@@ -636,7 +634,7 @@ public class ModuleUserProfileTests {
         Countly.sharedInstance().userProfile().push("rem", "HUH");
         Countly.sharedInstance().userProfile().save();
 
-        validateUserProfileRequest(TestUtils.map(), TestUtils.map("mul", json("$mul", 2_456_789), "rem", json("$push", new String[] { "ORIELY", "HUH" }), "inc", json("$inc", 1)));
+        validateUserProfileRequest(TestUtils.map(), TestUtils.map("mul", TestUtils.json("$mul", 2_456_789), "rem", TestUtils.json("$push", new String[] { "ORIELY", "HUH" }), "inc", TestUtils.json("$inc", 1)));
     }
 
     /**
@@ -696,104 +694,10 @@ public class ModuleUserProfileTests {
         validateUserProfileRequest(new HashMap<>(), new HashMap<>());
     }
 
-    /**
-     * Related user properties should be saved before event recordings
-     * call order, begin session, user property with "dark_mode", event, user property with "light_mode", end session
-     * Manual sessions are enabled
-     * generated request order  begin_session + first user property request + 3 events + user property request with light_mode + end_session
-     */
-    @Test
-    public void eventSaveScenario_manualSessions() throws JSONException {
-        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl());
-        TestUtils.assertRQSize(0);
-
-        countly.sessions().beginSession();
-        TestUtils.assertRQSize(1); // begin session request
-        countly.userProfile().setProperty("theme", "dark_mode");
-
-        countly.events().recordEvent("test_event1");
-        TestUtils.assertRQSize(2); // begin session request + user property request with dark_mode
-        countly.events().recordEvent("test_event2");
-        countly.events().recordEvent("test_event3");
-
-        countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(2); // no request is generated on the way
-
-        countly.sessions().endSession();
-        // begin_session + first user property request + 3 events + user property request with light_mode + end_session
-        validateUserProfileRequest(1, 5, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        validateUserProfileRequest(3, 5, TestUtils.map(), TestUtils.map("theme", "light_mode"));
-    }
-
-    /**
-     * Related user properties should be saved before event recordings
-     * call order, user property with "dark_mode", event, user property with "light_mode"
-     * No consent for sessions
-     * generated request order first user property request + 3 events + user property request with light_mode
-     */
-    @Test
-    public void eventSaveScenario_onTimer() throws InterruptedException, JSONException {
-        CountlyConfig config = TestUtils.createBaseConfig();
-        config.sessionUpdateTimerDelay = 2; // trigger update call for property save
-        Countly countly = new Countly().init(config);
-
-        TestUtils.assertRQSize(0); // no begin session because of no consent
-
-        countly.userProfile().setProperty("theme", "dark_mode");
-
-        countly.events().recordEvent("test_event1");
-        TestUtils.assertRQSize(1); // user property request with dark_mode
-        countly.events().recordEvent("test_event2");
-        countly.events().recordEvent("test_event3");
-
-        countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(1); // no request is generated on the way
-
-        Thread.sleep(3000);
-
-        // first user property request + 3 events + user property request with light_mode
-        validateUserProfileRequest(0, 3, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        validateUserProfileRequest(2, 3, TestUtils.map(), TestUtils.map("theme", "light_mode"));
-    }
-
-    /**
-     * Related user properties should be saved before event recordings
-     * call order, user property with "dark_mode", event, user property with "light_mode"
-     * generated request order first user property request + 3 events + user property request with light_mode
-     */
-    @Test
-    public void eventSaveScenario_changeDeviceIDWithoutMerge() throws JSONException {
-        Countly countly = new Countly().init(TestUtils.createBaseConfig());
-
-        TestUtils.assertRQSize(0);
-        countly.userProfile().setProperty("theme", "dark_mode");
-
-        countly.events().recordEvent("test_event1");
-        TestUtils.assertRQSize(1); // user property request with dark_mode
-        countly.events().recordEvent("test_event2");
-        countly.events().recordEvent("test_event3");
-
-        countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(1); // no request is generated on the way
-
-        countly.deviceId().changeWithoutMerge("new_device_id");
-
-        // first user property request + 3 events + user property request with light_mode
-        validateUserProfileRequest(0, 3, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        validateUserProfileRequest(2, 3, TestUtils.map(), TestUtils.map("theme", "light_mode"));
-    }
-
-    private JSONObject json(Object... args) {
-        return new JSONObject(TestUtils.map(args));
-    }
-
-    private void assertJsonsEquals(Object expected, Object actual) {
-        Assert.assertEquals(expected.toString(), actual.toString());
-    }
-
-    private void validateUserProfileRequest(int idx, int size, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+    protected static void validateUserProfileRequest(String deviceId, int idx, int size, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(size, RQ.length);
+        TestUtils.validateRequiredParams(RQ[idx], deviceId);
         JSONObject userDetails = new JSONObject(RQ[idx].get("user_details"));
         Assert.assertEquals(userDetails.length(), predefined.size() + 1);
         JSONObject customData = userDetails.getJSONObject("custom");
@@ -805,14 +709,18 @@ public class ModuleUserProfileTests {
 
         for (Map.Entry<String, Object> entry : custom.entrySet()) {
             if (entry.getValue() instanceof JSONObject) {
-                assertJsonsEquals(entry.getValue(), customData.get(entry.getKey()));
+                Assert.assertEquals(entry.getValue().toString(), customData.get(entry.getKey()).toString());
             } else {
                 Assert.assertEquals(entry.getValue(), customData.get(entry.getKey()));
             }
         }
     }
 
-    private void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+    protected static void validateUserProfileRequest(int idx, int size, Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
+        validateUserProfileRequest(TestUtils.commonDeviceId, idx, size, predefined, custom);
+    }
+
+    protected static void validateUserProfileRequest(Map<String, Object> predefined, Map<String, Object> custom) throws JSONException {
         validateUserProfileRequest(0, 1, predefined, custom);
     }
 }

@@ -531,6 +531,10 @@ public class TestUtils {
         return map;
     }
 
+    protected static JSONObject json(Object... args) {
+        return new JSONObject(TestUtils.map(args));
+    }
+
     public static Context getContext() {
         return ApplicationProvider.getApplicationContext();
     }
@@ -601,6 +605,9 @@ public class TestUtils {
         for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
             Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
         }
+
+        // TODO make this in a different PR
+        //Assert.assertEquals(9 + expectedExtras.size(), request.size());
     }
 
     protected static void assertRQSize(int size) {

@@ -19,7 +19,7 @@ import org.junit.runner.RunWith;
  * CNG:Session Consent not given
  */
 @RunWith(AndroidJUnit4.class)
-public class ScenarioSessionTests {
+public class scSE_SessionsTests {
 
     @Before
     public void setUp() {
@@ -71,7 +71,7 @@ public class ScenarioSessionTests {
         flowManualSessions(countly);
 
         Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
-        validateConsentRequest(0, true, TestUtils.commonDeviceId);
+        validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         validateSessionBeginRequest(2, TestUtils.commonDeviceId);
         validateSessionUpdateRequest(3, 2, TestUtils.commonDeviceId);
@@ -122,7 +122,7 @@ public class ScenarioSessionTests {
         flowManualSessions(countly);
 
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
-        validateConsentRequest(0, false, TestUtils.commonDeviceId);
+        validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
     }
 
@@ -173,7 +173,7 @@ public class ScenarioSessionTests {
         countly.sessions().endSession();
 
         Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
-        validateConsentRequest(0, true, TestUtils.commonDeviceId);
+        validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 2);
         validateSessionBeginRequest(3, "newID");
@@ -255,7 +255,7 @@ public class ScenarioSessionTests {
         flowAutomaticSessions(countly);
 
         Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
-        validateConsentRequest(0, true, TestUtils.commonDeviceId);
+        validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         validateSessionBeginRequest(2, TestUtils.commonDeviceId);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 3);
@@ -297,7 +297,7 @@ public class ScenarioSessionTests {
         flowAutomaticSessions(countly);
 
         Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
-        validateConsentRequest(0, false, TestUtils.commonDeviceId);
+        validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 2);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 3);
@@ -351,16 +351,16 @@ public class ScenarioSessionTests {
         countly.onStart(null);
     }
 
-    private void validateSessionBeginRequest(int idx, String deviceId) {
+    protected static void validateSessionBeginRequest(int idx, String deviceId) {
         TestUtils.validateRequest(deviceId, TestUtils.map("begin_session", "1"), idx);
     }
 
-    private void validateSessionEndRequest(int idx, Integer duration, String deviceId) {
+    protected static void validateSessionEndRequest(int idx, Integer duration, String deviceId) {
         Map<String, String> request = validateSessionUpdateRequest(idx, duration, deviceId);
         Assert.assertEquals("1", request.get("end_session"));
     }
 
-    private Map<String, String> validateSessionUpdateRequest(int idx, Integer duration, String deviceId) {
+    protected static Map<String, String> validateSessionUpdateRequest(int idx, Integer duration, String deviceId) {
         Map<String, String> request = TestUtils.getCurrentRQ()[idx];
 
         TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
@@ -371,7 +371,7 @@ public class ScenarioSessionTests {
         return request;
     }
 
-    private void validateConsentRequest(int idx, boolean consentForSession, String deviceId) {
+    private void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
         TestUtils.validateRequest(deviceId, TestUtils.map("consent",
             "{\"sessions\":" + consentForSession + ",\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"), idx);
     }

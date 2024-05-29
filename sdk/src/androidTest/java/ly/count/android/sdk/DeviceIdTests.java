@@ -286,7 +286,7 @@ public class DeviceIdTests {
         config.lifecycleObserver = () -> true;
 
         Countly countly = new Countly().init(config);
-        ModuleSessionsTests.validateSessionRequest(0, null, null, false, true);
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
 
         countly.userProfile().setProperty("prop1", "string");
         countly.userProfile().setProperty("prop2", 123);
@@ -304,7 +304,7 @@ public class DeviceIdTests {
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
         TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"123\",\"prop1\":\"string\",\"prop3\":\"false\"}}"), 2);
-        ModuleSessionsTests.validateSessionRequest(3, 3, "ff_merge", true, false);
+        ModuleSessionsTests.validateSessionEndRequest(3, 3, "ff_merge");
 
         Thread.sleep(1000);
 
