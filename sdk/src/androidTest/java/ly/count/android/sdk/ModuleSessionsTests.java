@@ -26,7 +26,7 @@ public class ModuleSessionsTests {
         Countly mCountly = new Countly().init(config);
         mCountly.sessions().beginSession();
 
-        validateSessionRequest(0, null, null, false, true);
+        validateSessionBeginRequest(0, TestUtils.commonDeviceId);
     }
 
     @Test
@@ -36,15 +36,15 @@ public class ModuleSessionsTests {
 
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
         mCountly.sessions().beginSession();
-        validateSessionRequest(0, null, null, false, true);
+        validateSessionBeginRequest(0, TestUtils.commonDeviceId);
 
         Thread.sleep(1000);
         mCountly.sessions().updateSession();
-        validateSessionRequest(1, 1, null, false, false);
+        validateSessionUpdateRequest(1, 1, TestUtils.commonDeviceId);
 
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        validateSessionRequest(2, 2, null, true, false);
+        validateSessionEndRequest(2, 2, TestUtils.commonDeviceId);
     }
 
     @Test
@@ -91,13 +91,13 @@ public class ModuleSessionsTests {
 
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
         mCountly.onStartInternal(null);
-        validateSessionRequest(0, null, null, false, true);
+        validateSessionBeginRequest(0, TestUtils.commonDeviceId);
 
         Thread.sleep(1000);
 
         mCountly.onStopInternal();
 
-        validateSessionRequest(1, 1, null, true, false);
+        validateSessionEndRequest(1, 1, TestUtils.commonDeviceId);
     }
 
     /**
@@ -112,8 +112,7 @@ public class ModuleSessionsTests {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
 
         Assert.assertEquals(2, RQ.length);
-        TestUtils.validateRequiredParams(RQ[0]); // this is consent request
-        Assert.assertEquals(consentForSession(false), RQ[0].get("consent"));
+        validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         TestUtils.validateRequiredParams(RQ[1]); // this is location request
         Assert.assertEquals("", RQ[1].get("location"));
 
@@ -163,7 +162,7 @@ public class ModuleSessionsTests {
 
         mCountly.sessions().beginSession();
 
-        validateSessionRequest(0, null, null, false, true);
+        validateSessionBeginRequest(0, TestUtils.commonDeviceId);
         mCountly.sessions().beginSession();
 
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
@@ -178,8 +177,7 @@ public class ModuleSessionsTests {
 
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(2, RQ.length);
-        TestUtils.validateRequiredParams(RQ[0]); // this is consent request
-        Assert.assertEquals(consentForSession(false), RQ[0].get("consent"));
+        validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         TestUtils.validateRequiredParams(RQ[1]); // this is location request
         Assert.assertEquals("", RQ[1].get("location"));
 
@@ -196,10 +194,9 @@ public class ModuleSessionsTests {
         RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(4, RQ.length);
 
-        validateSessionRequest(2, null, null, false, true);
+        validateSessionBeginRequest(2, TestUtils.commonDeviceId);
 
-        TestUtils.validateRequiredParams(RQ[3]);
-        Assert.assertEquals(consentForSession(true), RQ[3].get("consent"));
+        validateSessionConsentRequest(3, true, TestUtils.commonDeviceId);
 
         mCountly.sessions().beginSession();
         Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
@@ -214,35 +211,33 @@ public class ModuleSessionsTests {
         RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(6, RQ.length);
 
-        validateSessionRequest(4, 1, null, true, false);
-        TestUtils.validateRequiredParams(RQ[5]); // this is consent request
-        Assert.assertEquals(consentForSession(false), RQ[0].get("consent"));
+        validateSessionEndRequest(4, 1, TestUtils.commonDeviceId);
+
+        validateSessionConsentRequest(5, false, TestUtils.commonDeviceId);
     }
 
-    private String consentForSession(boolean consent) {
-        return "{\"sessions\":" + consent + ",\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}";
+    protected static void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
+        ModuleConsentTests.validateConsentRequest(deviceId, idx, new boolean[] { consentForSession, false, false, false, false, false, false, false, false, false, false, false, false, false });
     }
 
-    static void validateSessionRequest(int idx, Integer duration, String deviceId, boolean endSession, boolean beginSession) {
+    protected static void validateSessionBeginRequest(int idx, String deviceId) {
+        TestUtils.validateRequest(deviceId, TestUtils.map("begin_session", "1"), idx);
+    }
+
+    protected static void validateSessionEndRequest(int idx, Integer duration, String deviceId) {
+        Map<String, String> request = validateSessionUpdateRequest(idx, duration, deviceId);
+        Assert.assertEquals("1", request.get("end_session"));
+    }
+
+    protected static Map<String, String> validateSessionUpdateRequest(int idx, Integer duration, String deviceId) {
         Map<String, String> request = TestUtils.getCurrentRQ()[idx];
 
-        if (deviceId != null) {
-            TestUtils.validateRequiredParams(request, deviceId);
-        } else {
-            TestUtils.validateRequiredParams(request);
-        }
-
-        if (endSession) {
-            Assert.assertTrue(request.containsKey("end_session"));
-        }
-
+        TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
         if (duration != null) {
-            Assert.assertEquals(duration, Integer.valueOf(request.get("session_duration")));
+            Assert.assertEquals(duration.toString(), request.get("session_duration"));
         }
 
-        if (beginSession) {
-            Assert.assertTrue(request.containsKey("begin_session"));
-        }
+        return request;
     }
 
     //TODO add tests that make sure that init time consent is handled correctly
