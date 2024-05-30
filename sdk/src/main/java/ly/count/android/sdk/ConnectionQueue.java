@@ -388,13 +388,6 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        if (userdata.equals("")) {
-            L.d("[Connection Queue] No user data to send, skipping");
-            return;
-        }
-
-        moduleRequestQueue.sendEventsIfNeeded(true); // flush events before sending user details //todo this should be moved to the user profile modile after removing the static user profile implementation
-
         String data = prepareCommonRequestData() + userdata;
         addRequestToQueue(data, false);
         tick();

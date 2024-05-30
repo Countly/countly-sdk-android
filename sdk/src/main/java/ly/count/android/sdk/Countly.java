@@ -1018,9 +1018,11 @@ public class Countly {
             }
 
             //on every timer tick we collect all events and attempt to send requests
-            {
-                moduleRequestQueue.sendEventsIfNeeded(true);
-            }
+            moduleRequestQueue.sendEventsIfNeeded(true);
+
+            //on every timer tick we save the user profile if it was changed
+            moduleUserProfile.saveInternal();
+
             requestQueueProvider.tick();
         }
     }

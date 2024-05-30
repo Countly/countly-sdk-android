@@ -125,6 +125,9 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //force flush events so that they are associated correctly
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
+        //send user profile data because we are flushing the event queue
+        _cly.moduleUserProfile.saveInternal();
+
         //update remote config_ values after id change if automatic update is enabled
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(true);
 
