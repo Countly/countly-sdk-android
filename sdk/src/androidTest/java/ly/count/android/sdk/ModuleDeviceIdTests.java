@@ -58,9 +58,9 @@ public class ModuleDeviceIdTests {
      * - Set empty and validate that it is not changed
      * - Set the same id and validate that it is not changed
      */
-    //@Test TODO enable this test after RQ migration is merged
+    @Test
     public void setID() {
-        Countly countly = new Countly().init(TestUtils.createBaseConfig(null)); // no custom id provided
+        Countly countly = new Countly().init(TestUtils.createBaseConfig((String) null)); // no custom id provided
         validateDeviceIdIsSdkGenerated(countly); // validate id exist and sdk generated
 
         String newId = "NEW_ID";
