@@ -363,15 +363,15 @@ public class ModuleUserProfile extends ModuleBase {
 
     void saveInternal() {
         L.d("[ModuleUserProfile] saveInternal");
-        String userRequest = getDataForRequest();
-        if (userRequest.isEmpty()) {
+        String cachedUserData = getDataForRequest();
+        if (cachedUserData.isEmpty()) {
             L.d("[ModuleUserProfile] saveInternal, no user data to save");
             return;
         }
 
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
-        requestQueueProvider.sendUserData(userRequest);
+        requestQueueProvider.sendUserData(cachedUserData);
         clearInternal();
     }
 
