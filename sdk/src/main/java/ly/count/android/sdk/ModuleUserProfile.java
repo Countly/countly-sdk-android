@@ -20,15 +20,9 @@ public class ModuleUserProfile extends ModuleBase {
     static final String GENDER_KEY = "gender";
     static final String BYEAR_KEY = "byear";
     static final String CUSTOM_KEY = "custom";
-
     String[] namedFields = { NAME_KEY, USERNAME_KEY, EMAIL_KEY, ORG_KEY, PHONE_KEY, PICTURE_KEY, PICTURE_PATH_KEY, GENDER_KEY, BYEAR_KEY };
-
     boolean isSynced = true;
-
-    JSONObject dataStore = new JSONObject();
-
     UserProfile userProfileInterface;
-
     //fields from the old object
     String name;
     String username;
@@ -369,7 +363,15 @@ public class ModuleUserProfile extends ModuleBase {
 
     void saveInternal() {
         L.d("[ModuleUserProfile] saveInternal");
-        requestQueueProvider.sendUserData(getDataForRequest());
+        String cachedUserData = getDataForRequest();
+        if (cachedUserData.isEmpty()) {
+            L.d("[ModuleUserProfile] saveInternal, no user data to save");
+            return;
+        }
+
+        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+
+        requestQueueProvider.sendUserData(cachedUserData);
         clearInternal();
     }
 
@@ -476,8 +478,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and add value to array
+        /**
+         * Create array property, if property does not exist and add value to array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to add to array
          */
@@ -487,8 +491,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and add value to array, only if value is not yet in the array
+        /**
+         * Create array property, if property does not exist and add value to array, only if value is not yet in the array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to add to array
          */
@@ -498,8 +504,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and remove value from array
+        /**
+         * Create array property, if property does not exist and remove value from array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to remove from array
          */
@@ -551,7 +559,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /*
+        /**
          * Send provided values to server
          */
         public void save() {
