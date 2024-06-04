@@ -1,3 +1,9 @@
+## 24.4.2
+* ! Minor breaking change ! User properties will be auto-saved now on these circumtances:
+  * An event recording
+  * Internal timer tick
+  * Event queue flush
+
 ## 24.4.1
 * ! Minor breaking change ! Mitigated an issue where internal SDK limits did not apply
 
