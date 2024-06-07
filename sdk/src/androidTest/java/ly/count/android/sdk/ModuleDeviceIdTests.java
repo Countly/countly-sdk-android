@@ -85,7 +85,7 @@ public class ModuleDeviceIdTests {
     private void validateDeviceIdIsSdkGenerated(Countly countly) {
         String deviceId = countly.deviceId().getID();
         try {
-            Assert.assertTrue("Device id was " + deviceId, validateDeviceIDIsAndroidID(deviceId));
+            Assert.assertTrue(validateDeviceIDIsAndroidID(deviceId));
             Assert.assertEquals(DeviceIdType.OPEN_UDID, countly.deviceId().getType());
         } catch (IllegalArgumentException e) {
             Assert.fail("Device id is not a valid OPEN_UDID");
