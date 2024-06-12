@@ -1,8 +1,8 @@
 ## 24.4.2
-* ! Minor breaking change ! User properties will be auto-saved now on these circumtances:
-  * An event recording
-  * Internal timer tick
-  * Event queue flush
+* ! Minor breaking change ! User properties will now be automatically saved under the following conditions:
+  * When an event is recorded
+  * During an internal timer tick
+  * Upon flushing the event queue
 
 ## 24.4.1
 * ! Minor breaking change ! Mitigated an issue where internal SDK limits did not apply
