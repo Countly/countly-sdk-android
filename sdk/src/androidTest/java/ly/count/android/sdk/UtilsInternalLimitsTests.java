@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -362,6 +363,53 @@ public class UtilsInternalLimitsTests {
     }
 
     @Test
+    public void removeUnsupportedDataTypes_listsEmpty() {
+        List<String> aa1 = new ArrayList<>();
+        List<Integer> aa2 = new LinkedList<>();
+        Map<String, Object> segmentation = TestUtils.map("aa1", aa1, "aa2", aa2);
+
+        Assert.assertEquals(2, segmentation.size());
+
+        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertEquals(2, segmentation.size());
+        Assert.assertEquals(aa1, segmentation.get("aa1"));
+        Assert.assertEquals(aa2, segmentation.get("aa2"));
+    }
+
+    @Test
+    public void removeUnsupportedDataTypes_arraysEmpty() {
+        String[] aa1 = new String[] {};
+        int[] aa2 = new int[] {};
+        double[] aa3 = new double[] {};
+        float[] aa4 = new float[] {};
+        long[] aa5 = new long[] {};
+        boolean[] aa6 = new boolean[] {};
+        Object[] aa7 = new Object[] {};
+        Integer[] aa8 = new Integer[] {};
+        Double[] aa9 = new Double[] {};
+        Float[] aa10 = new Float[] {};
+        Long[] aa11 = new Long[] {};
+        Boolean[] aa12 = new Boolean[] {};
+        Map<String, Object> segmentation = TestUtils.map("aa1", aa1, "aa2", aa2, "aa3", aa3, "aa4", aa4, "aa5", aa5, "aa6", aa6, "aa7", aa7, "aa8", aa8, "aa9", aa9, "aa10", aa10, "aa11", aa11, "aa12", aa12);
+
+        Assert.assertEquals(12, segmentation.size());
+
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertEquals(11, segmentation.size());
+        Assert.assertEquals(aa1, segmentation.get("aa1"));
+        Assert.assertEquals(aa2, segmentation.get("aa2"));
+        Assert.assertEquals(aa3, segmentation.get("aa3"));
+        Assert.assertEquals(aa4, segmentation.get("aa4"));
+        Assert.assertEquals(aa5, segmentation.get("aa5"));
+        Assert.assertEquals(aa6, segmentation.get("aa6"));
+        Assert.assertEquals(aa8, segmentation.get("aa8"));
+        Assert.assertEquals(aa9, segmentation.get("aa9"));
+        Assert.assertEquals(aa10, segmentation.get("aa10"));
+        Assert.assertEquals(aa11, segmentation.get("aa11"));
+        Assert.assertEquals(aa12, segmentation.get("aa12"));
+    }
+
+    @Test
     public void isSupportedDataType() {
         Assert.assertTrue(UtilsInternalLimits.isSupportedDataType("string"));
         Assert.assertTrue(UtilsInternalLimits.isSupportedDataType(123));
@@ -466,8 +514,9 @@ public class UtilsInternalLimitsTests {
     @Test
     public void applySdkInternalLimitsToSegmentation_clipSegmentationValues() {
         Map<String, Object> segmentation = new ConcurrentHashMap<>();
+        List<String> list = new ArrayList<>();
         segmentation.put("test_test", "value1");
-        segmentation.put("test", new ArrayList<>());
+        segmentation.put("test", list);
         segmentation.put("map_too", TestUtils.map("a", 1));
 
         ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
@@ -477,8 +526,9 @@ public class UtilsInternalLimitsTests {
 
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
 
-        Assert.assertEquals(1, segmentation.size());
+        Assert.assertEquals(2, segmentation.size());
         Assert.assertEquals("v", segmentation.get("test_test"));
+        Assert.assertEquals(list, segmentation.get("test"));
     }
 
     @Test(expected = AssertionError.class)

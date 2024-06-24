@@ -366,7 +366,7 @@ public class UtilsInternalLimits {
                 classNames.add(element.getClass().getName());
             }
             // if it had multiple classes, it's not supported
-            return classNames.size() == 1;
+            return classNames.size() <= 1;
         } else if (value != null && value.getClass().isArray()) {
             Class<?> componentType = value.getClass().getComponentType();
             return componentType == String.class || componentType == Integer.class || componentType == Double.class || componentType == Boolean.class || componentType == Float.class || componentType == Long.class
