@@ -345,7 +345,33 @@ public class UtilsInternalLimits {
         return sb.toString();
     }
 
-    static boolean isSupportedDataType(@Nullable Object value) {
+    private static boolean isSupportedDataTypeBasic(@Nullable Object value) {
         return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float || value instanceof Long;
+    }
+
+    static boolean isSupportedDataType(@Nullable Object value) {
+        if (isSupportedDataTypeBasic(value)) {
+            return true;
+        } else if (value instanceof List) {
+            List<?> list = (List<?>) value;
+            for (Object element : list) {
+                if (!isSupportedDataTypeBasic(element)) {
+                    return false;
+                }
+            }
+            return true;
+        } else if (value != null && value.getClass().isArray()) {
+            Class<?> componentType = value.getClass().getComponentType();
+            if (componentType == String.class || componentType == Integer.class || componentType == Double.class || componentType == Boolean.class || componentType == Float.class || componentType == Long.class) {
+                return true;
+            }
+            for (Object element : (Object[]) value) {
+                if (!isSupportedDataTypeBasic(element)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 }
