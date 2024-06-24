@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
 
 public class UtilsInternalLimits {
 
@@ -364,6 +365,14 @@ public class UtilsInternalLimits {
             Class<?> componentType = value.getClass().getComponentType();
             return componentType == String.class || componentType == Integer.class || componentType == Double.class || componentType == Boolean.class || componentType == Float.class || componentType == Long.class
                 || componentType == int.class || componentType == double.class || componentType == boolean.class || componentType == float.class || componentType == long.class;
+        } else if (value instanceof JSONArray) {
+            JSONArray jsonArray = (JSONArray) value;
+            for (int i = 0; i < jsonArray.length(); i++) {
+                if (!isSupportedDataTypeBasic(jsonArray.opt(i))) {
+                    return false;
+                }
+            }
+            return true;
         }
         return false;
     }
