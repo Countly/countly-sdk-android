@@ -362,15 +362,8 @@ public class UtilsInternalLimits {
             return true;
         } else if (value != null && value.getClass().isArray()) {
             Class<?> componentType = value.getClass().getComponentType();
-            if (componentType == String.class || componentType == Integer.class || componentType == Double.class || componentType == Boolean.class || componentType == Float.class || componentType == Long.class) {
-                return true;
-            }
-            for (Object element : (Object[]) value) {
-                if (!isSupportedDataTypeBasic(element)) {
-                    return false;
-                }
-            }
-            return true;
+            return componentType == String.class || componentType == Integer.class || componentType == Double.class || componentType == Boolean.class || componentType == Float.class || componentType == Long.class
+                || componentType == int.class || componentType == double.class || componentType == boolean.class || componentType == float.class || componentType == long.class;
         }
         return false;
     }
