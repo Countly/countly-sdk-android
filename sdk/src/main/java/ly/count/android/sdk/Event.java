@@ -110,18 +110,7 @@ class Event {
             if (segmentation != null) {
                 for (Map.Entry<String, Object> pair : segmentation.entrySet()) {
                     if (pair.getValue().getClass().isArray()) {
-                        Object value = pair.getValue();
-                        if (value instanceof float[]) {
-                            // Convert float[] to double[] because JSONArray doesn't support float[] directly
-                            float[] floatArray = (float[]) value;
-                            double[] doubleArray = new double[floatArray.length];
-                            for (int i = 0; i < floatArray.length; i++) {
-                                doubleArray[i] = floatArray[i];
-                            }
-                            jobj.put(pair.getKey(), new JSONArray(doubleArray));
-                        } else {
-                            jobj.put(pair.getKey(), new JSONArray(pair.getValue()));
-                        }
+                        jobj.put(pair.getKey(), new JSONArray(pair.getValue()));
                     } else if (pair.getValue() instanceof List) {
                         jobj.put(pair.getKey(), new JSONArray((List<?>) pair.getValue()));
                     } else {
