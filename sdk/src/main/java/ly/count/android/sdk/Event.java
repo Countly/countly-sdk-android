@@ -23,9 +23,11 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -107,7 +109,24 @@ class Event {
             JSONObject jobj = new JSONObject();
             if (segmentation != null) {
                 for (Map.Entry<String, Object> pair : segmentation.entrySet()) {
-                    jobj.put(pair.getKey(), pair.getValue());
+                    if (pair.getValue().getClass().isArray()) {
+                        Object value = pair.getValue();
+                        if (value instanceof float[]) {
+                            // Convert float[] to double[] because JSONArray doesn't support float[] directly
+                            float[] floatArray = (float[]) value;
+                            double[] doubleArray = new double[floatArray.length];
+                            for (int i = 0; i < floatArray.length; i++) {
+                                doubleArray[i] = floatArray[i];
+                            }
+                            jobj.put(pair.getKey(), new JSONArray(doubleArray));
+                        } else {
+                            jobj.put(pair.getKey(), new JSONArray(pair.getValue()));
+                        }
+                    } else if (pair.getValue() instanceof List) {
+                        jobj.put(pair.getKey(), new JSONArray((List<?>) pair.getValue()));
+                    } else {
+                        jobj.put(pair.getKey(), pair.getValue());
+                    }
                 }
             }
 
