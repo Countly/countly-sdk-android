@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -118,6 +119,7 @@ public class ModuleCrashTests {
     public void provideCustomCrashSegment_DuringInit() {
         Countly countly = new Countly();
         CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        int[] arr = new int[] { 1, 2, 3, 4, 5 };
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
@@ -127,7 +129,7 @@ public class ModuleCrashTests {
         segm.put("3", true);
         segm.put("4", 45.4f);
         segm.put("41", new Object());
-        segm.put("42", new int[] { 1, 2 });
+        segm.put("42", arr);
 
         cConfig.setCustomCrashSegment(segm);
 
@@ -140,6 +142,7 @@ public class ModuleCrashTests {
         segm2.put("2", 1234.55d);
         segm2.put("3", true);
         segm2.put("4", 45.4f);
+        segm2.put("42", arr);
 
         Assert.assertEquals(segm2, countly.moduleCrash.customCrashSegments);
     }
@@ -353,9 +356,10 @@ public class ModuleCrashTests {
      */
     @Test
     public void recordHandledException_globalCrashFilter() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5 };
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", arr));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             if (crash.getStackTrace().contains("Secret")) {
                 return true;
@@ -388,6 +392,7 @@ public class ModuleCrashTests {
                 "bool", true,
                 "float", 1.1,
                 "long", Long.MAX_VALUE,
+                "array", new JSONArray(arr),
                 "sphinx_no", 324), 11, TestUtils.map("secret", "Minato"), Collections.singletonList("_ram_total"));
     }
 
@@ -435,7 +440,7 @@ public class ModuleCrashTests {
             Assert.assertEquals(20, crash.getCrashMetrics().size());
 
             crash.getCrashMetrics().put("5", new Object());
-            crash.getCrashMetrics().put("6", new int[] { 1, 2 });
+            crash.getCrashMetrics().put("6", new int[][] { new int[] { 1, 2 }, new int[] { 3, 4 } });
             return false;
         });
         Countly countly = new Countly().init(cConfig);
@@ -463,9 +468,10 @@ public class ModuleCrashTests {
      */
     @Test
     public void recordHandledException_basic() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5 };
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", new int[] { 1, 2 }));
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("secret", "Minato", "int", Integer.MAX_VALUE, "double", Double.MAX_VALUE, "bool", true, "long", Long.MAX_VALUE, "float", 1.1, "object", new Object(), "array", arr));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> false);
         Countly countly = new Countly().init(cConfig);
 
@@ -482,6 +488,7 @@ public class ModuleCrashTests {
                 "bool", true,
                 "long", Long.MAX_VALUE,
                 "float", 1.1,
+                "array", new JSONArray(arr),
                 "sphinx_no", 324), 0, new HashMap<>(), new ArrayList<>());
     }
 
@@ -552,11 +559,12 @@ public class ModuleCrashTests {
      */
     @Test
     public void recordException_globalCrashFilter_eliminateUnsupportedTypesFromCrashMetrics() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5 };
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             crash.getCrashMetrics().put("5", new Object());
-            crash.getCrashMetrics().put("6", new int[] { 1, 2 });
+            crash.getCrashMetrics().put("6", arr);
             crash.getCrashMetrics().put("7", "7");
             crash.getCrashMetrics().put("8", 8);
             crash.getCrashMetrics().put("9", 9.9d);
@@ -572,6 +580,7 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception);
         validateCrash(extractStackTrace(exception), "", true, false, new ConcurrentHashMap<>(), 2, TestUtils.map(
+            "6", new JSONArray(arr),
             "7", "7",
             "8", 8,
             "9", 9.9,
@@ -593,7 +602,7 @@ public class ModuleCrashTests {
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             crash.getCrashMetrics().put("5", new Object());
-            crash.getCrashMetrics().put("6", new int[] { 1, 2 });
+            crash.getCrashMetrics().put("6", new int[][] { new int[] { 1, 2 }, new int[] { 3, 4 } });
 
             return false;
         });
@@ -729,11 +738,12 @@ public class ModuleCrashTests {
      */
     @Test
     public void recordException_globalCrashFilter_invalidCustomSegmentations() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5 };
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
             crash.getCrashSegmentation().put("5", new Object());
-            crash.getCrashSegmentation().put("6", new int[] { 1, 2 });
+            crash.getCrashSegmentation().put("6", arr);
             crash.getCrashSegmentation().put("7", "7");
             return false;
         });
@@ -742,7 +752,7 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("secret");
         countly.crashes().recordUnhandledException(exception);
-        validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("7", "7"), 8, new ConcurrentHashMap<>(), new ArrayList<>());
+        validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("7", "7", "6", new JSONArray(arr)), 8, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -1083,10 +1093,11 @@ public class ModuleCrashTests {
      */
     @Test
     public void internalLimits_recordException_maxValueSize() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5 };
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
         cConfig.sdkInternalLimits.setMaxValueSize(5);
-        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("test", "123456", "integer", Integer.MAX_VALUE, "arr", new int[] { 1, 2, 3, 4, 5 }, "double", Double.MAX_VALUE, "bool", true, "float", 1.1, "object", new Object()));
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("test", "123456", "integer", Integer.MAX_VALUE, "arr", arr, "double", Double.MAX_VALUE, "bool", true, "float", 1.1, "object", new Object()));
         Countly countly = new Countly().init(cConfig);
 
         countly.crashes().addCrashBreadcrumb("Surpass");
@@ -1095,7 +1106,8 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception, TestUtils.map("case", "o the great one", "have", "dinosaur", "int1", Integer.MIN_VALUE, "double1", Double.MIN_VALUE, "bool", false));
 
-        validateCrash(extractStackTrace(exception), "Surpa\nYourL\nRight\n", true, false, TestUtils.map("test", "12345", "integer", Integer.MAX_VALUE, "int1", Integer.MIN_VALUE, "double", Double.MAX_VALUE, "double1", Double.MIN_VALUE, "bool", false, "float", 1.1, "have", "dinos", "case", "o the"),
+        validateCrash(extractStackTrace(exception), "Surpa\nYourL\nRight\n", true, false,
+            TestUtils.map("arr", new JSONArray(arr), "test", "12345", "integer", Integer.MAX_VALUE, "int1", Integer.MIN_VALUE, "double", Double.MAX_VALUE, "double1", Double.MIN_VALUE, "bool", false, "float", 1.1, "have", "dinos", "case", "o the"),
             0, new HashMap<>(),
             new ArrayList<>());
     }

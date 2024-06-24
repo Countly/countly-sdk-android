@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.messaging.ModulePush;
@@ -336,7 +338,7 @@ public class ModuleEventsTests {
 
         segm1.put("4", 45.4f);
         segm1.put("41", new Object());
-        segm1.put("42", new int[] { 1, 2 });
+        segm1.put("42", new int[][] { { 1, 2, 3 }, { 4, 5, 6 } });
         segm1.put("asd", "123");
         segm1.put("1", 1234);
         segm1.put("2", 1234.55d);
@@ -466,6 +468,8 @@ public class ModuleEventsTests {
 
     @Test
     public void recordEvent_validateFromRQ() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        List<String> list = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
         countlyConfig.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(countlyConfig);
@@ -478,7 +482,8 @@ public class ModuleEventsTests {
             "float", 1.5f,
             "long", Long.MAX_VALUE,
             "object", new Object(),
-            "array", new int[] { 1, 2, 3 },
+            "array", arr,
+            "list", list,
             "null", null
         );
 
@@ -490,7 +495,9 @@ public class ModuleEventsTests {
             "string", "string",
             "boolean", true,
             "float", 1.5,
-            "long", Long.MAX_VALUE
+            "long", Long.MAX_VALUE,
+            "array", new JSONArray(arr),
+            "list", new JSONArray(list)
         );
 
         validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
@@ -580,6 +587,7 @@ public class ModuleEventsTests {
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(eventCount, events.length());
         JSONObject event = events.getJSONObject(eventIdx);
+        System.out.println(event);
         Assert.assertEquals(eventName, event.get("key"));
         Assert.assertEquals(count, event.getInt("count"));
         Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
