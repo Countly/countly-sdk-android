@@ -465,10 +465,9 @@ public class UtilsInternalLimitsTests {
 
     @Test
     public void applySdkInternalLimitsToSegmentation_clipSegmentationValues() {
-        List<String> list = new ArrayList<>();
         Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("test_test", "value1");
-        segmentation.put("test", list);
+        segmentation.put("test", new ArrayList<>());
         segmentation.put("map_too", TestUtils.map("a", 1));
 
         ConfigSdkInternalLimits limitsConfig = new ConfigSdkInternalLimits()
@@ -478,9 +477,8 @@ public class UtilsInternalLimitsTests {
 
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, limitsConfig, new ModuleLog(), "tag");
 
-        Assert.assertEquals(2, segmentation.size());
+        Assert.assertEquals(1, segmentation.size());
         Assert.assertEquals("v", segmentation.get("test_test"));
-        Assert.assertEquals(list, segmentation.get("test"));
     }
 
     @Test(expected = AssertionError.class)
