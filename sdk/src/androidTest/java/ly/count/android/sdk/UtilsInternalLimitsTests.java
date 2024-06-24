@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -407,6 +408,31 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(aa10, segmentation.get("aa10"));
         Assert.assertEquals(aa11, segmentation.get("aa11"));
         Assert.assertEquals(aa12, segmentation.get("aa12"));
+    }
+
+    @Test
+    public void removeUnsupportedDataTypes_jsonArray() {
+        JSONArray empty = new JSONArray();
+        JSONArray arrInt = new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        JSONArray arrStr = new JSONArray(Arrays.asList("ff", "33"));
+        JSONArray arrDouble = new JSONArray(Arrays.asList(1.1, 2.2, 3.3, 4.4, 5.5));
+        JSONArray arrBool = new JSONArray(Arrays.asList(true, false, true, false));
+        JSONArray arrFloat = new JSONArray(Arrays.asList(1.1f, 2.2f, 3.3f, 4.4f, 5.5f));
+        JSONArray arrLong = new JSONArray(Arrays.asList(1L, 2L, 3L, 4L, 5L));
+        JSONArray arrObj = new JSONArray(Arrays.asList(1, 2, "ABC", true, 3.3d, 4.4f, 5L, new Object()));
+        Map<String, Object> segmentation = TestUtils.map("empty", empty, "arrInt", arrInt, "arrStr", arrStr, "arrDouble", arrDouble, "arrBool", arrBool, "arrFloat", arrFloat, "arrLong", arrLong, "arrObj", arrObj);
+
+        Assert.assertEquals(8, segmentation.size());
+
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertEquals(7, segmentation.size());
+        Assert.assertEquals(empty, segmentation.get("empty"));
+        Assert.assertEquals(arrInt, segmentation.get("arrInt"));
+        Assert.assertEquals(arrStr, segmentation.get("arrStr"));
+        Assert.assertEquals(arrDouble, segmentation.get("arrDouble"));
+        Assert.assertEquals(arrBool, segmentation.get("arrBool"));
+        Assert.assertEquals(arrFloat, segmentation.get("arrFloat"));
+        Assert.assertEquals(arrLong, segmentation.get("arrLong"));
     }
 
     @Test
