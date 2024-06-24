@@ -1,3 +1,8 @@
+## XX.XX.XX
+* Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
+  * String, Integer, int, Boolean, bool, Float, float, Double, double, Long, long
+  * Keep in mind that float array will be converted to the double array by the JSONArray
+
 ## 24.4.2
 * ! Minor breaking change ! User properties will now be automatically saved under the following conditions:
   * When an event is recorded
