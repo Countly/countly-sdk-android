@@ -578,6 +578,104 @@ public class ModuleEventsTests {
         validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
     }
 
+    @Test
+    public void recordEvent_validateSupportedArrays() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        boolean[] arrB = new boolean[] { true, false, true, false, true, false, true, false, true, false };
+        String[] arrS = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        long[] arrL = new long[] { Long.MAX_VALUE, Long.MIN_VALUE };
+        double[] arrD = new double[] { Double.MAX_VALUE, Double.MIN_VALUE };
+        Long[] arrLO = new Long[] { Long.MAX_VALUE, Long.MIN_VALUE };
+        Double[] arrDO = new Double[] { Double.MAX_VALUE, Double.MIN_VALUE };
+        Boolean[] arrBO = new Boolean[] { true, false, true, false, true, false, true, false, true, false };
+        Integer[] arrIO = new Integer[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        Object[] arrObj = new Object[] { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj
+        );
+
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrL", new JSONArray(arrL),
+            "arrD", new JSONArray(arrD),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO)
+        );
+
+        validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
+    @Test
+    public void recordEvent_validateSupportedLists() throws JSONException {
+        List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        List<Boolean> arrB = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
+        List<String> arrS = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+        List<Long> arrL = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
+        List<Double> arrD = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
+        List<Long> arrLO = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
+        List<Double> arrDO = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
+        List<Boolean> arrBO = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
+        List<Integer> arrIO = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        List<Object> arrObj = Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        // Create segmentation using maps with lists
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj
+        );
+
+        // Record event with the created segmentation
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        // Prepare expected segmentation with JSONArrays
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrL", new JSONArray(arrL),
+            "arrD", new JSONArray(arrD),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO)
+        );
+
+        // Validate the recorded event with expected segmentation
+        validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
     protected static JSONObject validateEventInRQ(String deviceId, String eventName, int count, double sum, double duration, int idx, int eventIdx, int eventCount, int rqCount) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         if (rqCount > -1) {
@@ -587,7 +685,6 @@ public class ModuleEventsTests {
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(eventCount, events.length());
         JSONObject event = events.getJSONObject(eventIdx);
-        System.out.println(event);
         Assert.assertEquals(eventName, event.get("key"));
         Assert.assertEquals(count, event.getInt("count"));
         Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
