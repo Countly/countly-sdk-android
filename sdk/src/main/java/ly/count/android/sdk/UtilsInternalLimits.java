@@ -373,12 +373,15 @@ public class UtilsInternalLimits {
                 || componentType == int.class || componentType == double.class || componentType == boolean.class || componentType == float.class || componentType == long.class;
         } else if (value instanceof JSONArray) {
             JSONArray jsonArray = (JSONArray) value;
+            Set<String> classNames = new HashSet<>();
             for (int i = 0; i < jsonArray.length(); i++) {
-                if (!isSupportedDataTypeBasic(jsonArray.opt(i))) {
+                Object element = jsonArray.opt(i);
+                if (!isSupportedDataTypeBasic(element)) {
                     return false;
                 }
+                classNames.add(element.getClass().getName());
             }
-            return true;
+            return classNames.size() <= 1;
         }
         return false;
     }
