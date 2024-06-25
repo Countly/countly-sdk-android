@@ -1602,7 +1602,7 @@ public class ModuleViewsTests {
     }
 
     /**
-     * "recordEvent" with List segmentations
+     * "startView" with List segmentations
      * Validate that all primitive types Lists are successfully recorded
      * And validate that List of Objects is not recorded
      * But Generic type of Object list which its values are only primitive types are recorded
@@ -1610,7 +1610,7 @@ public class ModuleViewsTests {
      * @throws JSONException if the JSON is not valid
      */
     @Test
-    public void startView__validateSupportedLists() throws JSONException {
+    public void startView_validateSupportedLists() throws JSONException {
         List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         List<Boolean> arrB = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
         List<String> arrS = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
@@ -1660,14 +1660,14 @@ public class ModuleViewsTests {
     }
 
     /**
-     * "recordEvent" with JSONArray segmentations
+     * "startView" with JSONArray segmentations
      * Validate that all primitive types JSONArrays are successfully recorded
      * And validate and JSONArray of Objects is not recorded
      *
      * @throws JSONException if the JSON is not valid
      */
     @Test
-    public void startView__validateSupportedJSONArrays() throws JSONException {
+    public void startView_validateSupportedJSONArrays() throws JSONException {
         JSONArray arr = new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
         JSONArray arrB = new JSONArray(Arrays.asList(true, false, true, false, true, false, true, false, true, false));
         JSONArray arrS = new JSONArray(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
@@ -1714,13 +1714,13 @@ public class ModuleViewsTests {
     }
 
     /**
-     * "recordHandledException" with invalid data types
+     * "startView" with invalid data types
      * Validate that unsupported data types are not recorded
      *
      * @throws JSONException if the JSON is not valid
      */
     @Test
-    public void startView__unsupportedDataTypesSegmentation() throws JSONException {
+    public void startView_unsupportedDataTypesSegmentation() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
         countlyConfig.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(countlyConfig);
