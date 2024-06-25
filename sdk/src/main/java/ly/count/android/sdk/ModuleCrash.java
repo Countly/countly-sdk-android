@@ -256,8 +256,8 @@ public class ModuleCrash extends ModuleBase {
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
         String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
         crashData.setStackTrace(truncatedStackTrace);
-        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
-        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics());
+        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation(), L);
+        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics(), L);
 
         return false;
     }

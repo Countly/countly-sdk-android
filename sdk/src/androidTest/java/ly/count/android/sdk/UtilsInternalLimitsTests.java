@@ -12,8 +12,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
-import static org.mockito.Mockito.mock;
-
 @RunWith(AndroidJUnit4.class)
 public class UtilsInternalLimitsTests {
 
@@ -160,7 +158,7 @@ public class UtilsInternalLimitsTests {
      */
     @Test(expected = AssertionError.class)
     public void truncateSegmentationValues_null() {
-        UtilsInternalLimits.truncateSegmentationValues(null, 10, "someTag", mock(ModuleLog.class));
+        UtilsInternalLimits.truncateSegmentationValues(null, 10, "someTag", Mockito.mock(ModuleLog.class));
         Assert.assertTrue(true);
     }
 
@@ -170,7 +168,7 @@ public class UtilsInternalLimitsTests {
     @Test
     public void truncateSegmentationValues_empty() {
         Map<String, Object> values = new HashMap<>();
-        UtilsInternalLimits.truncateSegmentationValues(values, 10, "someTag", mock(ModuleLog.class));
+        UtilsInternalLimits.truncateSegmentationValues(values, 10, "someTag", Mockito.mock(ModuleLog.class));
         Assert.assertTrue(true);
     }
 
@@ -184,7 +182,7 @@ public class UtilsInternalLimitsTests {
         values.put("a2", "2");
         values.put("a3", "3");
         values.put("a4", "4");
-        UtilsInternalLimits.truncateSegmentationValues(values, 6, "someTag", mock(ModuleLog.class));
+        UtilsInternalLimits.truncateSegmentationValues(values, 6, "someTag", Mockito.mock(ModuleLog.class));
 
         Assert.assertEquals(4, values.size());
         Assert.assertEquals("1", values.get("a1"));
@@ -203,7 +201,7 @@ public class UtilsInternalLimitsTests {
         values.put("a2", "2");
         values.put("a3", "3");
         values.put("a4", "4");
-        UtilsInternalLimits.truncateSegmentationValues(values, 2, "someTag", mock(ModuleLog.class));
+        UtilsInternalLimits.truncateSegmentationValues(values, 2, "someTag", Mockito.mock(ModuleLog.class));
 
         Assert.assertEquals(2, values.size());
         //after inspecting what is returned in the debugger, it should have the values of "a2" and "a4"
@@ -215,28 +213,28 @@ public class UtilsInternalLimitsTests {
     public void removeReservedKeysFromSegmentation() {
         Map<String, Object> values = new HashMap<>();
 
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] {}, "", mock(ModuleLog.class));
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] {}, "", Mockito.mock(ModuleLog.class));
         Assert.assertEquals(0, values.size());
 
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "", null }, "", mock(ModuleLog.class));
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "", null }, "", Mockito.mock(ModuleLog.class));
         Assert.assertEquals(0, values.size());
 
         values.put("b", 1);
         Assert.assertEquals(1, values.size());
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", Mockito.mock(ModuleLog.class));
         Assert.assertEquals(1, values.size());
         Assert.assertTrue(values.containsKey("b"));
 
         values.put("a", 2);
         Assert.assertEquals(2, values.size());
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", Mockito.mock(ModuleLog.class));
         Assert.assertEquals(1, values.size());
         Assert.assertTrue(values.containsKey("b"));
 
         values.put("a", 2);
         values.put("c", 3);
         Assert.assertEquals(3, values.size());
-        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", mock(ModuleLog.class));
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(values, new String[] { "a", "a1", "", null }, "", Mockito.mock(ModuleLog.class));
         Assert.assertEquals(2, values.size());
         Assert.assertTrue(values.containsKey("b"));
         Assert.assertTrue(values.containsKey("c"));
@@ -244,7 +242,7 @@ public class UtilsInternalLimitsTests {
 
     @Test(expected = AssertionError.class)
     public void removeUnsupportedDataTypesNull() {
-        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(null));
+        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(null, Mockito.mock(ModuleLog.class)));
     }
 
     @Test
@@ -261,7 +259,7 @@ public class UtilsInternalLimitsTests {
         segm.put("41", new Object());
         segm.put("42", new int[] { 1, 2 });
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm, Mockito.mock(ModuleLog.class)));
 
         Assert.assertTrue(segm.containsKey("aa"));
         Assert.assertTrue(segm.containsKey("aa1"));
@@ -284,7 +282,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(3, segm.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm, Mockito.mock(ModuleLog.class)));
 
         Assert.assertEquals(0, segm.size());
 
@@ -298,7 +296,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(7, segm.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm, Mockito.mock(ModuleLog.class)));
 
         Assert.assertEquals(4, segm.size());
         Assert.assertTrue(segm.containsKey("1"));
