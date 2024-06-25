@@ -292,10 +292,10 @@ public class UtilsInternalLimits {
      * @param data
      * @return returns true if any entry had been removed
      */
-    static boolean removeUnsupportedDataTypes(@NonNull Map<String, Object> data) {
+    static boolean removeUnsupportedDataTypes(@NonNull Map<String, Object> data, @NonNull ModuleLog L) {
         assert data != null;
 
-        boolean removed = false;
+        StringBuilder removedKeys = new StringBuilder();
 
         for (Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Object> entry = it.next();
@@ -305,15 +305,16 @@ public class UtilsInternalLimits {
             if (key == null || key.isEmpty() || !(isSupportedDataType(value))) {
                 //found unsupported data type or null key or value, removing
                 it.remove();
-                removed = true;
+                removedKeys.append("key:[").append(key).append("] value:[").append(value).append("] ").append("type: [").append(value == null ? "null" : value.getClass().getSimpleName()).append("] ,");
             }
         }
+        String removedKeysStr = removedKeys.toString();
 
-        if (removed) {
-            Countly.sharedInstance().L.w("[Utils] Unsupported data types were removed from provided segmentation");
+        if (!removedKeysStr.isEmpty()) {
+            L.w("[UtilsInternalLimits] removeUnsupportedDataTypes, removed " + removedKeysStr + " from the provided data map.");
         }
 
-        return removed;
+        return !removedKeysStr.isEmpty();
     }
 
     /**

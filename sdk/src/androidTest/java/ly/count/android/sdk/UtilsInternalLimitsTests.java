@@ -244,7 +244,7 @@ public class UtilsInternalLimitsTests {
 
     @Test(expected = AssertionError.class)
     public void removeUnsupportedDataTypesNull() {
-        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(null));
+        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(null, Mockito.mock(ModuleLog.class)));
     }
 
     @Test
@@ -261,7 +261,7 @@ public class UtilsInternalLimitsTests {
         segm.put("41", new Object());
         segm.put("42", new int[] { 1, 2 });
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm, Mockito.mock(ModuleLog.class)));
 
         Assert.assertTrue(segm.containsKey("aa"));
         Assert.assertTrue(segm.containsKey("aa1"));
@@ -284,7 +284,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(3, segm.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm, Mockito.mock(ModuleLog.class)));
 
         Assert.assertEquals(0, segm.size());
 
@@ -298,7 +298,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(7, segm.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segm, Mockito.mock(ModuleLog.class)));
 
         Assert.assertEquals(4, segm.size());
         Assert.assertTrue(segm.containsKey("1"));

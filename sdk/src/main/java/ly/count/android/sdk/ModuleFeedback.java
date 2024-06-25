@@ -447,7 +447,7 @@ public class ModuleFeedback extends ModuleBase {
 
         if (widgetResult != null) {
             //removing broken values first
-            UtilsInternalLimits.removeUnsupportedDataTypes(widgetResult);
+            UtilsInternalLimits.removeUnsupportedDataTypes(widgetResult, L);
 
             Iterator<Map.Entry<String, Object>> iter = widgetResult.entrySet().iterator();
             while (iter.hasNext()) {

@@ -88,7 +88,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         L.d("[ModuleEvents] recordEventInternal, key:[" + key + "] eventIdOverride:[" + eventIdOverride + "] segmentation:[" + segmentation + "] count:[" + count + "] sum:[" + sum + "] dur:[" + dur + "] instant:[" + instant + "]");
 
         if (segmentation != null) {
-            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
         }
 
         //record the current event timestamps
@@ -163,7 +163,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             case ACTION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.clicks) || consentProvider.getConsent(Countly.CountlyFeatureNames.scrolls)) {
                     if (segmentation != null) {
-                        UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
+                        UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
                     }
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
