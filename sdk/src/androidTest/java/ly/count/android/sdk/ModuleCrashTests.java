@@ -120,7 +120,7 @@ public class ModuleCrashTests {
     public void provideCustomCrashSegment_DuringInit() {
         Countly countly = new Countly();
         CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        int[] arr = new int[] { 1, 2, 3, 4, 5 };
+        int[] arr = { 1, 2, 3, 4, 5 };
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
