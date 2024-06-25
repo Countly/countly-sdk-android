@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.internal.util.collections.Sets;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -1273,5 +1274,195 @@ public class ModuleCrashTests {
         expectedStackTrace.append("\nHaburayaHa");
 
         validateCrash(expectedStackTrace.toString(), "", true, false, new HashMap<>(), 16, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * "recordHandledException" with Array segmentations
+     * Validate that all primitive types arrays are successfully recorded
+     * And validate that Object arrays are not recorded
+     * But Generic type of Object array which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordHandledException_validateSupportedArrays() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        boolean[] arrB = new boolean[] { true, false, true, false, true, false, true, false, true, false };
+        String[] arrS = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        long[] arrL = new long[] { Long.MAX_VALUE, Long.MIN_VALUE };
+        double[] arrD = new double[] { Double.MAX_VALUE, Double.MIN_VALUE };
+        Long[] arrLO = new Long[] { Long.MAX_VALUE, Long.MIN_VALUE };
+        Double[] arrDO = new Double[] { Double.MAX_VALUE, Double.MIN_VALUE };
+        Boolean[] arrBO = new Boolean[] { Boolean.TRUE, Boolean.FALSE };
+        Integer[] arrIO = new Integer[] { Integer.MAX_VALUE, Integer.MIN_VALUE };
+        Object[] arrObj = new Object[] { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
+        Object[] arrObjStr = new Object[] { "1", "1", "1.1d", "true", "1.1f", "Long.MAX_VALUE" };
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.metricProviderOverride = mmp;
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, segmentation);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrL", new JSONArray(arrL),
+            "arrD", new JSONArray(arrD),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO)
+        );
+
+        validateCrash(extractStackTrace(exception), "", false, false, expectedSegmentation, 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * "recordHandledException" with List segmentations
+     * Validate that all primitive types Lists are successfully recorded
+     * And validate that List of Objects is not recorded
+     * But Generic type of Object list which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordHandledException_validateSupportedLists() throws JSONException {
+        List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        List<Boolean> arrB = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
+        List<String> arrS = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+        List<Long> arrLO = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
+        List<Double> arrDO = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
+        List<Boolean> arrBO = Arrays.asList(Boolean.TRUE, Boolean.FALSE);
+        List<Integer> arrIO = Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE);
+        List<Object> arrObj = Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE);
+        List<Object> arrObjStr = Arrays.asList("1", "1", "1.1d", "true", "Long.MAX_VALUE");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.metricProviderOverride = mmp;
+        Countly countly = new Countly().init(countlyConfig);
+
+        // Create segmentation using maps with lists
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, segmentation);
+
+        // Prepare expected segmentation with JSONArrays
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO),
+            "arrObjStr", new JSONArray(arrObjStr)
+        );
+
+        validateCrash(extractStackTrace(exception), "", false, false, expectedSegmentation, 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * "recordHandledException" with JSONArray segmentations
+     * Validate that all primitive types JSONArrays are successfully recorded
+     * And validate and JSONArray of Objects is not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordHandledException_validateSupportedJSONArrays() throws JSONException {
+        JSONArray arr = new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        JSONArray arrB = new JSONArray(Arrays.asList(true, false, true, false, true, false, true, false, true, false));
+        JSONArray arrS = new JSONArray(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
+        JSONArray arrL = new JSONArray(Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE));
+        JSONArray arrD = new JSONArray(Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE));
+        JSONArray arrBO = new JSONArray(Arrays.asList(Boolean.TRUE, Boolean.FALSE));
+        JSONArray arrIO = new JSONArray(Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE));
+        JSONArray arrObj = new JSONArray(Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE));
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.metricProviderOverride = mmp;
+        Countly countly = new Countly().init(countlyConfig);
+
+        // Create segmentation using maps with lists
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj
+        );
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, segmentation);
+
+        // Prepare expected segmentation with JSONArrays
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO
+        );
+
+        validateCrash(extractStackTrace(exception), "", false, false, expectedSegmentation, 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * "recordHandledException" with invalid data types
+     * Validate that unsupported data types are not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordHandledException_unsupportedDataTypesSegmentation() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.metricProviderOverride = mmp;
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "a", TestUtils.map(),
+            "b", TestUtils.json(),
+            "c", new Object(),
+            "d", Sets.newSet(),
+            "e", mmp
+        );
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordHandledException(exception, segmentation);
+
+        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map(), 0, new HashMap<>(), new ArrayList<>());
     }
 }

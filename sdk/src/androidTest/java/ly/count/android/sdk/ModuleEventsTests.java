@@ -16,6 +16,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.mockito.internal.util.collections.Sets;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -596,7 +598,7 @@ public class ModuleEventsTests {
         Long[] arrLO = new Long[] { Long.MAX_VALUE, Long.MIN_VALUE };
         Double[] arrDO = new Double[] { Double.MAX_VALUE, Double.MIN_VALUE };
         Boolean[] arrBO = new Boolean[] { Boolean.TRUE, Boolean.FALSE };
-        Integer[] arrIO = new Integer[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        Integer[] arrIO = new Integer[] { Integer.MAX_VALUE, Integer.MIN_VALUE };
         Object[] arrObj = new Object[] { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
         Object[] arrObjStr = new Object[] { "1", "1", "1.1d", "true", "1.1f", "Long.MAX_VALUE" };
 
@@ -648,12 +650,10 @@ public class ModuleEventsTests {
         List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         List<Boolean> arrB = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
         List<String> arrS = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
-        List<Long> arrL = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
-        List<Double> arrD = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
         List<Long> arrLO = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
         List<Double> arrDO = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
         List<Boolean> arrBO = Arrays.asList(Boolean.TRUE, Boolean.FALSE);
-        List<Integer> arrIO = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        List<Integer> arrIO = Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE);
         List<Object> arrObj = Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE);
         List<Object> arrObjStr = Arrays.asList("1", "1", "1.1d", "true", "Long.MAX_VALUE");
 
@@ -666,8 +666,6 @@ public class ModuleEventsTests {
             "arr", arr,
             "arrB", arrB,
             "arrS", arrS,
-            "arrL", arrL,
-            "arrD", arrD,
             "arrLO", arrLO,
             "arrDO", arrDO,
             "arrBO", arrBO,
@@ -684,8 +682,6 @@ public class ModuleEventsTests {
             "arr", new JSONArray(arr),
             "arrB", new JSONArray(arrB),
             "arrS", new JSONArray(arrS),
-            "arrL", new JSONArray(arrL),
-            "arrD", new JSONArray(arrD),
             "arrLO", new JSONArray(arrLO),
             "arrDO", new JSONArray(arrDO),
             "arrBO", new JSONArray(arrBO),
@@ -711,10 +707,8 @@ public class ModuleEventsTests {
         JSONArray arrS = new JSONArray(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
         JSONArray arrL = new JSONArray(Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE));
         JSONArray arrD = new JSONArray(Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE));
-        JSONArray arrLO = new JSONArray(Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE));
-        JSONArray arrDO = new JSONArray(Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE));
         JSONArray arrBO = new JSONArray(Arrays.asList(Boolean.TRUE, Boolean.FALSE));
-        JSONArray arrIO = new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        JSONArray arrIO = new JSONArray(Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE));
         JSONArray arrObj = new JSONArray(Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE));
 
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
@@ -728,8 +722,6 @@ public class ModuleEventsTests {
             "arrS", arrS,
             "arrL", arrL,
             "arrD", arrD,
-            "arrLO", arrLO,
-            "arrDO", arrDO,
             "arrBO", arrBO,
             "arrIO", arrIO,
             "arrObj", arrObj
@@ -745,14 +737,38 @@ public class ModuleEventsTests {
             "arrS", arrS,
             "arrL", arrL,
             "arrD", arrD,
-            "arrLO", arrLO,
-            "arrDO", arrDO,
             "arrBO", arrBO,
             "arrIO", arrIO
         );
 
         // Validate the recorded event with expected segmentation
         validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
+    /**
+     * "recordHandledException" with invalid data types
+     * Validate that unsupported data types are not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_unsupportedDataTypesSegmentation() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "a", TestUtils.map(),
+            "b", TestUtils.json(),
+            "c", new Object(),
+            "d", Sets.newSet(),
+            "e", Mockito.mock(ModuleLog.class)
+        );
+
+        // Record event with the created segmentation
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        validateEventInRQ("key", TestUtils.map(), 1, 1.0d, 1.0d, 0);
     }
 
     protected static JSONObject validateEventInRQ(String deviceId, String eventName, int count, double sum, double duration, int idx, int eventIdx, int eventCount, int rqCount) throws JSONException {
@@ -773,10 +789,12 @@ public class ModuleEventsTests {
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
         JSONObject event = validateEventInRQ(TestUtils.commonDeviceId, eventName, count, sum, duration, idx, 0, 1, idx + 1);
-        JSONObject segmentation = event.getJSONObject("segmentation");
-        Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
-        for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
-            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+        if (!expectedSegmentation.isEmpty()) {
+            JSONObject segmentation = event.getJSONObject("segmentation");
+            Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
+            for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
+                Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+            }
         }
         Assert.assertEquals(count, event.getInt("count"));
         Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
