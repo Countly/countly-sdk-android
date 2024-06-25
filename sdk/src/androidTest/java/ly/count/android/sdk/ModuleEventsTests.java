@@ -590,17 +590,17 @@ public class ModuleEventsTests {
      */
     @Test
     public void recordEvent_validateSupportedArrays() throws JSONException {
-        int[] arr = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        boolean[] arrB = new boolean[] { true, false, true, false, true, false, true, false, true, false };
-        String[] arrS = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
-        long[] arrL = new long[] { Long.MAX_VALUE, Long.MIN_VALUE };
-        double[] arrD = new double[] { Double.MAX_VALUE, Double.MIN_VALUE };
-        Long[] arrLO = new Long[] { Long.MAX_VALUE, Long.MIN_VALUE };
-        Double[] arrDO = new Double[] { Double.MAX_VALUE, Double.MIN_VALUE };
-        Boolean[] arrBO = new Boolean[] { Boolean.TRUE, Boolean.FALSE };
-        Integer[] arrIO = new Integer[] { Integer.MAX_VALUE, Integer.MIN_VALUE };
-        Object[] arrObj = new Object[] { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
-        Object[] arrObjStr = new Object[] { "1", "1", "1.1d", "true", "1.1f", "Long.MAX_VALUE" };
+        int[] arr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        boolean[] arrB = { true, false, true, false, true, false, true, false, true, false };
+        String[] arrS = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        long[] arrL = { Long.MAX_VALUE, Long.MIN_VALUE };
+        double[] arrD = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Long[] arrLO = { Long.MAX_VALUE, Long.MIN_VALUE };
+        Double[] arrDO = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Boolean[] arrBO = { Boolean.TRUE, Boolean.FALSE };
+        Integer[] arrIO = { Integer.MAX_VALUE, Integer.MIN_VALUE };
+        Object[] arrObj = { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
+        Object[] arrObjStr = { "1", "1", "1.1d", "true", "1.1f", "Long.MAX_VALUE" };
 
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
         countlyConfig.setEventQueueSizeToSend(1);

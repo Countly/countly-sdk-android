@@ -315,13 +315,13 @@ public class UtilsInternalLimitsTests {
     @Test
     public void removeUnsupportedDataTypes_arrays() {
 
-        String[] aa1 = new String[] { "ff", "33" };
-        Integer[] aa2 = new Integer[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-        Double[] aa3 = new Double[] { 1.1, 2.2, 3.3, 4.4, 5.5 };
-        Boolean[] aa4 = new Boolean[] { true, false, true, false };
-        Float[] aa5 = new Float[] { 1.1f, 2.2f, 3.3f, 4.4f, 5.5f };
-        Long[] aa6 = new Long[] { 1L, 2L, 3L, 4L, 5L };
-        Object[] aa7 = new Object[] { 1, 2, "ABC", true, 3.3d, 4.4f, 5L, new Object() };
+        String[] aa1 = { "ff", "33" };
+        Integer[] aa2 = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        Double[] aa3 = { 1.1, 2.2, 3.3, 4.4, 5.5 };
+        Boolean[] aa4 = { true, false, true, false };
+        Float[] aa5 = { 1.1f, 2.2f, 3.3f, 4.4f, 5.5f };
+        Long[] aa6 = { 1L, 2L, 3L, 4L, 5L };
+        Object[] aa7 = { 1, 2, "ABC", true, 3.3d, 4.4f, 5L, new Object() };
         Map<String, Object> segmentation = TestUtils.map("aa1", aa1, "aa2", aa2, "aa3", aa3, "aa4", aa4, "aa5", aa5, "aa6", aa6, "aa7", aa7);
 
         Assert.assertEquals(7, segmentation.size());
@@ -379,18 +379,18 @@ public class UtilsInternalLimitsTests {
 
     @Test
     public void removeUnsupportedDataTypes_arraysEmpty() {
-        String[] aa1 = new String[] {};
-        int[] aa2 = new int[] {};
-        double[] aa3 = new double[] {};
-        float[] aa4 = new float[] {};
-        long[] aa5 = new long[] {};
-        boolean[] aa6 = new boolean[] {};
-        Object[] aa7 = new Object[] {};
-        Integer[] aa8 = new Integer[] {};
-        Double[] aa9 = new Double[] {};
-        Float[] aa10 = new Float[] {};
-        Long[] aa11 = new Long[] {};
-        Boolean[] aa12 = new Boolean[] {};
+        String[] aa1 = {};
+        int[] aa2 = {};
+        double[] aa3 = {};
+        float[] aa4 = {};
+        long[] aa5 = {};
+        boolean[] aa6 = {};
+        Object[] aa7 = {};
+        Integer[] aa8 = {};
+        Double[] aa9 = {};
+        Float[] aa10 = {};
+        Long[] aa11 = {};
+        Boolean[] aa12 = {};
         Map<String, Object> segmentation = TestUtils.map("aa1", aa1, "aa2", aa2, "aa3", aa3, "aa4", aa4, "aa5", aa5, "aa6", aa6, "aa7", aa7, "aa8", aa8, "aa9", aa9, "aa10", aa10, "aa11", aa11, "aa12", aa12);
 
         Assert.assertEquals(12, segmentation.size());
