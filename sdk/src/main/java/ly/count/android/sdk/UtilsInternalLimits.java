@@ -305,7 +305,7 @@ public class UtilsInternalLimits {
             if (key == null || key.isEmpty() || !(isSupportedDataType(value))) {
                 //found unsupported data type or null key or value, removing
                 it.remove();
-                removedKeys.append("key:[").append(key).append("] value:[").append(value).append("] ").append("type: [").append(value == null ? "null" : value.getClass().getSimpleName()).append("] ,");
+                removedKeys.append("key:[").append(key).append("] value:[").append(value).append("] type:[").append(value == null ? "null" : value.getClass().getSimpleName()).append("] ,");
             }
         }
         String removedKeysStr = removedKeys.toString();
