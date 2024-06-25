@@ -430,8 +430,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 RCAutomaticDownloadTrigger(false);
             } else {
                 L.d("[RemoteConfig] removing remote-config consent. Clearing stored values");
-                clearValueStoreInternal();
-                // if consent is removed, we should clear remote config values
+                CacheOrClearRCValuesIfNeeded();
             }
         }
     }
