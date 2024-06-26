@@ -50,7 +50,8 @@ public class ModuleRemoteConfigTests {
 
         countly.consent().removeConsentAll();
 
-        Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+        Assert.assertEquals(2, countly.remoteConfig().getValues().size()); // values are cache cleared
+        countly.remoteConfig().getValues().forEach((k, v) -> Assert.assertFalse(v.isCurrentUsersData));
     }
 
     /**
