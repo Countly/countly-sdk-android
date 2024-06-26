@@ -3,6 +3,8 @@
   * When an event is recorded
   * During an internal timer tick
   * Upon flushing the event queue
+ 
+* Mitigated an issue where on consent revoke, even if remote config caching is enabled, the RC values where cleared. 
 
 ## 24.4.1
 * ! Minor breaking change ! Mitigated an issue where internal SDK limits did not apply
