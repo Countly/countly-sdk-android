@@ -242,9 +242,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                         callback.callback(RequestResult.NetworkIssue, "Bad response from the server:" + checkResponse.toString());
                         return;
                     }
-
-                    RCAutomaticDownloadTrigger(true);//todo afterwards cache only that one key
-
+                    
                     callback.callback(RequestResult.Success, null);
                 } catch (Exception ex) {
                     L.e("[ModuleRemoteConfig] testingEnrollIntoVariantInternal - execute, Encountered internal issue while trying to enroll to the variant, [" + ex.toString() + "]");

@@ -4,6 +4,8 @@
   * During an internal timer tick
   * Upon flushing the event queue
 
+* Mitigated an issue where remote config values was redownloaded after enrolling to the variants, not anymore.
+
 ## 24.4.1
 * ! Minor breaking change ! Mitigated an issue where internal SDK limits did not apply
 
