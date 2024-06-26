@@ -30,7 +30,7 @@ public class ModuleRemoteConfigTests {
     }
 
     /**
-     * Consent removal should clear stored remote config values
+     * Consent removal shouldn't clear stored remote config values
      */
     @Test
     public void valuesClearedOnConsentRemoval() {
@@ -51,7 +51,7 @@ public class ModuleRemoteConfigTests {
         countly.consent().removeConsentAll();
 
         Assert.assertEquals(2, countly.remoteConfig().getValues().size()); // values are cache cleared
-        countly.remoteConfig().getValues().forEach((k, v) -> Assert.assertFalse(v.isCurrentUsersData));
+        countly.remoteConfig().getValues().forEach((k, v) -> Assert.assertTrue(v.isCurrentUsersData));
     }
 
     /**
