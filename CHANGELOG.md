@@ -3,6 +3,8 @@
   * When an event is recorded
   * During an internal timer tick
   * Upon flushing the event queue
+ 
+* Mitigated an issue where on consent revoke, remote config values were cleared, not anymore.
 
 * Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
   * String, Integer, int, Boolean, bool, Float, float, Double, double, Long, long
