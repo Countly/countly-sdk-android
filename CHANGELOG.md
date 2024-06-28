@@ -4,6 +4,9 @@
   * During an internal timer tick
   * Upon flushing the event queue
  
+* Mitigated an issue related to the device ID by creating an internal migration.
+* Resolved a problem where revoked consents were sent after changes without merging.
+* Fixed a bug that caused the device ID to be incorrectly set after changes with merging.
 * Mitigated an issue where on consent revoke, remote config values were cleared, not anymore.
 
 * Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
