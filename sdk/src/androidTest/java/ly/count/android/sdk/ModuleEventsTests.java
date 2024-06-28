@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.messaging.ModulePush;
@@ -14,6 +16,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
+import org.mockito.internal.util.collections.Sets;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -336,7 +340,7 @@ public class ModuleEventsTests {
 
         segm1.put("4", 45.4f);
         segm1.put("41", new Object());
-        segm1.put("42", new int[] { 1, 2 });
+        segm1.put("42", new int[][] { { 1, 2, 3 }, { 4, 5, 6 } });
         segm1.put("asd", "123");
         segm1.put("1", 1234);
         segm1.put("2", 1234.55d);
@@ -466,6 +470,8 @@ public class ModuleEventsTests {
 
     @Test
     public void recordEvent_validateFromRQ() throws JSONException {
+        int[] arr = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        List<String> list = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
         countlyConfig.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(countlyConfig);
@@ -478,7 +484,8 @@ public class ModuleEventsTests {
             "float", 1.5f,
             "long", Long.MAX_VALUE,
             "object", new Object(),
-            "array", new int[] { 1, 2, 3 },
+            "array", arr,
+            "list", list,
             "null", null
         );
 
@@ -490,7 +497,9 @@ public class ModuleEventsTests {
             "string", "string",
             "boolean", true,
             "float", 1.5,
-            "long", Long.MAX_VALUE
+            "long", Long.MAX_VALUE,
+            "array", new JSONArray(arr),
+            "list", new JSONArray(list)
         );
 
         validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
@@ -571,6 +580,197 @@ public class ModuleEventsTests {
         validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
     }
 
+    /**
+     * "recordEvent" with Array segmentations
+     * Validate that all primitive types arrays are successfully recorded
+     * And validate that Object arrays are not recorded
+     * But Generic type of Object array which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_validateSupportedArrays() throws JSONException {
+        int[] arr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        boolean[] arrB = { true, false, true, false, true, false, true, false, true, false };
+        String[] arrS = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        long[] arrL = { Long.MAX_VALUE, Long.MIN_VALUE };
+        double[] arrD = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Long[] arrLO = { Long.MAX_VALUE, Long.MIN_VALUE };
+        Double[] arrDO = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Boolean[] arrBO = { Boolean.TRUE, Boolean.FALSE };
+        Integer[] arrIO = { Integer.MAX_VALUE, Integer.MIN_VALUE };
+        Object[] arrObj = { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
+        Object[] arrObjStr = { "1", "1", "1.1d", "true", "1.1f", "Long.MAX_VALUE" };
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrL", new JSONArray(arrL),
+            "arrD", new JSONArray(arrD),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO)
+        );
+
+        validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
+    /**
+     * "recordEvent" with List segmentations
+     * Validate that all primitive types Lists are successfully recorded
+     * And validate that List of Objects is not recorded
+     * But Generic type of Object list which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_validateSupportedLists() throws JSONException {
+        List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        List<Boolean> arrB = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
+        List<String> arrS = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+        List<Long> arrLO = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
+        List<Double> arrDO = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
+        List<Boolean> arrBO = Arrays.asList(Boolean.TRUE, Boolean.FALSE);
+        List<Integer> arrIO = Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE);
+        List<Object> arrObj = Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE);
+        List<Object> arrObjStr = Arrays.asList("1", "1", "1.1d", "true", "Long.MAX_VALUE");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        // Create segmentation using maps with lists
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        // Record event with the created segmentation
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        // Prepare expected segmentation with JSONArrays
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO),
+            "arrObjStr", new JSONArray(arrObjStr)
+        );
+
+        // Validate the recorded event with expected segmentation
+        validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
+    /**
+     * "recordEvent" with JSONArray segmentations
+     * Validate that all primitive types JSONArrays are successfully recorded
+     * And validate and JSONArray of Objects is not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_validateSupportedJSONArrays() throws JSONException {
+        JSONArray arr = new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        JSONArray arrB = new JSONArray(Arrays.asList(true, false, true, false, true, false, true, false, true, false));
+        JSONArray arrS = new JSONArray(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
+        JSONArray arrL = new JSONArray(Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE));
+        JSONArray arrD = new JSONArray(Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE));
+        JSONArray arrBO = new JSONArray(Arrays.asList(Boolean.TRUE, Boolean.FALSE));
+        JSONArray arrIO = new JSONArray(Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE));
+        JSONArray arrObj = new JSONArray(Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE));
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        // Create segmentation using maps with lists
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj
+        );
+
+        // Record event with the created segmentation
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        // Prepare expected segmentation with JSONArrays
+        Map<String, Object> expectedSegmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO
+        );
+
+        // Validate the recorded event with expected segmentation
+        validateEventInRQ("key", expectedSegmentation, 1, 1.0d, 1.0d, 0);
+    }
+
+    /**
+     * "recordHandledException" with invalid data types
+     * Validate that unsupported data types are not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_unsupportedDataTypesSegmentation() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "a", TestUtils.map(),
+            "b", TestUtils.json(),
+            "c", new Object(),
+            "d", Sets.newSet(),
+            "e", Mockito.mock(ModuleLog.class)
+        );
+
+        // Record event with the created segmentation
+        countly.events().recordEvent("key", segmentation, 1, 1.0d, 1.0d);
+
+        validateEventInRQ("key", TestUtils.map(), 1, 1.0d, 1.0d, 0);
+    }
+
     protected static JSONObject validateEventInRQ(String deviceId, String eventName, int count, double sum, double duration, int idx, int eventIdx, int eventCount, int rqCount) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         if (rqCount > -1) {
@@ -589,10 +789,12 @@ public class ModuleEventsTests {
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
         JSONObject event = validateEventInRQ(TestUtils.commonDeviceId, eventName, count, sum, duration, idx, 0, 1, idx + 1);
-        JSONObject segmentation = event.getJSONObject("segmentation");
-        Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
-        for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
-            Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+        if (!expectedSegmentation.isEmpty()) {
+            JSONObject segmentation = event.getJSONObject("segmentation");
+            Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
+            for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
+                Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
+            }
         }
         Assert.assertEquals(count, event.getInt("count"));
         Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);

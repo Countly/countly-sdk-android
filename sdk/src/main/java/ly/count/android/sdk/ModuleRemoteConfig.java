@@ -425,12 +425,9 @@ public class ModuleRemoteConfig extends ModuleBase {
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.remoteConfig) && changeSource == ChangeConsentCall) {
             if (newConsent) {
+                L.d("[RemoteConfig] onConsentChanged, Consent given, will update RC values");
                 //if consent was just given trigger automatic RC download if needed
                 RCAutomaticDownloadTrigger(false);
-            } else {
-                L.d("[RemoteConfig] removing remote-config consent. Clearing stored values");
-                clearValueStoreInternal();
-                // if consent is removed, we should clear remote config values
             }
         }
     }
