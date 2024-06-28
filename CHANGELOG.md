@@ -4,6 +4,7 @@
   * During an internal timer tick
   * Upon flushing the event queue
  
+* Mitigated an issue where remote config values caching was changing by device id change, not anymore. It is linked to the configuration "enableRemoteConfigValueCaching" now.
 * Mitigated an issue related to the device ID by creating an internal migration.
 * Resolved a problem where revoked consents were sent after changes without merging.
 * Fixed a bug that caused the device ID to be incorrectly set after changes with merging.

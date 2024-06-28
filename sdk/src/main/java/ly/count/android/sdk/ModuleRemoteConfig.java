@@ -381,12 +381,11 @@ public class ModuleRemoteConfig extends ModuleBase {
         return variantResponse;
     }
 
-    void clearAndDownloadAfterIdChange(boolean valuesShouldBeCacheCleared) {
-        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update, " + valuesShouldBeCacheCleared);
+    void clearAndDownloadAfterIdChange() {
+        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
-        if (valuesShouldBeCacheCleared) {
-            CacheOrClearRCValuesIfNeeded();
-        }
+        CacheOrClearRCValuesIfNeeded();
+
         if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
         }
