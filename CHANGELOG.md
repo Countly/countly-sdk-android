@@ -1,4 +1,4 @@
-## 24.4.2
+## 24.6.0
 * ! Minor breaking change ! User properties will now be automatically saved under the following conditions:
   * When an event is recorded
   * During an internal timer tick
