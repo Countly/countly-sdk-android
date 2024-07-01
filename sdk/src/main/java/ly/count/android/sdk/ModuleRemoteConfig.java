@@ -88,7 +88,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }
 
             //prepare metrics and request data
-            String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride);
+            String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
             String requestData;
 
             if (useLegacyAPI) {
@@ -381,12 +381,11 @@ public class ModuleRemoteConfig extends ModuleBase {
         return variantResponse;
     }
 
-    void clearAndDownloadAfterIdChange(boolean valuesShouldBeCacheCleared) {
-        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update, " + valuesShouldBeCacheCleared);
+    void clearAndDownloadAfterIdChange() {
+        L.v("[RemoteConfig] Clearing remote config values and preparing to download after ID update");
 
-        if (valuesShouldBeCacheCleared) {
-            CacheOrClearRCValuesIfNeeded();
-        }
+        CacheOrClearRCValuesIfNeeded();
+
         if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             updateRemoteConfigAfterIdChange = true;
         }
@@ -426,12 +425,9 @@ public class ModuleRemoteConfig extends ModuleBase {
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.remoteConfig) && changeSource == ChangeConsentCall) {
             if (newConsent) {
+                L.d("[RemoteConfig] onConsentChanged, Consent given, will update RC values");
                 //if consent was just given trigger automatic RC download if needed
                 RCAutomaticDownloadTrigger(false);
-            } else {
-                L.d("[RemoteConfig] removing remote-config consent. Clearing stored values");
-                clearValueStoreInternal();
-                // if consent is removed, we should clear remote config values
             }
         }
     }

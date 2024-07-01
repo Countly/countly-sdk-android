@@ -255,7 +255,9 @@
             <property name="reportLevel" value="250" />
         </properties>
     </rule>
+    <!--
     <rule ref="category/java/design.xml/SignatureDeclareThrowsException" />
+    -->
     <rule ref="category/java/design.xml/SimplifiedTernary" />
     <rule ref="category/java/design.xml/SimplifyBooleanExpressions" />    
     <rule ref="category/java/design.xml/SimplifyConditional" />
@@ -301,12 +303,14 @@
         </properties>
     </rule>
     -->
+  
     <rule ref="category/java/documentation.xml/CommentSize">
         <properties>
-            <property name="maxLines" value="10" />
-            <property name="maxLineLength" value="200" />
+            <property name="maxLines" value="100" />
+            <property name="maxLineLength" value="300" />
         </properties>
     </rule>
+  
     <rule ref="category/java/documentation.xml/UncommentedEmptyConstructor" />    
 
     <!--

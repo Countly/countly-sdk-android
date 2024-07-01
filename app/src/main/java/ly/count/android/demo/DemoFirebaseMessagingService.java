@@ -2,12 +2,11 @@ package ly.count.android.demo;
 
 import android.content.Intent;
 import android.util.Log;
-
 import androidx.annotation.NonNull;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
-
 import ly.count.android.sdk.messaging.CountlyPush;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Demo service explaining Firebase Messaging notifications handling:
@@ -21,7 +20,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "DemoMessagingService";
 
     @Override
-    public void onNewToken(String token) {
+    public void onNewToken(@NotNull String token) {
         super.onNewToken(token);
 
         Log.d("DemoFirebaseService", "got new token: " + token);
@@ -53,7 +52,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
 
         if (message.has("typ")) {
             // custom handling only for messages with specific "typ" keys
-            if (message.data("typ").equals("download")) {
+            if ("download".equals(message.data("typ"))) {
                 // Some bg download case.
                 // We want to know how much devices started downloads after this particular message,
                 // so we report Actioned metric back to server:
@@ -61,7 +60,7 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
                 // AppDownloadManager.initiateBackgroundDownload(message.link());
                 message.recordAction(getApplicationContext());
                 return;
-            } else if (message.data("typ").equals("promo")) {
+            } else if ("promo".equals(message.data("typ"))) {
                 // Now we want to override default Countly UI for a promo message type.
                 // We know that it should contain 2 buttons, so we start Activity
                 // which would handle UI and report Actioned metric back to the server.
@@ -109,11 +108,6 @@ public class DemoFirebaseMessagingService extends FirebaseMessagingService {
         } else {
             Log.i(TAG, "Message wasn't handled by Countly SDK because API level is too low for Notification support or because currentActivity is null (not enough lifecycle method calls)");
         }
-    }
-
-    @Override
-    public void onDeletedMessages() {
-        super.onDeletedMessages();
     }
 }
 

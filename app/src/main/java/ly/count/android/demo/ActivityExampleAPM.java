@@ -2,12 +2,10 @@ package ly.count.android.demo;
 
 import android.os.Bundle;
 import android.view.View;
-
 import androidx.appcompat.app.AppCompatActivity;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
+import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.Countly;
 
 public class ActivityExampleAPM extends AppCompatActivity {
@@ -32,7 +30,7 @@ public class ActivityExampleAPM extends AppCompatActivity {
     }
 
     public void onClickEndTrace_1(View v) {
-        Map<String, Integer> customMetric = new HashMap<>();
+        Map<String, Integer> customMetric = new ConcurrentHashMap<>();
         customMetric.put("ABC", 1233);
         customMetric.put("C44C", 1337);
 

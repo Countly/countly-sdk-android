@@ -6,19 +6,20 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import static android.content.Context.UI_MODE_SERVICE;
 
@@ -226,30 +227,6 @@ public class Utils {
         return b64Value + timestamp;
     }
 
-    /**
-     * Utility method to fill JSONObject with supplied objects for supplied keys.
-     * Fills json only with non-null and non-empty key/value pairs.
-     *
-     * @param json JSONObject to fill
-     * @param objects varargs of this kind: key1, value1, key2, value2, ...
-     */
-    static void fillJSONIfValuesNotEmpty(final JSONObject json, final String... objects) {
-        try {
-            if (objects.length > 0 && objects.length % 2 == 0) {
-                for (int i = 0; i < objects.length; i += 2) {
-                    final String key = objects[i];
-                    final String value = objects[i + 1];
-                    if (value != null && value.length() > 0) {
-                        json.put(key, value);
-                    }
-                }
-            }
-        } catch (JSONException ignored) {
-            // shouldn't ever happen when putting String objects into a JSONObject,
-            // it can only happen when putting NaN or INFINITE doubles or floats into it
-        }
-    }
-
     //https://stackoverflow.com/a/40310535
 
     /**
@@ -395,5 +372,60 @@ public class Utils {
 
         // if startStr does not exist just return empty string[]
         return new String[] { data, null };
+    }
+
+    /**
+     * Splits a given request into key-value pairs
+     *
+     * @param request - request string to be split
+     * @return - returns a map of key-value pairs
+     */
+    public static @NonNull Map<String, String> splitIntoParams(@Nullable String request, @NonNull ModuleLog L) {
+        assert L != null;
+
+        Map<String, String> params = new HashMap<>();
+
+        if (request == null || request.isEmpty()) {
+            return params;
+        }
+
+        String[] entries = request.split("&");
+
+        for (String entry : entries) {
+            String[] parts = entry.split("=");
+            if (parts.length != 2) {
+                L.w("splitIntoParams, Param entry can't be split: [" + entry + "]");
+                continue;
+            }
+
+            params.put(parts[0], parts[1]);
+        }
+
+        return params;
+    }
+
+    /**
+     * Combines a map of key-value pairs into a request string
+     * reversed version of {@link #splitIntoParams}
+     *
+     * @param params - map of key-value pairs
+     * @return - returns a request string
+     */
+    public static @NonNull String combineParamsIntoRequest(@NonNull Map<String, String> params) {
+        assert params != null;
+
+        StringBuilder sb = new StringBuilder(100);
+
+        for (Map.Entry<String, String> pair : params.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append('&');
+            }
+
+            sb.append(pair.getKey());
+            sb.append('=');
+            sb.append(pair.getValue());
+        }
+
+        return sb.toString();
     }
 }

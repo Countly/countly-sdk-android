@@ -262,11 +262,11 @@ public class ConnectionProcessorTests {
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         connectionProcessor.run();
 
         verify(mockStore, times(2)).getRequests();
-        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockURLConnection).getResponseCode();
@@ -286,11 +286,11 @@ public class ConnectionProcessorTests {
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(300);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         connectionProcessor.run();
 
         verify(mockStore, times(1)).getRequests();
-        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockURLConnection).getResponseCode();
@@ -310,11 +310,11 @@ public class ConnectionProcessorTests {
         final TestInputStream testInputStream = new TestInputStream();
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         connectionProcessor.run();
 
         verify(mockStore, times(1)).getRequests();
-        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         verify(mockURLConnection).getResponseCode();
@@ -334,10 +334,10 @@ public class ConnectionProcessorTests {
         final CountlyResponseStream testInputStream = new CountlyResponseStream("Failed");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream);
         when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         connectionProcessor.run();
         verify(mockStore, times(2)).getRequests();
-        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&device_id=" + testDeviceId + "&rr=0", null);
+        verify(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
         verify(mockURLConnection).connect();
         verify(mockURLConnection).getInputStream();
         assertTrue(testInputStream.fullyRead());
@@ -358,13 +358,13 @@ public class ConnectionProcessorTests {
         final CountlyResponseStream testInputStream1 = new CountlyResponseStream("Success");
         final CountlyResponseStream testInputStream2 = new CountlyResponseStream("Success");
         when(mockURLConnection.getInputStream()).thenReturn(testInputStream1, testInputStream2);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData1 + "&device_id=" + testDeviceId + "&rr=1", null);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData2 + "&device_id=" + testDeviceId + "&rr=0", null);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData1 + "&rr=1", null);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(eventData2 + "&rr=0", null);
         when(mockURLConnection.getResponseCode()).thenReturn(200, 200);
         connectionProcessor.run();
         verify(mockStore, times(3)).getRequests();
-        verify(connectionProcessor).urlConnectionForServerRequest(eventData1 + "&device_id=" + testDeviceId + "&rr=1", null);
-        verify(connectionProcessor).urlConnectionForServerRequest(eventData2 + "&device_id=" + testDeviceId + "&rr=0", null);
+        verify(connectionProcessor).urlConnectionForServerRequest(eventData1 + "&rr=1", null);
+        verify(connectionProcessor).urlConnectionForServerRequest(eventData2 + "&rr=0", null);
         verify(mockURLConnection, times(2)).connect();
         verify(mockURLConnection, times(2)).getInputStream();
         verify(mockURLConnection, times(2)).getResponseCode();

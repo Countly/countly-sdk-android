@@ -125,10 +125,13 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //force flush events so that they are associated correctly
         _cly.moduleRequestQueue.sendEventsIfNeeded(true);
 
-        //update remote config_ values after id change if automatic update is enabled
-        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(true);
+        //send user profile data because we are flushing the event queue
+        _cly.moduleUserProfile.saveInternal();
 
-        _cly.moduleSessions.endSessionInternal(getDeviceId());
+        //update remote config_ values after id change if automatic update is enabled
+        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
+
+        _cly.moduleSessions.endSessionInternal();
 
         //remove all consent
         _cly.moduleConsent.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
@@ -143,6 +146,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         //clear automated star rating session values because now we have a new user
         _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal();
+        _cly.notifyDeviceIdChange();
     }
 
     /**
@@ -152,17 +156,16 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
      * @param deviceId new device id
      */
     void changeDeviceIdWithMergeInternal(@NonNull String deviceId) {
-        if ("".equals(deviceId)) {
+        if (deviceId.isEmpty()) {
             L.e("changeDeviceIdWithMergeInternal, provided device ID can't be empty string");
             return;
         }
 
-        //todo finish implementing remaining changes and uncomment this
-        //if(deviceIdInstance.getCurrentId().equals(deviceId)) {
-        //    //if we are attempting to change the device ID to the same ID, do nothing
-        //    L.w("[ModuleDeviceId] changeDeviceIdWithMergeInternal, We are attempting to change the device ID to the same ID, request will be ignored");
-        //    return;
-        //}
+        if (deviceIdInstance.getCurrentId().equals(deviceId)) {
+            //if we are attempting to change the device ID to the same ID, do nothing
+            L.w("[ModuleDeviceId] changeDeviceIdWithMergeInternal, We are attempting to change the device ID to the same ID, request will be ignored");
+            return;
+        }
 
         if (isTemporaryIdEnabled() || requestQueueProvider.queueContainsTemporaryIdItems()) {
             //if we are in temporary ID mode or
@@ -186,9 +189,35 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
             //update remote config_ values after id change if automatic update is enabled
-            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(false);
+            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
+            requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId());
+            deviceIdInstance.changeToCustomId(deviceId);
+            _cly.notifyDeviceIdChange();
+        }
+    }
 
-            requestQueueProvider.changeDeviceId(deviceId, _cly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
+    private void setIDInternal(String newDeviceID) {
+        if (Utils.isNullOrEmpty(newDeviceID)) {
+            L.w("[ModuleDeviceId] setID, Empty id passed to setID method");
+            return;
+        }
+
+        if (deviceIdInstance.getCurrentId() != null && deviceIdInstance.getCurrentId().equals(newDeviceID)) {
+            L.w("[ModuleDeviceId] setID, Same id passed to setID method, ignoring");
+            return;
+        }
+
+        DeviceIdType currentType = deviceIdInstance.getType();
+
+        if (currentType.equals(DeviceIdType.DEVELOPER_SUPPLIED)) {
+            // an ID was provided by the host app previously
+            // we can assume that a device ID change with merge was executed previously
+            // now we change it without merging
+            changeDeviceIdWithoutMergeInternal(newDeviceID);
+        } else {
+            // SDK generated ID
+            // we change device ID with merge so that data is combined
+            changeDeviceIdWithMergeInternal(newDeviceID);
         }
     }
 
@@ -306,6 +335,20 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
                 L.d("[DeviceId] Calling 'getDeviceID'");
 
                 return getDeviceId();
+            }
+        }
+
+        /**
+         * Sets device ID according to the device ID Type.
+         * If previous ID was Developer Supplied sets it without merge, otherwise with merge.
+         *
+         * @param newDeviceID device id to set
+         */
+        public void setID(String newDeviceID) {
+            synchronized (_cly) {
+                L.d("[DeviceId] Calling 'setID'");
+
+                setIDInternal(newDeviceID);
             }
         }
 

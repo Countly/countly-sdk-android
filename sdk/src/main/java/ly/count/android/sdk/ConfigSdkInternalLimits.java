@@ -4,6 +4,7 @@ public class ConfigSdkInternalLimits {
     //SDK internal limits
     protected Integer maxKeyLength;
     protected Integer maxValueSize;
+    protected int maxValueSizePicture = 4096;
     protected Integer maxSegmentationValues;
     protected Integer maxBreadcrumbCount;
     protected Integer maxStackTraceLinesPerThread;

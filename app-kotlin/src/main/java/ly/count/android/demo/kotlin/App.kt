@@ -5,18 +5,19 @@ import android.util.Log
 import ly.count.android.sdk.Countly
 import ly.count.android.sdk.CountlyConfig
 
-//import ly.count.android.sdk.DeviceIdType
-
+/**
+ * Main Application class
+ */
 class App : Application() {
-  val COUNTLY_SERVER_URL = "https://your.server.ly"
-  val COUNTLY_APP_KEY = "YOUR_APP_KEY"
+  private val COUNTLY_SERVER_URL = "https://your.server.ly"
+  private val COUNTLY_APP_KEY = "YOUR_APP_KEY"
   override fun onCreate() {
     super.onCreate()
-    
+
     if (COUNTLY_SERVER_URL == "https://your.server.ly" || COUNTLY_APP_KEY == "YOUR_APP_KEY") {
       Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY")
       return
-    }    
+    }
 
     val countlyConfig = CountlyConfig(
       this,

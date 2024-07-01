@@ -229,7 +229,7 @@ public class DeviceInfoTests {
         json.put("_has_hinge", regularDeviceInfo.mp.hasHinge(TestUtils.getContext()));
         json.put("_device_type", regularDeviceInfo.mp.getDeviceType(TestUtils.getContext()));
 
-        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), null), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), null, new ModuleLog()), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -259,7 +259,7 @@ public class DeviceInfoTests {
         json.put("456", "cc");
         json.put("Test", "aa");
 
-        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), metricOverride, new ModuleLog()), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }
@@ -291,7 +291,7 @@ public class DeviceInfoTests {
         json.put("_device_type", regularDeviceInfo.mp.getDeviceType(TestUtils.getContext()));
         json.put("asd", "123");
 
-        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), metricOverride), "UTF-8");
+        String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), metricOverride, new ModuleLog()), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
     }

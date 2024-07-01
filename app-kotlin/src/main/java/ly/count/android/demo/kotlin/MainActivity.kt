@@ -7,10 +7,11 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupActionBarWithNavController
 import ly.count.android.demo.kotlin.databinding.ActivityMainBinding
-
 import ly.count.android.sdk.Countly
-import ly.count.android.sdk.CountlyConfig
 
+/**
+ * Main Activity
+ */
 class MainActivity : AppCompatActivity() {
   private lateinit var navController: NavController
 

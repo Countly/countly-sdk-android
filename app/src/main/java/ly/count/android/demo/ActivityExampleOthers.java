@@ -2,12 +2,11 @@ package ly.count.android.demo;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.AttributionIndirectKey;
 import ly.count.android.sdk.Countly;
 import org.json.JSONArray;
@@ -52,7 +51,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
     }
 
     public void onAddDirectRequestClick(View v) {
-        Map<String, String> requestMap = new HashMap<>();
+        Map<String, String> requestMap = new ConcurrentHashMap<>();
         requestMap.put("city", "Istanbul");
         requestMap.put("country_code", "TR");
         requestMap.put("ip_address", "41.0082,28.9784");
@@ -92,7 +91,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
             events.put(event);
             requestMap.put("events", events.toString());
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e("Countly", "Failed to create JSON object", e);
         }
         Countly.sharedInstance().requestQueue().addDirectRequest(requestMap);
     }
@@ -118,7 +117,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
     }
 
     public void onClickReportIndirectAttribution(View v) {
-        Map<String, String> attributionValues = new HashMap<>();
+        Map<String, String> attributionValues = new ConcurrentHashMap<>();
         attributionValues.put(AttributionIndirectKey.AdvertisingID, GetAdvertisingID());
         Countly.sharedInstance().attribution().recordIndirectAttribution(attributionValues);
     }

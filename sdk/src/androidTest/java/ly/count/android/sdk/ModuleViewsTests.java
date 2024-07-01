@@ -4,13 +4,20 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.internal.util.collections.Sets;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
@@ -1096,6 +1103,7 @@ public class ModuleViewsTests {
         Map<String, Object> globalSegm = new HashMap<>();
         globalSegm.put("0", 4);
         globalSegm.put("1", "v1");
+        globalSegm.put("long", Long.MAX_VALUE);
 
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
         Countly mCountly = new Countly().init(cc);
@@ -1370,7 +1378,368 @@ public class ModuleViewsTests {
         clearInvocations(ep);
     }
 
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_setGlobalSegmentation_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+        config.setGlobalViewSegmentation(TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5));
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a");
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        ClearFillSegmentationViewStart(viewStartSegm, "a", true, TestUtils.map("d", 4, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+    }
+
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_startEvent_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a", TestUtils.map("d", 4, "e", 5, "f", 6));
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        ClearFillSegmentationViewStart(viewStartSegm, "a", true, TestUtils.map("f", 6, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+    }
+
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation
+     * Also validate that the global segmentation is updated correctly
+     * when the view is stopped
+     * "setGlobalViewSegmentation" call from the views interface is used
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimits_setGlobalSegmentation_maxSegmentationValues_interface() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a");
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        ClearFillSegmentationViewStart(viewStartSegm, "a", true);
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+
+        countly.views().setGlobalViewSegmentation(TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5));
+        countly.views().stopViewWithName("a");
+        Map<String, Object> viewEndSegm = TestUtils.map();
+        ClearFillSegmentationViewEnd(viewEndSegm, "a", TestUtils.map("d", 4, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewEndSegm, 1, 0.0d, 0.0d, 1);
+    }
     //test for sessions when consent removed
+
+    /**
+     * global seg : avu=4, avi=v1 after truncation: av=v1
+     * Test the truncation of view name and segmentation keys
+     * key length: 2
+     * Global view segmentation values will be truncated and merged to one because they have same start
+     * View name also will be truncated to expected name "VI"
+     * On stop view, global segmentation will not be overridden by the given segmentation after truncation
+     * on stop seg: satalite=hoho, avu=25 after truncation: sa=hoho, av=v1
+     * None of the countly view segmentation keys will be truncated nor overridden
+     */
+    @Test
+    public void internalLimit_recordViewsWithSegmentation() throws JSONException {
+        Map<String, Object> globalSegm = new ConcurrentHashMap<>();
+        globalSegm.put("avu", 4);
+        globalSegm.put("avi", "v1");
+
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        cc.sdkInternalLimits.setMaxKeyLength(2);
+        cc.setEventQueueSizeToSend(1);
+        Countly mCountly = new Countly().init(cc);
+
+        Map<String, Object> givenStartSegm = new ConcurrentHashMap<>();
+        givenStartSegm.put("sop", 4);
+        String viewID = mCountly.views().startView("VIEW", givenStartSegm);
+
+        Map<String, Object> expectedSegm = new ConcurrentHashMap<>();
+        ClearFillSegmentationViewStart(expectedSegm, "VI", true);
+        expectedSegm.putAll(TestUtils.map("av", "v1", "so", 4));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0);
+
+        mCountly.views().setGlobalViewSegmentation(TestUtils.map("sunburn", true, "sunflower", "huh"));
+
+        Map<String, Object> endSegm = new ConcurrentHashMap<>();
+        endSegm.put("satellite", "hoho");
+        endSegm.put("avu", 25);
+        mCountly.views().stopViewWithID(viewID, endSegm);
+        ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
+        expectedSegm.putAll(TestUtils.map("av", 25, "sa", "hoho", "su", "huh"));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
+    }
+
+    /**
+     * global seg : avu=4, avi=v1 after truncation: av=v1
+     * Test the truncation of view name and segmentation keys and values
+     * key length: 2
+     * value size: 2
+     * segment values: 4
+     * Global view segmentation values will be truncated and merged to one because they have same start
+     * View name also will be truncated to expected name "VI"
+     * Because key-value deletion is not exact for the max segmentation values, expected segmentation for view start
+     * taken from the first run of the test and it is "yo"="wo", "so"="ma", "av"="v1", "i_"="i_"
+     * In here global segmentation values are not gone but in the end view global view segmentation values are gone due to
+     * the max segmentation values
+     */
+    @Test
+    public void internalLimit_recordViewsWithSegmentation_maxValueSize() throws JSONException {
+        Map<String, Object> globalSegm = new HashMap<>();
+        globalSegm.put("avu", 4);
+        globalSegm.put("avi", "v1");
+
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, globalSegm);
+        cc.sdkInternalLimits.setMaxKeyLength(2).setMaxValueSize(2).setMaxSegmentationValues(4);
+        cc.setEventQueueSizeToSend(1);
+        Countly mCountly = new Countly().init(cc);
+
+        Map<String, Object> givenStartSegm = new HashMap<>();
+        givenStartSegm.put("sop", 4);
+        givenStartSegm.put("sophie", "macaroni");
+        givenStartSegm.put("dont", "give_up");
+        givenStartSegm.put("i_wish", "i_could");
+        givenStartSegm.put("you", "would");
+        String viewID = mCountly.views().startView("VIEW", givenStartSegm);
+
+        Map<String, Object> expectedSegm = new HashMap<>();
+        ClearFillSegmentationViewStart(expectedSegm, "VI", true);
+        expectedSegm.putAll(TestUtils.map("yo", "wo", "so", "ma", "av", "v1", "i_", "i_"));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0);
+
+        mCountly.views().setGlobalViewSegmentation(TestUtils.map("go", 45, "gone", 567.78f));
+
+        Map<String, Object> endSegm = new HashMap<>();
+        endSegm.put("satellite", "hoho");
+        endSegm.put("avu", 25);
+        endSegm.put("hara", true);
+        endSegm.put("happy_life", false);
+        endSegm.put("nope", 123);
+        mCountly.views().stopViewWithID(viewID, endSegm);
+        ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
+        expectedSegm.putAll(TestUtils.map("av", 25, "no", 123, "sa", "ho", "ha", true));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
+    }
+
+    /**
+     * "startView" with Array segmentations
+     * Validate that all primitive types arrays are successfully recorded
+     * And validate that Object arrays are not recorded
+     * But Generic type of Object array which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_validateSupportedArrays() throws JSONException {
+        int[] arr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        boolean[] arrB = { true, false, true, false, true, false, true, false, true, false };
+        String[] arrS = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        long[] arrL = { Long.MAX_VALUE, Long.MIN_VALUE };
+        double[] arrD = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Long[] arrLO = { Long.MAX_VALUE, Long.MIN_VALUE };
+        Double[] arrDO = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Boolean[] arrBO = { Boolean.TRUE, Boolean.FALSE };
+        Integer[] arrIO = { Integer.MAX_VALUE, Integer.MIN_VALUE };
+        Object[] arrObj = { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
+        Object[] arrObjStr = { "1", "1", "1.1d", "true", "1.1f", "Long.MAX_VALUE" };
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        countly.views().startView("test", segmentation);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map();
+        ClearFillSegmentationViewStart(expectedSegmentation, "test", true);
+        expectedSegmentation.putAll(TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrL", new JSONArray(arrL),
+            "arrD", new JSONArray(arrD),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO)
+        ));
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegmentation, 0);
+    }
+
+    /**
+     * "startView" with List segmentations
+     * Validate that all primitive types Lists are successfully recorded
+     * And validate that List of Objects is not recorded
+     * But Generic type of Object list which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_validateSupportedLists() throws JSONException {
+        List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        List<Boolean> arrB = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
+        List<String> arrS = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+        List<Long> arrLO = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
+        List<Double> arrDO = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
+        List<Boolean> arrBO = Arrays.asList(Boolean.TRUE, Boolean.FALSE);
+        List<Integer> arrIO = Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE);
+        List<Object> arrObj = Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE);
+        List<Object> arrObjStr = Arrays.asList("1", "1", "1.1d", "true", "Long.MAX_VALUE");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        // Create segmentation using maps with lists
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        countly.views().startView("test", segmentation);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map();
+        ClearFillSegmentationViewStart(expectedSegmentation, "test", true);
+
+        // Prepare expected segmentation with JSONArrays
+        expectedSegmentation.putAll(TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO),
+            "arrObjStr", new JSONArray(arrObjStr)
+        ));
+
+        // Validate the recorded event with expected segmentation
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegmentation, 0);
+    }
+
+    /**
+     * "startView" with JSONArray segmentations
+     * Validate that all primitive types JSONArrays are successfully recorded
+     * And validate and JSONArray of Objects is not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_validateSupportedJSONArrays() throws JSONException {
+        JSONArray arr = new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        JSONArray arrB = new JSONArray(Arrays.asList(true, false, true, false, true, false, true, false, true, false));
+        JSONArray arrS = new JSONArray(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
+        JSONArray arrL = new JSONArray(Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE));
+        JSONArray arrD = new JSONArray(Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE));
+        JSONArray arrBO = new JSONArray(Arrays.asList(Boolean.TRUE, Boolean.FALSE));
+        JSONArray arrIO = new JSONArray(Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE));
+        JSONArray arrObj = new JSONArray(Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE));
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        // Create segmentation using maps with lists
+        Map<String, Object> segmentation = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj
+        );
+
+        countly.views().startView("test", segmentation);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map();
+        ClearFillSegmentationViewStart(expectedSegmentation, "test", true);
+
+        // Prepare expected segmentation with JSONArrays
+        expectedSegmentation.putAll(TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO
+        ));
+
+        // Validate the recorded event with expected segmentation
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegmentation, 0);
+    }
+
+    /**
+     * "startView" with invalid data types
+     * Validate that unsupported data types are not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_unsupportedDataTypesSegmentation() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "a", TestUtils.map(),
+            "b", TestUtils.json(),
+            "c", new Object(),
+            "d", Sets.newSet(),
+            "e", Mockito.mock(ModuleLog.class)
+        );
+
+        countly.views().startView("test", segmentation);
+
+        Map<String, Object> expectedSegmentation = TestUtils.map();
+        ClearFillSegmentationViewStart(expectedSegmentation, "test", true);
+
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegmentation, 0);
+    }
 
     //todo extract orientation tests
 }

@@ -2,11 +2,9 @@ package ly.count.android.demo;
 
 import android.os.Bundle;
 import android.view.View;
-
 import androidx.appcompat.app.AppCompatActivity;
-import java.util.HashMap;
 import java.util.Map;
-
+import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.Countly;
 
 @SuppressWarnings({ "UnusedParameters", "unused" })
@@ -23,7 +21,7 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
     }
 
     public void onClickRecordViewWithSegmentationA(View v) {
-        Map<String, Object> viewSegmentation = new HashMap<>();
+        Map<String, Object> viewSegmentation = new ConcurrentHashMap<>();
 
         viewSegmentation.put("Cats", 123);
         viewSegmentation.put("Moons", 1.8d);
@@ -37,7 +35,7 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
     }
 
     public void onClickRecordViewWithSegmentationB(View v) {
-        Map<String, Object> viewSegmentation = new HashMap<>();
+        Map<String, Object> viewSegmentation = new ConcurrentHashMap<>();
 
         viewSegmentation.put("Dogs", 345);
         viewSegmentation.put("Sun", 4.33d);
@@ -51,7 +49,7 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
     }
 
     public void onClickRecordViewWithSegmentationC(View v) {
-        Map<String, Object> viewSegmentation = new HashMap<>();
+        Map<String, Object> viewSegmentation = new ConcurrentHashMap<>();
 
         viewSegmentation.put("Fish", 7);
         viewSegmentation.put("Jupiter", 9.98d);

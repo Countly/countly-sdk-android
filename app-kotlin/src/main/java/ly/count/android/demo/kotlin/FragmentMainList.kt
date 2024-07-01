@@ -9,6 +9,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import ly.count.android.demo.kotlin.databinding.FragmentMainListBinding
 
+/**
+ * Fragment for the main list
+ */
 class FragmentMainList : Fragment() {
   private var _binding: FragmentMainListBinding? = null
 

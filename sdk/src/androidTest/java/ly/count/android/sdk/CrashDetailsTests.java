@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,22 +90,6 @@ public class CrashDetailsTests {
         }
     }
 
-    @Test
-    public void getCustomSegmentsJson() throws JSONException {
-        Map<String, Object> cSeg = TestUtils.createMapString(5);
-
-        JSONObject jobj = DeviceInfo.getCustomSegmentsJson(cSeg);
-
-        Assert.assertEquals(cSeg.size(), jobj.length());
-
-        for (Map.Entry<String, Object> entry : cSeg.entrySet()) {
-            String key = entry.getKey();
-            String value = (String) entry.getValue();
-
-            Assert.assertEquals(value, jobj.get(key));
-        }
-    }
-
     /**
      * Making sure that retrieving crash metrics takes into account the provided metric overrides
      * It should only set the common values and not any other
@@ -117,13 +100,13 @@ public class CrashDetailsTests {
     public void crashMetrics_override() throws JSONException {
         boolean isNativeCrash = false;
 
-        JSONObject cData = regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, null);
-        Assert.assertEquals(regularDeviceInfo.mp.getDevice(), cData.getString("_device"));
-        Assert.assertEquals(regularDeviceInfo.mp.getOS(), cData.getString("_os"));
-        Assert.assertEquals(regularDeviceInfo.mp.getOSVersion(), cData.getString("_os_version"));
-        Assert.assertEquals(regularDeviceInfo.mp.getResolution(TestUtils.getContext()), cData.getString("_resolution"));
-        Assert.assertEquals(regularDeviceInfo.mp.getAppVersion(TestUtils.getContext()), cData.getString("_app_version"));
-        Assert.assertEquals(regularDeviceInfo.mp.getManufacturer(), cData.getString("_manufacturer"));
+        Map<String, Object> cData = regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, null, new ModuleLog());
+        Assert.assertEquals(regularDeviceInfo.mp.getDevice(), cData.get("_device"));
+        Assert.assertEquals(regularDeviceInfo.mp.getOS(), cData.get("_os"));
+        Assert.assertEquals(regularDeviceInfo.mp.getOSVersion(), cData.get("_os_version"));
+        Assert.assertEquals(regularDeviceInfo.mp.getResolution(TestUtils.getContext()), cData.get("_resolution"));
+        Assert.assertEquals(regularDeviceInfo.mp.getAppVersion(TestUtils.getContext()), cData.get("_app_version"));
+        Assert.assertEquals(regularDeviceInfo.mp.getManufacturer(), cData.get("_manufacturer"));
 
         Map<String, String> metricOverride = new HashMap<>();
         metricOverride.put("a", "1");
@@ -135,19 +118,19 @@ public class CrashDetailsTests {
         metricOverride.put("_app_version", "r12");
         metricOverride.put("_manufacturer", "t12");
 
-        JSONObject cData2 = regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride);
-        Assert.assertFalse(cData2.has("a"));
-        Assert.assertFalse(cData2.has("a1"));
-        Assert.assertEquals(metricOverride.get("_device"), cData2.getString("_device"));
-        Assert.assertEquals(metricOverride.get("_os"), cData2.getString("_os"));
-        Assert.assertEquals(metricOverride.get("_os_version"), cData2.getString("_os_version"));
-        Assert.assertEquals(metricOverride.get("_resolution"), cData2.getString("_resolution"));
-        Assert.assertEquals(metricOverride.get("_app_version"), cData2.getString("_app_version"));
-        Assert.assertEquals(metricOverride.get("_manufacturer"), cData2.getString("_manufacturer"));
+        Map<String, Object> cData2 = regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride, new ModuleLog());
+        Assert.assertFalse(cData2.containsKey("a"));
+        Assert.assertFalse(cData2.containsKey("a1"));
+        Assert.assertEquals(metricOverride.get("_device"), cData2.get("_device"));
+        Assert.assertEquals(metricOverride.get("_os"), cData2.get("_os"));
+        Assert.assertEquals(metricOverride.get("_os_version"), cData2.get("_os_version"));
+        Assert.assertEquals(metricOverride.get("_resolution"), cData2.get("_resolution"));
+        Assert.assertEquals(metricOverride.get("_app_version"), cData2.get("_app_version"));
+        Assert.assertEquals(metricOverride.get("_manufacturer"), cData2.get("_manufacturer"));
     }
 
     private CrashData createCrashData(String errorText, boolean nonfatal, Map<String, Object> crashSegmentation, @NonNull List<String> breadcrumbs, @Nullable Map<String, String> metricOverride, boolean isNativeCrash) {
-        return new CrashData(errorText, crashSegmentation, breadcrumbs, regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride), !nonfatal);
+        return new CrashData(errorText, crashSegmentation, breadcrumbs, regularDeviceInfo.getCrashMetrics(TestUtils.getContext(), isNativeCrash, metricOverride, new ModuleLog()), !nonfatal);
     }
 
     void assertCrashData(String cData, String error, boolean nonfatal, boolean isNativeCrash) {

@@ -20,15 +20,9 @@ public class ModuleUserProfile extends ModuleBase {
     static final String GENDER_KEY = "gender";
     static final String BYEAR_KEY = "byear";
     static final String CUSTOM_KEY = "custom";
-
     String[] namedFields = { NAME_KEY, USERNAME_KEY, EMAIL_KEY, ORG_KEY, PHONE_KEY, PICTURE_KEY, PICTURE_PATH_KEY, GENDER_KEY, BYEAR_KEY };
-
     boolean isSynced = true;
-
-    JSONObject dataStore = new JSONObject();
-
     UserProfile userProfileInterface;
-
     //fields from the old object
     String name;
     String username;
@@ -155,6 +149,7 @@ public class ModuleUserProfile extends ModuleBase {
 
             JSONObject ob;
             if (custom != null) {
+                UtilsInternalLimits.truncateSegmentationValues(custom, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleUserProfile] toJSON", _cly.L);
                 ob = new JSONObject(custom);
             } else {
                 ob = new JSONObject();
@@ -166,7 +161,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
             json.put(CUSTOM_KEY, ob);
         } catch (JSONException e) {
-            Countly.sharedInstance().L.w("[UserData] Got exception converting an UserData to JSON", e);
+            L.w("[UserData] Got exception converting an UserData to JSON", e);
         }
 
         return json;
@@ -204,7 +199,7 @@ public class ModuleUserProfile extends ModuleBase {
                         }
                     }
                 } catch (JSONException e) {
-                    Countly.sharedInstance().L.w("[ModuleUserProfile] Got exception converting an Custom Json to Custom User data", e);
+                    L.w("[ModuleUserProfile] Got exception converting an Custom Json to Custom User data", e);
                 }
             }
         }
@@ -220,26 +215,35 @@ public class ModuleUserProfile extends ModuleBase {
     void modifyCustomData(String key, Object value, String mod) {
         try {
             if (!(value instanceof Double || value instanceof Integer || value instanceof String)) {
-                Countly.sharedInstance().L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
+                L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
                 return;
+            }
+
+            Object truncatedValue;
+            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            if (value instanceof String) {
+                truncatedValue = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            } else {
+                truncatedValue = value;
             }
 
             if (customMods == null) {
                 customMods = new HashMap<>();
             }
+
             JSONObject ob;
             if (!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
-                ob.put(mod, value);
+                ob.put(mod, truncatedValue);
             } else {
-                if (customMods.containsKey(key)) {
-                    ob = customMods.get(key);
+                if (customMods.containsKey(truncatedKey)) {
+                    ob = customMods.get(truncatedKey);
                 } else {
                     ob = new JSONObject();
                 }
-                ob.accumulate(mod, value);
+                ob.accumulate(mod, truncatedValue);
             }
-            customMods.put(key, ob);
+            customMods.put(truncatedKey, ob);
             isSynced = false;
         } catch (JSONException e) {
             e.printStackTrace();
@@ -253,8 +257,8 @@ public class ModuleUserProfile extends ModuleBase {
      * @param data
      */
     void setPropertiesInternal(@NonNull Map<String, Object> data) {
-        if (data.size() == 0) {
-            Countly.sharedInstance().L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
+        if (data.isEmpty()) {
+            L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
             return;
         }
 
@@ -265,7 +269,22 @@ public class ModuleUserProfile extends ModuleBase {
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
+
+            if (value == null) {
+                L.w("[ModuleUserProfile] setPropertiesInternal, provided value for key [" + key + "] is 'null'");
+                continue;
+            }
+
             boolean isNamed = false;
+
+            // limit to the picture path is applied when request is being made in the ConnectionProcessor
+            if (value instanceof String) {
+                if (key.equals(PICTURE_PATH_KEY) || key.equals(PICTURE_KEY)) {
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSizePicture, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                } else {
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                }
+            }
 
             for (String namedField : namedFields) {
                 if (namedField.equals(key)) {
@@ -277,7 +296,8 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             if (!isNamed) {
-                dataCustomFields.put(key, value.toString());
+                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                dataCustomFields.put(truncatedKey, value.toString());
             }
         }
 
@@ -288,6 +308,7 @@ public class ModuleUserProfile extends ModuleBase {
         if (custom == null) {
             custom = new HashMap<>();
         }
+
         custom.putAll(dataCustomFields);
 
         isSynced = false;
@@ -320,7 +341,7 @@ public class ModuleUserProfile extends ModuleBase {
         if (picturePath != null) {
             File sourceFile = new File(picturePath);
             if (!sourceFile.isFile()) {
-                Countly.sharedInstance().L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
+                L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
                 picturePath = null;
             }
         }
@@ -334,20 +355,28 @@ public class ModuleUserProfile extends ModuleBase {
             try {
                 byear = Integer.parseInt(data.get(ModuleUserProfile.BYEAR_KEY));
             } catch (NumberFormatException e) {
-                Countly.sharedInstance().L.w("[UserData] Incorrect byear number format");
+                L.w("[UserData] Incorrect byear number format");
                 byear = 0;
             }
         }
     }
 
     void saveInternal() {
-        Countly.sharedInstance().L.d("[ModuleUserProfile] saveInternal");
-        requestQueueProvider.sendUserData(getDataForRequest());
+        L.d("[ModuleUserProfile] saveInternal");
+        String cachedUserData = getDataForRequest();
+        if (cachedUserData.isEmpty()) {
+            L.d("[ModuleUserProfile] saveInternal, no user data to save");
+            return;
+        }
+
+        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+
+        requestQueueProvider.sendUserData(cachedUserData);
         clearInternal();
     }
 
     void clearInternal() {
-        Countly.sharedInstance().L.d("[ModuleUserProfile] clearInternal");
+        L.d("[ModuleUserProfile] clearInternal");
 
         name = null;
         username = null;
@@ -449,8 +478,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and add value to array
+        /**
+         * Create array property, if property does not exist and add value to array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to add to array
          */
@@ -460,8 +491,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and add value to array, only if value is not yet in the array
+        /**
+         * Create array property, if property does not exist and add value to array, only if value is not yet in the array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to add to array
          */
@@ -471,8 +504,10 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /* Create array property, if property does not exist and remove value from array
+        /**
+         * Create array property, if property does not exist and remove value from array
          * You can only use it on array properties or properties that do not exist yet
+         *
          * @param key String with property name for array property
          * @param value String with value to remove from array
          */
@@ -524,7 +559,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
         }
 
-        /*
+        /**
          * Send provided values to server
          */
         public void save() {

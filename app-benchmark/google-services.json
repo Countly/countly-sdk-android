@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "969412419457",
-    "project_id": "ak-pushtest",
-    "storage_bucket": "ak-pushtest.appspot.com"
+    "project_number": "355395217058",
+    "project_id": "countlydemo-7d8d0",
+    "storage_bucket": "countlydemo-7d8d0.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:969412419457:android:4acfe5ba74a30b59165280",
+        "mobilesdk_app_id": "1:355395217058:android:130d09fdf6bebd941c99fb",
         "android_client_info": {
           "package_name": "ly.count.android.demo"
         }
@@ -20,7 +20,7 @@
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyACld6dIalDlxNK9ZP97jWw13KTnZfLIVY"
+          "current_key": "AIzaSyAYxUHbqnotLwParY0UR_fmhaTgx-ahUbc"
         }
       ],
       "services": {

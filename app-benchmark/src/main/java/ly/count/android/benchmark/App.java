@@ -8,9 +8,9 @@ import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.PerformanceCounterCollector;
 
 public class App extends Application {
-    final String COUNTLY_SERVER_URL = "https://xxx.count.ly";
-    final String COUNTLY_APP_KEY = "YOUR_APP_KEY";
-    final String DEVICE_ID = "YOUR_DEVICE_ID";
+    private final static String COUNTLY_SERVER_URL = "https://xxx.count.ly";
+    private final static String COUNTLY_APP_KEY = "YOUR_APP_KEY";
+    private final static String DEVICE_ID = "YOUR_DEVICE_ID";
 
     public static PerformanceCounterCollector appPcc;
 
@@ -37,7 +37,7 @@ public class App extends Application {
         Benchmark.countlyStore = new CountlyStore(this, new ModuleLog());
     }
 
-    /**
+    /*
      * Benchmark scenario - 1
      * Generate events and not requests: yes
      * wait: yes
@@ -55,9 +55,7 @@ public class App extends Application {
      * 5) send requests
      * 6) wait till all sent
      * 7) print counters
-     */
-
-    /**
+     *
      * Scenario 2
      * RQ size 1000
      * Generate a mix of 1200 requests

@@ -8,6 +8,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import ly.count.android.demo.kotlin.databinding.FragmentSecondListBinding
 
+/**
+ * Fragment for the events list
+ */
 class FragmentCustomEvents : Fragment() {
 
   companion object {

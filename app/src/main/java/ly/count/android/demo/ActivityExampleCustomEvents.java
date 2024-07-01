@@ -2,12 +2,10 @@ package ly.count.android.demo;
 
 import android.os.Bundle;
 import android.view.View;
-
 import androidx.appcompat.app.AppCompatActivity;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
+import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.Countly;
 
 @SuppressWarnings("UnusedParameters")
@@ -36,13 +34,13 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     public void onClickRecordEvent05(View v) {
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("wall", "green");
         Countly.sharedInstance().events().recordEvent("Custom event 5", segmentation, 1, 0, 0);
     }
 
     public void onClickRecordEvent06(View v) {
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("wall", "red");
         segmentation.put("flowers", 3);
         segmentation.put("area", 1.23);
@@ -51,7 +49,7 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     public void onClickRecordEvent07(View v) {
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("wall", "blue");
         segmentation.put("flowers", new Random().nextInt());
         segmentation.put("area", new Random().nextDouble());
@@ -61,7 +59,7 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     public void onClickRecordEvent08(View v) {
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("wall", "yellow");
         Countly.sharedInstance().events().recordEvent("Custom event 8", segmentation, 25, 10, 50);
     }
@@ -82,7 +80,7 @@ public class ActivityExampleCustomEvents extends AppCompatActivity {
     }
 
     public void onClickRecordEvent11(View v) {
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("wall", "orange");
         Countly.sharedInstance().events().recordEvent("Custom event 9", segmentation, 4, 34);
     }
