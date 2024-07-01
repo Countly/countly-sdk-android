@@ -129,7 +129,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         _cly.moduleUserProfile.saveInternal();
 
         //update remote config_ values after id change if automatic update is enabled
-        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(true);
+        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
         _cly.moduleSessions.endSessionInternal();
 
@@ -189,7 +189,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
             //update remote config_ values after id change if automatic update is enabled
-            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange(false);
+            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
             requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId());
             deviceIdInstance.changeToCustomId(deviceId);
             _cly.notifyDeviceIdChange();

@@ -1,14 +1,20 @@
-## 24.4.2
+## 24.7.0
 * ! Minor breaking change ! User properties will now be automatically saved under the following conditions:
   * When an event is recorded
   * During an internal timer tick
   * Upon flushing the event queue
  
-* Mitigated an issue where on consent revoke, remote config values were cleared, not anymore.
-
 * Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
   * String, Integer, int, Boolean, bool, Float, float, Double, double, Long, long
   * Keep in mind that float array will be converted to the double array by the JSONArray
+
+* Mitigated an issue where remote config values caching was changing by device id change, not anymore. It is linked to the configuration "enableRemoteConfigValueCaching" now.
+* Mitigated an issue related to the device ID by creating an internal migration.
+* Resolved a problem where revoked consents were sent after changes without merging.
+* Fixed a bug that caused the device ID to be incorrectly set after changes with merging.
+* Mitigated an issue where on consent revoke, remote config values were cleared, not anymore.
+
+* Change device id with merge not reporting session duration anymore.
 
 ## 24.4.1
 * ! Minor breaking change ! Mitigated an issue where internal SDK limits did not apply
