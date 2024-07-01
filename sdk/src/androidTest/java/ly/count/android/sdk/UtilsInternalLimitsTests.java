@@ -324,7 +324,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(7, segmentation.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
 
         Assert.assertEquals(6, segmentation.size());
         Assert.assertEquals(aa1, segmentation.get("aa1"));
@@ -350,7 +350,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(9, segmentation.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
 
         Assert.assertEquals(6, segmentation.size());
         Assert.assertEquals(aa1, segmentation.get("aa1"));
@@ -369,7 +369,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(2, segmentation.size());
 
-        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertFalse(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
         Assert.assertEquals(2, segmentation.size());
         Assert.assertEquals(aa1, segmentation.get("aa1"));
         Assert.assertEquals(aa2, segmentation.get("aa2"));
@@ -393,7 +393,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(12, segmentation.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
         Assert.assertEquals(11, segmentation.size());
         Assert.assertEquals(aa1, segmentation.get("aa1"));
         Assert.assertEquals(aa2, segmentation.get("aa2"));
@@ -422,7 +422,7 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertEquals(8, segmentation.size());
 
-        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation));
+        Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
         Assert.assertEquals(7, segmentation.size());
         Assert.assertEquals(empty, segmentation.get("empty"));
         Assert.assertEquals(arrInt, segmentation.get("arrInt"));
