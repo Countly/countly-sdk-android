@@ -37,7 +37,7 @@ android {
             path file('src/main/cpp/CMakeLists.txt')
         }
     }
-    ndkVersion '23.1.7779620'
+    ndkVersion '21.0.6113669'
 
     // Use this if you are working with sdk-native subproject instead of maven library.
     // Change also the dependency config below.
