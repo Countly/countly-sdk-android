@@ -3,11 +3,9 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 
@@ -358,31 +356,25 @@ public class UtilsInternalLimits {
             return true;
         } else if (value instanceof List) {
             List<?> list = (List<?>) value;
-            Set<String> classNames = new HashSet<>();
-            // checking for multiple classes because we cannot access generic type of the list
             for (Object element : list) {
                 if (!isSupportedDataTypeBasic(element)) {
                     return false;
                 }
-                classNames.add(element.getClass().getName());
             }
-            // if it had multiple classes, it's not supported
-            return classNames.size() <= 1;
+            return true;
         } else if (value != null && value.getClass().isArray()) {
             Class<?> componentType = value.getClass().getComponentType();
             return componentType == String.class || componentType == Integer.class || componentType == Double.class || componentType == Boolean.class || componentType == Float.class || componentType == Long.class
                 || componentType == int.class || componentType == double.class || componentType == boolean.class || componentType == float.class || componentType == long.class;
         } else if (value instanceof JSONArray) {
             JSONArray jsonArray = (JSONArray) value;
-            Set<String> classNames = new HashSet<>();
             for (int i = 0; i < jsonArray.length(); i++) {
                 Object element = jsonArray.opt(i);
                 if (!isSupportedDataTypeBasic(element)) {
                     return false;
                 }
-                classNames.add(element.getClass().getName());
             }
-            return classNames.size() <= 1;
+            return true;
         }
         return false;
     }
