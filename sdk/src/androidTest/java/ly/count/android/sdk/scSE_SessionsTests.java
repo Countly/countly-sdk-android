@@ -202,7 +202,6 @@ public class scSE_SessionsTests {
      * *back to foreground*
      * --- Expected Requests ---
      * Check request queue and verify:
-     * 1. too lazy to calculate just let us know and lets verify together
      */
     @Test
     public void SE_204_CNR_A_id_change() throws InterruptedException {
@@ -211,15 +210,22 @@ public class scSE_SessionsTests {
 
         flowAutomaticSessions(countly);
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(12, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 1);
         validateSessionEndRequest(2, 2, "newID");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 3);
-        validateSessionBeginRequest(4, "newID_2");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 5);
-        validateSessionEndRequest(6, null, "newID");
-        validateSessionBeginRequest(7, "newID");
+
+        validateSessionBeginRequest(3, "newID_2");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 4);
+        validateSessionEndRequest(5, 2, "newID");
+
+        validateSessionBeginRequest(6, "newID_2");
+        validateSessionEndRequest(7, 1, "newID_2");
+
+        validateSessionBeginRequest(8, "newID_2");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 9);
+        validateSessionEndRequest(10, null, "newID");
+        validateSessionBeginRequest(11, "newID");
     }
 
     /**
