@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -79,6 +80,9 @@ class TransparentActivity extends Activity {
      */
     protected static void showActivity(@NonNull Context context, @NonNull TransparentActivityConfig config) {
         assert context != null;
+        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+        int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        calculateSize(screenWidth, screenHeight, config);
 
         Intent intent = new Intent(context, TransparentActivity.class);
         intent.putExtra(X_KEY, config.x);
@@ -88,5 +92,53 @@ class TransparentActivity extends Activity {
         intent.putExtra(URI_KEY, config.url);
 
         context.startActivity(intent);
+    }
+
+    private static void calculateSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
+        if (config.xPercent != null) {
+            config.x = (int) (screenWidth * adjustPercent(config.xPercent));
+        }
+        if (config.yPercent != null) {
+            config.y = (int) (screenHeight * adjustPercent(config.yPercent));
+        }
+
+        int remainingWidth = screenWidth - (config.x != null ? config.x : 0);
+        int remainingHeight = screenHeight - (config.y != null ? config.y : 0);
+
+        if (config.widthPercent != null) {
+            config.width = (int) (remainingWidth * adjustPercent(config.widthPercent));
+            config.width = Math.min(config.width, remainingWidth);
+        }
+
+        if (config.heightPercent != null) {
+            config.height = (int) (remainingHeight * adjustPercent(config.heightPercent));
+            config.height = Math.min(config.height, remainingHeight);
+        }
+
+        //fallback to remaining screen
+        if (config.width == null) {
+            config.width = remainingWidth;
+        }
+        if (config.height == null) {
+            config.height = remainingHeight;
+        }
+
+        //fallback to top left corner
+        if (config.x == null) {
+            config.x = 0;
+        }
+        if (config.y == null) {
+            config.y = 0;
+        }
+    }
+
+    private static Double adjustPercent(Double percent) {
+        if (percent > 1 || percent < -1) {
+            percent = percent % 1;
+        }
+        if (percent < 0) {
+            percent = 1 + percent;
+        }
+        return percent;
     }
 }
