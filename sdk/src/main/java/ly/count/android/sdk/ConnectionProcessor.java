@@ -123,6 +123,14 @@ public class ConnectionProcessor implements Runnable {
 
         final URL url = new URL(urlStr);
         final HttpURLConnection conn;
+
+        long pccTsOpenURLConnection = 0L;
+        long pccTsConfigureConnection = 0L;
+        long pccTsStartHeaderFieldSize = 0L;
+        if (pcc != null) {
+            pccTsOpenURLConnection = UtilsTime.getNanoTime();
+        }
+
         if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
             conn = (HttpURLConnection) url.openConnection();
         } else {
@@ -130,6 +138,13 @@ public class ConnectionProcessor implements Runnable {
             c.setSSLSocketFactory(sslContext_.getSocketFactory());
             conn = c;
         }
+
+        if (pcc != null) {
+            long openUrlConnectionTime = UtilsTime.getNanoTime() - pccTsOpenURLConnection;
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_01_OpenURLConnection", openUrlConnectionTime);
+            pccTsConfigureConnection = UtilsTime.getNanoTime();
+        }
+
         conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
         conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
         conn.setUseCaches(false);
@@ -197,6 +212,11 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_02_ConfigureConnection", UtilsTime.getNanoTime() - pccTsConfigureConnection);
+            pccTsStartHeaderFieldSize = UtilsTime.getNanoTime();
+        }
+
         //calculating header field size
         try {
             //just after init, because of background operations, this might fail
@@ -212,7 +232,11 @@ public class ConnectionProcessor implements Runnable {
                 approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
             }
         } catch (Exception e) {
-            L.e("[ConnectionProcessor] urlConnectionForServerRequest, exception while calculating header field size: " + e);
+            L.e("[Connection Processor] urlConnectionForServerRequest, exception while calculating header field size: " + e);
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForServerRequest_03_HeaderFieldSize", UtilsTime.getNanoTime() - pccTsStartHeaderFieldSize);
         }
 
         L.v("[ConnectionProcessor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
@@ -279,16 +303,17 @@ public class ConnectionProcessor implements Runnable {
 
     @Override
     public void run() {
+        long wholeQueueStart = UtilsTime.getNanoTime();
         while (true) {
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
             long pccTsStartTempIdCheck = 0L;
             long pccTsStartEndpointCheck = 0L;
             long pccTsStartOldRCheck = 0L;
-            long pccTsStartGetURLConnection = 0L;
-            long pccTsStartDeviceIDOverride = 0L;
+            long pccTsStartGetURLConnection;
             long pccTsStartRemainingRequests = 0L;
-            long pccTsStartHandlingResponse = 0L;
+            long pccTsReadingStream;
+            long pccTsStartHandlingResponse;
 
             if (!configProvider_.getNetworkingEnabled()) {
                 L.w("[ConnectionProcessor] run, Networking config is disabled, request queue skipped");
@@ -296,22 +321,15 @@ public class ConnectionProcessor implements Runnable {
             }
 
             //------------------------
-
-            if (pcc != null) {
-                pccTsStartWholeQueue = UtilsTime.getNanoTime();
-            }
-
             // get stored requests
             final String[] storedRequests = storageProvider_.getRequests();
             int storedRequestCount = storedRequests == null ? 0 : storedRequests.length;
 
-            if (L.logEnabled()) {
-                String msg = "[ConnectionProcessor] Starting to run, there are [" + storedRequestCount + "] requests stored";
-                if (storedRequestCount == 0) {
-                    L.v(msg);
-                } else {
-                    L.i(msg);
-                }
+            String msg = "[Connection Processor] Starting to run, there are [" + storedRequestCount + "] requests stored";
+            if (storedRequestCount == 0) {
+                L.v(msg);
+            } else {
+                L.i(msg);
             }
 
             if (storedRequests == null || storedRequestCount == 0) {
@@ -354,16 +372,14 @@ public class ConnectionProcessor implements Runnable {
                 pccTsStartTempIdCheck = UtilsTime.getNanoTime();
             }
             // temp ID checks
-            String temporaryIdOverrideTag = "&override_id=" + DeviceId.temporaryCountlyDeviceId;
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            boolean containsTemporaryIdOverride = requestData.contains(temporaryIdOverrideTag);
             boolean containsTemporaryId = requestData.contains(temporaryIdTag);
-            if (containsTemporaryIdOverride || containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
+            if (containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
                 //we are about to change ID to the temporary one or
                 //the internally set id is the temporary one
 
                 //abort and wait for exiting temporary mode
-                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests. Id override:[" + containsTemporaryIdOverride + "], tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
+                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests. tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
                 break;
             }
             if (pcc != null) {
@@ -383,7 +399,7 @@ public class ConnectionProcessor implements Runnable {
             if (extractionResult[1] != null) {
                 requestData = extractionResult[0];
 
-                if (!extractionResult[1].equals("")) {
+                if (!extractionResult[1].isEmpty()) {
                     customEndpoint = extractionResult[1];
                 }
                 L.v("[ConnectionProcessor] Custom end point detected for the request:[" + customEndpoint + "]");
@@ -391,58 +407,6 @@ public class ConnectionProcessor implements Runnable {
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_04_NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartEndpointCheck);
-            }
-
-            //------------------------
-
-            if (pcc != null) {
-                pccTsStartDeviceIDOverride = UtilsTime.getNanoTime();
-            }
-
-            //add the device_id to the created request
-            boolean deviceIdOverride = requestData.contains("&override_id="); //if the sendable data contains a override tag
-            boolean deviceIdChange = requestData.contains("&device_id="); //if the sendable data contains a device_id tag. In this case it means that we will have to change the stored device ID
-
-            final String newId;
-
-            if (deviceIdOverride) {
-                // if the override tag is used, it means that the device_id will be changed
-                // to finish the session of the previous device_id, we have cache it into the request
-                // this is indicated by having the "override_id" tag. This just means that we
-                // don't use the id provided in the deviceId variable as this might have changed already.
-
-                requestData = requestData.replace("&override_id=", "&device_id=");
-                newId = null;
-            } else {
-                if (deviceIdChange) {
-                    // this branch will be used if a new device_id is provided
-                    // and a device_id merge on server has to be performed
-
-                    final int endOfDeviceIdTag = requestData.indexOf("&device_id=") + "&device_id=".length();
-                    newId = UtilsNetworking.urlDecodeString(requestData.substring(endOfDeviceIdTag));
-
-                    if (newId.equals(deviceIdProvider_.getDeviceId())) {
-                        // If the new device_id is the same as previous,
-                        // we don't do anything to change it
-
-                        deviceIdChange = false;
-
-                        L.d("[ConnectionProcessor] Provided device_id is the same as the previous one used, nothing will be merged");
-                    } else {
-                        //new device_id provided, make sure it will be merged
-                        requestData = requestData + "&old_device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-                    }
-                } else {
-                    // this branch will be used in almost all requests.
-                    // This just adds the device_id to them
-
-                    newId = null;
-                    requestData = requestData + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-                }
-            }
-
-            if (pcc != null) {
-                pcc.TrackCounterTimeNs("ConnectionProcessorRun_05_NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartDeviceIDOverride);
             }
 
             //------------------------
@@ -465,22 +429,24 @@ public class ConnectionProcessor implements Runnable {
                 URLConnection conn = null;
                 InputStream connInputStream = null;
                 try {
-                    if (pcc != null) {
-                        pccTsStartGetURLConnection = UtilsTime.getNanoTime();
-                    }
+                    pccTsStartGetURLConnection = UtilsTime.getNanoTime();
 
                     // initialize and open connection
                     conn = urlConnectionForServerRequest(requestData, customEndpoint);
+                    long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
+                    L.d("[ConnectionProcessor] run, TIMING Setup server request took:[" + setupServerRequestTime / 1000000.0d + "] ms");
                     if (pcc != null) {
-                        pcc.TrackCounterTimeNs("ConnectionProcessorRun_07_SetupServerRequest", UtilsTime.getNanoTime() - pccTsStartGetURLConnection);
+                        pcc.TrackCounterTimeNs("ConnectionProcessorRun_07_SetupServerRequest", setupServerRequestTime);
                         pccTsStartOnlyInternet = UtilsTime.getNanoTime();
                     }
                     conn.connect();
 
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_08_NetworkOnlyInternet", UtilsTime.getNanoTime() - pccTsStartOnlyInternet);
-                        pccTsStartHandlingResponse = UtilsTime.getNanoTime();
                     }
+
+                    pccTsStartHandlingResponse = UtilsTime.getNanoTime();
+                    pccTsReadingStream = UtilsTime.getNanoTime();
 
                     int responseCode = 0;
                     String responseString = "";
@@ -499,7 +465,12 @@ public class ConnectionProcessor implements Runnable {
                         responseString = Utils.inputStreamToString(connInputStream);
                     }
 
-                    L.d("[ConnectionProcessor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + requestData + ", url: " + serverURL_);
+                    long readingStreamTime = UtilsTime.getNanoTime() - pccTsReadingStream;
+                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + requestData + ", url: " + serverURL_ + ", Reading stream took:[" + readingStreamTime / 1000000.0d + "] ms");
+
+                    if (pcc != null) {
+                        pcc.TrackCounterTimeNs("ConnectionProcessorRun_13_ReadingStream", readingStreamTime);
+                    }
 
                     final RequestResult rRes;
 
@@ -555,19 +526,6 @@ public class ConnectionProcessor implements Runnable {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
                         storageProvider_.removeRequest(originalRequest);
-
-                        if (deviceIdChange) {
-                            if (newId != null && !newId.isEmpty()) {
-                                deviceIdProvider_.getDeviceIdInstance().changeToCustomId(newId);//todo needs to be refactored
-                            } else {
-                                L.e("[ConnectionProcessor] Failed to change device ID with merging because the new ID was empty or null. [" + newId + "]");
-                            }
-                        }
-
-                        if (deviceIdChange || deviceIdOverride) {
-                            L.v("[ConnectionProcessor] Device ID changed, change:[" + deviceIdChange + "] | override:[" + deviceIdOverride + "]");
-                            Countly.sharedInstance().notifyDeviceIdChange();//todo needs to be removed at some point
-                        }
                     } else {
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
@@ -600,8 +558,10 @@ public class ConnectionProcessor implements Runnable {
                         ((HttpURLConnection) conn).disconnect();
                     }
                 }
+                long handlingResponseTime = UtilsTime.getNanoTime() - pccTsStartHandlingResponse;
+                L.d("[ConnectionProcessor] run, TIMING Handling response took:[" + handlingResponseTime / 1000000.0d + "] ms");
                 if (pcc != null) {
-                    pcc.TrackCounterTimeNs("ConnectionProcessorRun_09_HandlingResponse", UtilsTime.getNanoTime() - pccTsStartHandlingResponse);
+                    pcc.TrackCounterTimeNs("ConnectionProcessorRun_09_HandlingResponse", handlingResponseTime);
                 }
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
@@ -619,6 +579,8 @@ public class ConnectionProcessor implements Runnable {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_10_NetworkWholeQueue", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
         }
+        long wholeQueueTime = UtilsTime.getNanoTime() - wholeQueueStart;
+        L.v("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
     }
 
     String getServerURL() {

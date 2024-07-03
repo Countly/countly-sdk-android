@@ -140,13 +140,26 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
         if (customSegmentation != null) {
+            UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
-        UtilsInternalLimits.removeUnsupportedDataTypes(combinedSegmentationValues);
         UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
 
-        return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride), !handled);
+        return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride, L), !handled);
+    }
+
+    private String prepareStackTrace(Throwable e) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+
+        if (recordAllThreads) {
+            addAllThreadInformationToCrash(pw, _cly.config_.sdkInternalLimits);
+        }
+
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(sw.toString(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] prepareStackTrace", L);
+        return truncatedStackTrace;
     }
 
     public void sendCrashReportToQueue(@NonNull CrashData crashData, final boolean isNativeCrash) {
@@ -163,17 +176,23 @@ public class ModuleCrash extends ModuleBase {
      *
      * @param segments Map&lt;String, Object&gt; key segments and their values
      */
-    void setCustomCrashSegmentsInternal(Map<String, Object> segments) {
+    void setCustomCrashSegmentsInternal(@Nullable Map<String, Object> segments) {
         L.d("[ModuleCrash] Calling setCustomCrashSegmentsInternal");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return;
         }
 
-        if (segments != null) {
-            UtilsInternalLimits.removeUnsupportedDataTypes(segments);
+        Map<String, Object> customSegments;
+        if (segments == null) {
+            customSegments = new HashMap<>();
+        } else {
+            customSegments = segments;
         }
-        customCrashSegments = segments;
+
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
+
+        customCrashSegments = customSegments;
     }
 
     void enableCrashReporting() {
@@ -188,17 +207,8 @@ public class ModuleCrash extends ModuleBase {
                 L.d("[ModuleCrash] Uncaught crash handler triggered");
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
 
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    e.printStackTrace(pw);
-
-                    //add other threads
-                    if (recordAllThreads) {
-                        addAllThreadInformationToCrash(pw);
-                    }
-
-                    //check if it passes the crash filter
-                    CrashData crashData = prepareCrashData(sw.toString(), false, false, null);
+                    String stackTrace = prepareStackTrace(e);
+                    CrashData crashData = prepareCrashData(stackTrace, false, false, null);
                     if (!crashFilterCheck(crashData)) {
                         sendCrashReportToQueue(crashData, false);
                     }
@@ -242,26 +252,28 @@ public class ModuleCrash extends ModuleBase {
 
         crashData.calculateChangedFields();
 
-        L.d("[ModuleCrash] crashFilterCheck, while filtering new breadcrumbs are added, checking for maxBreadcrumbCount: [" + _cly.config_.sdkInternalLimits.maxBreadcrumbCount + "]");
-        if (crashData.getBreadcrumbs().size() > _cly.config_.sdkInternalLimits.maxBreadcrumbCount) {
-            L.d("[ModuleCrash] crashFilterCheck, after filtering, breadcrumbs limit is exceeded. clipping oldest count:[" + crashData.getBreadcrumbs().size() + "]");
-            int gonnaClip = crashData.getBreadcrumbs().size() - _cly.config_.sdkInternalLimits.maxBreadcrumbCount;
-            if (gonnaClip > 0) {
-                crashData.getBreadcrumbs().subList(0, gonnaClip).clear();
-            }
-        }
-
-        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation());
-        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics());
-        UtilsInternalLimits.truncateSegmentationValues(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] sendCrashReportToQueue", L);
+        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(crashData.getBreadcrumbs(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
+        crashData.setStackTrace(truncatedStackTrace);
+        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation(), L);
+        UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics(), L);
 
         return false;
     }
 
-    void addAllThreadInformationToCrash(PrintWriter pw) {
+    void addAllThreadInformationToCrash(@NonNull PrintWriter pw, @NonNull ConfigSdkInternalLimits sdkInternalLimits) {
+        assert pw != null;
+        assert sdkInternalLimits != null;
+
         Map<Thread, StackTraceElement[]> allThreads = Thread.getAllStackTraces();
+        int threadCount = 0;
 
         for (Map.Entry<Thread, StackTraceElement[]> entry : allThreads.entrySet()) {
+            if (threadCount >= sdkInternalLimits.maxStackTraceThreadCount) {
+                break;
+            }
+
             StackTraceElement[] val = entry.getValue();
             Thread thread = entry.getKey();
 
@@ -271,9 +283,11 @@ public class ModuleCrash extends ModuleBase {
 
             pw.println();
             pw.println("Thread " + thread.getName());
-            for (StackTraceElement stackTraceElement : val) {
-                pw.println(stackTraceElement.toString());
+
+            for (int i = 0; i < Math.min(val.length, sdkInternalLimits.maxStackTraceLinesPerThread); i++) {
+                pw.println(val[i].toString());
             }
+            threadCount++;
         }
     }
 
@@ -296,29 +310,12 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        StringWriter sw = new StringWriter();
-        PrintWriter pw = new PrintWriter(sw);
-        exception.printStackTrace(pw);
-
-        if (recordAllThreads) {
-            addAllThreadInformationToCrash(pw);
-        }
-
-        String exceptionString = sw.toString();
+        String exceptionString = prepareStackTrace(exception);
 
         CrashData crashData = prepareCrashData(exceptionString, itIsHandled, false, customSegmentation);
         if (crashFilterCheck(crashData)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
-            //in case the exception needs to be recorded, truncate it
-            //String[] splitRes = exceptionString.split("\n");
-            //int totalAllowedLines = _cly.config_.maxStackTraceThreadCount * _cly.config_.maxStackTraceLinesPerThread;
-            //StringBuilder sb = new StringBuilder(exceptionString.length());
-            //
-            //for(int a = 0 ; a < splitRes.length && a < totalAllowedLines ; a++) {
-            //    sb.append(splitRes[a].substring(0, Math.min(splitRes[a].length(), _cly.config_.maxStackTraceLineLength)));
-            //}
-            //sendCrashReportToQueue(sb.toString(), itIsHandled, false, customSegmentation);
             sendCrashReportToQueue(crashData, false);
         }
         return _cly;

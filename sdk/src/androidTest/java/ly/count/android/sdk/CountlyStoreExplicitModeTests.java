@@ -90,23 +90,19 @@ public class CountlyStoreExplicitModeTests {
         store.addRequest("c", false);
 
         CountlyStore emStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), true);
+        emStore.maxRequestQueueSize = 1;
 
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
         validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "a", "b", "c" }, store, emStore);
+        emStore.addRequest("d", false);
 
-        emStore.deleteOldestRequest();
-
-        validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "b", "c" }, store, emStore);
-
-        emStore.deleteOldestRequest();
-
-        validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "c" }, store, emStore);
+        validateRQArrays(new String[] { "a", "b", "c" }, new String[] { "d" }, store, emStore);
 
         esWriteCacheToStorageValidateWrite(emStore, true);
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write
 
-        validateRQArrays(new String[] { "c" }, new String[] { "c" }, store, emStore);
+        validateRQArrays(new String[] { "d" }, new String[] { "d" }, store, emStore);
     }
 
     @Test

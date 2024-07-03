@@ -42,7 +42,8 @@ public class TestUtils {
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
     public final static String SDK_NAME = "java-native-android";
-    public final static String SDK_VERSION = "24.4.0";
+    public final static String SDK_VERSION = "24.7.0";
+    public static final int MAX_THREAD_COUNT_PER_STACK_TRACE = 50;
 
     public static class Activity2 extends Activity {
     }
@@ -123,16 +124,25 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig() {
+        return createBaseConfig(commonDeviceId);
+    }
+
+    public static CountlyConfig createBaseConfig(String deviceId) {
         CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
-            .setDeviceId(commonDeviceId)
+            .setDeviceId(deviceId)
             .setLoggingEnabled(true)
             .enableCrashReporting();
 
         return cc;
     }
 
-    protected static CountlyConfig getBaseConfig() {
-        return new CountlyConfig(getContext(), commonAppKey, commonURL).setDeviceId(commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
+    public static CountlyConfig createBaseConfig(Context context) {
+        CountlyConfig cc = new CountlyConfig(context, commonAppKey, commonURL)
+            .setDeviceId(commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableCrashReporting();
+
+        return cc;
     }
 
     public static String[] createStringArray(int count) {
@@ -521,6 +531,10 @@ public class TestUtils {
         return map;
     }
 
+    protected static JSONObject json(Object... args) {
+        return new JSONObject(TestUtils.map(args));
+    }
+
     public static Context getContext() {
         return ApplicationProvider.getApplicationContext();
     }
@@ -549,7 +563,7 @@ public class TestUtils {
         int tz = Integer.parseInt(params.get("tz"));
 
         validateSdkIdentityParams(params);
-        //Assert.assertEquals(deviceId, params.get("device_id"));
+        Assert.assertEquals(deviceId, params.get("device_id"));
         Assert.assertEquals(commonAppKey, params.get("app_key"));
         Assert.assertEquals(Countly.DEFAULT_APP_VERSION, params.get("av"));
         Assert.assertTrue(Long.parseLong(params.get("timestamp")) > 0);
@@ -570,5 +584,30 @@ public class TestUtils {
             json.put(key, value);
         } catch (JSONException ignored) {
         }
+    }
+
+    public static void assertQueueSizes(int rqSize, int eqSize, CountlyStore cs) {
+        Assert.assertEquals(rqSize, cs.getRequests().length);
+        Assert.assertEquals(eqSize, cs.getEventQueueSize());
+    }
+
+    protected static String generateRandomString(int length) {
+        byte[] array = new byte[length];
+        new Random().nextBytes(array);
+
+        return new String(array, java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    protected static void validateRequest(String deviceId, Map<String, Object> expectedExtras, int idx) {
+        Map<String, String> request = getCurrentRQ()[idx];
+
+        validateRequiredParams(getCurrentRQ()[idx], deviceId);
+        for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
+            Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
+        }
+    }
+
+    protected static void assertRQSize(int size) {
+        Assert.assertEquals(size, getCurrentRQ().length);
     }
 }

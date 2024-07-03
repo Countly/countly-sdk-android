@@ -50,9 +50,9 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -355,15 +355,10 @@ class DeviceInfo {
                 /**
                  * Returns the current device cpu.
                  */
-                @TargetApi(Build.VERSION_CODES.LOLLIPOP)
                 @NonNull
                 @Override
                 public String getCpu() {
-                    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-                        return android.os.Build.CPU_ABI;
-                    } else {
-                        return Build.SUPPORTED_ABIS[0];
-                    }
+                    return Build.SUPPORTED_ABIS[0];
                 }
 
                 /**
@@ -570,47 +565,53 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    JSONObject getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = new JSONObject();
+    Map<String, Object> getCommonMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
+        final Map<String, Object> map = new ConcurrentHashMap<>();
 
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_device", mp.getDevice(),
-            "_os", mp.getOS(),
-            "_os_version", mp.getOSVersion(),
-            "_resolution", mp.getResolution(context),
-            "_app_version", mp.getAppVersion(context),
-            "_manufacturer", mp.getManufacturer(),
-            "_has_hinge", mp.hasHinge(context));
+        putIfNotNullAndNotEmpty(map, "_device", mp.getDevice());
+        putIfNotNullAndNotEmpty(map, "_os", mp.getOS());
+        putIfNotNullAndNotEmpty(map, "_os_version", mp.getOSVersion());
+        putIfNotNullAndNotEmpty(map, "_resolution", mp.getResolution(context));
+        putIfNotNullAndNotEmpty(map, "_app_version", mp.getAppVersion(context));
+        putIfNotNullAndNotEmpty(map, "_manufacturer", mp.getManufacturer());
+        putIfNotNullAndNotEmpty(map, "_has_hinge", mp.hasHinge(context));
 
         if (metricOverride != null) {
             try {
+
                 if (metricOverride.containsKey("_device")) {
-                    json.put("_device", metricOverride.get("_device"));
+                    map.put("_device", metricOverride.get("_device"));
                 }
                 if (metricOverride.containsKey("_os")) {
-                    json.put("_os", metricOverride.get("_os"));
+                    map.put("_os", metricOverride.get("_os"));
                 }
                 if (metricOverride.containsKey("_os_version")) {
-                    json.put("_os_version", metricOverride.get("_os_version"));
+                    map.put("_os_version", metricOverride.get("_os_version"));
                 }
                 if (metricOverride.containsKey("_resolution")) {
-                    json.put("_resolution", metricOverride.get("_resolution"));
+                    map.put("_resolution", metricOverride.get("_resolution"));
                 }
                 if (metricOverride.containsKey("_app_version")) {
-                    json.put("_app_version", metricOverride.get("_app_version"));
+                    map.put("_app_version", metricOverride.get("_app_version"));
                 }
                 if (metricOverride.containsKey("_manufacturer")) {
-                    json.put("_manufacturer", metricOverride.get("_manufacturer"));
+                    map.put("_manufacturer", metricOverride.get("_manufacturer"));
                 }
                 if (metricOverride.containsKey("_has_hinge")) {
-                    json.put("_has_hinge", metricOverride.get("_has_hinge"));
+                    map.put("_has_hinge", metricOverride.get("_has_hinge"));
                 }
-            } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[DeviceInfo] SDK encountered failure while trying to apply metric override, " + ex.toString());
+            } catch (Exception e) {
+                L.e("[DeviceInfo] getCommonMetrics, SDK encountered failure while trying to apply metric override, " + e);
             }
         }
 
-        return json;
+        return map;
+    }
+
+    private void putIfNotNullAndNotEmpty(@NonNull Map<String, Object> metrics, String key, String value) {
+        if (value != null && !value.isEmpty()) {
+            metrics.put(key, value);
+        }
     }
 
     /**
@@ -621,41 +622,35 @@ class DeviceInfo {
      * @return
      */
     @NonNull
-    String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+    String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
         //we set the override to null because all of the entries will be overwritten anyway
-        final JSONObject json = getCommonMetrics(context, null);
+        Map<String, Object> metrics = getCommonMetrics(context, null, L);
 
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_carrier", mp.getCarrier(context),
-            "_density", mp.getDensity(context),
-            "_locale", mp.getLocale(),
-            "_store", mp.getStore(context),
-            "_device_type", mp.getDeviceType(context));
+        putIfNotNullAndNotEmpty(metrics, "_carrier", mp.getCarrier(context));
+        putIfNotNullAndNotEmpty(metrics, "_density", mp.getDensity(context));
+        putIfNotNullAndNotEmpty(metrics, "_locale", mp.getLocale());
+        putIfNotNullAndNotEmpty(metrics, "_store", mp.getStore(context));
+        putIfNotNullAndNotEmpty(metrics, "_device_type", mp.getDeviceType(context));
 
-        //override metric values
         if (metricOverride != null) {
             for (String k : metricOverride.keySet()) {
-                if (k == null || k.length() == 0) {
-                    Countly.sharedInstance().L.w("Provided metric override key can't be null or empty");
+                if (k == null || k.isEmpty()) {
+                    L.w("[DeviceInfo] getMetrics, Provided metric override key can't be null or empty");
                     continue;
                 }
 
                 String overrideValue = metricOverride.get(k);
 
                 if (overrideValue == null) {
-                    Countly.sharedInstance().L.w("Provided metric override value can't be null, key:[" + k + "]");
+                    L.w("[DeviceInfo] getMetrics, Provided metric override value can't be null, key:[" + k + "]");
                     continue;
                 }
 
-                try {
-                    json.put(k, overrideValue);
-                } catch (Exception ex) {
-                    Countly.sharedInstance().L.e("Could not set metric override, [" + ex + "]");
-                }
+                metrics.put(k, overrideValue);
             }
         }
 
-        String result = json.toString();
+        String result = new JSONObject(metrics).toString();
 
         try {
             result = java.net.URLEncoder.encode(result, "UTF-8");
@@ -669,21 +664,19 @@ class DeviceInfo {
 
     @NonNull
     String getMetricsHealthCheck(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = new JSONObject();
+        Map<String, Object> metrics = new ConcurrentHashMap<>();
 
-        Utils.fillJSONIfValuesNotEmpty(json, "_app_version", mp.getAppVersion(context));
+        String appVersion = mp.getAppVersion(context);
 
         if (metricOverride != null) {
-            try {
-                if (metricOverride.containsKey("_app_version")) {
-                    json.put("_app_version", metricOverride.get("_app_version"));
-                }
-            } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[DeviceInfo] SDK encountered failure while trying to apply metric override, " + ex.toString());
+            if (metricOverride.containsKey("_app_version")) {
+                appVersion = metricOverride.get("_app_version");
             }
         }
 
-        String result = json.toString();
+        metrics.put("_app_version", appVersion);
+
+        String result = new JSONObject(metrics).toString();
 
         try {
             result = java.net.URLEncoder.encode(result, "UTF-8");
@@ -700,69 +693,54 @@ class DeviceInfo {
      */
     @NonNull
     JSONObject getCrashDataJSON(@NonNull CrashData crashData, final boolean isNativeCrash) {
-        JSONObject json = crashData.getCrashMetricsJSON();
+        Map<String, Object> crashDataMap = crashData.getCrashMetrics();
 
         //setting this first so the followup are not picked up as "dev changes" in the change field
-        putToJson(json, "_ob", crashData.getChangedFieldsAsInt());
+        crashDataMap.put("_ob", crashData.getChangedFieldsAsInt());
 
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_error", crashData.getStackTrace(),
-            "_nonfatal", Boolean.toString(!crashData.getFatal())
-        );
+        putIfNotNullAndNotEmpty(crashDataMap, "_error", crashData.getStackTrace());
+        putIfNotNullAndNotEmpty(crashDataMap, "_nonfatal", Boolean.toString(!crashData.getFatal()));
 
         if (!isNativeCrash) {
             String breadcrumbs = crashData.getBreadcrumbsAsString();
             if (!breadcrumbs.isEmpty()) {
-                putToJson(json, "_logs", crashData.getBreadcrumbsAsString());
+                crashDataMap.put("_logs", breadcrumbs);
             }
         }
 
-        putToJson(json, "_custom", getCustomSegmentsJson(crashData.getCrashSegmentation()));
-
-        return json;
-    }
-
-    private void putToJson(JSONObject json, String key, Object value) {
-        try {
-            json.put(key, value);
-        } catch (JSONException ignored) {
-
+        if (!crashData.getCrashSegmentation().isEmpty()) {
+            crashDataMap.put("_custom", crashData.getCrashSegmentation());
         }
+
+        return new JSONObject(crashDataMap);
     }
 
     @NonNull
-    JSONObject getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride) {
-        final JSONObject json = getCommonMetrics(context, metricOverride);
+    Map<String, Object> getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
+        Map<String, Object> metrics = getCommonMetrics(context, metricOverride, L);
 
-        Utils.fillJSONIfValuesNotEmpty(json,
-            "_cpu", mp.getCpu(),
-            "_opengl", mp.getOpenGL(context),
-            "_root", mp.isRooted(),
-            "_ram_total", mp.getRamTotal(),
-            "_disk_total", mp.getDiskTotal()
-        );
+        putIfNotNullAndNotEmpty(metrics, "_cpu", mp.getCpu());
+        putIfNotNullAndNotEmpty(metrics, "_opengl", mp.getOpenGL(context));
+        putIfNotNullAndNotEmpty(metrics, "_root", mp.isRooted());
+        putIfNotNullAndNotEmpty(metrics, "_ram_total", mp.getRamTotal());
+        putIfNotNullAndNotEmpty(metrics, "_disk_total", mp.getDiskTotal());
 
         if (!isNativeCrash) {
             //if is not a native crash
-            Utils.fillJSONIfValuesNotEmpty(json,
-                "_ram_current", mp.getRamCurrent(context),
-                "_disk_current", mp.getDiskCurrent(),
-                "_bat", mp.getBatteryLevel(context),
-                "_run", mp.getRunningTime(),
-                "_orientation", mp.getOrientation(context),
-                "_online", mp.isOnline(context),
-                "_muted", mp.isMuted(context),
-                "_background", isInBackground()
-            );
+            putIfNotNullAndNotEmpty(metrics, "_ram_current", mp.getRamCurrent(context));
+            putIfNotNullAndNotEmpty(metrics, "_disk_current", mp.getDiskCurrent());
+            putIfNotNullAndNotEmpty(metrics, "_bat", mp.getBatteryLevel(context));
+            putIfNotNullAndNotEmpty(metrics, "_run", mp.getRunningTime());
+            putIfNotNullAndNotEmpty(metrics, "_orientation", mp.getOrientation(context));
+            putIfNotNullAndNotEmpty(metrics, "_online", mp.isOnline(context));
+            putIfNotNullAndNotEmpty(metrics, "_muted", mp.isMuted(context));
+            putIfNotNullAndNotEmpty(metrics, "_background", isInBackground());
         } else {
             //if is a native crash
-            try {
-                json.put("_native_cpp", true);
-            } catch (JSONException ignored) {
-            }
+            metrics.put("_native_cpp", true);
         }
 
-        return json;
+        return metrics;
     }
 
     @NonNull
@@ -799,27 +777,5 @@ class DeviceInfo {
      */
     String isInBackground() {
         return Boolean.toString(inBackground);
-    }
-
-    /**
-     * Get custom segments json string from the provided map
-     */
-    static JSONObject getCustomSegmentsJson(@Nullable final Map<String, Object> customSegments) {
-        if (customSegments == null || customSegments.isEmpty()) {
-            return null;
-        }
-
-        JSONObject returnedSegmentation = new JSONObject();
-        for (String k : customSegments.keySet()) {
-            if (k != null) {
-                try {
-                    returnedSegmentation.put(k, customSegments.get(k));
-                } catch (JSONException e) {
-                    Countly.sharedInstance().L.w("[getCustomSegmentsJson] Failed to add custom segmentation to crash");
-                }
-            }
-        }
-
-        return returnedSegmentation;
     }
 }

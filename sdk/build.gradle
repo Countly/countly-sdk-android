@@ -16,7 +16,7 @@ android {
   buildToolsVersion "34.0.0"
 
   defaultConfig {
-    minSdk 17
+    minSdk 21
     targetSdk 34
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'

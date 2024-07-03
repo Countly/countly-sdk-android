@@ -30,7 +30,7 @@ public class ModuleRemoteConfigTests {
     }
 
     /**
-     * Consent removal should clear stored remote config values
+     * Consent removal shouldn't clear stored remote config values
      */
     @Test
     public void valuesClearedOnConsentRemoval() {
@@ -50,7 +50,8 @@ public class ModuleRemoteConfigTests {
 
         countly.consent().removeConsentAll();
 
-        Assert.assertEquals(0, countly.remoteConfig().getValues().size());
+        Assert.assertEquals(2, countly.remoteConfig().getValues().size()); // values are cache cleared
+        countly.remoteConfig().getValues().forEach((k, v) -> Assert.assertTrue(v.isCurrentUsersData));
     }
 
     /**
@@ -88,12 +89,14 @@ public class ModuleRemoteConfigTests {
             }
 
             countly.deviceId().changeWithMerge("dd");
-            Assert.assertEquals(intendedCount, triggerCounter[0]);//changing device ID with merging should not create a request
+            Assert.assertEquals(++intendedCount, triggerCounter[0]);//changing device ID with merging should create a request
 
             countly.deviceId().changeWithoutMerge("dd11");
-            //todo the current behaviour is slightly out of spec as it would download RC after the RQ would have executed that request
-            //todo this should be updated once the RQ is reworked
-            Assert.assertEquals(intendedCount, triggerCounter[0]);//changing device ID without merging should create a request
+            if (a == 0) {
+                Assert.assertEquals(intendedCount, triggerCounter[0]);//changing device ID without merging won't create a request because all consents are revoked
+            } else {
+                Assert.assertEquals(++intendedCount, triggerCounter[0]);//changing device ID without merging would create a request because consent is not required
+            }
 
             countly.deviceId().enableTemporaryIdMode();
             Assert.assertEquals(intendedCount, triggerCounter[0]);//entering tempID mode should not create a request
@@ -123,10 +126,11 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void rcValueCaching() {
+        boolean valuesAreCached = false;
         for (int a = 0; a < 4; a++) {
             countlyStore.clear();
 
-            CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+            CountlyConfig config = TestUtils.createBaseConfig();
             config.enableRemoteConfigAutomaticTriggers();
 
             if (a == 0 || a == 1) {
@@ -136,6 +140,7 @@ public class ModuleRemoteConfigTests {
 
             if (a == 0 || a == 2) {
                 config.enableRemoteConfigValueCaching();
+                valuesAreCached = true;
             }
 
             Countly countly = new Countly().init(config);
@@ -147,12 +152,12 @@ public class ModuleRemoteConfigTests {
             Assert.assertEquals(2, countly.remoteConfig().getValues().size());
             assertCValueCachedState(countly.remoteConfig().getValues(), false);
 
-            //changing with merging should leave no impact on this
+            //changing with merging should trigger caching
             countly.deviceId().changeWithMerge("dd");
-            Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+            assertCValueCachedState(countly.remoteConfig().getValues(), valuesAreCached);
 
             //changing without merging should trigger caching. Lack of consent should leave no impact on this
-            assertCValueCachedState(countly.remoteConfig().getValues(), false);
+            assertCValueCachedState(countly.remoteConfig().getValues(), valuesAreCached);
             countly.deviceId().changeWithoutMerge("dd11");
 
             for (int b = 0; b < 2; b++) {
@@ -187,6 +192,8 @@ public class ModuleRemoteConfigTests {
                     Assert.assertEquals(0, countly.remoteConfig().getValues().size());
                 }
             }
+
+            valuesAreCached = false;
         }
     }
 

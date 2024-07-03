@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.4.0";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.0";
 
     /**
      * Used as request meta data on every request
@@ -269,10 +269,10 @@ public class Countly {
     }
 
     /**
-     * Initializes the Countly SDK. Call from your main Activity's onCreate() method.
      * Must be called before other SDK methods can be used.
      * To initialise the SDK, you must pass a CountlyConfig object that contains
      * all the necessary information for setting up the SDK
+     * Please prefer to use this on Application's onCreate method
      *
      * @param config contains all needed information to init SDK
      */
@@ -926,7 +926,7 @@ public class Countly {
             // if we don't use manual session control
             // Called when final Activity is stopped.
             // Sends an end session event to the server, also sends any unsent custom events.
-            moduleSessions.endSessionInternal(null);
+            moduleSessions.endSessionInternal();
         }
 
         config_.deviceInfo.inBackground();
@@ -1018,9 +1018,11 @@ public class Countly {
             }
 
             //on every timer tick we collect all events and attempt to send requests
-            {
-                moduleRequestQueue.sendEventsIfNeeded(true);
-            }
+            moduleRequestQueue.sendEventsIfNeeded(true);
+
+            //on every timer tick we save the user profile if it was changed
+            moduleUserProfile.saveInternal();
+
             requestQueueProvider.tick();
         }
     }

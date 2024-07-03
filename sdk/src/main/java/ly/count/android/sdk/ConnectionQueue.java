@@ -285,20 +285,15 @@ class ConnectionQueue implements RequestQueueProvider {
         }
     }
 
-    public void changeDeviceId(String deviceId, final int duration) {
+    public void changeDeviceId(String deviceId, String oldDeviceId) {
         if (!checkInternalState()) {
             return;
         }
         L.d("[Connection Queue] changeDeviceId");
 
-        String data = prepareCommonRequestData();
+        String data = prepareCommonRequestData(deviceId);
 
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            data += "&session_duration=" + duration;
-        }
-
-        // !!!!! THIS SHOULD ALWAYS BE ADDED AS THE LAST FIELD, OTHERWISE MERGING BREAKS !!!!!
-        data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceId);
+        data += "&old_device_id=" + UtilsNetworking.urlEncodeString(oldDeviceId);
 
         addRequestToQueue(data, false);
         tick();
@@ -343,30 +338,16 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void endSession(final int duration) {
-        endSession(duration, null);
-    }
-
-    public void endSession(final int duration, String deviceIdOverride) {
         if (!checkInternalState()) {
             return;
         }
         L.d("[Connection Queue] endSession");
-
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            L.d("[Connection Queue] request ignored, 'sessions' consent not given");
-            return;
-        }
 
         String data = prepareCommonRequestData();
 
         data += "&end_session=1";
         if (duration > 0) {
             data += "&session_duration=" + duration;
-        }
-
-        if (deviceIdOverride != null) {
-            //if no consent is given, device ID override is not sent
-            data += "&override_id=" + UtilsNetworking.urlEncodeString(deviceIdOverride);
         }
 
         addRequestToQueue(data, false);
@@ -406,13 +387,6 @@ class ConnectionQueue implements RequestQueueProvider {
             L.d("[Connection Queue] request ignored, 'users' consent not given");
             return;
         }
-
-        if (userdata.equals("")) {
-            L.d("[Connection Queue] No user data to send, skipping");
-            return;
-        }
-
-        moduleRequestQueue.sendEventsIfNeeded(true); // flush events before sending user details //todo this should be moved to the user profile modile after removing the static user profile implementation
 
         String data = prepareCommonRequestData() + userdata;
         addRequestToQueue(data, false);
@@ -703,9 +677,14 @@ class ConnectionQueue implements RequestQueueProvider {
 
     @NonNull
     String prepareCommonRequestData() {
+        return prepareCommonRequestData(deviceIdProvider_.getDeviceId());
+    }
+
+    @NonNull
+    String prepareCommonRequestData(@NonNull String deviceId) {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
 
-        return prepareCommonRequestDataShort(instant)
+        return prepareCommonRequestDataShort(instant, deviceId)
             + "&hour=" + instant.hour
             + "&dow=" + instant.dow
             + "&tz=" + deviceInfo.mp.getTimezoneOffset();
@@ -719,7 +698,13 @@ class ConnectionQueue implements RequestQueueProvider {
 
     @NonNull
     String prepareCommonRequestDataShort(@NonNull UtilsTime.Instant instant) {
+        return prepareCommonRequestDataShort(instant, deviceIdProvider_.getDeviceId());
+    }
+
+    @NonNull
+    String prepareCommonRequestDataShort(@NonNull UtilsTime.Instant instant, @NonNull String deviceId) {
         return "app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
+            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId)
             + "&timestamp=" + instant.timestampMs
             + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
             + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME
@@ -758,10 +743,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
-        String data = prepareCommonRequestData()
-            + "&method=fetch_remote_config"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-
+        String data = prepareCommonRequestData() + "&method=fetch_remote_config";
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&metrics=" + preparedMetrics;
@@ -778,10 +760,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics, boolean autoEnroll) {
-        String data = prepareCommonRequestData()
-            + "&method=rc"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-
+        String data = prepareCommonRequestData() + "&method=rc";
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             //add session data if consent given
             data += "&metrics=" + preparedMetrics;
@@ -809,11 +788,7 @@ class ConnectionQueue implements RequestQueueProvider {
      * @return
      */
     public String prepareFetchAllVariants() {
-        String data = prepareCommonRequestDataShort()
-            + "&method=ab_fetch_variants"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-
-        return data;
+        return prepareCommonRequestDataShort() + "&method=ab_fetch_variants";
     }
 
     /**
@@ -824,17 +799,12 @@ class ConnectionQueue implements RequestQueueProvider {
      * @return
      */
     public String prepareFetchAllExperiments() {
-        String data = prepareCommonRequestDataShort()
-            + "&method=ab_fetch_experiments"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-
-        return data;
+        return prepareCommonRequestDataShort() + "&method=ab_fetch_experiments";
     }
 
     public String prepareEnrollVariant(String key, String variant) {
         String data = prepareCommonRequestDataShort()
             + "&method=ab_enroll_variant"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId())
             + "&key=" + UtilsNetworking.urlEncodeString(key)
             + "&variant=" + UtilsNetworking.urlEncodeString(variant);
 
@@ -842,36 +812,20 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public String prepareRatingWidgetRequest(String widgetId) {
-        String data = prepareCommonRequestData()
-            + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId)
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-        return data;
+        return prepareCommonRequestData() + "&widget_id=" + UtilsNetworking.urlEncodeString(widgetId);
     }
 
     public String prepareFeedbackListRequest() {
-        String data = prepareCommonRequestData()
-            + "&method=feedback"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-
-        return data;
+        return prepareCommonRequestData() + "&method=feedback";
     }
 
     public String prepareHealthCheckRequest(String preparedMetrics) {
-        String data = prepareCommonRequestData();
-
-        //consent not required for these curated metrics
-        data += "&metrics=" + preparedMetrics;
-        data += "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-
-        return data;
+        return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
     @Override
     public String prepareServerConfigRequest() {
-        String data = prepareCommonRequestDataShort()
-            + "&method=sc"
-            + "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider_.getDeviceId());
-        return data;
+        return prepareCommonRequestDataShort() + "&method=sc";
     }
 
     /**

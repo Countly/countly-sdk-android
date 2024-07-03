@@ -65,7 +65,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param instant
      * @param eventIdOverride
      */
-    public void recordEventInternal(@Nullable final String key, @Nullable final Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
+    public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
         //assert key != null;
         assert count >= 1;
         assert _cly.isInitialized();
@@ -85,10 +85,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             count = 1;
         }
 
-        L.d("[ModuleEvents] Recording event with key: [" + key + "] and provided event ID of:[" + eventIdOverride + "] and segmentation with:[" + (segmentation == null ? "null" : segmentation.size()) + "] keys");
+        L.d("[ModuleEvents] recordEventInternal, key:[" + key + "] eventIdOverride:[" + eventIdOverride + "] segmentation:[" + segmentation + "] count:[" + count + "] sum:[" + sum + "] dur:[" + dur + "] instant:[" + instant + "]");
 
         if (segmentation != null) {
-            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation);
+            UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
         }
 
         //record the current event timestamps
@@ -125,6 +125,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             pcc.TrackCounterTimeNs("ModuleEvents_recordEventInternalGenID", UtilsTime.getNanoTime() - pccTsStartRecordEventInternal);
         }
 
+        //before each event is recorded, check if user profile data needs to be saved
+        _cly.moduleUserProfile.saveInternal();
+
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
@@ -159,13 +162,21 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             case ACTION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.clicks) || consentProvider.getConsent(Countly.CountlyFeatureNames.scrolls)) {
+                    if (segmentation != null) {
+                        UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
+                    }
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
+                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
+                    if (segmentation == null) {
+                        segmentation = new HashMap<>();
+                    }
+                    UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
+                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
@@ -430,7 +441,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             synchronized (_cly) {
                 L.i("[Events] Calling recordEvent: [" + key + "]");
 
-                UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                if (segmentation != null) {
+                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                }
 
                 eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null, null);
             }

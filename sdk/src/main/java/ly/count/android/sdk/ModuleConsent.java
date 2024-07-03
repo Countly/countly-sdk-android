@@ -41,7 +41,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         super(cly, config);
         consentProvider = this;
         config.consentProvider = this;
-        L.v("[ModuleConsent] Initialising");
+        L.v("[ModuleConsent] constructor, Initialising");
         L.i("[ModuleConsent] Is consent required? [" + config.shouldRequireConsent + "]");
 
         //setup initial consent data structure
@@ -54,17 +54,18 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         if (config.shouldRequireConsent) {
             requiresConsent = config.shouldRequireConsent;
             if (config.enabledFeatureNames == null && !config.enableAllConsents) {
-                L.i("[ModuleConsent] Consent has been required but no consent was given during init");
+                L.i("[ModuleConsent] constructor, Consent has been required but no consent was given during init");
             } else {
 
                 if (config.enableAllConsents) {
                     //set all consent values to "true"
-                    L.i("[ModuleConsent] Giving consent for all features");
+                    L.i("[ModuleConsent] constructor, Giving consent for all features");
                     for (String featureName : validFeatureNames) {
                         featureConsentValues.put(featureName, true);
                     }
                 } else {
                     //set provided consent values
+                    L.i("[ModuleConsent] constructor, Giving consent for features named: [" + Arrays.toString(config.enabledFeatureNames) + "]");
                     for (String providedFeature : config.enabledFeatureNames) {
                         featureConsentValues.put(providedFeature, true);
                     }
@@ -105,7 +106,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         boolean returnValue = getConsentTrue(featureName);
-        L.v("[ModuleConsent] Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
+        L.v("[ModuleConsent] getConsentInternal, Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
         return returnValue;
     }
 
@@ -128,9 +129,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      * Print the consent values of all features
      */
     public void checkAllConsentInternal() {
-        L.d("[ModuleConsent] Checking and printing consent for All features");
-        L.d("[ModuleConsent] Is consent required? [" + requiresConsent + "]");
-
+        L.d("[ModuleConsent] checkAllConsentInternal, consentRequired: [" + requiresConsent + "]");
         //make sure push consent has been added to the feature map
         getConsent(Countly.CountlyFeatureNames.push);
 
@@ -140,7 +139,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             sb.append("Feature named [").append(key).append("], consent value: [").append(featureConsentValues.get(key)).append("]\n");
         }
 
-        L.d(sb.toString());
+        L.d("[ModuleConsent] checkAllConsentInternal, Current consent state: [" + sb + "]");
     }
 
     /**
@@ -149,7 +148,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      * @param consentValue The value of push consent
      */
     void doPushConsentSpecialAction(final boolean consentValue) {
-        L.d("[ModuleConsent] Doing push consent special action: [" + consentValue + "]");
+        L.d("[ModuleConsent] doPushConsentSpecialAction, consentValue: [" + consentValue + "]");
         _cly.countlyStore.setConsentPush(consentValue);
         _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
     }
@@ -201,23 +200,22 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     }
 
     void setConsentInternal(@Nullable final String[] featureNames, final boolean isConsentGiven, final ConsentChangeSource changeSource) {
+        L.d("[ModuleConsent] setConsentInternal, featureNames: [" + Arrays.toString(featureNames) + "] to value: [" + isConsentGiven + "], changeSource: [" + changeSource + "]");
         if (!requiresConsent) {
-            //if consent is not required, ignore all calls to it
+            L.i("[ModuleConsent] setConsentInternal, Consent is not required, ignoring the call");
             return;
         }
 
         if (featureNames == null) {
-            L.w("[ModuleConsent] Calling setConsent with null featureNames!");
+            L.w("[ModuleConsent] setConsentInternal, Calling setConsent with null featureNames!");
             return;
         }
 
         List<String> consentThatWillChange = new ArrayList<>(featureNames.length);
 
         for (String featureName : featureNames) {
-            L.d("[ModuleConsent] Setting consent for feature: [" + featureName + "] with value: [" + isConsentGiven + "]");
-
             if (!isValidFeatureName(featureName)) {
-                L.w("[ModuleConsent] Given feature: [" + featureName + "] is not a valid name, ignoring it");
+                L.w("[ModuleConsent] setConsentInternal, Given feature: [" + featureName + "] is not a valid name, ignoring it");
                 continue;
             }
 
@@ -234,9 +232,12 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             module.onConsentChanged(consentThatWillChange, isConsentGiven, changeSource);
         }
 
-        //send consent changes
-        String formattedConsentState = formatConsentState(featureConsentValues);
-        requestQueueProvider.sendConsentChanges(formattedConsentState);
+        if (isConsentGiven || !changeSource.equals(ConsentChangeSource.DeviceIDChangedNotMerged)) {
+          //send consent changes
+          String formattedConsentState = formatConsentState(featureConsentValues);
+          L.v("[ModuleConsent] setConsentInternal, Sending consent changes: [" + formattedConsentState + "]");
+          requestQueueProvider.sendConsentChanges(formattedConsentState);
+        }
     }
 
     /**
@@ -245,8 +246,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      * @param featureNames the names of features for which consent should be removed
      */
     public void removeConsentInternal(@Nullable final String[] featureNames, final ConsentChangeSource changeSource) {
-        L.d("[ModuleConsent] Removing consent for features named: [" + Arrays.toString(featureNames) + "]");
-
+        L.d("[ModuleConsent] removeConsentInternal, featureNames: [" + Arrays.toString(featureNames) + "], changeSource: [" + changeSource + "]");
         setConsentInternal(featureNames, false, changeSource);
     }
 
@@ -254,13 +254,13 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      * Remove consent for all features
      */
     public void removeConsentAllInternal(final ConsentChangeSource changeSource) {
-        L.d("[ModuleConsent] Removing consent for all features");
-
+        L.d("[ModuleConsent] removeConsentAllInternal, changeSource: [" + changeSource + "]");
         removeConsentInternal(validFeatureNames, changeSource);
     }
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
+        L.d("[ModuleConsent] initFinished, requiresConsent: [" + requiresConsent + "]");
         if (requiresConsent) {
             //do appropriate action regarding the current consent state
 
@@ -269,10 +269,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
             //send 'after init' consent state
             String formattedConsentState = formatConsentState(featureConsentValues);
+            L.d("[ModuleConsent] initFinished, Sending consent changes after init: [" + formattedConsentState + "]");
             requestQueueProvider.sendConsentChanges(formattedConsentState);
 
             if (L.logEnabled()) {
-                L.d("[ModuleConsent] [Init] Countly is initialized with the current consent state:");
                 checkAllConsentInternal();
             }
         }
@@ -280,6 +280,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        L.d("[ModuleConsent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
             //handle push consent changes
             doPushConsentSpecialAction(newConsent);
@@ -296,6 +297,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * Print the consent values of all features
          */
         public void checkAllConsent() {
+            L.i("[Countly] checkAllConsent");
             synchronized (_cly) {
                 L.i("[Consent] calling checkAllConsent");
 
@@ -310,6 +312,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * @return the consent value
          */
         public boolean getConsent(@Nullable final String featureName) {
+            L.i("[Countly] getConsent, featureName: [" + featureName + "]");
             synchronized (_cly) {
                 return getConsentInternal(featureName);
             }
@@ -319,6 +322,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * Remove consent for all features
          */
         public void removeConsentAll() {
+            L.i("[Countly] removeConsentAll");
             synchronized (_cly) {
                 removeConsentAllInternal(ConsentChangeSource.ChangeConsentCall);
             }
@@ -330,6 +334,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * @param featureNames the names of features for which consent should be removed
          */
         public void removeConsent(@Nullable final String[] featureNames) {
+            L.i("[Countly] removeConsent");
             synchronized (_cly) {
                 removeConsentInternal(featureNames, ConsentChangeSource.ChangeConsentCall);
             }
@@ -352,6 +357,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * @param featureNames the names of features for which consent should be given
          */
         public void giveConsent(@Nullable final String[] featureNames) {
+            L.i("[Countly] giveConsent");
             synchronized (_cly) {
                 setConsentInternal(featureNames, true, ConsentChangeSource.ChangeConsentCall);
             }
@@ -364,6 +370,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * @param isConsentGiven the consent value that should be set
          */
         public void setConsent(@Nullable final String[] featureNames, final boolean isConsentGiven) {
+            L.i("[Countly] setConsent");
             synchronized (_cly) {
                 setConsentInternal(featureNames, isConsentGiven, ConsentChangeSource.ChangeConsentCall);
             }
@@ -376,9 +383,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * @param isConsentGiven the value that should be set for this consent group
          */
         public void setConsentFeatureGroup(@Nullable final String groupName, final boolean isConsentGiven) {
+            L.i("[Countly] setConsentFeatureGroup, groupName: [" + groupName + "], isConsentGiven: [" + isConsentGiven + "]");
             synchronized (_cly) {
                 if (!groupedFeatures.containsKey(groupName)) {
-                    L.d("[Countly] Trying to set consent for a unknown feature group: [" + groupName + "]");
+                    L.d("[Countly] setConsentFeatureGroup, Trying to set consent for a unknown feature group: [" + groupName + "]");
 
                     return;
                 }
@@ -394,6 +402,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
          * @param features array of feature to be added to the consent group
          */
         public void createFeatureGroup(@Nullable final String groupName, @Nullable final String[] features) {
+            L.i("[Countly] createFeatureGroup, groupName: [" + groupName + "], features: [" + Arrays.toString(features) + "]");
             synchronized (_cly) {
                 groupedFeatures.put(groupName, features);
             }

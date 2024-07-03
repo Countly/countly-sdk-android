@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebView;
@@ -15,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ModuleFeedback extends ModuleBase {
@@ -240,14 +240,22 @@ public class ModuleFeedback extends ModuleBase {
         widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
         widgetListUrl.append("&platform=android");
 
+        // TODO: this will be the base for the custom segmentation users can send while presenting a widget
+        JSONObject customObjectToSendWithTheWidget = new JSONObject();
+        try {
+            customObjectToSendWithTheWidget.put("tc", 1);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+        widgetListUrl.append("&custom=");
+        widgetListUrl.append(customObjectToSendWithTheWidget.toString());
+
         final String preparedWidgetUrl = widgetListUrl.toString();
 
         L.d("[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            //enable for chrome debugging
-            //WebView.setWebContentsDebuggingEnabled(true);
-        }
+        //enable for chrome debugging
+        //WebView.setWebContentsDebuggingEnabled(true);
 
         final boolean useAlertDialog = true;
         Handler handler = new Handler(Looper.getMainLooper());
@@ -439,6 +447,8 @@ public class ModuleFeedback extends ModuleBase {
 
         if (widgetResult != null) {
             //removing broken values first
+            UtilsInternalLimits.removeUnsupportedDataTypes(widgetResult, L);
+
             Iterator<Map.Entry<String, Object>> iter = widgetResult.entrySet().iterator();
             while (iter.hasNext()) {
                 Map.Entry<String, Object> entry = iter.next();
@@ -451,6 +461,14 @@ public class ModuleFeedback extends ModuleBase {
                 } else if (entry.getValue() == null) {
                     L.w("[ModuleFeedback] provided feedback widget result contains a 'null' value, it will be removed, key[" + entry.getKey() + "]");
                     iter.remove();
+                }
+
+                if (entry.getValue() instanceof String) {
+                    // TODO, if applicable think about applying key and segmentation count limit for the widget result
+                    String truncatedValue = UtilsInternalLimits.truncateValueSize(entry.getValue().toString(), _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleFeedback] reportFeedbackWidgetManuallyInternal");
+                    if (!truncatedValue.equals(entry.getValue())) {
+                        entry.setValue(truncatedValue);
+                    }
                 }
             }
 

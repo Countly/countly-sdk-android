@@ -19,7 +19,7 @@ public class BreadcrumbHelper {
         this.L = L;
     }
 
-    protected void addBreadcrumb(@NonNull String breadcrumb, int valueSize) { // TODO when valuesize limit added delete this from here
+    protected void addBreadcrumb(@NonNull String breadcrumb, int valueSize) {
         assert breadcrumb != null;
         assert !breadcrumb.isEmpty();
         assert valueSize > 0;
@@ -29,16 +29,13 @@ public class BreadcrumbHelper {
             return;
         }
 
-        if (breadcrumb.length() > valueSize) {
-            L.d("[BreadcrumbHelper] addBreadcrumb, Breadcrumb exceeds character limit: [" + breadcrumb.length() + "], reducing it to: [" + valueSize + "]");
-            breadcrumb = breadcrumb.substring(0, valueSize);
-        }
+        String truncatedBreadcrumb = UtilsInternalLimits.truncateValueSize(breadcrumb, valueSize, L, "[BreadcrumbHelper] addBreadcrumb");
 
         if (logs.size() >= maxBreadcrumbs) {
             L.d("[BreadcrumbHelper] addBreadcrumb, Breadcrumb amount limit exceeded, deleting the oldest one");
             logs.removeFirst();
         }
-        logs.add(breadcrumb);
+        logs.add(truncatedBreadcrumb);
 
         assert logs.size() <= maxBreadcrumbs;
     }
