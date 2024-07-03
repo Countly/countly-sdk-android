@@ -423,7 +423,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(8, segmentation.size());
 
         Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
-        Assert.assertEquals(7, segmentation.size());
+        Assert.assertEquals(8, segmentation.size());
         Assert.assertEquals(empty, segmentation.get("empty"));
         Assert.assertEquals(arrInt, segmentation.get("arrInt"));
         Assert.assertEquals(arrStr, segmentation.get("arrStr"));
@@ -431,6 +431,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(arrBool, segmentation.get("arrBool"));
         Assert.assertEquals(arrFloat, segmentation.get("arrFloat"));
         Assert.assertEquals(arrLong, segmentation.get("arrLong"));
+        Assert.assertEquals(arrObj, segmentation.get("arrObj"));
     }
 
     @Test
