@@ -433,7 +433,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     @Override
-    void deviceIdChanged() {
+    void deviceIdChanged(boolean withoutMerge) {
         L.v("[RemoteConfig] Device ID changed will update values: [" + updateRemoteConfigAfterIdChange + "]");
 
         if (updateRemoteConfigAfterIdChange) {
