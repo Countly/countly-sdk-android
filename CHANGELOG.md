@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Added mixed type of immutable lists, arrays to client given segmentations
+
 ## 24.7.0
 * ! Minor breaking change ! User properties will now be automatically saved under the following conditions:
   * When an event is recorded
