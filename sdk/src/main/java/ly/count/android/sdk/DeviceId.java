@@ -142,7 +142,7 @@ public class DeviceId {
 
     protected void enterTempIDMode() {
         L.v("[DeviceId-int] enterTempIDMode");
-        setAndStoreId(DeviceIdType.DEVELOPER_SUPPLIED, ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
+        setAndStoreId(DeviceIdType.TEMPORARY_ID, ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
     }
 
     void setAndStoreId(@NonNull DeviceIdType setType, @NonNull String setDeviceId) {
@@ -164,9 +164,6 @@ public class DeviceId {
     protected DeviceIdType getType() {
         assert type != null;
 
-        if (isTemporaryIdModeEnabled()) {
-            return DeviceIdType.TEMPORARY_ID;
-        }
         return type;
     }
 
