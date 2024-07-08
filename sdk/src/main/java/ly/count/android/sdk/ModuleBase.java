@@ -88,7 +88,7 @@ abstract class ModuleBase {
     //}
 
     //notify the SDK modules that the device ID has changed
-    void deviceIdChanged() {
+    void deviceIdChanged(boolean withoutMerge) {
     }
 
     //notify the SDK modules that consent was updated

@@ -878,11 +878,11 @@ public class Countly {
         staticInit();
     }
 
-    synchronized void notifyDeviceIdChange() {
+    synchronized void notifyDeviceIdChange(boolean withoutMerge) {
         L.d("Notifying modules that device ID changed");
 
         for (ModuleBase module : modules) {
-            module.deviceIdChanged();
+            module.deviceIdChanged(withoutMerge);
         }
     }
 

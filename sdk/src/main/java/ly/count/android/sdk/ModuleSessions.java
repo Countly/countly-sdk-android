@@ -171,6 +171,14 @@ public class ModuleSessions extends ModuleBase {
         sessionRunning = false;
     }
 
+    @Override
+    void deviceIdChanged(boolean withoutMerge) {
+        if (!manualSessionControlEnabled && withoutMerge) {
+            L.d("[ModuleSessions] deviceIdChanged, automatic session control enabled and device id changed without merge, starting a new session");
+            beginSessionInternal();
+        }
+    }
+
     public class Sessions {
         public void beginSession() {
             synchronized (_cly) {
