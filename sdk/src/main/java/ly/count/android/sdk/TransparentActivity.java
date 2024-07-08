@@ -14,7 +14,7 @@ import android.webkit.WebViewClient;
 import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 
-class TransparentActivity extends Activity {
+public class TransparentActivity extends Activity {
 
     static final String X_KEY = "x";
     static final String Y_KEY = "y";
@@ -78,7 +78,7 @@ class TransparentActivity extends Activity {
      * @param context The context
      * @param config The configuration
      */
-    protected static void showActivity(@NonNull Context context, @NonNull TransparentActivityConfig config) {
+    public static void showActivity(@NonNull Context context, @NonNull TransparentActivityConfig config) {
         assert context != null;
         int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
         int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
