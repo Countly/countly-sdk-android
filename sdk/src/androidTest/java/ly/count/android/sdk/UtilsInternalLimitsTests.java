@@ -417,13 +417,15 @@ public class UtilsInternalLimitsTests {
         JSONArray arrBool = new JSONArray(Arrays.asList(true, false, true, false));
         JSONArray arrFloat = new JSONArray(Arrays.asList(1.1f, 2.2f, 3.3f, 4.4f, 5.5f));
         JSONArray arrLong = new JSONArray(Arrays.asList(1L, 2L, 3L, 4L, 5L));
-        JSONArray arrObj = new JSONArray(Arrays.asList(1, 2, "ABC", true, 3.3d, 4.4f, 5L, new Object()));
-        Map<String, Object> segmentation = TestUtils.map("empty", empty, "arrInt", arrInt, "arrStr", arrStr, "arrDouble", arrDouble, "arrBool", arrBool, "arrFloat", arrFloat, "arrLong", arrLong, "arrObj", arrObj);
+        JSONArray arrObj = new JSONArray(Arrays.asList(1, 2, "ABC", true, 3.3d, 4.4f, 5L));
+        JSONArray arrObjUltra = new JSONArray(Arrays.asList(new HashMap<>(), new ArrayList<>(), empty));
 
-        Assert.assertEquals(8, segmentation.size());
+        Map<String, Object> segmentation = TestUtils.map("empty", empty, "arrInt", arrInt, "arrStr", arrStr, "arrDouble", arrDouble, "arrBool", arrBool, "arrFloat", arrFloat, "arrLong", arrLong, "arrObj", arrObj, "arrObjUltra", arrObjUltra);
+
+        Assert.assertEquals(9, segmentation.size());
 
         Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
-        Assert.assertEquals(7, segmentation.size());
+        Assert.assertEquals(8, segmentation.size());
         Assert.assertEquals(empty, segmentation.get("empty"));
         Assert.assertEquals(arrInt, segmentation.get("arrInt"));
         Assert.assertEquals(arrStr, segmentation.get("arrStr"));
@@ -431,6 +433,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(arrBool, segmentation.get("arrBool"));
         Assert.assertEquals(arrFloat, segmentation.get("arrFloat"));
         Assert.assertEquals(arrLong, segmentation.get("arrLong"));
+        Assert.assertEquals(arrObj, segmentation.get("arrObj"));
     }
 
     @Test

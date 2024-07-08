@@ -592,6 +592,7 @@ public class ModuleFeedbackTests {
             "arrDO", new JSONArray(arrDO),
             "arrBO", new JSONArray(arrBO),
             "arrIO", new JSONArray(arrIO),
+            "arrObj", new JSONArray(arrObj),
             "arrObjStr", new JSONArray(arrObjStr), "rating", 10, "comment", "huhu"
         );
 
@@ -644,7 +645,8 @@ public class ModuleFeedbackTests {
             "arrL", arrL,
             "arrD", arrD,
             "arrBO", arrBO,
-            "arrIO", arrIO, "rating", 10, "comment", "huhu"
+            "arrIO", arrIO, "rating", 10, "comment", "huhu",
+            "arrObj", arrObj
         );
 
         fillFeedbackWidgetSegmentationParams(expectedSegmentation, widgetInfo.widgetId);

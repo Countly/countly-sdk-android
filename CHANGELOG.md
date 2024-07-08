@@ -1,4 +1,5 @@
 ## XX.XX.XX
+* Added mixed type of immutable lists, arrays to client given segmentations
 * Mitigated issues where:
   * session was ending regardless of manual control after without merge, not anymore.
   * session was not starting even if consent is not required and automatic sessions are enabled after without merge, not anymore.
