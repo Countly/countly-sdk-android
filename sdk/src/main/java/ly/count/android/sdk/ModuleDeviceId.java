@@ -131,7 +131,10 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //update remote config_ values after id change if automatic update is enabled
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
-        _cly.moduleSessions.endSessionInternal();
+        if (!_cly.moduleSessions.manualSessionControlEnabled) {
+            //if manual session control is not enabled, end the current session
+            _cly.moduleSessions.endSessionInternal(); // this will check consent
+        }
 
         //remove all consent
         _cly.moduleConsent.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
@@ -146,7 +149,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         //clear automated star rating session values because now we have a new user
         _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal();
-        _cly.notifyDeviceIdChange();
+        _cly.notifyDeviceIdChange(true);
     }
 
     /**
@@ -192,7 +195,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
             requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId());
             deviceIdInstance.changeToCustomId(deviceId);
-            _cly.notifyDeviceIdChange();
+            _cly.notifyDeviceIdChange(false);
         }
     }
 
