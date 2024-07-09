@@ -50,6 +50,8 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
+    RequestListener requestListener;
+    ResponseListener responseListener;
 
     HealthTracker healthTracker;
 
@@ -823,6 +825,10 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
+    public String prepareFetchContents(String resolution, String userAgent) {
+        return prepareCommonRequestData() + "&resolution=" + resolution + "&ua=" + UtilsNetworking.urlEncodeString(userAgent) + "&method=fetch_contents";
+    }
+
     @Override
     public String prepareServerConfigRequest() {
         return prepareCommonRequestDataShort() + "&method=sc";
@@ -870,7 +876,8 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
+
+        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, requestListener, responseListener);
         cp.pcc = pcc;
         return cp;
     }

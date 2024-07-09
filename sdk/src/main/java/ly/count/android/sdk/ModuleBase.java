@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import java.util.List;
+import org.json.JSONObject;
 
 abstract class ModuleBase {
     final Countly _cly;
@@ -101,5 +102,13 @@ abstract class ModuleBase {
     }
 
     void initFinished(@NonNull CountlyConfig config) {
+    }
+
+    void onRequest(@NonNull String request) {
+
+    }
+
+    void onResponse(@NonNull JSONObject response) {
+
     }
 }

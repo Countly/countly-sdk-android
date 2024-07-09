@@ -178,6 +178,7 @@ public class Countly {
     ModuleUserProfile moduleUserProfile = null;
     ModuleConfiguration moduleConfiguration = null;
     ModuleHealthCheck moduleHealthCheck = null;
+    ModuleContent moduleContent = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -570,6 +571,7 @@ public class Countly {
             moduleLocation = new ModuleLocation(this, config);
             moduleFeedback = new ModuleFeedback(this, config);
             moduleAttribution = new ModuleAttribution(this, config);
+            moduleContent = new ModuleContent(this, config);
 
             modules.clear();
             modules.add(moduleConfiguration);
@@ -587,6 +589,7 @@ public class Countly {
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
+            modules.add(moduleContent);
 
             modules.add(moduleHealthCheck);//set this at the end to detect any health issues with other modules before sending the report
 
@@ -673,6 +676,17 @@ public class Countly {
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
+
+            connectionQueue_.requestListener = result -> {
+                for (ModuleBase module : modules) {
+                    module.onRequest(result);
+                }
+            };
+            connectionQueue_.responseListener = response -> {
+                for (ModuleBase module : modules) {
+                    module.onResponse(response);
+                }
+            };
             connectionQueue_.requestInfoProvider = new RequestInfoProvider() {
                 @Override public boolean isHttpPostForced() {
                     return requestQueue().isHttpPostForced();
@@ -871,6 +885,7 @@ public class Countly {
         moduleRequestQueue = null;
         moduleConfiguration = null;
         moduleHealthCheck = null;
+        moduleContent = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;

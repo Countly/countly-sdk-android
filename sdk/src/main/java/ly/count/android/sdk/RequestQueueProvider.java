@@ -69,4 +69,6 @@ interface RequestQueueProvider {
     String prepareServerConfigRequest();
 
     String prepareHealthCheckRequest(String preparedMetrics);
+
+    String prepareFetchContents(String resolution, String userAgent);
 }

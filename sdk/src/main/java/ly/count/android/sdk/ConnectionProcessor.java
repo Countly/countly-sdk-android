@@ -71,6 +71,8 @@ public class ConnectionProcessor implements Runnable {
     ModuleLog L;
 
     public PerformanceCounterCollector pcc;
+    private final RequestListener requestListener;
+    private final ResponseListener responseListener;
 
     private enum RequestResult {
         OK,         // success
@@ -79,7 +81,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker) {
+        HealthTracker healthTracker, RequestListener requestListener, ResponseListener responseListener) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -89,6 +91,8 @@ public class ConnectionProcessor implements Runnable {
         requestInfoProvider_ = requestInfoProvider;
         L = logModule;
         this.healthTracker = healthTracker;
+        this.requestListener = requestListener;
+        this.responseListener = responseListener;
     }
 
     synchronized public @NonNull URLConnection urlConnectionForServerRequest(@NonNull String requestData, @Nullable final String customEndpoint) throws IOException {
@@ -416,7 +420,9 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // add the remaining request count
-            requestData = requestData + "&rr=" + (storedRequestCount - 1);
+
+            requestListener.onRequest(requestData);
+            requestData = requestData + "&rr=" + (storedRequestCount - 1); // move this to the module request queue on request thing
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_06_remainingRequests", UtilsTime.getNanoTime() - pccTsStartRemainingRequests);
@@ -496,6 +502,7 @@ public class ConnectionProcessor implements Runnable {
                             } else {
                                 if (jsonObject.has("result")) {
                                     //contains result entry
+                                    responseListener.onResponse(jsonObject);
                                     L.v("[ConnectionProcessor] Response was a success");
                                     rRes = RequestResult.OK;
                                 } else {
