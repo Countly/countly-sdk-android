@@ -67,6 +67,9 @@ public class ConnectionProcessorTests {
 
     String testSaltValueDefult = "123qwerty";
 
+    RequestListener requestListener;
+    ResponseListener responseListener;
+
     @Before
     public void setUp() {
         configurationProviderFake = new ConfigurationProvider() {
@@ -77,6 +80,12 @@ public class ConnectionProcessorTests {
             @Override public boolean getTrackingEnabled() {
                 return true;
             }
+        };
+
+        requestListener = result -> {
+        };
+
+        responseListener = result -> {
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);
@@ -108,7 +117,7 @@ public class ConnectionProcessorTests {
             }
         };
 
-        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
+        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, requestListener, responseListener);
         testDeviceId = "123";
     }
 
@@ -117,7 +126,7 @@ public class ConnectionProcessorTests {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
         final DeviceIdProvider mockDeviceId = mock(DeviceIdProvider.class);
-        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
+        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, requestListener, responseListener);
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
     }
@@ -184,7 +193,7 @@ public class ConnectionProcessorTests {
         customValues.put("5", "");
         customValues.put("6", null);
 
-        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock);
+        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock, requestListener, responseListener);
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest("eventData", null);
 
         assertEquals("bb", urlConnection.getRequestProperty("aa"));
