@@ -8,7 +8,7 @@
               android:paddingRight="@dimen/activity_horizontal_margin"
               android:paddingTop="@dimen/activity_vertical_margin"
               android:paddingBottom="@dimen/activity_vertical_margin"
-              tools:context=".ActivityExampleCrashReporting"
+              tools:context=".ActivityExampleTransparentActivity"
               android:gravity="center_vertical"
 >
 
@@ -16,69 +16,49 @@
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/buttonShowTransparent_text1"
-      android:hint="X Coordinate"
-      android:gravity="center"/>
+      android:hint="@string/x_coordinate"
+      android:gravity="center"
+      android:autofillHints="number,coordinate"
+      android:inputType="numberDecimal"/>
   <EditText
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/buttonShowTransparent_text2"
-      android:hint="Y Coordinate"
-      android:gravity="center"/>
-
-  <EditText
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/buttonShowTransparent_text3"
-      android:hint="X Percentage"
-      android:gravity="center"/>
-
-  <EditText
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/buttonShowTransparent_text4"
-      android:hint="Y Percentage"
-      android:gravity="center"/>
-
+      android:hint="@string/y_coordinate"
+      android:gravity="center"
+      android:autofillHints="number,coordinate"
+      android:inputType="numberDecimal"/>
   <EditText
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/buttonShowTransparent_text5"
-      android:hint="Width Px"
-      android:gravity="center"/>
+      android:hint="@string/width_px"
+      android:gravity="center"
+      android:autofillHints="number,coordinate"
+      android:inputType="numberDecimal"/>
   <EditText
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/buttonShowTransparent_text6"
-      android:hint="Height Px"
-      android:gravity="center"/>
-
-  <EditText
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/buttonShowTransparent_text7"
-      android:hint="Width Percentage"
-      android:gravity="center"/>
-
-  <EditText
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:id="@+id/buttonShowTransparent_text8"
-      android:hint="Height Percentage"
-      android:gravity="center"/>
-
+      android:hint="@string/height_px"
+      android:gravity="center"
+      android:autofillHints="number,coordinate"
+      android:inputType="numberDecimal"/>
   <EditText
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/buttonShowTransparent_text9"
-      android:hint="Webview URL"
-      android:gravity="center"/>
+      android:hint="@string/webview_url"
+      android:gravity="center"
+      android:autofillHints="number,coordinate"
+      android:inputType="textUri"/>
 
   <Button
-      android:text="Show Transparent Activity"
+      android:text="@string/show_transparent_activity"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:id="@+id/buttonShowTransparent"
       android:onClick="onClickShowTransparentActivity"
-  />
+      tools:ignore="UsingOnClickInXml"/>
 
 </LinearLayout>

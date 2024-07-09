@@ -95,25 +95,8 @@ public class TransparentActivity extends Activity {
     }
 
     private static void calculateSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
-        if (config.xPercent != null) {
-            config.x = (int) (screenWidth * adjustPercent(config.xPercent));
-        }
-        if (config.yPercent != null) {
-            config.y = (int) (screenHeight * adjustPercent(config.yPercent));
-        }
-
         int remainingWidth = screenWidth - (config.x != null ? config.x : 0);
         int remainingHeight = screenHeight - (config.y != null ? config.y : 0);
-
-        if (config.widthPercent != null) {
-            config.width = (int) (remainingWidth * adjustPercent(config.widthPercent));
-            config.width = Math.min(config.width, remainingWidth);
-        }
-
-        if (config.heightPercent != null) {
-            config.height = (int) (remainingHeight * adjustPercent(config.heightPercent));
-            config.height = Math.min(config.height, remainingHeight);
-        }
 
         //fallback to remaining screen
         if (config.width == null) {
@@ -130,15 +113,5 @@ public class TransparentActivity extends Activity {
         if (config.y == null) {
             config.y = 0;
         }
-    }
-
-    private static Double adjustPercent(Double percent) {
-        if (percent > 1 || percent < -1) {
-            percent = percent % 1;
-        }
-        if (percent < 0) {
-            percent = 1 + percent;
-        }
-        return percent;
     }
 }
