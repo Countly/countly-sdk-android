@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import android.content.Intent;
+import android.content.res.Resources;
 import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import org.json.JSONObject;
@@ -7,9 +9,8 @@ import org.json.JSONObject;
 public class ModuleContent extends ModuleBase {
 
     private String contentChecksum = null;
-    private ImmediateRequestGenerator iRGenerator;
-
-    private int requestCountToAddParameter = 0;
+    private final ImmediateRequestGenerator iRGenerator;
+    private final int requestCountToAddParameter;
     private int requestCount = 0;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -29,6 +30,7 @@ public class ModuleContent extends ModuleBase {
 
             String resolution = deviceInfo.mp.getResolution(_cly.context_);
             String userAgent = new WebView(_cly.context_).getSettings().getUserAgentString();
+            // ADD ORIENTATION
             String requestData = requestQueueProvider.prepareFetchContents(resolution, userAgent);
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
@@ -44,7 +46,7 @@ public class ModuleContent extends ModuleBase {
                     if (validateResponse(checkResponse)) {
                         L.d("[ModuleContent] fetchContents, got new content data, showing it");
                         TransparentActivityConfig tac = parseContent(checkResponse);
-                        TransparentActivity.showActivity(_cly.context_, tac);
+                        showActivity(tac);
                     }
                 } catch (Exception ex) {
                     L.e("[ModuleContent] fetchContents, Encountered internal issue while trying to fetch contents, [" + ex + "]");
@@ -55,6 +57,38 @@ public class ModuleContent extends ModuleBase {
 
     boolean validateResponse(JSONObject response) {
         return response.has("content") && response.has("x") && response.has("y") && response.has("width") && response.has("height");
+    }
+
+    void showActivity(TransparentActivityConfig config) {
+        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+        int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+        tweakSize(screenWidth, screenHeight, config);
+
+        Intent intent = new Intent(_cly.context_, TransparentActivity.class);
+        intent.putExtra(TransparentActivity.CONFIGURATION, config);
+
+        _cly.context_.startActivity(intent);
+    }
+
+    private static void tweakSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
+        //fallback to top left corner
+        if (config.x == null) {
+            config.x = 0;
+        }
+        if (config.y == null) {
+            config.y = 0;
+        }
+
+        int remainingWidth = screenWidth - config.x;
+        int remainingHeight = screenHeight - config.y;
+
+        //fallback to remaining screen
+        if (config.width == null) {
+            config.width = remainingWidth;
+        }
+        if (config.height == null) {
+            config.height = remainingHeight;
+        }
     }
 
     TransparentActivityConfig parseContent(JSONObject response) {
