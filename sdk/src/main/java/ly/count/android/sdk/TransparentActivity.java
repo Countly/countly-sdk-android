@@ -111,16 +111,18 @@ public class TransparentActivity extends Activity {
     }
 
     private static void tweakSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
+        int topLeftX = -(screenWidth / 2);
+        int topLeftY = -(screenHeight / 2);
         //fallback to top left corner
         if (config.x == null) {
-            config.x = -(screenWidth / 2);
+            config.x = topLeftX;
         } else {
-            config.x = Double.valueOf(Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density)).intValue();
+            config.x = topLeftX + Double.valueOf(Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density)).intValue();
         }
         if (config.y == null) {
-            config.y = -(screenHeight / 2);
+            config.y = topLeftY;
         } else {
-            config.y = Double.valueOf(Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density)).intValue();
+            config.y = topLeftY + Double.valueOf(Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density)).intValue();
         }
 
         int remainingWidth = screenWidth - config.x;
