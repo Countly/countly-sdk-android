@@ -30,7 +30,9 @@ public class ModuleContent extends ModuleBase {
 
             String resolution = deviceInfo.mp.getResolution(_cly.context_);
             String userAgent = new WebView(_cly.context_).getSettings().getUserAgentString();
-            // ADD ORIENTATION
+            // ADD PORTRAIT AND LANDSCAPE VERSION OF IT
+            // ADD DENSITY
+            // GIVE RESOLUTION / DENSITY
             String requestData = requestQueueProvider.prepareFetchContents(resolution, userAgent);
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
@@ -62,6 +64,7 @@ public class ModuleContent extends ModuleBase {
     void showActivity(TransparentActivityConfig config) {
         int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
         int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+
         tweakSize(screenWidth, screenHeight, config);
 
         Intent intent = new Intent(_cly.context_, TransparentActivity.class);
@@ -93,10 +96,10 @@ public class ModuleContent extends ModuleBase {
 
     TransparentActivityConfig parseContent(JSONObject response) {
         String content = response.optString("content");
-        Integer width = response.optInt("width");
-        Integer height = response.optInt("height");
-        Integer x = response.optInt("x");
-        Integer y = response.optInt("y");
+        Integer width = response.optInt("width"); // x density
+        Integer height = response.optInt("height"); // x density
+        Integer x = response.optInt("x"); // x density
+        Integer y = response.optInt("y"); // x density
 
         L.d("[ModuleContent] parseContent, content: [" + content + "], x: [" + x + "], y: [" + y + "], width: [" + width + "], height: [" + height + "]");
 

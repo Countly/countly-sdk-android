@@ -7,7 +7,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.view.Gravity;
+import android.util.Log;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -31,13 +31,11 @@ public class TransparentActivity extends Activity {
             finish();
             return;
         }
-        
         int width = config.width;
         int height = config.height;
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        params.gravity = Gravity.TOP;
         params.x = config.x;
         params.y = config.y;
         params.height = height;
@@ -88,12 +86,26 @@ public class TransparentActivity extends Activity {
      */
     public static void showActivity(@NonNull Context context, @NonNull TransparentActivityConfig config) {
         assert context != null;
-        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
+        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels; // only get the parent pixel size
         int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
         tweakSize(screenWidth, screenHeight, config);
 
         Intent intent = new Intent(context, TransparentActivity.class);
         intent.putExtra(CONFIGURATION, config);
+        float density = Resources.getSystem().getDisplayMetrics().density;
+
+        Log.e("PIXEL", "Density " + density);
+        Log.e("PIXEL", "Xdpi " + Resources.getSystem().getDisplayMetrics().xdpi);
+        Log.e("PIXEL", "Ydpi " + Resources.getSystem().getDisplayMetrics().ydpi);
+        Log.e("PIXEL", "screenHeight " + screenHeight);
+        Log.e("PIXEL", "screenWidth " + screenWidth);
+        Log.e("PIXEL", "h/D" + screenHeight / density);
+        Log.e("PIXEL", "w/D" + screenWidth / density);
+
+        Log.e("PIXEL", "X " + config.x);
+        Log.e("PIXEL", "Y " + config.y);
+        Log.e("PIXEL", "Width " + config.width);
+        Log.e("PIXEL", "Height " + config.height);
 
         context.startActivity(intent);
     }
@@ -101,10 +113,14 @@ public class TransparentActivity extends Activity {
     private static void tweakSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
         //fallback to top left corner
         if (config.x == null) {
-            config.x = 0;
+            config.x = -(screenWidth / 2);
+        } else {
+            config.x = Double.valueOf(Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density)).intValue();
         }
         if (config.y == null) {
-            config.y = 0;
+            config.y = -(screenHeight / 2);
+        } else {
+            config.y = Double.valueOf(Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density)).intValue();
         }
 
         int remainingWidth = screenWidth - config.x;
@@ -113,9 +129,13 @@ public class TransparentActivity extends Activity {
         //fallback to remaining screen
         if (config.width == null) {
             config.width = remainingWidth;
+        } else {
+            config.width = Double.valueOf(Math.ceil(config.width * Resources.getSystem().getDisplayMetrics().density)).intValue();
         }
         if (config.height == null) {
             config.height = remainingHeight;
+        } else {
+            config.height = Double.valueOf(Math.ceil(config.height * Resources.getSystem().getDisplayMetrics().density)).intValue();
         }
     }
 }
