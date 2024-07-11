@@ -84,7 +84,7 @@ public class TransparentActivity extends Activity {
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
         final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         final Display display = wm.getDefaultDisplay();
-        final DisplayMetrics metrics = new DisplayMetrics();
+        final DisplayMetrics metrics = new DisplayMetrics(); // this gets all
         display.getMetrics(metrics);
 
         if (config == null) {
