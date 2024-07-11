@@ -834,10 +834,16 @@ class ConnectionQueue implements RequestQueueProvider {
         int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
         boolean portrait = displayMetrics.widthPixels <= displayMetrics.heightPixels;
         try {
-            json.put("lw", portrait ? scaledHeight : scaledWidth);
-            json.put("lh", portrait ? scaledWidth : scaledHeight);
-            json.put("pw", portrait ? scaledWidth : scaledHeight);
-            json.put("ph", portrait ? scaledHeight : scaledWidth);
+            JSONObject landscapeJson = new JSONObject();
+            landscapeJson.put("width", portrait ? scaledHeight : scaledWidth);
+            landscapeJson.put("height", portrait ? scaledWidth : scaledHeight);
+
+            JSONObject portraitJson = new JSONObject();
+            portraitJson.put("width", portrait ? scaledWidth : scaledHeight);
+            portraitJson.put("height", portrait ? scaledHeight : scaledWidth);
+
+            json.put("landscape", landscapeJson);
+            json.put("portrait", portraitJson);
         } catch (JSONException e) {
             L.e("Error while preparing fetch contents request");
         }
