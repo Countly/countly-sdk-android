@@ -14,6 +14,7 @@ import android.view.Gravity;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
 
@@ -104,7 +105,11 @@ public class TransparentActivity extends Activity {
         if (config.y < 1) {
             config.y = 0;
         }
+        //config.y = metrics.heightPixels;
+        //config.height = config.height * 2;
 
+        Log.e("PIXEL", "screen width: " + metrics.widthPixels + " height: " + metrics.heightPixels);
+        Log.e("PIXEL", "density: " + metrics.density);
         Log.e("PIXEL ", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
 
         return config;
@@ -134,6 +139,7 @@ public class TransparentActivity extends Activity {
 
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
         Log.e("PIXEL", "onConfigurationChanged");
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;

@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -35,6 +36,13 @@ public class ModuleContent extends ModuleBase {
             contentChecksum = checksum;
 
             DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
+            // todo add landscape
+            //https://stackoverflow.com/questions/20264268/how-do-i-get-the-height-and-width-of-the-android-navigation-bar-programmatically
+            Resources resources = _cly.context_.getResources();
+            int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+            if (resourceId > 0) {
+                displayMetrics.heightPixels += resources.getDimensionPixelSize(resourceId);
+            }
             // GIVE RESOLUTION / DENSITY
             String requestData = requestQueueProvider.prepareFetchContents(displayMetrics);
             Log.e("PIXEL", requestData);
