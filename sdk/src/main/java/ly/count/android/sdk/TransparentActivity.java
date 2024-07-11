@@ -6,8 +6,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -33,9 +37,11 @@ public class TransparentActivity extends Activity {
         }
         int width = config.width;
         int height = config.height;
+        final View rootView = findViewById(android.R.id.content);
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
+        params.gravity = Gravity.TOP | Gravity.LEFT;
         params.x = config.x;
         params.y = config.y;
         params.height = height;
@@ -53,6 +59,22 @@ public class TransparentActivity extends Activity {
         // Add views
         relativeLayout.addView(webView);
         setContentView(relativeLayout);
+
+        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                Rect rect = new Rect();
+                rootView.getWindowVisibleDisplayFrame(rect);
+
+                int actualWidth = rect.width();
+                int actualHeight = rect.height();
+
+                Log.e("PIXEL", "Actual Width " + actualWidth);
+                Log.e("PIXEL", "Actual Height " + actualHeight);
+
+                rootView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+            }
+        });
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -111,8 +133,8 @@ public class TransparentActivity extends Activity {
     }
 
     private static void tweakSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
-        int topLeftX = -(screenWidth / 2);
-        int topLeftY = -(screenHeight / 2);
+        int topLeftX = 0;//-(screenWidth / 2);
+        int topLeftY = 0;//-(screenHeight / 2);
         //fallback to top left corner
         if (config.x == null) {
             config.x = topLeftX;
