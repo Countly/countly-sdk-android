@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -49,13 +50,13 @@ public class ModuleContent extends ModuleBase {
                 try {
                     if (validateResponse(checkResponse)) {
                         L.d("[ModuleContent] fetchContentsInternal, got new content data, showing it");
-                        Map<String, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
+                        Map<Integer, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
 
                         Intent intent = new Intent(_cly.context_, TransparentActivity.class);
-                        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get("Landscape"));
-                        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get("Portrait"));
+                        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
+                        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
                         intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
-
+                        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
                         _cly.context_.startActivity(intent);
                     }
                 } catch (Exception ex) {
@@ -70,22 +71,22 @@ public class ModuleContent extends ModuleBase {
     }
 
     @NonNull
-    Map<String, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
-        Map<String, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
+    Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
+        Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         String content = response.optString("pathToHtml");
         JSONObject coordinates = response.optJSONObject("placementCoordinates");
 
         assert coordinates != null;
-        placementCoordinates.put("Portrait", extractOrientationPlacements(coordinates, displayMetrics.density, "Portrait", content));
-        placementCoordinates.put("Landscape", extractOrientationPlacements(coordinates, displayMetrics.density, "Landscape", content));
+        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "portrait", content));
+        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, extractOrientationPlacements(coordinates, displayMetrics.density, "landscape", content));
 
         return placementCoordinates;
     }
 
     private TransparentActivityConfig extractOrientationPlacements(@NonNull JSONObject placements, float density, @NonNull String orientation, @NonNull String content) {
-        if (placements.has(orientation.toLowerCase())) {
+        if (placements.has(orientation)) {
             Log.d("Countly", "[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "]");
-            JSONObject orientationPlacements = placements.optJSONObject(orientation.toLowerCase());
+            JSONObject orientationPlacements = placements.optJSONObject(orientation);
             assert orientationPlacements != null;
             int x = orientationPlacements.optInt("x");
             int y = orientationPlacements.optInt("y");

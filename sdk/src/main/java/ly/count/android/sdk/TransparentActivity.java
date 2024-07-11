@@ -8,6 +8,7 @@ import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.WindowManager;
@@ -87,6 +88,7 @@ public class TransparentActivity extends Activity {
         display.getMetrics(metrics);
 
         if (config == null) {
+            Log.e("PIXEL", "Config is null");
             return new TransparentActivityConfig(0, 0, metrics.widthPixels, metrics.heightPixels);
         }
         if (config.width < 1) {
@@ -101,6 +103,8 @@ public class TransparentActivity extends Activity {
         if (config.y < 1) {
             config.y = 0;
         }
+
+        Log.e("PIXEL ", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
 
         return config;
     }
