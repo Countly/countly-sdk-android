@@ -37,6 +37,7 @@ public class ModuleContent extends ModuleBase {
             DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
             // GIVE RESOLUTION / DENSITY
             String requestData = requestQueueProvider.prepareFetchContents(displayMetrics);
+            Log.e("PIXEL", requestData);
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();

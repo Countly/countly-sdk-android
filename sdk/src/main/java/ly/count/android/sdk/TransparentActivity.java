@@ -91,6 +91,7 @@ public class TransparentActivity extends Activity {
             Log.e("PIXEL", "Config is null");
             return new TransparentActivityConfig(0, 0, metrics.widthPixels, metrics.heightPixels);
         }
+
         if (config.width < 1) {
             config.width = metrics.widthPixels;
         }
@@ -111,6 +112,7 @@ public class TransparentActivity extends Activity {
 
     private void changeOrientation(TransparentActivityConfig config) {
         // Configure window layout parameters
+        Log.e("PIXEL", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
         params.gravity = Gravity.TOP | Gravity.LEFT;
         params.x = config.x;
@@ -132,8 +134,11 @@ public class TransparentActivity extends Activity {
 
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        Log.e("PIXEL", "onConfigurationChanged");
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;
+            Log.e("PIXEL", "Orientation changed");
+            Log.e("PIXEL", "Current orientation: " + currentOrientation + " Landscape: " + Configuration.ORIENTATION_LANDSCAPE + " Portrait: " + Configuration.ORIENTATION_PORTRAIT);
             switch (currentOrientation) {
                 case Configuration.ORIENTATION_LANDSCAPE:
                     if (configLandscape != null) {
