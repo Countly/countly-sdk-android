@@ -2,7 +2,7 @@ package ly.count.android.sdk;
 
 import android.content.Intent;
 import android.content.res.Resources;
-import android.webkit.WebView;
+import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import org.json.JSONObject;
 
@@ -28,17 +28,14 @@ public class ModuleContent extends ModuleBase {
             L.d("[ModuleContent] fetchContent, new content data available, fetching it");
             contentChecksum = checksum;
 
-            String resolution = deviceInfo.mp.getResolution(_cly.context_);
-            String userAgent = new WebView(_cly.context_).getSettings().getUserAgentString();
-            // ADD PORTRAIT AND LANDSCAPE VERSION OF IT
-            // ADD DENSITY
+            DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
             // GIVE RESOLUTION / DENSITY
-            String requestData = requestQueueProvider.prepareFetchContents(resolution, userAgent);
+            String requestData = requestQueueProvider.prepareFetchContents(displayMetrics);
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i", cp, false, networkingIsEnabled, checkResponse -> {
+            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/content/sdkDim", cp, false, networkingIsEnabled, checkResponse -> {
                 L.d("[ModuleContent] fetchContents, processing fetched contents, received response is :[" + checkResponse + "]");
                 if (checkResponse == null) {
                     return;
@@ -77,9 +74,13 @@ public class ModuleContent extends ModuleBase {
         //fallback to top left corner
         if (config.x == null) {
             config.x = 0;
+        } else {
+            config.x = (int) Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density);
         }
         if (config.y == null) {
             config.y = 0;
+        } else {
+            config.y = (int) Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density);
         }
 
         int remainingWidth = screenWidth - config.x;
@@ -88,9 +89,13 @@ public class ModuleContent extends ModuleBase {
         //fallback to remaining screen
         if (config.width == null) {
             config.width = remainingWidth;
+        } else {
+            config.width = (int) Math.ceil(config.width * Resources.getSystem().getDisplayMetrics().density);
         }
         if (config.height == null) {
             config.height = remainingHeight;
+        } else {
+            config.height = (int) Math.ceil(config.height * Resources.getSystem().getDisplayMetrics().density);
         }
     }
 

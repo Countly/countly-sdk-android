@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Map;
@@ -70,5 +71,5 @@ interface RequestQueueProvider {
 
     String prepareHealthCheckRequest(String preparedMetrics);
 
-    String prepareFetchContents(String resolution, String userAgent);
+    String prepareFetchContents(DisplayMetrics displayMetrics);
 }

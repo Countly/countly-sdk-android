@@ -22,6 +22,7 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
+import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Map;
@@ -32,6 +33,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * ConnectionQueue queues session and event data and periodically sends that data to
@@ -825,8 +828,21 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
-    public String prepareFetchContents(String resolution, String userAgent) {
-        return prepareCommonRequestData() + "&resolution=" + resolution + "&ua=" + UtilsNetworking.urlEncodeString(userAgent) + "&method=fetch_contents";
+    public String prepareFetchContents(DisplayMetrics displayMetrics) {
+        JSONObject json = new JSONObject();
+        int scaledWidth = (int) Math.ceil(displayMetrics.widthPixels / displayMetrics.density);
+        int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
+        boolean portrait = displayMetrics.widthPixels <= displayMetrics.heightPixels;
+        try {
+            json.put("lw", portrait ? scaledHeight : scaledWidth);
+            json.put("lh", portrait ? scaledWidth : scaledHeight);
+            json.put("pw", portrait ? scaledWidth : scaledHeight);
+            json.put("ph", portrait ? scaledHeight : scaledWidth);
+        } catch (JSONException e) {
+            L.e("Error while preparing fetch contents request");
+        }
+
+        return prepareCommonRequestData() + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString());
     }
 
     @Override

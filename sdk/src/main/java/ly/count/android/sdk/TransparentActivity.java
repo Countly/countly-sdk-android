@@ -6,18 +6,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Gravity;
-import android.view.View;
-import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
-import java.util.List;
 
 public class TransparentActivity extends Activity {
 
@@ -37,7 +32,15 @@ public class TransparentActivity extends Activity {
         }
         int width = config.width;
         int height = config.height;
-        final View rootView = findViewById(android.R.id.content);
+
+        config.listeners.add((url, webView) -> {
+            if (url.endsWith("cly_x_close=1")) {
+                finish();
+                return true;
+            } else {
+                return false;
+            }
+        });
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
@@ -54,33 +57,17 @@ public class TransparentActivity extends Activity {
         RelativeLayout relativeLayout = new RelativeLayout(this);
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(width, height);
         relativeLayout.setLayoutParams(layoutParams);
-        WebView webView = createWebView(config.url, width, height, config.listeners);
+        WebView webView = createWebView(config);
 
         // Add views
         relativeLayout.addView(webView);
         setContentView(relativeLayout);
-
-        rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                Rect rect = new Rect();
-                rootView.getWindowVisibleDisplayFrame(rect);
-
-                int actualWidth = rect.width();
-                int actualHeight = rect.height();
-
-                Log.e("PIXEL", "Actual Width " + actualWidth);
-                Log.e("PIXEL", "Actual Height " + actualHeight);
-
-                rootView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-            }
-        });
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private WebView createWebView(String uri, int width, int height, List<WebViewUrlListener> listeners) {
+    private WebView createWebView(TransparentActivityConfig config) {
         WebView webView = new CountlyWebView(this);
-        RelativeLayout.LayoutParams webLayoutParams = new RelativeLayout.LayoutParams(width, height);
+        RelativeLayout.LayoutParams webLayoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
         webView.setLayoutParams(webLayoutParams);
@@ -92,10 +79,10 @@ public class TransparentActivity extends Activity {
         webView.clearHistory();
 
         CountlyWebViewClient client = new CountlyWebViewClient();
-        client.registerWebViewUrlListeners(listeners);
+        client.registerWebViewUrlListeners(config.listeners);
 
         webView.setWebViewClient(client);
-        webView.loadUrl(uri);
+        webView.loadUrl(config.url);
         return webView;
     }
 
@@ -114,37 +101,22 @@ public class TransparentActivity extends Activity {
 
         Intent intent = new Intent(context, TransparentActivity.class);
         intent.putExtra(CONFIGURATION, config);
-        float density = Resources.getSystem().getDisplayMetrics().density;
-
-        Log.e("PIXEL", "Density " + density);
-        Log.e("PIXEL", "Xdpi " + Resources.getSystem().getDisplayMetrics().xdpi);
-        Log.e("PIXEL", "Ydpi " + Resources.getSystem().getDisplayMetrics().ydpi);
-        Log.e("PIXEL", "screenHeight " + screenHeight);
-        Log.e("PIXEL", "screenWidth " + screenWidth);
-        Log.e("PIXEL", "h/D" + screenHeight / density);
-        Log.e("PIXEL", "w/D" + screenWidth / density);
-
-        Log.e("PIXEL", "X " + config.x);
-        Log.e("PIXEL", "Y " + config.y);
-        Log.e("PIXEL", "Width " + config.width);
-        Log.e("PIXEL", "Height " + config.height);
-
         context.startActivity(intent);
     }
 
     private static void tweakSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
-        int topLeftX = 0;//-(screenWidth / 2);
-        int topLeftY = 0;//-(screenHeight / 2);
+        //int topLeftX = 0;//-(screenWidth / 2);
+        //int topLeftY = 0;//-(screenHeight / 2);
         //fallback to top left corner
         if (config.x == null) {
-            config.x = topLeftX;
+            config.x = 0;
         } else {
-            config.x = topLeftX + Double.valueOf(Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density)).intValue();
+            config.x = (int) Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density);
         }
         if (config.y == null) {
-            config.y = topLeftY;
+            config.y = 0;
         } else {
-            config.y = topLeftY + Double.valueOf(Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density)).intValue();
+            config.y = (int) Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density);
         }
 
         int remainingWidth = screenWidth - config.x;
@@ -154,12 +126,12 @@ public class TransparentActivity extends Activity {
         if (config.width == null) {
             config.width = remainingWidth;
         } else {
-            config.width = Double.valueOf(Math.ceil(config.width * Resources.getSystem().getDisplayMetrics().density)).intValue();
+            config.width = (int) Math.ceil(config.width * Resources.getSystem().getDisplayMetrics().density);
         }
         if (config.height == null) {
             config.height = remainingHeight;
         } else {
-            config.height = Double.valueOf(Math.ceil(config.height * Resources.getSystem().getDisplayMetrics().density)).intValue();
+            config.height = (int) Math.ceil(config.height * Resources.getSystem().getDisplayMetrics().density);
         }
     }
 }
