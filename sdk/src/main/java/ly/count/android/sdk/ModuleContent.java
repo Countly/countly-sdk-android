@@ -1,9 +1,12 @@
 package ly.count.android.sdk;
 
 import android.content.Intent;
-import android.content.res.Resources;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import androidx.annotation.NonNull;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -12,6 +15,7 @@ public class ModuleContent extends ModuleBase {
     private final ImmediateRequestGenerator iRGenerator;
     private final int requestCountToAddParameter;
     private int requestCount = 0;
+    Content contentInterface;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -20,12 +24,13 @@ public class ModuleContent extends ModuleBase {
 
         L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
         requestCountToAddParameter = config.requestCountToAddParameter;
+        contentInterface = new Content();
     }
 
-    void fetchContents(String checksum) {
-        L.d("[ModuleContent] fetchContent, checksum: [" + checksum + "], old checksum: [" + contentChecksum + "]");
+    void fetchContentsInternal(String checksum) {
+        L.d("[ModuleContent] fetchContentsInternal, checksum: [" + checksum + "], old checksum: [" + contentChecksum + "]");
         if (contentChecksum == null || !contentChecksum.equals(checksum)) {
-            L.d("[ModuleContent] fetchContent, new content data available, fetching it");
+            L.d("[ModuleContent] fetchContentsInternal, new content data available, fetching it");
             contentChecksum = checksum;
 
             DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
@@ -36,111 +41,74 @@ public class ModuleContent extends ModuleBase {
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
             iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/content/sdkDim", cp, false, networkingIsEnabled, checkResponse -> {
-                L.d("[ModuleContent] fetchContents, processing fetched contents, received response is :[" + checkResponse + "]");
+                L.d("[ModuleContent] fetchContentsInternal, processing fetched contents, received response is :[" + checkResponse + "]");
                 if (checkResponse == null) {
                     return;
                 }
 
                 try {
                     if (validateResponse(checkResponse)) {
-                        L.d("[ModuleContent] fetchContents, got new content data, showing it");
-                        TransparentActivityConfig tac = parseContent(checkResponse);
-                        showActivity(tac);
+                        L.d("[ModuleContent] fetchContentsInternal, got new content data, showing it");
+                        Map<String, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
+
+                        Intent intent = new Intent(_cly.context_, TransparentActivity.class);
+                        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get("Landscape"));
+                        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get("Portrait"));
+                        intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+
+                        _cly.context_.startActivity(intent);
                     }
                 } catch (Exception ex) {
-                    L.e("[ModuleContent] fetchContents, Encountered internal issue while trying to fetch contents, [" + ex + "]");
+                    L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
                 }
             }, L);
         }
     }
 
-    boolean validateResponse(JSONObject response) {
-        return response.has("content") && response.has("x") && response.has("y") && response.has("width") && response.has("height");
+    boolean validateResponse(@NonNull JSONObject response) {
+        return response.has("placementCoordinates") && response.has("pathToHtml");
     }
 
-    void showActivity(TransparentActivityConfig config) {
-        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
-        int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
+    @NonNull
+    Map<String, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
+        Map<String, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
+        String content = response.optString("pathToHtml");
+        JSONObject coordinates = response.optJSONObject("placementCoordinates");
 
-        tweakSize(screenWidth, screenHeight, config);
+        assert coordinates != null;
+        placementCoordinates.put("Portrait", extractOrientationPlacements(coordinates, displayMetrics.density, "Portrait", content));
+        placementCoordinates.put("Landscape", extractOrientationPlacements(coordinates, displayMetrics.density, "Landscape", content));
 
-        Intent intent = new Intent(_cly.context_, TransparentActivity.class);
-        intent.putExtra(TransparentActivity.CONFIGURATION, config);
-
-        _cly.context_.startActivity(intent);
+        return placementCoordinates;
     }
 
-    private static void tweakSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
-        //fallback to top left corner
-        if (config.x == null) {
-            config.x = 0;
-        } else {
-            config.x = (int) Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density);
-        }
-        if (config.y == null) {
-            config.y = 0;
-        } else {
-            config.y = (int) Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density);
+    private TransparentActivityConfig extractOrientationPlacements(@NonNull JSONObject placements, float density, @NonNull String orientation, @NonNull String content) {
+        if (placements.has(orientation.toLowerCase())) {
+            Log.d("Countly", "[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "]");
+            JSONObject orientationPlacements = placements.optJSONObject(orientation.toLowerCase());
+            assert orientationPlacements != null;
+            int x = orientationPlacements.optInt("x");
+            int y = orientationPlacements.optInt("y");
+            int w = orientationPlacements.optInt("width");
+            int h = orientationPlacements.optInt("height");
+            L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
+
+            TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
+            config.setUrl(content);
+            return config;
         }
 
-        int remainingWidth = screenWidth - config.x;
-        int remainingHeight = screenHeight - config.y;
-
-        //fallback to remaining screen
-        if (config.width == null) {
-            config.width = remainingWidth;
-        } else {
-            config.width = (int) Math.ceil(config.width * Resources.getSystem().getDisplayMetrics().density);
-        }
-        if (config.height == null) {
-            config.height = remainingHeight;
-        } else {
-            config.height = (int) Math.ceil(config.height * Resources.getSystem().getDisplayMetrics().density);
-        }
+        return null;
     }
-
-    TransparentActivityConfig parseContent(JSONObject response) {
-        String content = response.optString("content");
-        Integer width = response.optInt("width"); // x density
-        Integer height = response.optInt("height"); // x density
-        Integer x = response.optInt("x"); // x density
-        Integer y = response.optInt("y"); // x density
-
-        L.d("[ModuleContent] parseContent, content: [" + content + "], x: [" + x + "], y: [" + y + "], width: [" + width + "], height: [" + height + "]");
-
-        TransparentActivityConfig tac = new TransparentActivityConfig(x, y, width, height);
-        tac.setUrl(content);
-
-        return tac;
-    }
-
-    /**
-     * if (jsonObject.has("content")) {
-     * String content = jsonObject.getString("content");
-     * L.d("[ConnectionProcessor] Content received: " + content);
-     * if (content != null && !content.isEmpty()) {
-     * // Content is not empty, so we will do an immediate request to download the content
-     * // and show it via TransparentActivity
-     * // Lets wait for server ok
-     * // 1 - We will going to send a request to fetch contents
-     * // 2- We will look whether content checksum is changed
-     * //  2.a - If it is changed show the new one
-     * // 3 - Just show the content that is at the top of the queue
-     * // 4 - Queue mechanism will be implemented later because they are not exact yet
-     * //
-     * // https://stackoverflow.com/questions/58337691/wkwebview-user-agent-swift
-     * // https://stackoverflow.com/a/29218966
-     * L.d("[ConnectionProcessor] Content received, will show it via TransparentActivity");
-     * }
-     * }
-     *
-     * @param request
-     */
 
     @Override
     void onRequest(@NonNull String request) {
-        //TODO please add device_id and app_key check
         assert request != null;
+
+        if (!_cly.moduleRequestQueue.doesBelongToCurrentAppKeyOrDeviceId(request)) {
+            L.d("[ModuleContent] onRequest, request does not contain current app_id or device_id, skipping");
+            return;
+        }
 
         requestCount++;
         if (requestCount >= requestCountToAddParameter) {
@@ -159,7 +127,7 @@ public class ModuleContent extends ModuleBase {
             String checksum = response.optString("checksum");
             if (!checksum.isEmpty()) {
                 L.d("[ModuleContent] Got new remote config data, saving it");
-                fetchContents(checksum);
+                fetchContentsInternal(checksum);
             }
         }
     }
@@ -167,5 +135,12 @@ public class ModuleContent extends ModuleBase {
     @Override
     void halt() {
         contentChecksum = null;
+        contentInterface = null;
+    }
+
+    public class Content {
+        public void fetchContents() {
+            fetchContentsInternal(UUID.randomUUID().toString());
+        }
     }
 }

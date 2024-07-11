@@ -4,19 +4,27 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
-import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class TransparentActivity extends Activity {
-
-    static final String CONFIGURATION = "configuration";
+    static final String CONFIGURATION_LANDSCAPE = "Landscape";
+    static final String CONFIGURATION_PORTRAIT = "Portrait";
+    static final String ORIENTATION = "orientation";
+    int currentOrientation = 0;
+    TransparentActivityConfig configLandscape = null;
+    TransparentActivityConfig configPortrait = null;
+    WebView webView;
+    RelativeLayout relativeLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,11 +33,19 @@ public class TransparentActivity extends Activity {
 
         // Get extras
         Intent intent = getIntent();
-        TransparentActivityConfig config = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION);
-        if (config == null) {
-            finish();
-            return;
+        currentOrientation = (int) intent.getSerializableExtra(ORIENTATION);
+        configLandscape = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_LANDSCAPE);
+        configPortrait = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_PORTRAIT);
+
+        TransparentActivityConfig config;
+        if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+            config = configLandscape;
+        } else {
+            config = configPortrait;
         }
+
+        config = setupConfig(config);
+
         int width = config.width;
         int height = config.height;
 
@@ -54,14 +70,83 @@ public class TransparentActivity extends Activity {
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         // Create and configure the layout
-        RelativeLayout relativeLayout = new RelativeLayout(this);
+        relativeLayout = new RelativeLayout(this);
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(width, height);
         relativeLayout.setLayoutParams(layoutParams);
-        WebView webView = createWebView(config);
+        webView = createWebView(config);
 
         // Add views
         relativeLayout.addView(webView);
         setContentView(relativeLayout);
+    }
+
+    private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
+        final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        final Display display = wm.getDefaultDisplay();
+        final DisplayMetrics metrics = new DisplayMetrics();
+        display.getMetrics(metrics);
+
+        if (config == null) {
+            return new TransparentActivityConfig(0, 0, metrics.widthPixels, metrics.heightPixels);
+        }
+        if (config.width < 1) {
+            config.width = metrics.widthPixels;
+        }
+        if (config.height < 1) {
+            config.height = metrics.heightPixels;
+        }
+        if (config.x < 1) {
+            config.x = 0;
+        }
+        if (config.y < 1) {
+            config.y = 0;
+        }
+
+        return config;
+    }
+
+    private void changeOrientation(TransparentActivityConfig config) {
+        // Configure window layout parameters
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams();
+        params.gravity = Gravity.TOP | Gravity.LEFT;
+        params.x = config.x;
+        params.y = config.y;
+        params.height = config.height;
+        params.width = config.width;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        getWindow().setAttributes(params);
+
+        // Create and configure the layout
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
+        relativeLayout.setLayoutParams(layoutParams);
+
+        RelativeLayout.LayoutParams webLayoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
+        webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+        webView.setLayoutParams(webLayoutParams);
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        if (currentOrientation != newConfig.orientation) {
+            currentOrientation = newConfig.orientation;
+            switch (currentOrientation) {
+                case Configuration.ORIENTATION_LANDSCAPE:
+                    if (configLandscape != null) {
+                        configLandscape = setupConfig(configLandscape);
+                        changeOrientation(configLandscape);
+                    }
+                    break;
+                case Configuration.ORIENTATION_PORTRAIT:
+                    if (configPortrait != null) {
+                        configPortrait = setupConfig(configPortrait);
+                        changeOrientation(configPortrait);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -84,54 +169,5 @@ public class TransparentActivity extends Activity {
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);
         return webView;
-    }
-
-    /**
-     * Show the widget
-     * TODO remove this method
-     *
-     * @param context The context
-     * @param config The configuration
-     */
-    public static void showActivity(@NonNull Context context, @NonNull TransparentActivityConfig config) {
-        assert context != null;
-        int screenHeight = Resources.getSystem().getDisplayMetrics().heightPixels; // only get the parent pixel size
-        int screenWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
-        tweakSize(screenWidth, screenHeight, config);
-
-        Intent intent = new Intent(context, TransparentActivity.class);
-        intent.putExtra(CONFIGURATION, config);
-        context.startActivity(intent);
-    }
-
-    private static void tweakSize(int screenWidth, int screenHeight, TransparentActivityConfig config) {
-        //int topLeftX = 0;//-(screenWidth / 2);
-        //int topLeftY = 0;//-(screenHeight / 2);
-        //fallback to top left corner
-        if (config.x == null) {
-            config.x = 0;
-        } else {
-            config.x = (int) Math.ceil(config.x * Resources.getSystem().getDisplayMetrics().density);
-        }
-        if (config.y == null) {
-            config.y = 0;
-        } else {
-            config.y = (int) Math.ceil(config.y * Resources.getSystem().getDisplayMetrics().density);
-        }
-
-        int remainingWidth = screenWidth - config.x;
-        int remainingHeight = screenHeight - config.y;
-
-        //fallback to remaining screen
-        if (config.width == null) {
-            config.width = remainingWidth;
-        } else {
-            config.width = (int) Math.ceil(config.width * Resources.getSystem().getDisplayMetrics().density);
-        }
-        if (config.height == null) {
-            config.height = remainingHeight;
-        } else {
-            config.height = (int) Math.ceil(config.height * Resources.getSystem().getDisplayMetrics().density);
-        }
     }
 }

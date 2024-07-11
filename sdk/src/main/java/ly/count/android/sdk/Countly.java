@@ -1225,6 +1225,15 @@ public class Countly {
         return moduleUserProfile.userProfileInterface;
     }
 
+    public ModuleContent.Content content() {
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before accessing content");
+            return null;
+        }
+
+        return moduleContent.contentInterface;
+    }
+
     public static void applicationOnCreate() {
     }
 
