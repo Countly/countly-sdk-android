@@ -22,7 +22,6 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.content.Context;
-import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Map;
@@ -828,19 +827,17 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
-    public String prepareFetchContents(DisplayMetrics displayMetrics) {
+    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight) {
+
         JSONObject json = new JSONObject();
-        int scaledWidth = (int) Math.ceil(displayMetrics.widthPixels / displayMetrics.density);
-        int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
-        boolean portrait = displayMetrics.widthPixels <= displayMetrics.heightPixels;
         try {
             JSONObject landscapeJson = new JSONObject();
-            landscapeJson.put("width", portrait ? scaledHeight : scaledWidth);
-            landscapeJson.put("height", portrait ? scaledWidth : scaledHeight);
+            landscapeJson.put("width", landscapeWidth);
+            landscapeJson.put("height", landscapeHeight);
 
             JSONObject portraitJson = new JSONObject();
-            portraitJson.put("width", portrait ? scaledWidth : scaledHeight);
-            portraitJson.put("height", portrait ? scaledHeight : scaledWidth);
+            portraitJson.put("width", portraitWidth);
+            portraitJson.put("height", portraitHeight);
 
             json.put("landscape", landscapeJson);
             json.put("portrait", portraitJson);

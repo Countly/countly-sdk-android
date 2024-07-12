@@ -102,11 +102,6 @@
         android:configChanges="orientation|screenSize"/>
 
     <activity
-        android:name=".ActivityExampleTransparentActivity"
-        android:label="@string/activity_name_feedback"
-        android:configChanges="orientation|screenSize"/>
-
-    <activity
         android:name=".ActivityExampleTests"
         android:exported="false"/>
 

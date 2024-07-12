@@ -130,8 +130,8 @@
         android:id="@+id/button74"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:onClick="onClickTransparentActivity"
-        android:text="Transparent Activity"
+        android:onClick="onClickFetchContents"
+        android:text="Show Avaliable Content"
     />
 
   </LinearLayout>

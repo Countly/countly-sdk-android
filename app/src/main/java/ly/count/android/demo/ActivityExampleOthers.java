@@ -1,7 +1,6 @@
 package ly.count.android.demo;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -139,7 +138,7 @@ public class ActivityExampleOthers extends AppCompatActivity {
         Countly.sharedInstance().sessions().endSession();
     }
 
-    public void onClickTransparentActivity(View v) {
-        startActivity(new Intent(this, ActivityExampleTransparentActivity.class));
+    public void onClickFetchContents(View v) {
+        Countly.sharedInstance().content().fetchContents();
     }
 }

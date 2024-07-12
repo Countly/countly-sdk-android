@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
 import java.util.Map;
 import java.util.UUID;
@@ -29,23 +30,14 @@ public class ModuleContent extends ModuleBase {
         contentInterface = new Content();
     }
 
-    void fetchContentsInternal(String checksum) {
+    void fetchContentsInternal(@NonNull String checksum) {
         L.d("[ModuleContent] fetchContentsInternal, checksum: [" + checksum + "], old checksum: [" + contentChecksum + "]");
         if (contentChecksum == null || !contentChecksum.equals(checksum)) {
             L.d("[ModuleContent] fetchContentsInternal, new content data available, fetching it");
             contentChecksum = checksum;
 
             DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
-            // todo add landscape
-            //https://stackoverflow.com/questions/20264268/how-do-i-get-the-height-and-width-of-the-android-navigation-bar-programmatically
-            Resources resources = _cly.context_.getResources();
-            int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-            if (resourceId > 0) {
-                displayMetrics.heightPixels += resources.getDimensionPixelSize(resourceId);
-            }
-            // GIVE RESOLUTION / DENSITY
-            String requestData = requestQueueProvider.prepareFetchContents(displayMetrics);
-            Log.e("PIXEL", requestData);
+            String requestData = prepareContentFetchRequest(displayMetrics);
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
@@ -73,6 +65,32 @@ public class ModuleContent extends ModuleBase {
                 }
             }, L);
         }
+    }
+
+    @NonNull
+    private String prepareContentFetchRequest(@NonNull DisplayMetrics displayMetrics) {
+
+        Resources resources = _cly.context_.getResources();
+        int currentOrientation = resources.getConfiguration().orientation;
+        boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
+        int navbarHeightScaled = 0;
+
+        if (ViewConfiguration.get(_cly.context_).hasPermanentMenuKey()) {
+            int navbarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+            if (navbarHeightId > 0) {
+                navbarHeightScaled = (int) Math.ceil(resources.getDimensionPixelSize(navbarHeightId) / displayMetrics.density);
+            }
+        }
+
+        int scaledWidth = (int) Math.ceil(displayMetrics.widthPixels / displayMetrics.density);
+        int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
+
+        int portraitWidth = portrait ? scaledWidth : scaledHeight;
+        int portraitHeight = (portrait ? scaledHeight : scaledWidth) + navbarHeightScaled;
+        int landscapeWidth = (portrait ? scaledHeight : scaledWidth);
+        int landscapeHeight = portrait ? scaledWidth : scaledHeight;
+
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {

@@ -11,10 +11,10 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
 
@@ -30,6 +30,7 @@ public class TransparentActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(Countly.TAG, "[TransparentActivity] onCreate, content received, showing it");
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -52,7 +53,7 @@ public class TransparentActivity extends Activity {
         int height = config.height;
 
         config.listeners.add((url, webView) -> {
-            if (url.endsWith("cly_x_close=1")) {
+            if (url.endsWith("&cly_x_close=1")) {
                 finish();
                 return true;
             } else {
@@ -118,22 +119,21 @@ public class TransparentActivity extends Activity {
     private void changeOrientation(TransparentActivityConfig config) {
         // Configure window layout parameters
         Log.e("PIXEL", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        params.gravity = Gravity.TOP | Gravity.LEFT;
+        WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
         params.y = config.y;
         params.height = config.height;
         params.width = config.width;
-        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         getWindow().setAttributes(params);
 
-        // Create and configure the layout
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
+        ViewGroup.LayoutParams layoutParams = relativeLayout.getLayoutParams();
+        layoutParams.width = config.width;
+        layoutParams.height = config.height;
         relativeLayout.setLayoutParams(layoutParams);
 
-        RelativeLayout.LayoutParams webLayoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
-        webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
-        webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
+        ViewGroup.LayoutParams webLayoutParams = webView.getLayoutParams();
+        webLayoutParams.width = config.width;
+        webLayoutParams.height = config.height;
         webView.setLayoutParams(webLayoutParams);
     }
 
@@ -178,6 +178,21 @@ public class TransparentActivity extends Activity {
         webView.clearCache(true);
         webView.clearHistory();
 
+        // TODO this might going to be used in the future
+        /*webView.addJavascriptInterface(new JavaScriptInterface(this, (url, view) -> {
+            if (url.endsWith("cly_x_close=1")) {
+                finish();
+                return true;
+            } else {
+                return false;
+            }
+        }), "Android");
+
+        String script = "window.addEventListener('message', function(event) {" +
+            "    Android.receiveMessage(JSON.stringify(event.data));" +
+            "}, false);";
+        webView.evaluateJavascript(script, null);*/
+
         CountlyWebViewClient client = new CountlyWebViewClient();
         client.registerWebViewUrlListeners(config.listeners);
 
@@ -185,4 +200,33 @@ public class TransparentActivity extends Activity {
         webView.loadUrl(config.url);
         return webView;
     }
+
+    // TODO this might going to be used in the future
+    /*
+    static class JavaScriptInterface {
+
+        WebViewUrlListener listener;
+        Context context;
+
+        JavaScriptInterface(Context context, WebViewUrlListener listener) {
+            this.listener = listener;
+            this.context = context;
+        }
+
+        @JavascriptInterface
+        public void receiveMessage(String message) {
+            // Handle the message received from postMessage
+            try {
+                JSONObject json = new JSONObject(message);
+                boolean isClose = json.optBoolean("close", false);
+                if (isClose) {
+                    // Close the activity
+                    listener.onUrl("cly_x_close=1", null);
+                    Log.d("PIXEL", "Close the activity");
+                }
+            } catch (JSONException e) {
+                Log.e("PIXEL", "Error parsing JSON: " + e.getMessage());
+            }
+        }
+    }*/
 }
