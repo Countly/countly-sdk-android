@@ -203,7 +203,6 @@ public class CountlyConfig {
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
-    int requestCountToAddParameter = 5;
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED

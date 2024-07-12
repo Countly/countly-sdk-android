@@ -52,8 +52,6 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
-    RequestListener requestListener;
-    ResponseListener responseListener;
 
     HealthTracker healthTracker;
 
@@ -896,7 +894,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
     public ConnectionProcessor createConnectionProcessor() {
 
-        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, requestListener, responseListener);
+        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
         cp.pcc = pcc;
         return cp;
     }

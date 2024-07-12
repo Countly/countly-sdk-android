@@ -8,16 +8,13 @@ import android.util.Log;
 import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
 
-    private String contentChecksum = null;
+    private String currentContentChecksum = null;
     private final ImmediateRequestGenerator iRGenerator;
-    private final int requestCountToAddParameter;
-    private int requestCount = 0;
     Content contentInterface;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -26,45 +23,44 @@ public class ModuleContent extends ModuleBase {
         iRGenerator = config.immediateRequestGenerator;
 
         L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
-        requestCountToAddParameter = config.requestCountToAddParameter;
         contentInterface = new Content();
     }
 
-    void fetchContentsInternal(@NonNull String checksum) {
-        L.d("[ModuleContent] fetchContentsInternal, checksum: [" + checksum + "], old checksum: [" + contentChecksum + "]");
-        if (contentChecksum == null || !contentChecksum.equals(checksum)) {
-            L.d("[ModuleContent] fetchContentsInternal, new content data available, fetching it");
-            contentChecksum = checksum;
+    void fetchContentsInternal() {
+        L.d("[ModuleContent] fetchContentsInternal, new content data available, fetching it");
 
-            DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
-            String requestData = prepareContentFetchRequest(displayMetrics);
+        DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
+        String requestData = prepareContentFetchRequest(displayMetrics);
 
-            ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-            final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+        ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-            iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/content/queue", cp, false, networkingIsEnabled, checkResponse -> {
-                L.d("[ModuleContent] fetchContentsInternal, processing fetched contents, received response is :[" + checkResponse + "]");
-                if (checkResponse == null) {
-                    return;
-                }
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/content/queue", cp, false, networkingIsEnabled, checkResponse -> {
+            L.d("[ModuleContent] fetchContentsInternal, processing fetched contents, received response is :[" + checkResponse + "]");
+            if (checkResponse == null) {
+                return;
+            }
 
-                try {
-                    if (validateResponse(checkResponse)) {
-                        L.d("[ModuleContent] fetchContentsInternal, got new content data, showing it");
-                        Map<Integer, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
-
-                        Intent intent = new Intent(_cly.context_, TransparentActivity.class);
-                        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
-                        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
-                        intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        _cly.context_.startActivity(intent);
+            try {
+                if (validateResponse(checkResponse)) {
+                    L.d("[ModuleContent] fetchContentsInternal, got new content data, showing it");
+                    Map<Integer, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
+                    if (placementCoordinates.isEmpty()) {
+                        L.d("[ModuleContent] fetchContentsInternal, placement coordinates are empty, skipping");
+                        return;
                     }
-                } catch (Exception ex) {
-                    L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
+
+                    Intent intent = new Intent(_cly.context_, TransparentActivity.class);
+                    intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
+                    intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
+                    intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    _cly.context_.startActivity(intent);
                 }
-            }, L);
-        }
+            } catch (Exception ex) {
+                L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
+            }
+        }, L);
     }
 
     @NonNull
@@ -75,7 +71,7 @@ public class ModuleContent extends ModuleBase {
         boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
         int navbarHeightScaled = 0;
 
-        if (ViewConfiguration.get(_cly.context_).hasPermanentMenuKey()) {
+        if (!ViewConfiguration.get(_cly.context_).hasPermanentMenuKey()) {
             int navbarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
             if (navbarHeightId > 0) {
                 navbarHeightScaled = (int) Math.ceil(resources.getDimensionPixelSize(navbarHeightId) / displayMetrics.density);
@@ -101,6 +97,16 @@ public class ModuleContent extends ModuleBase {
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         String content = response.optString("pathToHtml");
+
+        String contentChecksum = UtilsNetworking.sha256Hash(content);
+        L.d("[ModuleContent] parseContent, checksum: [" + contentChecksum + "], current checksum: [" + currentContentChecksum + "]");
+
+        if (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum)) {
+            L.d("[ModuleContent] parseContent, content did not change, skipping");
+            return placementCoordinates;
+        }
+        currentContentChecksum = contentChecksum;
+
         JSONObject coordinates = response.optJSONObject("placementCoordinates");
 
         assert coordinates != null;
@@ -130,45 +136,14 @@ public class ModuleContent extends ModuleBase {
     }
 
     @Override
-    void onRequest(@NonNull String request) {
-        assert request != null;
-
-        if (!_cly.moduleRequestQueue.doesBelongToCurrentAppKeyOrDeviceId(request)) {
-            L.d("[ModuleContent] onRequest, request does not contain current app_id or device_id, skipping");
-            return;
-        }
-
-        requestCount++;
-        if (requestCount >= requestCountToAddParameter) {
-            L.d("[ModuleContent] onRequest, adding fetch_content=1 parameter to the request rc: [" + requestCount + "], rcap: [" + requestCountToAddParameter + "]");
-            request += "&fetch_content=1";
-            requestCount = 0;
-        }
-    }
-
-    @Override
-    void onResponse(@NonNull JSONObject response) {
-        assert response != null;
-
-        if (response.has("content")) {
-            L.d("[ModuleContent] onResponse, got content data from server");
-            String checksum = response.optString("checksum");
-            if (!checksum.isEmpty()) {
-                L.d("[ModuleContent] Got new remote config data, saving it");
-                fetchContentsInternal(checksum);
-            }
-        }
-    }
-
-    @Override
     void halt() {
-        contentChecksum = null;
+        currentContentChecksum = null;
         contentInterface = null;
     }
 
     public class Content {
         public void fetchContents() {
-            fetchContentsInternal(UUID.randomUUID().toString());
+            fetchContentsInternal();
         }
     }
 }

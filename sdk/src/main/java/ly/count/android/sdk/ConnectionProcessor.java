@@ -71,8 +71,6 @@ public class ConnectionProcessor implements Runnable {
     ModuleLog L;
 
     public PerformanceCounterCollector pcc;
-    private final RequestListener requestListener;
-    private final ResponseListener responseListener;
 
     private enum RequestResult {
         OK,         // success
@@ -81,7 +79,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker, RequestListener requestListener, ResponseListener responseListener) {
+        HealthTracker healthTracker) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -91,8 +89,6 @@ public class ConnectionProcessor implements Runnable {
         requestInfoProvider_ = requestInfoProvider;
         L = logModule;
         this.healthTracker = healthTracker;
-        this.requestListener = requestListener;
-        this.responseListener = responseListener;
     }
 
     synchronized public @NonNull URLConnection urlConnectionForServerRequest(@NonNull String requestData, @Nullable final String customEndpoint) throws IOException {
@@ -420,8 +416,6 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // add the remaining request count
-
-            requestListener.onRequest(requestData);
             requestData = requestData + "&rr=" + (storedRequestCount - 1); // move this to the module request queue on request thing
 
             if (pcc != null) {
@@ -502,7 +496,6 @@ public class ConnectionProcessor implements Runnable {
                             } else {
                                 if (jsonObject.has("result")) {
                                     //contains result entry
-                                    responseListener.onResponse(jsonObject);
                                     L.v("[ConnectionProcessor] Response was a success");
                                     rRes = RequestResult.OK;
                                 } else {
