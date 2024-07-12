@@ -98,7 +98,7 @@ public class ModuleContent extends ModuleBase {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         String content = response.optString("pathToHtml");
 
-        String contentChecksum = UtilsNetworking.sha256Hash(content);
+        String contentChecksum = UtilsNetworking.sha256Hash(content); // TODO store this to prevent showing the same content again
         L.d("[ModuleContent] parseContent, checksum: [" + contentChecksum + "], current checksum: [" + currentContentChecksum + "]");
 
         if (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum)) {

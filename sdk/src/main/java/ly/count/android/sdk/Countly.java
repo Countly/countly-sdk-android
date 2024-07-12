@@ -676,17 +676,6 @@ public class Countly {
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
-
-            connectionQueue_.requestListener = result -> {
-                for (ModuleBase module : modules) {
-                    module.onRequest(result);
-                }
-            };
-            connectionQueue_.responseListener = response -> {
-                for (ModuleBase module : modules) {
-                    module.onResponse(response);
-                }
-            };
             connectionQueue_.requestInfoProvider = new RequestInfoProvider() {
                 @Override public boolean isHttpPostForced() {
                     return requestQueue().isHttpPostForced();
