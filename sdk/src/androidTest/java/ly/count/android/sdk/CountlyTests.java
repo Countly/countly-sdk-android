@@ -161,7 +161,10 @@ public class CountlyTests {
         mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId(null));
     }
 
-    @Test
+    /**
+     * This test not fail anymore because we are now not throwing an exception when device ID is empty.
+     */
+    @Test(expected = AssertionError.class)
     public void testInit_emptyDeviceID() {
         try {
             mUninitedCountly.init(new CountlyConfig(getContext(), "appkey", "http://test.count.ly").setDeviceId(""));
@@ -169,6 +172,15 @@ public class CountlyTests {
         } catch (IllegalArgumentException ignored) {
             // success!
         }
+    }
+
+    @Test
+    public void testInit_emptyDeviceID_sdkGenerated() {
+        mCountly.halt(); // to reset the state
+        mUninitedCountly.init(TestUtils.createBaseConfig().setDeviceId(""));
+
+        // this should be an SDK generated device ID
+        Assert.assertEquals(DeviceIdType.OPEN_UDID, mUninitedCountly.deviceId().getType());
     }
 
     @Test
