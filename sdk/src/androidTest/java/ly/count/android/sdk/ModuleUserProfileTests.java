@@ -2,10 +2,13 @@ package ly.count.android.sdk;
 
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -13,6 +16,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.internal.util.collections.Sets;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleUserProfileTests {
@@ -689,6 +694,193 @@ public class ModuleUserProfileTests {
 
         mCountly.userProfile().setProperties(data);
         mCountly.userProfile().save();
+
+        validateUserProfileRequest(new HashMap<>(), new HashMap<>());
+    }
+
+    /**
+     * "setProperties" with Array properties
+     * Validate that all primitive types arrays are successfully recorded
+     * And validate that Object arrays are not recorded
+     * But Generic type of Object array which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void setProperties_validateSupportedArrays() throws JSONException {
+        int[] arr = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+        boolean[] arrB = { true, false, true, false, true, false, true, false, true, false };
+        String[] arrS = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "10" };
+        long[] arrL = { Long.MAX_VALUE, Long.MIN_VALUE };
+        double[] arrD = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Long[] arrLO = { Long.MAX_VALUE, Long.MIN_VALUE };
+        Double[] arrDO = { Double.MAX_VALUE, Double.MIN_VALUE };
+        Boolean[] arrBO = { Boolean.TRUE, Boolean.FALSE };
+        Integer[] arrIO = { Integer.MAX_VALUE, Integer.MIN_VALUE };
+        Object[] arrObj = { "1", 1, 1.1d, true, 1.1f, Long.MAX_VALUE };
+        Object[] arrObjStr = { "1", "1", "1.1d", "true", "1.1f", "Long.MAX_VALUE" };
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> userProperties = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        countly.userProfile().setProperties(userProperties);
+        countly.userProfile().save();
+
+        Map<String, Object> expectedCustomProperties = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrL", new JSONArray(arrL),
+            "arrD", new JSONArray(arrD),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO)
+        );
+
+        validateUserProfileRequest(new HashMap<>(), expectedCustomProperties);
+    }
+
+    /**
+     * "setProperties" with List properties
+     * Validate that all primitive types Lists are successfully recorded
+     * And validate that List of Objects is not recorded
+     * But Generic type of Object list which its values are only primitive types are recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void setProperties_validateSupportedLists() throws JSONException {
+        List<Integer> arr = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        List<Boolean> arrB = Arrays.asList(true, false, true, false, true, false, true, false, true, false);
+        List<String> arrS = Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10");
+        List<Long> arrLO = Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE);
+        List<Double> arrDO = Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE);
+        List<Boolean> arrBO = Arrays.asList(Boolean.TRUE, Boolean.FALSE);
+        List<Integer> arrIO = Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE);
+        List<Object> arrObj = Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE);
+        List<Object> arrObjStr = Arrays.asList("1", "1", "1.1d", "true", "Long.MAX_VALUE");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> userProperties = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrLO", arrLO,
+            "arrDO", arrDO,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj,
+            "arrObjStr", arrObjStr
+        );
+
+        countly.userProfile().setProperties(userProperties);
+        countly.userProfile().save();
+
+        Map<String, Object> expectedCustomProperties = TestUtils.map(
+            "arr", new JSONArray(arr),
+            "arrB", new JSONArray(arrB),
+            "arrS", new JSONArray(arrS),
+            "arrLO", new JSONArray(arrLO),
+            "arrDO", new JSONArray(arrDO),
+            "arrBO", new JSONArray(arrBO),
+            "arrIO", new JSONArray(arrIO),
+            "arrObjStr", new JSONArray(arrObjStr),
+            "arrObj", new JSONArray(arrObj)
+        );
+
+        validateUserProfileRequest(new HashMap<>(), expectedCustomProperties);
+    }
+
+    /**
+     * "setProperties" with JSONArray properties
+     * Validate that all primitive types JSONArrays are successfully recorded
+     * And validate and JSONArray of Objects is not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void setProperties_validateSupportedJSONArrays() throws JSONException {
+        JSONArray arr = new JSONArray(Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10));
+        JSONArray arrB = new JSONArray(Arrays.asList(true, false, true, false, true, false, true, false, true, false));
+        JSONArray arrS = new JSONArray(Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"));
+        JSONArray arrL = new JSONArray(Arrays.asList(Long.MAX_VALUE, Long.MIN_VALUE));
+        JSONArray arrD = new JSONArray(Arrays.asList(Double.MAX_VALUE, Double.MIN_VALUE));
+        JSONArray arrBO = new JSONArray(Arrays.asList(Boolean.TRUE, Boolean.FALSE));
+        JSONArray arrIO = new JSONArray(Arrays.asList(Integer.MAX_VALUE, Integer.MIN_VALUE));
+        JSONArray arrObj = new JSONArray(Arrays.asList("1", 1, 1.1d, true, Long.MAX_VALUE));
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> userProperties = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj
+        );
+
+        // Record event with the created segmentation
+        countly.userProfile().setProperties(userProperties);
+        countly.userProfile().save();
+
+        // Prepare expected segmentation with JSONArrays
+        Map<String, Object> expectedCustomProperties = TestUtils.map(
+            "arr", arr,
+            "arrB", arrB,
+            "arrS", arrS,
+            "arrL", arrL,
+            "arrD", arrD,
+            "arrBO", arrBO,
+            "arrIO", arrIO,
+            "arrObj", arrObj
+        );
+
+        validateUserProfileRequest(new HashMap<>(), expectedCustomProperties);
+    }
+
+    /**
+     * "setProperties" with invalid data types
+     * Validate that unsupported data types are not recorded
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void setProperties_unsupportedDataTypes() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> userProperties = TestUtils.map(
+            "a", TestUtils.map(),
+            "b", TestUtils.json(),
+            "c", new Object(),
+            "d", Sets.newSet(),
+            "e", Mockito.mock(ModuleLog.class)
+        );
+
+        countly.userProfile().setProperties(userProperties);
+        countly.userProfile().save();
 
         validateUserProfileRequest(new HashMap<>(), new HashMap<>());
     }
