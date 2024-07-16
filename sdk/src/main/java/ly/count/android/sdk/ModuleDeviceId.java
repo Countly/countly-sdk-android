@@ -82,6 +82,9 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //start by changing stored ID
         deviceIdInstance.changeToCustomId(deviceId);
 
+        // trigger fetching if the temp id given on init
+        _cly.moduleConfiguration.fetchConfigFromServer();
+
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);
 
@@ -89,6 +92,9 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         _cly.moduleRemoteConfig.RCAutomaticDownloadTrigger(false);
 
         _cly.requestQueue().attemptToSendStoredRequests();
+
+        // trigger sending if the temp id given on init
+        _cly.moduleHealthCheck.sendHealthCheck();
     }
 
     /**

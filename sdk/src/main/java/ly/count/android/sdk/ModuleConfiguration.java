@@ -26,6 +26,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
+    boolean configurationFetched = false;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -50,9 +51,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
-        // this is because init order of module is before module device id
-        // the device id provider is not yet set, so we have to specifically set it here
-        deviceIdProvider = config.deviceIdProvider;
         if (serverConfigEnabled) {
             //once the SDK has loaded, init fetching the server config
             fetchConfigFromServer();
@@ -180,11 +178,20 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     void fetchConfigFromServer() {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
-        if (deviceIdProvider.isTemporaryIdEnabled()) {
+        // why _cly? because module configuration is created before module device id, so we need to access it like this
+        // call order to module device id is after module configuration and device id provider is module device id
+        if (_cly.config_.deviceIdProvider.isTemporaryIdEnabled()) {
             //temporary id mode enabled, abort
             L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, temporary device ID mode is set");
             return;
         }
+
+        if (configurationFetched) {
+            L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, config already fetched");
+            return;
+        }
+
+        configurationFetched = true;
 
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
