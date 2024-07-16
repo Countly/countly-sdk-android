@@ -32,7 +32,7 @@ public class ModuleUserProfile extends ModuleBase {
     String picture;
     static String picturePath;//protected only for testing
     String gender;
-    Map<String, String> custom;
+    Map<String, Object> custom;
     Map<String, JSONObject> customMods;
     int byear = 0;
 
@@ -219,12 +219,15 @@ public class ModuleUserProfile extends ModuleBase {
                 return;
             }
 
-            Object truncatedValue;
+            Object valueAdded;
             String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
             if (value instanceof String) {
-                truncatedValue = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+                valueAdded = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            } else if (UtilsInternalLimits.isSupportedDataType(value)) {
+                valueAdded = value;
             } else {
-                truncatedValue = value;
+                L.w("[ModuleUserProfile] modifyCustomData, provided an unsupported type for key: [" + key + "], value: [" + value + "], type: [" + value.getClass().getSimpleName() + "], mod: [" + mod + "], omitting call");
+                return;
             }
 
             if (customMods == null) {
@@ -234,14 +237,14 @@ public class ModuleUserProfile extends ModuleBase {
             JSONObject ob;
             if (!mod.equals("$pull") && !mod.equals("$push") && !mod.equals("$addToSet")) {
                 ob = new JSONObject();
-                ob.put(mod, truncatedValue);
+                ob.put(mod, valueAdded);
             } else {
                 if (customMods.containsKey(truncatedKey)) {
                     ob = customMods.get(truncatedKey);
                 } else {
                     ob = new JSONObject();
                 }
-                ob.accumulate(mod, truncatedValue);
+                ob.accumulate(mod, valueAdded);
             }
             customMods.put(truncatedKey, ob);
             isSynced = false;
@@ -264,7 +267,7 @@ public class ModuleUserProfile extends ModuleBase {
 
         //todo recheck if in the future these can be <String, Object>
         Map<String, String> dataNamedFields = new HashMap<>();
-        Map<String, String> dataCustomFields = new HashMap<>();
+        Map<String, Object> dataCustomFields = new HashMap<>();
 
         for (Map.Entry<String, Object> entry : data.entrySet()) {
             String key = entry.getKey();
@@ -297,7 +300,11 @@ public class ModuleUserProfile extends ModuleBase {
 
             if (!isNamed) {
                 String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
-                dataCustomFields.put(truncatedKey, value.toString());
+                if (UtilsInternalLimits.isSupportedDataType(value)) {
+                    dataCustomFields.put(truncatedKey, value);
+                } else {
+                    L.w("[ModuleUserProfile] setPropertiesInternal, provided an unsupported type for key: [" + key + "], value: [" + value + "], type: [" + value.getClass().getSimpleName() + "], omitting call");
+                }
             }
         }
 

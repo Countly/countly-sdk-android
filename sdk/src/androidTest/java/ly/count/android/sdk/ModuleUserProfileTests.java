@@ -514,7 +514,7 @@ public class ModuleUserProfileTests {
                 ModuleUserProfile.NAME_KEY, "name",
                 ModuleUserProfile.PICTURE_KEY, "picture"
             ), TestUtils.map(
-                "cu", "23", // because in user profiles, all values are stored as strings
+                "cu", 23, // because in user profiles, all values are stored as strings
                 "ha", "black")
         );
     }
@@ -567,12 +567,11 @@ public class ModuleUserProfileTests {
                 ModuleUserProfile.PICTURE_KEY, "picture"
             ), TestUtils.map(
                 "custom1", "va", // because in user profiles, all values are stored as strings
-                "custom2", "23",
+                "custom2", 23,
                 "hair", "bl",
-                "custom3", "1234",
-                "custom4", "1234.5",
-                "custom5", "true",
-                "custom6", obj.toString()) // toString() is called on non-String values
+                "custom3", 1234,
+                "custom4", 1234.5,
+                "custom5", true)
         );
     }
 
@@ -613,7 +612,7 @@ public class ModuleUserProfileTests {
         Countly.sharedInstance().userProfile().setProperties(TestUtils.map("a", "b", "c", "d", "f", 5, "level", 45, "age", 101));
         Countly.sharedInstance().userProfile().save();
 
-        validateUserProfileRequest(TestUtils.map(), TestUtils.map("f", "5", "age", "101"));
+        validateUserProfileRequest(TestUtils.map(), TestUtils.map("f", 5, "age", 101));
     }
 
     /**

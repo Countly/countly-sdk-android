@@ -351,6 +351,18 @@ public class UtilsInternalLimits {
         return value instanceof String || value instanceof Integer || value instanceof Double || value instanceof Boolean || value instanceof Float || value instanceof Long;
     }
 
+    /**
+     * This function currently validates below segmentations:
+     * - Event segmentations (custom ones not internal keys)
+     * - Crash segmentations
+     * - View segmentations
+     * - User profile custom properties
+     * - User profile custom properties modifiers
+     * - Feedback widgets' results
+     *
+     * @param value to check
+     * @return true if the value is a supported data type
+     */
     static boolean isSupportedDataType(@Nullable Object value) {
         if (isSupportedDataTypeBasic(value)) {
             return true;
