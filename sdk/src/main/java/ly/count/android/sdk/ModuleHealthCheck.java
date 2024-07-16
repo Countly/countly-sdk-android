@@ -1,7 +1,6 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
-import org.json.JSONObject;
 
 class ModuleHealthCheck extends ModuleBase {
 
@@ -22,6 +21,10 @@ class ModuleHealthCheck extends ModuleBase {
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
+        // this is because init order of module is before module device id
+        // the device id provider is not yet set, so we have to specifically set it here
+        deviceIdProvider = config.deviceIdProvider;
+
         if (healthCheckEnabled) {
             sendHealthCheck();
         }
@@ -40,6 +43,13 @@ class ModuleHealthCheck extends ModuleBase {
 
     void sendHealthCheck() {
         L.v("[ModuleHealthCheck] sendHealthCheck, attempting to send health information");
+
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            //temporary id mode enabled, abort
+            L.d("[ModuleHealthCheck] sendHealthCheck, sending health info of the SDK to server is aborted, temporary device ID mode is set");
+            return;
+        }
+
         String preparedMetrics = deviceInfo.getMetricsHealthCheck(_cly.context_, _cly.config_.metricOverride);
 
         StringBuilder requestData = new StringBuilder(requestQueueProvider.prepareHealthCheckRequest(preparedMetrics));

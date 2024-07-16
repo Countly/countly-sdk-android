@@ -50,6 +50,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
+        // this is because init order of module is before module device id
+        // the device id provider is not yet set, so we have to specifically set it here
+        deviceIdProvider = config.deviceIdProvider;
         if (serverConfigEnabled) {
             //once the SDK has loaded, init fetching the server config
             fetchConfigFromServer();
@@ -176,6 +179,13 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      */
     void fetchConfigFromServer() {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
+
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            //temporary id mode enabled, abort
+            L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, temporary device ID mode is set");
+            return;
+        }
+
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 
