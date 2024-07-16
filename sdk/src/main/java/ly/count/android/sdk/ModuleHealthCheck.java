@@ -42,6 +42,11 @@ class ModuleHealthCheck extends ModuleBase {
     void sendHealthCheck() {
         L.v("[ModuleHealthCheck] sendHealthCheck, attempting to send health information");
 
+        if (!healthCheckEnabled) {
+            L.d("[ModuleHealthCheck] sendHealthCheck, sending health info of the SDK to server is aborted, health check is disabled");
+            return;
+        }
+
         // why _cly? because module health is created last. So device id provider
         // call order to module device id is before module health check and device id provider is module device id
         if (_cly.config_.deviceIdProvider.isTemporaryIdEnabled()) {

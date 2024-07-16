@@ -178,6 +178,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     void fetchConfigFromServer() {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
+        if (!serverConfigEnabled) {
+            L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, server config is disabled");
+            return;
+        }
+
         // why _cly? because module configuration is created before module device id, so we need to access it like this
         // call order to module device id is after module configuration and device id provider is module device id
         if (_cly.config_.deviceIdProvider.isTemporaryIdEnabled()) {
