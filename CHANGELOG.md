@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* ! Minor breaking change ! Unsupported types for user properties will now be omitted, they won't be converted to strings.
+
 * Added support for mixed type of immutable lists, arrays to client given segmentations and user properties.
 * Added array, list and JSONArray support to the user properties.
 
