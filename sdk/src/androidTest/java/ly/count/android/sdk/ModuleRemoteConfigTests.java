@@ -65,7 +65,7 @@ public class ModuleRemoteConfigTests {
             final int[] triggerCounter = { 0 };
             int intendedCount = 0;
 
-            CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+            CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().disableHealthCheck();
             config.disableHealthCheck();//mocked tests fail without disabling this
             config.enableRemoteConfigAutomaticTriggers();
             if (a == 0) {

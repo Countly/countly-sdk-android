@@ -686,7 +686,8 @@ public class ModuleEventsTests {
             "arrDO", new JSONArray(arrDO),
             "arrBO", new JSONArray(arrBO),
             "arrIO", new JSONArray(arrIO),
-            "arrObjStr", new JSONArray(arrObjStr)
+            "arrObjStr", new JSONArray(arrObjStr),
+            "arrObj", new JSONArray(arrObj)
         );
 
         // Validate the recorded event with expected segmentation
@@ -738,7 +739,8 @@ public class ModuleEventsTests {
             "arrL", arrL,
             "arrD", arrD,
             "arrBO", arrBO,
-            "arrIO", arrIO
+            "arrIO", arrIO,
+            "arrObj", arrObj
         );
 
         // Validate the recorded event with expected segmentation
