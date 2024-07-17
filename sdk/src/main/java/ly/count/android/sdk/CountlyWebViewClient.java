@@ -42,4 +42,3 @@ class CountlyWebViewClient extends WebViewClient {
         this.listeners.addAll(listener);
     }
 }
-

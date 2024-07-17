@@ -126,6 +126,7 @@
         android:onClick="onClickEndSession"
         android:text="End Session"
     />
+    
     <Button
         android:id="@+id/button74"
         android:layout_width="match_parent"
@@ -133,6 +134,5 @@
         android:onClick="onClickFetchContents"
         android:text="Show Avaliable Content"
     />
-
   </LinearLayout>
 </ScrollView>
