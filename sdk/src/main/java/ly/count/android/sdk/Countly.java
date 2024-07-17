@@ -1029,8 +1029,6 @@ public class Countly {
             //on every timer tick we save the user profile if it was changed
             moduleUserProfile.saveInternal();
 
-            moduleContent.fetchContentsInternal();
-
             requestQueueProvider.tick();
         }
     }
