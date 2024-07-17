@@ -65,11 +65,4 @@
   <string name="manual_report">manual report</string>
   <string name="add_a_breadcrumb">Add a breadcrumb</string>
   <string name="activity_name_feedback">Feedback examples</string>
-  <string name="x_coordinate">X Coordinate</string>
-  <string name="y_coordinate">Y Coordinate</string>
-  <string name="width_px">Width Px</string>
-  <string name="height_px">Height Px</string>
-  <string name="webview_url">Webview URL</string>
-  <string name="show_transparent_activity">Show Transparent Activity</string>
-
 </resources>

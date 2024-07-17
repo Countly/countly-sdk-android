@@ -12,6 +12,7 @@
         android:exported="false"/>
     <uses-library android:name="android.test.runner"/>
     <activity android:name=".TransparentActivity"
+              android:configChanges="orientation|screenSize"
               android:theme="@android:style/Theme.Translucent.NoTitleBar">
     </activity>
   </application>
