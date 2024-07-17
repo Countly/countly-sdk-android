@@ -303,7 +303,7 @@ public class DeviceIdTests {
         assertEquals(5, TestUtils.getCurrentRQ().length);
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
-        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"123\",\"prop1\":\"string\",\"prop3\":\"false\"}}"), 2);
+        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":123,\"prop1\":\"string\",\"prop3\":false}}"), 2);
         ModuleSessionsTests.validateSessionEndRequest(3, 3, "ff_merge");
 
         Thread.sleep(1000);
@@ -334,9 +334,9 @@ public class DeviceIdTests {
 
         assertEquals(9, TestUtils.getCurrentRQ().length);
 
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":\"[sd]\"}}"), 5);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop6\":\"{key=123}\",\"prop5\":\"{key=value}\",\"prop7\":\"{key=false}\"}}"), 6);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"456\",\"prop1\":\"string_a\",\"prop3\":\"true\"}}"), 7);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":[\"sd\"]}}"), 5);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{}}"), 6);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":456,\"prop1\":\"string_a\",\"prop3\":true}}"), 7);
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 8);
     }
