@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="ly.count.android.sdk">
+          package="ly.count.android.sdk">
 
   <application>
     <activity
@@ -9,12 +9,16 @@
         android:noHistory="true"
         android:taskAffinity=".CountlyPushActivity"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
-        android:exported="false" />
-    <uses-library android:name="android.test.runner" />
+        android:exported="false"/>
+    <uses-library android:name="android.test.runner"/>
+    <activity android:name=".TransparentActivity"
+              android:configChanges="orientation|screenSize"
+              android:theme="@android:style/Theme.Translucent.NoTitleBar">
+    </activity>
   </application>
 
   <permission
       android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
-      android:protectionLevel="signature" />
+      android:protectionLevel="signature"/>
 
 </manifest>
