@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TransparentActivityConfig implements Serializable {
+class TransparentActivityConfig implements Serializable {
     Integer x;
     Integer y;
     Integer width;
@@ -12,7 +12,7 @@ public class TransparentActivityConfig implements Serializable {
     String url;
     List<WebViewUrlListener> listeners;
 
-    public TransparentActivityConfig(Integer x, Integer y, Integer width, Integer height) {
+    TransparentActivityConfig(Integer x, Integer y, Integer width, Integer height) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -20,7 +20,7 @@ public class TransparentActivityConfig implements Serializable {
         this.listeners = new ArrayList<>();
     }
 
-    public void setUrl(String url) {
+    void setUrl(String url) {
         this.url = url;
     }
 }

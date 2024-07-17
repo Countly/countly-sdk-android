@@ -17,7 +17,7 @@ import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
 
-public class TransparentActivity extends Activity {
+class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
