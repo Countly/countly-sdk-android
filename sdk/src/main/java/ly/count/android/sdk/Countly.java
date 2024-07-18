@@ -142,7 +142,7 @@ public class Countly {
     }
 
     ConnectionQueue connectionQueue_;
-    private final ScheduledExecutorService timerService_;
+    private ScheduledExecutorService timerService_;
     private ScheduledFuture<?> timerFuture = null;
     private int activityCount_;
     boolean disableUpdateSessionRequests_ = false;//todo, move to module after 'setDisableUpdateSessionRequests' is removed
@@ -241,13 +241,8 @@ public class Countly {
      * Creates a new ConnectionQueue and initializes the session timer.
      */
     Countly() {
-        timerService_ = Executors.newSingleThreadScheduledExecutor();
-        staticInit();
-    }
-
-    private void staticInit() {
         connectionQueue_ = new ConnectionQueue();
-        startTimerService(timerService_, timerFuture, TIMER_DELAY_IN_SECONDS);
+        timerService_ = Executors.newSingleThreadScheduledExecutor();
     }
 
     private void startTimerService(ScheduledExecutorService service, ScheduledFuture<?> previousTimer, long timerDelay) {
@@ -260,12 +255,7 @@ public class Countly {
             timerDelay = 1;
         }
 
-        timerFuture = service.scheduleWithFixedDelay(new Runnable() {
-            @Override
-            public void run() {
-                onTimer();
-            }
-        }, timerDelay, timerDelay, TimeUnit.SECONDS);
+        timerFuture = service.scheduleWithFixedDelay(this::onTimer, timerDelay, timerDelay, TimeUnit.SECONDS);
     }
 
     /**
@@ -427,11 +417,13 @@ public class Countly {
                 config.sdkInternalLimits.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
             }
 
+            long timerDelay = TIMER_DELAY_IN_SECONDS;
             if (config.sessionUpdateTimerDelay != null) {
                 //if we need to change the timer delay, do that first
                 L.d("[Init] Setting custom session update timer delay, [" + config.sessionUpdateTimerDelay + "]");
-                startTimerService(timerService_, timerFuture, config.sessionUpdateTimerDelay);
+                timerDelay = config.sessionUpdateTimerDelay;
             }
+            startTimerService(timerService_, timerFuture, timerDelay);
 
             if (config.explicitStorageModeEnabled) {
                 L.i("[Init] Explicit storage mode is being enabled");
@@ -832,6 +824,23 @@ public class Countly {
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 
+    private void stopTimer() {
+        L.i("[Countly] stopTimer, Stopping global timer");
+        if (timerService_ != null) {
+            try {
+                timerService_.shutdown();
+                if (!timerService_.awaitTermination(1, TimeUnit.SECONDS)) {
+                    timerService_.shutdownNow();
+                    if (!timerService_.awaitTermination(1, TimeUnit.SECONDS)) {
+                        L.e("[Countly] stopTimer, Global timer must be locked");
+                    }
+                }
+            } catch (Throwable t) {
+                L.e("[Countly] stopTimer, Error while stopping global timer " + t);
+            }
+        }
+    }
+
     /**
      * Immediately disables session &amp; event tracking and clears any stored session &amp; event data.
      * This API is useful if your app has a tracking opt-out switch, and you want to immediately
@@ -843,6 +852,7 @@ public class Countly {
         L.i("Halting Countly!");
         sdkIsInitialised = false;
         L.SetListener(null);
+        stopTimer();
 
         if (connectionQueue_ != null) {
             if (countlyStore != null) {
@@ -877,7 +887,8 @@ public class Countly {
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
 
-        staticInit();
+        connectionQueue_ = new ConnectionQueue();
+        timerService_ = Executors.newSingleThreadScheduledExecutor();
     }
 
     synchronized void notifyDeviceIdChange(boolean withoutMerge) {
