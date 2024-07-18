@@ -22,13 +22,14 @@ public class scUP_UserProfileTests {
 
     @Before
     public void setUp() {
-        Countly.sharedInstance().halt();
         TestUtils.getCountyStore().clear();
+        Countly.sharedInstance().halt();
     }
 
     @After
     public void tearDown() {
         TestUtils.getCountyStore().clear();
+        Countly.sharedInstance().halt();
     }
 
     /**

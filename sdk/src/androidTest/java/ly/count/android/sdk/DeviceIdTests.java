@@ -21,9 +21,11 @@ public class DeviceIdTests {
 
     @Before
     public void setUp() {
-        Countly.sharedInstance().setLoggingEnabled(true);
-        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
+        store = TestUtils.getCountyStore();
         store.clear();
+
+        Countly.sharedInstance().halt();
+        Countly.sharedInstance().setLoggingEnabled(true);
 
         openUDIDProvider = new OpenUDIDProvider() {
             @Override public String getOpenUDID() {
@@ -35,6 +37,8 @@ public class DeviceIdTests {
     @After
     public void tearDown() {
         store.clear();
+
+        Countly.sharedInstance().halt();
     }
 
     /**
@@ -339,5 +343,8 @@ public class DeviceIdTests {
         TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":456,\"prop1\":\"string_a\",\"prop3\":true}}"), 7);
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 8);
+
+        countly.halt();
+        store.clear();
     }
 }
