@@ -1017,10 +1017,11 @@ public class CountlyConfig {
      *
      * @param contentUpdateInterval in seconds
      */
-    public void setContentUpdateInterval(int contentUpdateInterval) {
+    public synchronized CountlyConfig setContentUpdateInterval(int contentUpdateInterval) {
         if (contentUpdateInterval > 0) {
             this.contentUpdateInterval = contentUpdateInterval;
         }
+        return this;
     }
 
     /**
