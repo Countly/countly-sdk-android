@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -42,6 +43,10 @@ public class CountlyTimer {
         if (TIMER_DELAY_MS > 0) {
             timerDelay = TIMER_DELAY_MS;
             startTime = 0;
+        }
+
+        if (timerService == null) {
+            timerService = Executors.newSingleThreadScheduledExecutor();
         }
 
         timerService.scheduleWithFixedDelay(runnable, startTime, timerDelay, TimeUnit.MILLISECONDS);
