@@ -35,10 +35,6 @@ public class ModuleContent extends ModuleBase {
 
     void fetchContents(String[] tags) {
         L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents:[" + shouldFetchContents + "], tags:[" + Arrays.toString(tags) + "]");
-        if (!shouldFetchContents) {
-            L.w("[ModuleContent] fetchContentsInternal, shouldFetchContents is false, skipping");
-            return;
-        }
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
         String requestData = prepareContentFetchRequest(displayMetrics);
@@ -75,6 +71,11 @@ public class ModuleContent extends ModuleBase {
     }
 
     void registerForContentUpdates(String[] tags) {
+        if (!shouldFetchContents) {
+            L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
+            return;
+        }
+
         countlyTimer.startTimer(contentUpdateInterval, () -> {
             fetchContents(tags);
         }, L);
