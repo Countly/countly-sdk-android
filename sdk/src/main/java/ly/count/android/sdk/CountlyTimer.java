@@ -34,19 +34,16 @@ class CountlyTimer {
         if (timerDelayInternal < 1000) {
             timerDelayInternal = 1000;
         }
-
-        long startTime = timerDelayInternal;
-
+        
         if (TIMER_DELAY_MS > 0) {
             timerDelayInternal = TIMER_DELAY_MS;
-            startTime = 0;
         }
 
         if (timerService == null) {
             timerService = Executors.newSingleThreadScheduledExecutor();
         }
 
-        timerService.scheduleWithFixedDelay(runnable, startTime, timerDelayInternal, TimeUnit.MILLISECONDS);
+        timerService.scheduleWithFixedDelay(runnable, 0, timerDelayInternal, TimeUnit.MILLISECONDS);
     }
 
     protected void purgeTimer(ModuleLog L) {
