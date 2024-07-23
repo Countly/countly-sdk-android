@@ -227,6 +227,7 @@ public class Countly {
         public static final String apm = "apm";
         public static final String feedback = "feedback";
         public static final String remoteConfig = "remote-config";
+        public static final String content = "content";
         //public static final String accessoryDevices = "accessory-devices";
     }
 
