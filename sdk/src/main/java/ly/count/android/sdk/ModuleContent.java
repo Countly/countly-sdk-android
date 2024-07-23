@@ -71,6 +71,11 @@ public class ModuleContent extends ModuleBase {
     }
 
     void registerForContentUpdates(String[] tags) {
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
+            return;
+        }
+
         if (!shouldFetchContents) {
             L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
             return;
