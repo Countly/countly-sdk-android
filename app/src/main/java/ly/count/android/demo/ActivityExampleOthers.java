@@ -139,6 +139,6 @@ public class ActivityExampleOthers extends AppCompatActivity {
     }
 
     public void onClickFetchContents(View v) {
-        Countly.sharedInstance().content().fetchContents();
+        Countly.sharedInstance().content().openForContent();
     }
 }
