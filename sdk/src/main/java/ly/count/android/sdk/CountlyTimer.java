@@ -21,8 +21,8 @@ class CountlyTimer {
                         L.e("[CountlyTimer] Global timer must be locked");
                     }
                 }
-            } catch (Exception ignored) {
-                L.e("[CountlyTimer] Error while stopping global timer " + t);
+            } catch (Exception e) {
+                L.e("[CountlyTimer] Error while stopping global timer " + e);
             }
         }
     }
@@ -34,7 +34,7 @@ class CountlyTimer {
         if (timerDelayInternal < 1000) {
             timerDelayInternal = 1000;
         }
-        
+
         if (TIMER_DELAY_MS > 0) {
             timerDelayInternal = TIMER_DELAY_MS;
         }
