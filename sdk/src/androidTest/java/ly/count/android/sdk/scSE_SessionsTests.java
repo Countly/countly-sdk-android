@@ -379,7 +379,9 @@ public class scSE_SessionsTests {
 
     private void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
         TestUtils.validateRequest(deviceId, TestUtils.map("consent",
-            "{\"sessions\":" + consentForSession + ",\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"), idx);
+            "{\"sessions\":"
+                + consentForSession
+                + ",\"crashes\":false,\"users\":false,\"push\":false,\"content\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"), idx);
     }
 
     private void validateRequest(Map<String, Object> expectedExtras, int idx) {
