@@ -7,6 +7,8 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONObject;
@@ -16,6 +18,9 @@ public class ModuleContent extends ModuleBase {
     private String currentContentChecksum = null;
     private final ImmediateRequestGenerator iRGenerator;
     Content contentInterface;
+    CountlyTimer countlyTimer;
+    private boolean shouldFetchContents = false;
+    private final int contentUpdateInterval;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -24,10 +29,16 @@ public class ModuleContent extends ModuleBase {
 
         L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
         contentInterface = new Content();
+        countlyTimer = new CountlyTimer();
+        contentUpdateInterval = config.contentUpdateInterval;
     }
 
-    void fetchContentsInternal() {
-        L.d("[ModuleContent] fetchContentsInternal, new content data available, fetching it");
+    void fetchContents(String[] tags) {
+        L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents:[" + shouldFetchContents + "], tags:[" + Arrays.toString(tags) + "]");
+        if (!shouldFetchContents) {
+            L.w("[ModuleContent] fetchContentsInternal, shouldFetchContents is false, skipping");
+            return;
+        }
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
         String requestData = prepareContentFetchRequest(displayMetrics);
@@ -60,6 +71,12 @@ public class ModuleContent extends ModuleBase {
             } catch (Exception ex) {
                 L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
             }
+        }, L);
+    }
+
+    void registerForContentUpdates(String[] tags) {
+        countlyTimer.startTimer(contentUpdateInterval, () -> {
+            fetchContents(tags);
         }, L);
     }
 
@@ -139,11 +156,82 @@ public class ModuleContent extends ModuleBase {
     void halt() {
         currentContentChecksum = null;
         contentInterface = null;
+        countlyTimer.purgeTimer(L);
+        countlyTimer = null;
+    }
+
+    private void optOutFromContent() {
+        exitFromContentInternal();
+        shouldFetchContents = false;
+    }
+
+    @Override
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        L.d("[ModuleContent] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content)) {
+            if (!newConsent) {
+                optOutFromContent();
+            }
+        }
+    }
+
+    @Override
+    void deviceIdChanged(boolean withoutMerge) {
+        L.d("[ModuleContent] deviceIdChanged, withoutMerge:[" + withoutMerge + "]");
+        if (withoutMerge) {
+            optOutFromContent();
+        }
+    }
+
+    protected void exitFromContentInternal() {
+        countlyTimer.stopTimer(L);
     }
 
     public class Content {
-        public void fetchContents() {
-            fetchContentsInternal();
+
+        /**
+         * Opt in user for the content fetching and updates
+         *
+         * @param tags tags for the content
+         */
+        public void openForContent(@NonNull String... tags) {
+            L.d("[ModuleContent] openForContent, tags: [" + Arrays.toString(tags) + "]");
+
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+                return;
+            }
+
+            shouldFetchContents = true;
+            registerForContentUpdates(tags);
+        }
+
+        /**
+         * Opt out user from the content fetching and updates
+         */
+        public void exitFromContent() {
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+                return;
+            }
+
+            exitFromContentInternal();
+        }
+
+        /**
+         * Change the content that is being shown
+         *
+         * @param tags tags for the content
+         */
+        public void changeContent(@NonNull String... tags) {
+            L.d("[ModuleContent] changeContent, tags: [" + Arrays.toString(tags) + "]");
+
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+                return;
+            }
+
+            registerForContentUpdates(tags);
         }
     }
 }
