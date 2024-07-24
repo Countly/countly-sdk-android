@@ -842,9 +842,8 @@ public class Countly {
     }
 
     /**
-     * Immediately disables session &amp; event tracking and clears any stored session &amp; event data.
-     * This API is useful if your app has a tracking opt-out switch, and you want to immediately
-     * disable tracking when a user opts out.
+     * Immediately disables session and event tracking and clears any stored session and event data.
+     * Testing Purposes Only!
      *
      * This will destroy all stored data
      */
