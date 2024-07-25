@@ -7,12 +7,12 @@ import java.util.concurrent.TimeUnit;
 
 class CountlyTimer {
 
-    private ScheduledExecutorService timerService;
+    ScheduledExecutorService timerService;
     protected static int TIMER_DELAY_MS = 0; // for testing purposes
 
     protected void stopTimer(@NonNull ModuleLog L) {
-        L.i("[CountlyTimer] stopTimer, Stopping global timer");
         if (timerService != null) {
+            L.i("[CountlyTimer] stopTimer, Stopping timer");
             try {
                 timerService.shutdown();
                 if (!timerService.awaitTermination(1, TimeUnit.SECONDS)) {
@@ -24,11 +24,13 @@ class CountlyTimer {
             } catch (Exception e) {
                 L.e("[CountlyTimer] Error while stopping global timer " + e);
             }
+            timerService = null;
+        } else {
+            L.d("[CountlyTimer] stopTimer, Timer already stopped");
         }
     }
 
     protected void startTimer(long timerDelay, @NonNull Runnable runnable, @NonNull ModuleLog L) {
-        L.i("[CountlyTimer] startTimer, Starting global timer timerDelay: [" + timerDelay + "]");
         long timerDelayInternal = timerDelay * 1000;
 
         if (timerDelayInternal < 1000) {
@@ -39,18 +41,13 @@ class CountlyTimer {
             timerDelayInternal = TIMER_DELAY_MS;
         }
 
-        if (timerService == null) {
-            timerService = Executors.newSingleThreadScheduledExecutor();
-        } else {
+        L.i("[CountlyTimer] startTimer, Starting timer timerDelay: [" + timerDelayInternal + " ms]");
+
+        if (timerService != null) {
             stopTimer(L);
         }
 
+        timerService = Executors.newSingleThreadScheduledExecutor();
         timerService.scheduleWithFixedDelay(runnable, 0, timerDelayInternal, TimeUnit.MILLISECONDS);
-    }
-
-    protected void purgeTimer(ModuleLog L) {
-        L.d("[CountlyTimer] purgeTimer, stopping the times and nulling the service");
-        stopTimer(L);
-        timerService = null;
     }
 }

@@ -158,7 +158,7 @@ public class ModuleContent extends ModuleBase {
     void halt() {
         currentContentChecksum = null;
         contentInterface = null;
-        countlyTimer.purgeTimer(L);
+        countlyTimer.stopTimer(L);
         countlyTimer = null;
     }
 
