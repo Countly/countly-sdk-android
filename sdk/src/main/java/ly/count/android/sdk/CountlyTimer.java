@@ -33,8 +33,8 @@ class CountlyTimer {
     protected void startTimer(long timerDelay, @NonNull Runnable runnable, @NonNull ModuleLog L) {
         long timerDelayInternal = timerDelay * 1000;
 
-        if (timerDelayInternal < 1000) {
-            timerDelayInternal = 1000;
+        if (timerDelayInternal < UtilsTime.ONE_SECOND_IN_MS) {
+            timerDelayInternal = UtilsTime.ONE_SECOND_IN_MS;
         }
 
         if (TIMER_DELAY_MS > 0) {
