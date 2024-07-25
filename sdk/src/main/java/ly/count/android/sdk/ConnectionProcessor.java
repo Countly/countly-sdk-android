@@ -68,6 +68,8 @@ public class ConnectionProcessor implements Runnable {
 
     static String endPointOverrideTag = "&new_end_point=";
 
+    Map<String, RequestObserver> requestObservers;
+
     ModuleLog L;
 
     public PerformanceCounterCollector pcc;
@@ -349,6 +351,13 @@ public class ConnectionProcessor implements Runnable {
             final String originalRequest = storedRequests[0];
             String requestData = originalRequest;//todo rework to another param approach
 
+            // notify observers for the request
+            if (requestObservers != null) {
+                for (Map.Entry<String, RequestObserver> entry : requestObservers.entrySet()) {
+                    entry.getValue().onRequest(requestData);
+                }
+            }
+
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
@@ -428,6 +437,10 @@ public class ConnectionProcessor implements Runnable {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 InputStream connInputStream = null;
+
+                JSONObject responseBody = null;
+                String error = null;
+                int responseCode = 0;
                 try {
                     pccTsStartGetURLConnection = UtilsTime.getNanoTime();
 
@@ -448,7 +461,6 @@ public class ConnectionProcessor implements Runnable {
                     pccTsStartHandlingResponse = UtilsTime.getNanoTime();
                     pccTsReadingStream = UtilsTime.getNanoTime();
 
-                    int responseCode = 0;
                     String responseString = "";
                     if (conn instanceof HttpURLConnection) {
                         final HttpURLConnection httpConn = (HttpURLConnection) conn;
@@ -473,28 +485,25 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     final RequestResult rRes;
-
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {
                             L.v("[ConnectionProcessor] Response was empty, will retry");
                             rRes = RequestResult.RETRY;
                         } else {
-                            JSONObject jsonObject;
                             try {
-                                jsonObject = new JSONObject(responseString);
+                                responseBody = new JSONObject(responseString);
                             } catch (JSONException ex) {
                                 //failed to parse, so not a valid json
-                                jsonObject = null;
                                 L.e("[ConnectionProcessor] Failed to parse response [" + responseString + "].");
                             }
 
-                            if (jsonObject == null) {
+                            if (responseBody == null) {
                                 //received unparseable response, retrying
                                 L.v("[ConnectionProcessor] Response was a unknown, will retry");
                                 rRes = RequestResult.RETRY;
                             } else {
-                                if (jsonObject.has("result")) {
+                                if (responseBody.has("result")) {
                                     //contains result entry
                                     L.v("[ConnectionProcessor] Response was a success");
                                     rRes = RequestResult.OK;
@@ -540,12 +549,20 @@ public class ConnectionProcessor implements Runnable {
                     }
                 } catch (Exception e) {
                     L.d("[ConnectionProcessor] Got exception while trying to submit request data: [" + requestData + "] [" + e + "]");
+                    error = e.toString();
                     // if exception occurred, stop processing, let next tick take care of retrying
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_11_NetworkWholeQueueException", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
                     }
                     break;
                 } finally {
+                    // notify observers for the response
+                    if (requestObservers != null) {
+                        for (Map.Entry<String, RequestObserver> entry : requestObservers.entrySet()) {
+                            entry.getValue().onResponse(responseCode, responseBody, error);
+                        }
+                    }
+
                     // free connection resources
                     if (conn instanceof HttpURLConnection) {
                         try {

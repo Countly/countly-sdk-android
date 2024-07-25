@@ -69,4 +69,19 @@ interface RequestQueueProvider {
     String prepareServerConfigRequest();
 
     String prepareHealthCheckRequest(String preparedMetrics);
+
+    /**
+     * Internal function to register a request observer to be able to intercept requests and responses
+     *
+     * @param observerID unique ID of the observer
+     * @param observer observer object
+     */
+    void registerRequestObserver(@NonNull String observerID, @NonNull RequestObserver observer);
+
+    /**
+     * Internal function to remove a request observer
+     *
+     * @param observerID unique ID of the observer
+     */
+    void removeRequestObserver(@NonNull String observerID);
 }

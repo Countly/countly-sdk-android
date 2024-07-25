@@ -25,6 +25,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -50,7 +51,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
-
+    private Map<String, RequestObserver> requestObservers = new ConcurrentHashMap<>();
     HealthTracker healthTracker;
 
     public PerformanceCounterCollector pcc;
@@ -840,6 +841,16 @@ class ConnectionQueue implements RequestQueueProvider {
         }
     }
 
+    @Override
+    public void registerRequestObserver(@NonNull String observerID, @NonNull RequestObserver observer) {
+        requestObservers.put(observerID, observer);
+    }
+
+    @Override
+    public void removeRequestObserver(@NonNull String observerID) {
+        requestObservers.remove(observerID);
+    }
+
     /**
      * Starts ConnectionProcessor instances running in the background to
      * process the local connection queue data.
@@ -872,6 +883,8 @@ class ConnectionQueue implements RequestQueueProvider {
     public ConnectionProcessor createConnectionProcessor() {
         ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
         cp.pcc = pcc;
+        cp.requestObservers = requestObservers;
+
         return cp;
     }
 
