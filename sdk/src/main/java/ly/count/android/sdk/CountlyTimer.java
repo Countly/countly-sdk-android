@@ -41,6 +41,8 @@ class CountlyTimer {
 
         if (timerService == null) {
             timerService = Executors.newSingleThreadScheduledExecutor();
+        } else {
+            stopTimer(L);
         }
 
         timerService.scheduleWithFixedDelay(runnable, 0, timerDelayInternal, TimeUnit.MILLISECONDS);

@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
 import java.util.Arrays;
@@ -24,10 +23,10 @@ public class ModuleContent extends ModuleBase {
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
-        L.v("[ModuleRemoteConfig] Initialising");
+        L.v("[ModuleContent] Initialising");
         iRGenerator = config.immediateRequestGenerator;
 
-        L.d("[ModuleRemoteConfig] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
+        L.d("[ModuleContent] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
         contentUpdateInterval = config.contentUpdateInterval;
@@ -81,9 +80,7 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, () -> {
-            fetchContents(tags);
-        }, L);
+        countlyTimer.startTimer(contentUpdateInterval, () -> fetchContents(tags), L);
     }
 
     @NonNull
@@ -106,7 +103,7 @@ public class ModuleContent extends ModuleBase {
 
         int portraitWidth = portrait ? scaledWidth : scaledHeight;
         int portraitHeight = (portrait ? scaledHeight : scaledWidth) + navbarHeightScaled;
-        int landscapeWidth = (portrait ? scaledHeight : scaledWidth);
+        int landscapeWidth = portrait ? scaledHeight : scaledWidth;
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
         return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight);
@@ -141,7 +138,6 @@ public class ModuleContent extends ModuleBase {
 
     private TransparentActivityConfig extractOrientationPlacements(@NonNull JSONObject placements, float density, @NonNull String orientation, @NonNull String content) {
         if (placements.has(orientation)) {
-            Log.d("Countly", "[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "]");
             JSONObject orientationPlacements = placements.optJSONObject(orientation);
             assert orientationPlacements != null;
             int x = orientationPlacements.optInt("x");
@@ -174,10 +170,8 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleContent] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
-        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content)) {
-            if (!newConsent) {
-                optOutFromContent();
-            }
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
+            optOutFromContent();
         }
     }
 
