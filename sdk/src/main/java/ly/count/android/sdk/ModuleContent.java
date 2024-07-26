@@ -32,7 +32,7 @@ public class ModuleContent extends ModuleBase {
         contentUpdateInterval = config.contentUpdateInterval;
     }
 
-    void fetchContents(String[] tags) {
+    void fetchContentsInternal(String[] tags) {
         L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents:[" + shouldFetchContents + "], tags:[" + Arrays.toString(tags) + "]");
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
@@ -80,12 +80,11 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, () -> fetchContents(tags), L);
+        countlyTimer.startTimer(contentUpdateInterval, () -> fetchContentsInternal(tags), L);
     }
 
     @NonNull
     private String prepareContentFetchRequest(@NonNull DisplayMetrics displayMetrics) {
-
         Resources resources = _cly.context_.getResources();
         int currentOrientation = resources.getConfiguration().orientation;
         boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
@@ -232,6 +231,13 @@ public class ModuleContent extends ModuleBase {
             }
 
             registerForContentUpdates(tags);
+        }
+
+        /**
+         * Change the content that is being shown
+         */
+        public void fetchContents() {
+            fetchContentsInternal(new String[] { "" });
         }
     }
 }
