@@ -18,11 +18,11 @@ class CountlyTimer {
                 if (!timerService.awaitTermination(1, TimeUnit.SECONDS)) {
                     timerService.shutdownNow();
                     if (!timerService.awaitTermination(1, TimeUnit.SECONDS)) {
-                        L.e("[CountlyTimer] Global timer must be locked");
+                        L.e("[CountlyTimer] stopTimer, Global timer must be locked");
                     }
                 }
             } catch (Exception e) {
-                L.e("[CountlyTimer] Error while stopping global timer " + e);
+                L.e("[CountlyTimer] stopTimer, Error while stopping global timer " + e);
             }
             timerService = null;
         } else {
@@ -44,6 +44,7 @@ class CountlyTimer {
         L.i("[CountlyTimer] startTimer, Starting timer timerDelay: [" + timerDelayInternal + " ms]");
 
         if (timerService != null) {
+            L.d("[CountlyTimer] startTimer, timer was running, stopping it");
             stopTimer(L);
         }
 
