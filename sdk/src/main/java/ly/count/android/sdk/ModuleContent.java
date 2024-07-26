@@ -94,7 +94,7 @@ public class ModuleContent extends ModuleBase {
             int navbarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
             if (navbarHeightId > 0) {
                 //disable this for now, as it is not working correctly
-                //navbarHeightScaled = (int) Math.ceil(resources.getDimensionPixelSize(navbarHeightId) / displayMetrics.density);
+                navbarHeightScaled = (int) Math.ceil(resources.getDimensionPixelSize(navbarHeightId) / displayMetrics.density);
             }
         }
 
@@ -102,8 +102,9 @@ public class ModuleContent extends ModuleBase {
         int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
 
         int portraitWidth = portrait ? scaledWidth : scaledHeight;
-        int portraitHeight = (portrait ? scaledHeight : scaledWidth) + navbarHeightScaled;
+        int portraitHeight = (portrait ? scaledHeight : scaledWidth);
         int landscapeWidth = portrait ? scaledHeight : scaledWidth;
+        //Action Bar
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
         return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight);
