@@ -93,7 +93,8 @@ public class ModuleContent extends ModuleBase {
         if (!ViewConfiguration.get(_cly.context_).hasPermanentMenuKey()) {
             int navbarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
             if (navbarHeightId > 0) {
-                navbarHeightScaled = (int) Math.ceil(resources.getDimensionPixelSize(navbarHeightId) / displayMetrics.density);
+                //disable this for now, as it is not working correctly
+                //navbarHeightScaled = (int) Math.ceil(resources.getDimensionPixelSize(navbarHeightId) / displayMetrics.density);
             }
         }
 
