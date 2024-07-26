@@ -121,10 +121,11 @@ public class ModuleContent extends ModuleBase {
         String contentChecksum = UtilsNetworking.sha256Hash(content); // TODO store this to prevent showing the same content again
         L.d("[ModuleContent] parseContent, checksum: [" + contentChecksum + "], current checksum: [" + currentContentChecksum + "]");
 
-        if (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum)) {
-            L.d("[ModuleContent] parseContent, content did not change, skipping");
-            return placementCoordinates;
-        }
+        // disable for the sake of demo
+        //if (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum)) {
+        //  L.d("[ModuleContent] parseContent, content did not change, skipping");
+        // return placementCoordinates;
+        //}
         currentContentChecksum = contentChecksum;
 
         JSONObject coordinates = response.optJSONObject("placementCoordinates");
