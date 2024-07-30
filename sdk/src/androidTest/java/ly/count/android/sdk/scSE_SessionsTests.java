@@ -99,7 +99,6 @@ public class scSE_SessionsTests {
 
         Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        // orientation request 1
         validateSessionUpdateRequest(2, 2, TestUtils.commonDeviceId);
         validateSessionUpdateRequest(3, 2, TestUtils.commonDeviceId);
         validateSessionEndRequest(4, 2, TestUtils.commonDeviceId);

@@ -57,8 +57,8 @@ public class scUP_UserProfileTests {
 
         countly.sessions().endSession();
         // begin_session + first user property request + 3 events + user property request with light_mode + end_session
-        ModuleUserProfileTests.validateUserProfileRequest(1, 6, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        ModuleUserProfileTests.validateUserProfileRequest(3, 6, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(2, 6, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(4, 6, TestUtils.map(), TestUtils.map("theme", "light_mode"));
     }
 
     /**
@@ -437,7 +437,7 @@ public class scUP_UserProfileTests {
         sendUserData(countly);
         Thread.sleep(6000);
 
-        validateUserDataRequest(1, 2, "My Property", TestUtils.commonDeviceId); // plus orientation
+        validateUserDataRequest(0, 1, "My Property", TestUtils.commonDeviceId); // plus orientation
     }
 
     private void sendUserProperties(Countly countly) {

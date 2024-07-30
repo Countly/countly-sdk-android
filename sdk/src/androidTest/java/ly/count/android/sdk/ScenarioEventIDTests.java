@@ -92,7 +92,7 @@ public class ScenarioEventIDTests {
 
         //internal event
         mCountly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleFeedback.RATING_EVENT_KEY, idE[1], idV[1], null, null, 0, 1);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleFeedback.RATING_EVENT_KEY, idE[2], idV[1], null, null, 0, 1);
         clearInvocations(eqp);
 
         mCountly.onStopInternal();
@@ -101,7 +101,7 @@ public class ScenarioEventIDTests {
 
         //custom event 2
         mCountly.events().recordEvent(eKeys[1]);
-        verifyRecordEventToEventQueueIDs(eqp, eKeys[1], idE[2], idV[1], null, idE[0], 0, 1);
+        verifyRecordEventToEventQueueIDs(eqp, eKeys[1], idE[3], idV[1], null, idE[1], 0, 1);
     }
 
     /**
