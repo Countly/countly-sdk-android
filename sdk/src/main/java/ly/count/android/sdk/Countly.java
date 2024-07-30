@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.json.JSONObject;
 
 /**
  * This class is the public API for the Countly Android SDK.
@@ -47,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.1-RC1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.1-RC2";
 
     /**
      * Used as request meta data on every request
@@ -664,6 +665,8 @@ public class Countly {
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
             connectionQueue_.deviceInfo = config.deviceInfo;
             connectionQueue_.pcc = config.pcc;
+            connectionQueue_.requestObserver = this::notifyModulesForRequest;
+            connectionQueue_.responseObserver = this::notifyModulesForResponse;
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
@@ -826,6 +829,18 @@ public class Countly {
 
     boolean lifecycleStateAtLeastStartedInternal() {
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
+    }
+
+    private void notifyModulesForRequest(@NonNull String request) {
+        for (ModuleBase module : modules) {
+            module.onRequest(request);
+        }
+    }
+
+    private void notifyModulesForResponse(@NonNull JSONObject response) {
+        for (ModuleBase module : modules) {
+            module.onResponse(response);
+        }
     }
 
     private void stopTimer() {

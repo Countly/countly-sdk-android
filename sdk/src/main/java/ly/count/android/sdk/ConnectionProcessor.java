@@ -68,6 +68,9 @@ public class ConnectionProcessor implements Runnable {
 
     static String endPointOverrideTag = "&new_end_point=";
 
+    Consumer<String> requestObserver;
+    Consumer<JSONObject> responseObserver;
+
     ModuleLog L;
 
     public PerformanceCounterCollector pcc;
@@ -349,6 +352,11 @@ public class ConnectionProcessor implements Runnable {
             final String originalRequest = storedRequests[0];
             String requestData = originalRequest;//todo rework to another param approach
 
+            // notify observers for the request
+            if (requestObserver != null) {
+                requestObserver.consume(requestData);
+            }
+
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
@@ -428,6 +436,7 @@ public class ConnectionProcessor implements Runnable {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 InputStream connInputStream = null;
+
                 try {
                     pccTsStartGetURLConnection = UtilsTime.getNanoTime();
 
@@ -473,7 +482,6 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     final RequestResult rRes;
-
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {
@@ -494,6 +502,10 @@ public class ConnectionProcessor implements Runnable {
                                 L.v("[ConnectionProcessor] Response was a unknown, will retry");
                                 rRes = RequestResult.RETRY;
                             } else {
+                                // notify observers for the response
+                                if (responseObserver != null) {
+                                    responseObserver.consume(jsonObject);
+                                }
                                 if (jsonObject.has("result")) {
                                     //contains result entry
                                     L.v("[ConnectionProcessor] Response was a success");
