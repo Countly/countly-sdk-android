@@ -98,9 +98,7 @@ public class ModuleContent extends ModuleBase {
                     }
 
                     try {
-                        if (checkResponse.has("checksum")) {
-                            fetchContentsInternal(tags);
-                        }
+                        validateAndCallFetch(checkResponse);
                     } catch (Exception ex) {
                         L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
                     }
@@ -146,6 +144,16 @@ public class ModuleContent extends ModuleBase {
         return response.has("placementCoordinates") && response.has("pathToHtml");
     }
 
+    void validateAndCallFetch(JSONObject response) {
+        String checksum = response.optString("checksum", null);
+        if (!checksum.equals(currentContentChecksum)) {
+            currentContentChecksum = checksum;
+            if (tags != null) {
+                fetchContentsInternal(tags);
+            }
+        }
+    }
+
     @NonNull
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
@@ -154,11 +162,10 @@ public class ModuleContent extends ModuleBase {
         String contentChecksum = UtilsNetworking.sha256Hash(content); // TODO store this to prevent showing the same content again
         L.d("[ModuleContent] parseContent, checksum: [" + contentChecksum + "], current checksum: [" + currentContentChecksum + "]");
 
-        // disable for the sake of demo
-        //if (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum)) {
-        //  L.d("[ModuleContent] parseContent, content did not change, skipping");
-        // return placementCoordinates;
-        //}
+        if (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum)) {
+            L.d("[ModuleContent] parseContent, content did not change, skipping");
+            return placementCoordinates;
+        }
         currentContentChecksum = contentChecksum;
 
         JSONObject coordinates = response.optJSONObject("placementCoordinates");
@@ -219,6 +226,7 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onRequest(@NonNull StringBuilder request) {
+        L.d("[ModuleContent] onRequest, request:[" + request + "]");
         synchronized (this) {
             if (shouldAddParamsToRequest) {
                 request.append("&trigger=content-update");
@@ -228,12 +236,11 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onResponse(@NonNull JSONObject response) {
+        L.d("[ModuleContent] onResponse, response:[" + response + "]");
         synchronized (this) {
             if (shouldAddParamsToRequest) {
                 shouldAddParamsToRequest = false;
-                if (tags != null) {
-                    registerForContentUpdates(tags);
-                }
+                validateAndCallFetch(response);
             }
         }
     }
