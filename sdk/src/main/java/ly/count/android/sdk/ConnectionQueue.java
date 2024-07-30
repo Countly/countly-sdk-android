@@ -51,9 +51,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
-
     HealthTracker healthTracker;
-
     public PerformanceCounterCollector pcc;
 
     private Map<String, String> requestHeaderCustomValues;
@@ -65,8 +63,9 @@ class ConnectionQueue implements RequestQueueProvider {
     protected DeviceInfo deviceInfo = null;//todo ?remove in the future?
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
-
     RequestInfoProvider requestInfoProvider;
+    Consumer<String> requestObserver = null;
+    Consumer<JSONObject> responseObserver = null;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -895,6 +894,9 @@ class ConnectionQueue implements RequestQueueProvider {
 
         ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
         cp.pcc = pcc;
+        cp.requestObserver = requestObserver;
+        cp.responseObserver = responseObserver;
+
         return cp;
     }
 
