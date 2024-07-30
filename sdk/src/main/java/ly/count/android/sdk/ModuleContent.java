@@ -109,6 +109,7 @@ public class ModuleContent extends ModuleBase {
                 L.d("[ModuleContent] registerForContentUpdates, request queue is not empty, skipping");
                 synchronized (this) {
                     shouldAddParamsToRequest = true;
+                    requestQueueProvider.tick();
                 }
             }
         }, L);
