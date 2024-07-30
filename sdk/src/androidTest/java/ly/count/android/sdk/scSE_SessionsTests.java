@@ -97,11 +97,11 @@ public class scSE_SessionsTests {
 
         flowManualSessions(countly);
 
-        Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        validateSessionUpdateRequest(1, 2, TestUtils.commonDeviceId);
         validateSessionUpdateRequest(2, 2, TestUtils.commonDeviceId);
-        validateSessionEndRequest(3, 2, TestUtils.commonDeviceId);
+        validateSessionUpdateRequest(3, 2, TestUtils.commonDeviceId);
+        validateSessionEndRequest(4, 2, TestUtils.commonDeviceId);
     }
 
     /**
@@ -122,7 +122,7 @@ public class scSE_SessionsTests {
 
         flowManualSessions(countly);
 
-        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length); // not 2 anymore plus orientation
         validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
     }
@@ -211,22 +211,26 @@ public class scSE_SessionsTests {
 
         flowAutomaticSessions(countly);
 
-        Assert.assertEquals(12, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(16, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 1);
-        validateSessionEndRequest(2, 2, "newID");
+        // orientation request
+        validateSessionEndRequest(3, 2, "newID");
 
-        validateSessionBeginRequest(3, "newID_2");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 4);
-        validateSessionEndRequest(5, 2, "newID");
-
-        validateSessionBeginRequest(6, "newID_2");
-        validateSessionEndRequest(7, 1, "newID_2");
+        validateSessionBeginRequest(4, "newID_2");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 5);
+        // orientation request
+        validateSessionEndRequest(7, 2, "newID");
 
         validateSessionBeginRequest(8, "newID_2");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 9);
-        validateSessionEndRequest(10, null, "newID");
-        validateSessionBeginRequest(11, "newID");
+        // orientation request
+        validateSessionEndRequest(10, 1, "newID_2");
+
+        validateSessionBeginRequest(11, "newID_2");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 12);
+        // orientation request
+        validateSessionEndRequest(14, null, "newID");
+        validateSessionBeginRequest(15, "newID");
     }
 
     /**

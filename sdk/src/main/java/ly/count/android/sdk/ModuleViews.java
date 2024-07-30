@@ -436,13 +436,14 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         autoCloseRequiredViews(true, viewSegmentation);
     }
 
-    void updateOrientation(int newOrientation) {
+    void updateOrientation(int newOrientation, boolean forceSend) {
+        L.d("[ModuleViews] updateOrientation,  forceSend: [" + forceSend + "]");
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
             L.d("[ModuleViews] updateOrientation, no consent given for users, skipping orientation tracking");
             return;
         }
 
-        if (currentOrientation == newOrientation) {
+        if (!forceSend && currentOrientation == newOrientation) {
             L.d("[ModuleViews] updateOrientation, orientation did not change, skipping");
             return;
         }
@@ -460,6 +461,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null, null);
+    }
+
+    void updateOrientation(int newOrientation) {
+        updateOrientation(newOrientation, false);
     }
 
     void pauseRunningViewsAndSend() {

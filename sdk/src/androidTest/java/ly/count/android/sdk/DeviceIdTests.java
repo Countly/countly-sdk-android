@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Collections;
+import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -284,7 +285,7 @@ public class DeviceIdTests {
      * -- at this point 9 requests are generated (firs begin, 1 merge, 1 user profile, 1 end session for without merge, 1 begin session for the new user, 1 user profile, 1 user profile, 1 user profile, 1 merge)
      */
     @Test
-    public void sessionDurationScenario_1() throws InterruptedException {
+    public void sessionDurationScenario_1() throws InterruptedException, JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.setRequiresConsent(false);
         config.lifecycleObserver = () -> true;
@@ -304,11 +305,12 @@ public class DeviceIdTests {
         Thread.sleep(2000);
 
         countly.deviceId().changeWithoutMerge("ff"); // this will generate a request with "end_session", "session_duration" fields and reset duration + begin_session
-        assertEquals(5, TestUtils.getCurrentRQ().length);
+        assertEquals(6, TestUtils.getCurrentRQ().length); // not 5 anymore, it will send orientation event as well
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
-        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":123,\"prop1\":\"string\",\"prop3\":false}}"), 2);
-        ModuleSessionsTests.validateSessionEndRequest(3, 3, "ff_merge");
+        ModuleEventsTests.validateEventInRQ("ff_merge", "[CLY]_orientation", 1, 0.0d, 0.0d, 2, 0, 1, -1);
+        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":123,\"prop1\":\"string\",\"prop3\":false}}"), 3);
+        ModuleSessionsTests.validateSessionEndRequest(4, 3, "ff_merge");
 
         Thread.sleep(1000);
 
@@ -336,13 +338,13 @@ public class DeviceIdTests {
 
         countly.deviceId().changeWithMerge("ff_merge"); // this will generate a request with "session_duration" field and reset duration
 
-        assertEquals(9, TestUtils.getCurrentRQ().length);
+        assertEquals(11, TestUtils.getCurrentRQ().length);
 
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":[\"sd\"]}}"), 5);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{}}"), 6);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":456,\"prop1\":\"string_a\",\"prop3\":true}}"), 7);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":[\"sd\"]}}"), 7);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{}}"), 8);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":456,\"prop1\":\"string_a\",\"prop3\":true}}"), 9);
 
-        TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 8);
+        TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 10);
 
         countly.halt();
         store.clear();
