@@ -20,6 +20,8 @@ public class ModuleContent extends ModuleBase {
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
     private final int contentUpdateInterval;
+    private boolean shouldAddParamsToRequest = false;
+    private String[] tags = null;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -80,7 +82,36 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, () -> fetchContentsInternal(tags), L);
+        this.tags = tags;
+
+        countlyTimer.startTimer(contentUpdateInterval, () -> {
+            if (requestQueueProvider.isRequestQueueEmpty()) {
+                String requestData = requestQueueProvider.prepareEngagementQueueFetch();
+
+                ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+                final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+
+                iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/content/queue/check", cp, false, networkingIsEnabled, checkResponse -> {
+                    L.d("[ModuleContent] registerForContentUpdates, processing fetched contents, received response is :[" + checkResponse + "]");
+                    if (checkResponse == null) {
+                        return;
+                    }
+
+                    try {
+                        if (checkResponse.has("checksum")) {
+                            fetchContentsInternal(tags);
+                        }
+                    } catch (Exception ex) {
+                        L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
+                    }
+                }, L);
+            } else {
+                L.d("[ModuleContent] registerForContentUpdates, request queue is not empty, skipping");
+                synchronized (this) {
+                    shouldAddParamsToRequest = true;
+                }
+            }
+        }, L);
     }
 
     @NonNull
@@ -182,6 +213,27 @@ public class ModuleContent extends ModuleBase {
         L.d("[ModuleContent] deviceIdChanged, withoutMerge:[" + withoutMerge + "]");
         if (withoutMerge) {
             optOutFromContent();
+        }
+    }
+
+    @Override
+    void onRequest(@NonNull StringBuilder request) {
+        synchronized (this) {
+            if (shouldAddParamsToRequest) {
+                request.append("&trigger=content-update");
+            }
+        }
+    }
+
+    @Override
+    void onResponse(@NonNull JSONObject response) {
+        synchronized (this) {
+            if (shouldAddParamsToRequest) {
+                shouldAddParamsToRequest = false;
+                if (tags != null) {
+                    registerForContentUpdates(tags);
+                }
+            }
         }
     }
 

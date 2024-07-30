@@ -831,7 +831,7 @@ public class Countly {
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 
-    private void notifyModulesForRequest(@NonNull String request) {
+    private void notifyModulesForRequest(@NonNull StringBuilder request) {
         for (ModuleBase module : modules) {
             module.onRequest(request);
         }

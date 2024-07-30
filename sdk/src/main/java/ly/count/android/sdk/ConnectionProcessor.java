@@ -68,7 +68,7 @@ public class ConnectionProcessor implements Runnable {
 
     static String endPointOverrideTag = "&new_end_point=";
 
-    Consumer<String> requestObserver;
+    Consumer<StringBuilder> requestObserver;
     Consumer<JSONObject> responseObserver;
 
     ModuleLog L;
@@ -354,7 +354,9 @@ public class ConnectionProcessor implements Runnable {
 
             // notify observers for the request
             if (requestObserver != null) {
-                requestObserver.consume(requestData);
+                StringBuilder requestStringBuilder = new StringBuilder(requestData);
+                requestObserver.consume(requestStringBuilder);
+                requestData = requestStringBuilder.toString();
             }
 
             if (pcc != null) {

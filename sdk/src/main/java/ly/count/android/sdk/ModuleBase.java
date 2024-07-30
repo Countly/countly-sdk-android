@@ -109,7 +109,7 @@ abstract class ModuleBase {
      *
      * @param request request that is about to be sent
      */
-    void onRequest(@NonNull String request) {
+    void onRequest(@NonNull StringBuilder request) {
     }
 
     /**

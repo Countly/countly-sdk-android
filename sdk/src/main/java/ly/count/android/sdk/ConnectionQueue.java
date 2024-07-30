@@ -65,7 +65,7 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
-    Consumer<String> requestObserver = null;
+    Consumer<StringBuilder> requestObserver = null;
     Consumer<JSONObject> responseObserver = null;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
@@ -681,6 +681,10 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData(deviceIdProvider_.getDeviceId());
     }
 
+    public String prepareEngagementQueueFetch() {
+        return prepareCommonRequestData() + "&method=fetch_content";
+    }
+
     @NonNull
     String prepareCommonRequestData(@NonNull String deviceId) {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
@@ -921,13 +925,9 @@ class ConnectionQueue implements RequestQueueProvider {
     /**
      * Returns true if no requests are current stored, false otherwise.
      */
-    boolean isRequestQueueEmpty() {
-        String rawRequestQueue = storageProvider.getRequestQueueRaw();
-        if (rawRequestQueue.length() > 0) {
-            return false;
-        } else {
-            return true;
-        }
+    @Override
+    public boolean isRequestQueueEmpty() {
+        return storageProvider.getRequestQueueRaw().isEmpty();
     }
 
     // for unit testing
