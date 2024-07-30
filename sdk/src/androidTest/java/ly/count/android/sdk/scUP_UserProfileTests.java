@@ -48,17 +48,17 @@ public class scUP_UserProfileTests {
         countly.userProfile().setProperty("theme", "dark_mode");
 
         countly.events().recordEvent("test_event1");
-        TestUtils.assertRQSize(2); // begin session request + user property request with dark_mode
+        TestUtils.assertRQSize(3); // begin session request + user property request with dark_mode + orientation event
         countly.events().recordEvent("test_event2");
         countly.events().recordEvent("test_event3");
 
         countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(2); // no request is generated on the way
+        TestUtils.assertRQSize(3); // no request is generated on the way, not 2 anymore because of orientation event
 
         countly.sessions().endSession();
         // begin_session + first user property request + 3 events + user property request with light_mode + end_session
-        ModuleUserProfileTests.validateUserProfileRequest(1, 5, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        ModuleUserProfileTests.validateUserProfileRequest(3, 5, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(1, 6, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(3, 6, TestUtils.map(), TestUtils.map("theme", "light_mode"));
     }
 
     /**
@@ -325,8 +325,9 @@ public class scUP_UserProfileTests {
         TestUtils.assertRQSize(8);
         ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
 
-        ModuleEventsTests.validateEventInRQ("A", 1, 0, 2);
-        ModuleEventsTests.validateEventInRQ("B", 1, 1, 2);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", 1, 0, 3);
+        ModuleEventsTests.validateEventInRQ("A", 1, 1, 3); // not 2 anymore because of orientation, 0 is orientation
+        ModuleEventsTests.validateEventInRQ("B", 1, 2, 3);
 
         ModuleUserProfileTests.validateUserProfileRequest(2, 8, TestUtils.map(), TestUtils.map("a12345", "4"));
 
@@ -378,8 +379,9 @@ public class scUP_UserProfileTests {
         ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
         ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
 
-        ModuleEventsTests.validateEventInRQ("A", 2, 0, 2);
-        ModuleEventsTests.validateEventInRQ("B", 2, 1, 2);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", 2, 0, 3);
+        ModuleEventsTests.validateEventInRQ("A", 2, 1, 3); // not 2 anymore because of orientation
+        ModuleEventsTests.validateEventInRQ("B", 2, 2, 3); // not 2 anymore because of orientation
 
         ModuleUserProfileTests.validateUserProfileRequest(3, 9, TestUtils.map(), TestUtils.map("a12345", "4"));
 
@@ -435,7 +437,7 @@ public class scUP_UserProfileTests {
         sendUserData(countly);
         Thread.sleep(6000);
 
-        validateUserDataRequest(0, 1, "My Property", TestUtils.commonDeviceId);
+        validateUserDataRequest(1, 2, "My Property", TestUtils.commonDeviceId); // plus orientation
     }
 
     private void sendUserProperties(Countly countly) {

@@ -72,7 +72,7 @@ public class ScenarioEventIDTests {
         verifyRecordEventToEventQueueNotCalled(eqp);
 
         mCountly.onStartInternal(act);
-        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 1);
+        verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 1, 2); // not 1 anymore plus orientation
 
         clearInvocations(eqp);
 
@@ -83,7 +83,7 @@ public class ScenarioEventIDTests {
 
         //custom event 1
         mCountly.events().recordEvent(eKeys[0]);
-        verifyRecordEventToEventQueueIDs(eqp, eKeys[0], idE[0], idV[1], null, "", 0, 1);
+        verifyRecordEventToEventQueueIDs(eqp, eKeys[0], idE[1], idV[1], null, "", 0, 1);
         clearInvocations(eqp);
 
         mCountly.onStopInternal();
