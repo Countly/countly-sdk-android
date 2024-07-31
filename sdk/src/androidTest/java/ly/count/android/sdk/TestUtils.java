@@ -512,6 +512,14 @@ public class TestUtils {
         return resultMapArray;
     }
 
+    protected static void removeRequestContains(String search) {
+        for (String request : getCountyStore().getRequests()) {
+            if (request.contains(search)) {
+                getCountyStore().removeRequest(request);
+            }
+        }
+    }
+
     protected static Map<String, Object> map(Object... args) {
         Map<String, Object> map = new ConcurrentHashMap<>();
 
