@@ -5,8 +5,8 @@
 * Added array, list and JSONArray support to the user properties.
 
 * Mitigated issues where:
-  * session was ending regardless of manual control after without merge, not anymore.
-  * session was not starting even if consent is not required and automatic sessions are enabled after without merge, not anymore.
+  * session was ending with device ID change without merge, when consent was not required and manual session control was enabled.
+  * session was not starting after device ID change without merge, when consent was not required and automatic sessions were enabled.
 
 ## 24.7.0
 * ! Minor breaking change ! User properties will now be automatically saved under the following conditions:
