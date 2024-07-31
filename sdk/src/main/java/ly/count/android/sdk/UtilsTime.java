@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class UtilsTime {
+    protected static int ONE_SECOND_IN_MS = 1000;
 
     public static class Instant {
         public final long timestampMs;
