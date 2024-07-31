@@ -233,10 +233,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         if (isConsentGiven || !changeSource.equals(ConsentChangeSource.DeviceIDChangedNotMerged)) {
-          //send consent changes
-          String formattedConsentState = formatConsentState(featureConsentValues);
-          L.v("[ModuleConsent] setConsentInternal, Sending consent changes: [" + formattedConsentState + "]");
-          requestQueueProvider.sendConsentChanges(formattedConsentState);
+            //send consent changes
+            String formattedConsentState = formatConsentState(featureConsentValues);
+            L.v("[ModuleConsent] setConsentInternal, Sending consent changes: [" + formattedConsentState + "]");
+            requestQueueProvider.sendConsentChanges(formattedConsentState);
         }
     }
 
