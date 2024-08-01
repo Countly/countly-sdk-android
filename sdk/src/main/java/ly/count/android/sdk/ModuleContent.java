@@ -21,7 +21,9 @@ public class ModuleContent extends ModuleBase {
     private boolean shouldFetchContents = false;
     private final int contentUpdateInterval;
     private boolean shouldAddParamsToRequest = false;
+    private final boolean experimental = true;
     private String[] tags = null;
+    private Intent intent = null;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -56,9 +58,11 @@ public class ModuleContent extends ModuleBase {
                     if (placementCoordinates.isEmpty()) {
                         L.d("[ModuleContent] fetchContentsInternal, placement coordinates are empty, skipping");
                         return;
+                    } else if (intent != null) {
+                        _cly.context_.stopService(intent);
                     }
 
-                    Intent intent = new Intent(_cly.context_, TransparentActivity.class);
+                    intent = new Intent(_cly.context_, TransparentActivity.class);
                     intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
                     intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
                     intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
@@ -85,7 +89,10 @@ public class ModuleContent extends ModuleBase {
         this.tags = tags;
 
         countlyTimer.startTimer(contentUpdateInterval, () -> {
-            if (requestQueueProvider.isRequestQueueEmpty()) {
+            if (experimental) {
+                L.v("[ModuleContent] registerForContentUpdates, experimental mode enabled, directly fetching contents");
+                fetchContentsInternal(tags);
+            } else if (requestQueueProvider.isRequestQueueEmpty()) {
                 String requestData = requestQueueProvider.prepareEngagementQueueFetch();
 
                 ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
@@ -100,7 +107,7 @@ public class ModuleContent extends ModuleBase {
                     try {
                         validateAndCallFetch(checkResponse);
                     } catch (Exception ex) {
-                        L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
+                        L.e("[ModuleContent] registerForContentUpdates, Encountered internal issue while trying to fetch contents, [" + ex + "]");
                     }
                 }, L);
             } else {
@@ -162,7 +169,7 @@ public class ModuleContent extends ModuleBase {
         String contentChecksum = UtilsNetworking.sha256Hash(content); // TODO store this to prevent showing the same content again
         L.d("[ModuleContent] parseContent, checksum: [" + contentChecksum + "], current checksum: [" + currentContentChecksum + "]");
 
-        if (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum)) {
+        if (!experimental && (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum))) {
             L.d("[ModuleContent] parseContent, content did not change, skipping");
             return placementCoordinates;
         }
@@ -227,6 +234,10 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onRequest(@NonNull StringBuilder request) {
         L.d("[ModuleContent] onRequest, request:[" + request + "]");
+        if (experimental) {
+            L.v("[ModuleContent] onRequest, experimental mode enabled, skipping");
+            return;
+        }
         synchronized (this) {
             if (shouldAddParamsToRequest) {
                 request.append("&trigger=content-update");
@@ -237,6 +248,10 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onResponse(@NonNull JSONObject response) {
         L.d("[ModuleContent] onResponse, response:[" + response + "]");
+        if (experimental) {
+            L.v("[ModuleContent] onResponse, experimental mode enabled, skipping");
+            return;
+        }
         synchronized (this) {
             if (shouldAddParamsToRequest) {
                 shouldAddParamsToRequest = false;
@@ -256,7 +271,8 @@ public class ModuleContent extends ModuleBase {
          *
          * @param tags tags for the content
          */
-        public void openForContent(@NonNull String... tags) {
+        // TODO this is an experimental for now, will not expose it to the public API
+        protected void openForContent(@NonNull String... tags) {
             L.d("[ModuleContent] openForContent, tags: [" + Arrays.toString(tags) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -269,7 +285,20 @@ public class ModuleContent extends ModuleBase {
         }
 
         /**
+         * Opt in user for the content fetching and updates
+         * <p>
+         * <strong>Important Note:</strong> This method is an experimental feature and it might be removed in the future.
+         * </p>
+         */
+        public void openForContent() {
+            openForContent(new String[] {});
+        }
+
+        /**
          * Opt out user from the content fetching and updates
+         * <p>
+         * <strong>Important Note:</strong> This method is an experimental feature and it might be removed in the future.
+         * </p>
          */
         public void exitFromContent() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -285,7 +314,8 @@ public class ModuleContent extends ModuleBase {
          *
          * @param tags tags for the content
          */
-        public void changeContent(@NonNull String... tags) {
+        // TODO this is an experimental for now, will not expose it to the public API
+        protected void changeContent(@NonNull String... tags) {
             L.d("[ModuleContent] changeContent, tags: [" + Arrays.toString(tags) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
