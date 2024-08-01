@@ -44,7 +44,7 @@ public class ModuleSessionsTests {
 
         Thread.sleep(2000);
         mCountly.sessions().endSession();
-        validateSessionEndRequest(2, 2, TestUtils.commonDeviceId);
+        validateSessionEndRequest(3, 2, TestUtils.commonDeviceId); // not idx 2 anymore, it will send orientation event RQ
     }
 
     @Test
@@ -97,7 +97,7 @@ public class ModuleSessionsTests {
 
         mCountly.onStopInternal();
 
-        validateSessionEndRequest(1, 1, TestUtils.commonDeviceId);
+        validateSessionEndRequest(2, 1, TestUtils.commonDeviceId); // not idx 1 anymore, it will send orientation event RQ
     }
 
     /**

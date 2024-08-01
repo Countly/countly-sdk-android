@@ -57,6 +57,10 @@ public class ModuleSessions extends ModuleBase {
         sessionRunning = true;
         prevSessionDurationStartTime_ = System.currentTimeMillis();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
+
+        if (_cly.moduleViews.trackOrientationChanges) {
+            _cly.moduleViews.updateOrientation(_cly.context_.getResources().getConfiguration().orientation, true);
+        }
     }
 
     void updateSessionInternal() {
