@@ -1383,6 +1383,7 @@ public class ModuleCrashTests {
             "arrDO", new JSONArray(arrDO),
             "arrBO", new JSONArray(arrBO),
             "arrIO", new JSONArray(arrIO),
+            "arrObj", new JSONArray(arrObj),
             "arrObjStr", new JSONArray(arrObjStr)
         );
 
@@ -1434,7 +1435,8 @@ public class ModuleCrashTests {
             "arrL", arrL,
             "arrD", arrD,
             "arrBO", arrBO,
-            "arrIO", arrIO
+            "arrIO", arrIO,
+            "arrObj", arrObj
         );
 
         validateCrash(extractStackTrace(exception), "", false, false, expectedSegmentation, 0, new HashMap<>(), new ArrayList<>());

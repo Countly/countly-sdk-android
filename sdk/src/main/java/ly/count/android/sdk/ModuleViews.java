@@ -436,27 +436,35 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         autoCloseRequiredViews(true, viewSegmentation);
     }
 
-    void updateOrientation(int newOrientation) {
-        L.d("[ModuleViews] Calling [updateOrientation], new orientation:[" + newOrientation + "]");
-
+    void updateOrientation(int newOrientation, boolean forceSend) {
+        L.d("[ModuleViews] updateOrientation,  forceSend: [" + forceSend + "]");
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-            //we don't have consent, just leave
+            L.d("[ModuleViews] updateOrientation, no consent given for users, skipping orientation tracking");
             return;
         }
 
-        if (currentOrientation != newOrientation) {
-            currentOrientation = newOrientation;
-
-            Map<String, Object> segm = new HashMap<>();
-
-            if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
-                segm.put("mode", "portrait");
-            } else {
-                segm.put("mode", "landscape");
-            }
-
-            eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null, null);
+        if (!forceSend && currentOrientation == newOrientation) {
+            L.d("[ModuleViews] updateOrientation, orientation did not change, skipping");
+            return;
         }
+
+        L.i("[ModuleViews] updateOrientation, new orientation:[" + newOrientation + "], current orientation:[" + currentOrientation + "], landscape:[" + Configuration.ORIENTATION_LANDSCAPE + "], portrait:[" + Configuration.ORIENTATION_PORTRAIT + "]");
+
+        currentOrientation = newOrientation;
+
+        Map<String, Object> segm = new HashMap<>();
+
+        if (currentOrientation == Configuration.ORIENTATION_PORTRAIT) {
+            segm.put("mode", "portrait");
+        } else {
+            segm.put("mode", "landscape");
+        }
+
+        eventProvider.recordEventInternal(ORIENTATION_EVENT_KEY, segm, 1, 0, 0, null, null);
+    }
+
+    void updateOrientation(int newOrientation) {
+        updateOrientation(newOrientation, false);
     }
 
     void pauseRunningViewsAndSend() {

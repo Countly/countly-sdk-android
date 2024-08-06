@@ -1,3 +1,13 @@
+## 24.7.1
+* ! Minor breaking change ! Unsupported types for user properties will now be omitted, they won't be converted to strings.
+
+* Added support for mixed type of immutable lists, arrays to client given segmentations and user properties.
+* Added array, list and JSONArray support to the user properties.
+
+* Mitigated issues where:
+  * session was ending with device ID change without merge, when consent was not required and manual session control was enabled.
+  * session was not starting after device ID change without merge, when consent was not required and automatic sessions were enabled.
+
 ## 24.7.0
 * ! Minor breaking change ! User properties will now be automatically saved under the following conditions:
   * When an event is recorded

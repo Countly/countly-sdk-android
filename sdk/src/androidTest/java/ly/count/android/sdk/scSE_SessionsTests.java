@@ -23,13 +23,14 @@ public class scSE_SessionsTests {
 
     @Before
     public void setUp() {
-        Countly.sharedInstance().halt();
         TestUtils.getCountyStore().clear();
+        Countly.sharedInstance().halt();
     }
 
     @After
     public void tearDown() {
         TestUtils.getCountyStore().clear();
+        Countly.sharedInstance().halt();
     }
 
     /**
@@ -96,6 +97,7 @@ public class scSE_SessionsTests {
 
         flowManualSessions(countly);
 
+        TestUtils.removeRequestContains("orientation"); //TODO fix for now, tweak this
         Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
         validateSessionUpdateRequest(1, 2, TestUtils.commonDeviceId);
@@ -121,7 +123,7 @@ public class scSE_SessionsTests {
 
         flowManualSessions(countly);
 
-        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length); // not 2 anymore plus orientation
         validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
     }
@@ -202,7 +204,6 @@ public class scSE_SessionsTests {
      * *back to foreground*
      * --- Expected Requests ---
      * Check request queue and verify:
-     * 1. too lazy to calculate just let us know and lets verify together
      */
     @Test
     public void SE_204_CNR_A_id_change() throws InterruptedException {
@@ -211,15 +212,27 @@ public class scSE_SessionsTests {
 
         flowAutomaticSessions(countly);
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(16, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 1);
-        validateSessionEndRequest(2, 2, "newID");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 3);
+        boolean isOrientationRequest = TestUtils.getCurrentRQ()[1].containsKey("events");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), isOrientationRequest ? 2 : 1);
+        // orientation request
+        validateSessionEndRequest(3, 2, "newID");
+
         validateSessionBeginRequest(4, "newID_2");
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 5);
-        validateSessionEndRequest(6, null, "newID");
-        validateSessionBeginRequest(7, "newID");
+        // orientation request
+        validateSessionEndRequest(7, 2, "newID");
+
+        validateSessionBeginRequest(8, "newID_2");
+        // orientation request
+        validateSessionEndRequest(10, 1, "newID_2");
+
+        validateSessionBeginRequest(11, "newID_2");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 12);
+        // orientation request
+        validateSessionEndRequest(14, null, "newID");
+        validateSessionBeginRequest(15, "newID");
     }
 
     /**

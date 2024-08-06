@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Collections;
+import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,9 +22,11 @@ public class DeviceIdTests {
 
     @Before
     public void setUp() {
-        Countly.sharedInstance().setLoggingEnabled(true);
-        store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
+        store = TestUtils.getCountyStore();
         store.clear();
+
+        Countly.sharedInstance().halt();
+        Countly.sharedInstance().setLoggingEnabled(true);
 
         openUDIDProvider = new OpenUDIDProvider() {
             @Override public String getOpenUDID() {
@@ -35,6 +38,8 @@ public class DeviceIdTests {
     @After
     public void tearDown() {
         store.clear();
+
+        Countly.sharedInstance().halt();
     }
 
     /**
@@ -260,11 +265,11 @@ public class DeviceIdTests {
      * ---
      * set a couple of user properties
      * sleep 1 second
-     * change device ID with merge (creates a session duration request with the duration of 1 second)
+     * change device ID with merge
      * save user profiles
      * sleep 2 seconds
-     * change device ID without merge (creates a session duration request with the duration of 2 seconds)
-     * -- at this point 4 requests are generated (firs begin, 1 merge, 1 user profile, 1 end session for without merge)
+     * change device ID without merge (creates a session duration request with the duration of 3 seconds) and will generate new begin session because consent not required
+     * -- at this point 4 requests are generated (firs begin, 1 merge, 1 user profile, 1 end session for without merge, 1 begin session for the new user)
      * sleep 1 second
      * set user property and save it
      * change device ID without merge with same device id (no session duration request)
@@ -277,10 +282,10 @@ public class DeviceIdTests {
      * set user properties and save them
      * sleep 1 second
      * change device ID with merge (creates a session duration request with the duration of 4 seconds)
-     * -- at this point 8 requests are generated (firs begin, 1 merge, 1 user profile, 1 end session for without merge, 1 user profile, 1 user profile, 1 user profile, 1 merge)
+     * -- at this point 9 requests are generated (firs begin, 1 merge, 1 user profile, 1 end session for without merge, 1 begin session for the new user, 1 user profile, 1 user profile, 1 user profile, 1 merge)
      */
     @Test
-    public void sessionDurationScenario_1() throws InterruptedException {
+    public void sessionDurationScenario_1() throws InterruptedException, JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.setRequiresConsent(false);
         config.lifecycleObserver = () -> true;
@@ -294,17 +299,18 @@ public class DeviceIdTests {
 
         Thread.sleep(1000);
 
-        countly.deviceId().changeWithMerge("ff_merge"); // this will generate a request with "session_duration" field and reset duration
+        countly.deviceId().changeWithMerge("ff_merge");
         countly.userProfile().save();
 
         Thread.sleep(2000);
 
-        countly.deviceId().changeWithoutMerge("ff"); // this will generate a request with "end_session", "session_duration" fields and reset duration
-        assertEquals(4, TestUtils.getCurrentRQ().length);
+        countly.deviceId().changeWithoutMerge("ff"); // this will generate a request with "end_session", "session_duration" fields and reset duration + begin_session
+        assertEquals(6, TestUtils.getCurrentRQ().length); // not 5 anymore, it will send orientation event as well
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
-        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"123\",\"prop1\":\"string\",\"prop3\":\"false\"}}"), 2);
-        ModuleSessionsTests.validateSessionEndRequest(3, 3, "ff_merge");
+        ModuleEventsTests.validateEventInRQ("ff_merge", "[CLY]_orientation", 1, 0.0d, 0.0d, 2, 0, 1, -1);
+        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":123,\"prop1\":\"string\",\"prop3\":false}}"), 3);
+        ModuleSessionsTests.validateSessionEndRequest(4, 3, "ff_merge");
 
         Thread.sleep(1000);
 
@@ -332,12 +338,15 @@ public class DeviceIdTests {
 
         countly.deviceId().changeWithMerge("ff_merge"); // this will generate a request with "session_duration" field and reset duration
 
-        assertEquals(8, TestUtils.getCurrentRQ().length);
+        assertEquals(11, TestUtils.getCurrentRQ().length);
 
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":\"[sd]\"}}"), 4);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop6\":\"{key=123}\",\"prop5\":\"{key=value}\",\"prop7\":\"{key=false}\"}}"), 5);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":\"456\",\"prop1\":\"string_a\",\"prop3\":\"true\"}}"), 6);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":[\"sd\"]}}"), 7);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{}}"), 8);
+        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":456,\"prop1\":\"string_a\",\"prop3\":true}}"), 9);
 
-        TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 7);
+        TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 10);
+
+        countly.halt();
+        store.clear();
     }
 }

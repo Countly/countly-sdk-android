@@ -57,6 +57,10 @@ public class ModuleSessions extends ModuleBase {
         sessionRunning = true;
         prevSessionDurationStartTime_ = System.currentTimeMillis();
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
+
+        if (_cly.moduleViews.trackOrientationChanges) {
+            _cly.moduleViews.updateOrientation(_cly.context_.getResources().getConfiguration().orientation, true);
+        }
     }
 
     void updateSessionInternal() {
@@ -169,6 +173,14 @@ public class ModuleSessions extends ModuleBase {
     void halt() {
         prevSessionDurationStartTime_ = 0;
         sessionRunning = false;
+    }
+
+    @Override
+    void deviceIdChanged(boolean withoutMerge) {
+        if (!manualSessionControlEnabled && withoutMerge) {
+            L.d("[ModuleSessions] deviceIdChanged, automatic session control enabled and device id changed without merge, starting a new session");
+            beginSessionInternal();
+        }
     }
 
     public class Sessions {
