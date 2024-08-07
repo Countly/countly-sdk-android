@@ -32,6 +32,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * ConnectionQueue queues session and event data and periodically sends that data to
@@ -50,9 +52,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
-
     HealthTracker healthTracker;
-
     public PerformanceCounterCollector pcc;
 
     private Map<String, String> requestHeaderCustomValues;
@@ -64,8 +64,9 @@ class ConnectionQueue implements RequestQueueProvider {
     protected DeviceInfo deviceInfo = null;//todo ?remove in the future?
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
-
     RequestInfoProvider requestInfoProvider;
+    Consumer<StringBuilder> requestObserver = null;
+    Consumer<JSONObject> responseObserver = null;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -680,6 +681,10 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData(deviceIdProvider_.getDeviceId());
     }
 
+    public String prepareEngagementQueueFetch() {
+        return prepareCommonRequestData() + "&method=fetch_content";
+    }
+
     @NonNull
     String prepareCommonRequestData(@NonNull String deviceId) {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
@@ -823,6 +828,27 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
+    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight) {
+
+        JSONObject json = new JSONObject();
+        try {
+            JSONObject landscapeJson = new JSONObject();
+            landscapeJson.put("width", landscapeWidth);
+            landscapeJson.put("height", landscapeHeight);
+
+            JSONObject portraitJson = new JSONObject();
+            portraitJson.put("width", portraitWidth);
+            portraitJson.put("height", portraitHeight);
+
+            json.put("landscape", landscapeJson);
+            json.put("portrait", portraitJson);
+        } catch (JSONException e) {
+            L.e("Error while preparing fetch contents request");
+        }
+
+        return prepareCommonRequestData() + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString());
+    }
+
     @Override
     public String prepareServerConfigRequest() {
         return prepareCommonRequestDataShort() + "&method=sc";
@@ -870,8 +896,12 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
+
         ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
         cp.pcc = pcc;
+        cp.requestObserver = requestObserver;
+        cp.responseObserver = responseObserver;
+
         return cp;
     }
 
@@ -895,13 +925,9 @@ class ConnectionQueue implements RequestQueueProvider {
     /**
      * Returns true if no requests are current stored, false otherwise.
      */
-    boolean isRequestQueueEmpty() {
-        String rawRequestQueue = storageProvider.getRequestQueueRaw();
-        if (rawRequestQueue.length() > 0) {
-            return false;
-        } else {
-            return true;
-        }
+    @Override
+    public boolean isRequestQueueEmpty() {
+        return storageProvider.getRequestQueueRaw().isEmpty();
     }
 
     // for unit testing

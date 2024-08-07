@@ -121,15 +121,27 @@ class DeviceInfo {
                     // we catch Throwable and return empty string if that happens
                     String resolution = "";
                     try {
-                        final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-                        final Display display = wm.getDefaultDisplay();
-                        final DisplayMetrics metrics = new DisplayMetrics();
-                        display.getMetrics(metrics);
+                        final DisplayMetrics metrics = getDisplayMetrics(context);
                         resolution = metrics.widthPixels + "x" + metrics.heightPixels;
                     } catch (Throwable t) {
                         Countly.sharedInstance().L.i("[DeviceInfo] Device resolution cannot be determined");
                     }
                     return resolution;
+                }
+
+                /**
+                 * Return the display metrics collected from the WindowManager in the specified context.
+                 * @param context context to use to retrieve the current WindowManager
+                 * @return the display metrics of the current default display
+                 */
+                @NonNull
+                @Override
+                public DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
+                    final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                    final Display display = wm.getDefaultDisplay();
+                    final DisplayMetrics metrics = new DisplayMetrics();
+                    display.getMetrics(metrics);
+                    return metrics;
                 }
 
                 /**

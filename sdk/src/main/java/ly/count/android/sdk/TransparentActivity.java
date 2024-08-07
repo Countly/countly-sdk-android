@@ -6,18 +6,21 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.ViewGroup;
+import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
 
-class TransparentActivity extends Activity {
+public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
@@ -29,6 +32,7 @@ class TransparentActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Log.d(Countly.TAG, "[TransparentActivity] onCreate, content received, showing it");
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -88,6 +92,7 @@ class TransparentActivity extends Activity {
         display.getMetrics(metrics);
 
         if (config == null) {
+            Log.e("PIXEL", "Config is null");
             return new TransparentActivityConfig(0, 0, metrics.widthPixels, metrics.heightPixels);
         }
 
@@ -103,12 +108,26 @@ class TransparentActivity extends Activity {
         if (config.y < 1) {
             config.y = 0;
         }
+        Rect rectangle = new Rect();
+        Window window = getWindow();
+        window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
+        int statusBarHeight = rectangle.top;
+        int contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
+        int titleBarHeight = contentViewTop - statusBarHeight;
+
+        //config.y = metrics.heightPixels;
+        //config.height = config.height * 2;
+
+        Log.e("PIXEL", "screen width: " + metrics.widthPixels + " height: " + metrics.heightPixels);
+        Log.e("PIXEL", "density: " + metrics.density);
+        Log.e("PIXEL ", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
 
         return config;
     }
 
     private void changeOrientation(TransparentActivityConfig config) {
         // Configure window layout parameters
+        Log.e("PIXEL", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
         params.y = config.y;
@@ -130,8 +149,11 @@ class TransparentActivity extends Activity {
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        Log.e("PIXEL", "onConfigurationChanged");
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;
+            Log.e("PIXEL", "Orientation changed");
+            Log.e("PIXEL", "Current orientation: " + currentOrientation + " Landscape: " + Configuration.ORIENTATION_LANDSCAPE + " Portrait: " + Configuration.ORIENTATION_PORTRAIT);
             switch (currentOrientation) {
                 case Configuration.ORIENTATION_LANDSCAPE:
                     if (configLandscape != null) {

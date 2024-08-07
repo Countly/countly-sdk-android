@@ -217,7 +217,7 @@ public class ModuleSessionsTests {
     }
 
     protected static void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
-        ModuleConsentTests.validateConsentRequest(deviceId, idx, new boolean[] { consentForSession, false, false, false, false, false, false, false, false, false, false, false, false, false });
+        ModuleConsentTests.validateConsentRequest(deviceId, idx, new boolean[] { consentForSession, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
     }
 
     protected static void validateSessionBeginRequest(int idx, String deviceId) {

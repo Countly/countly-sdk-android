@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import org.json.JSONObject;
 
 /**
  * This class is the public API for the Countly Android SDK.
@@ -178,6 +179,7 @@ public class Countly {
     ModuleUserProfile moduleUserProfile = null;
     ModuleConfiguration moduleConfiguration = null;
     ModuleHealthCheck moduleHealthCheck = null;
+    ModuleContent moduleContent = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -226,6 +228,7 @@ public class Countly {
         public static final String apm = "apm";
         public static final String feedback = "feedback";
         public static final String remoteConfig = "remote-config";
+        public static final String content = "content";
         //public static final String accessoryDevices = "accessory-devices";
     }
 
@@ -564,6 +567,7 @@ public class Countly {
             moduleLocation = new ModuleLocation(this, config);
             moduleFeedback = new ModuleFeedback(this, config);
             moduleAttribution = new ModuleAttribution(this, config);
+            moduleContent = new ModuleContent(this, config);
 
             modules.clear();
             modules.add(moduleConfiguration);
@@ -581,6 +585,7 @@ public class Countly {
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
+            modules.add(moduleContent);
 
             modules.add(moduleHealthCheck);//set this at the end to detect any health issues with other modules before sending the report
 
@@ -660,6 +665,8 @@ public class Countly {
             connectionQueue_.moduleRequestQueue = moduleRequestQueue;
             connectionQueue_.deviceInfo = config.deviceInfo;
             connectionQueue_.pcc = config.pcc;
+            connectionQueue_.requestObserver = this::notifyModulesForRequest;
+            connectionQueue_.responseObserver = this::notifyModulesForResponse;
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLContext();
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
@@ -824,6 +831,18 @@ public class Countly {
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 
+    private void notifyModulesForRequest(@NonNull StringBuilder request) {
+        for (ModuleBase module : modules) {
+            module.onRequest(request);
+        }
+    }
+
+    private void notifyModulesForResponse(@NonNull JSONObject response) {
+        for (ModuleBase module : modules) {
+            module.onResponse(response);
+        }
+    }
+
     private void stopTimer() {
         L.i("[Countly] stopTimer, Stopping global timer");
         if (timerService_ != null) {
@@ -882,6 +901,7 @@ public class Countly {
         moduleRequestQueue = null;
         moduleConfiguration = null;
         moduleHealthCheck = null;
+        moduleContent = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
@@ -1220,6 +1240,15 @@ public class Countly {
         }
 
         return moduleUserProfile.userProfileInterface;
+    }
+
+    public ModuleContent.Content content() {
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before accessing content");
+            return null;
+        }
+
+        return moduleContent.contentInterface;
     }
 
     public static void applicationOnCreate() {

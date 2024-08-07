@@ -204,6 +204,7 @@ public class CountlyConfig {
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
 
+    int contentUpdateInterval = 30;
     /**
      * THIS VARIABLE SHOULD NOT BE USED
      * IT IS ONLY FOR INTERNAL TESTING
@@ -1008,6 +1009,18 @@ public class CountlyConfig {
 
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
+        return this;
+    }
+
+    /**
+     * Set the interval for the automatic content update calls
+     *
+     * @param contentUpdateInterval in seconds
+     */
+    public synchronized CountlyConfig setContentUpdateInterval(int contentUpdateInterval) {
+        if (contentUpdateInterval > 0) {
+            this.contentUpdateInterval = contentUpdateInterval;
+        }
         return this;
     }
 

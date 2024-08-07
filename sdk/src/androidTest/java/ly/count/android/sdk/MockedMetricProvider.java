@@ -1,9 +1,9 @@
 package ly.count.android.sdk;
 
 import android.content.Context;
+import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.HashMap;
 
 public class MockedMetricProvider implements MetricProvider {
 
@@ -113,5 +113,9 @@ public class MockedMetricProvider implements MetricProvider {
 
     @Override public String getRunningTime() {
         return "88";
+    }
+
+    @Override public DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
+        return new DisplayMetrics();
     }
 }
