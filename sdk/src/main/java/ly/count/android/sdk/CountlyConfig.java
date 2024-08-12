@@ -204,7 +204,6 @@ public class CountlyConfig {
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
 
-    int contentUpdateInterval = 30;
     /**
      * THIS VARIABLE SHOULD NOT BE USED
      * IT IS ONLY FOR INTERNAL TESTING
@@ -1013,18 +1012,6 @@ public class CountlyConfig {
     }
 
     /**
-     * Set the interval for the automatic content update calls
-     *
-     * @param contentUpdateInterval in seconds
-     */
-    public synchronized CountlyConfig setContentUpdateInterval(int contentUpdateInterval) {
-        if (contentUpdateInterval > 0) {
-            this.contentUpdateInterval = contentUpdateInterval;
-        }
-        return this;
-    }
-
-    /**
      * APM configuration interface to be used with CountlyConfig
      */
     public final ConfigApm apm = new ConfigApm();
@@ -1038,4 +1025,9 @@ public class CountlyConfig {
      * Crash Reporting configuration interface to be used with CountlyConfig
      */
     public final ConfigCrashes crashes = new ConfigCrashes();
+
+    /**
+     * Crash Reporting configuration interface to be used with CountlyConfig
+     */
+    public final ConfigContent contents = new ConfigContent();
 }

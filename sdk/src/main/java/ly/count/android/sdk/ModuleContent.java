@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -33,7 +34,8 @@ public class ModuleContent extends ModuleBase {
         L.d("[ModuleContent] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
-        contentUpdateInterval = config.contentUpdateInterval;
+        contentUpdateInterval = config.contents.contentUpdateInterval;
+        shouldFetchContents = config.contents.contentUpdatesEnabled;
     }
 
     void fetchContentsInternal(String[] tags) {
@@ -141,7 +143,6 @@ public class ModuleContent extends ModuleBase {
         int portraitWidth = portrait ? scaledWidth : scaledHeight;
         int portraitHeight = (portrait ? scaledHeight : scaledWidth);
         int landscapeWidth = portrait ? scaledHeight : scaledWidth;
-        //Action Bar
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
         return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight);
@@ -218,7 +219,7 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleContent] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
-        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
+        if (!experimental && consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
             optOutFromContent();
         }
     }
@@ -260,6 +261,11 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
+    @Override
+    void initFinished(@NotNull CountlyConfig config) {
+        registerForContentUpdates(new String[] {});
+    }
+
     protected void exitFromContentInternal() {
         countlyTimer.stopTimer(L);
     }
@@ -275,7 +281,7 @@ public class ModuleContent extends ModuleBase {
         protected void openForContent(@NonNull String... tags) {
             L.d("[ModuleContent] openForContent, tags: [" + Arrays.toString(tags) + "]");
 
-            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
                 return;
             }
@@ -301,7 +307,7 @@ public class ModuleContent extends ModuleBase {
          * </p>
          */
         public void exitFromContent() {
-            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
                 return;
             }
@@ -318,7 +324,7 @@ public class ModuleContent extends ModuleBase {
         protected void changeContent(@NonNull String... tags) {
             L.d("[ModuleContent] changeContent, tags: [" + Arrays.toString(tags) + "]");
 
-            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
                 return;
             }
