@@ -13,6 +13,7 @@
   <string name="activity_name_custom_events">Custom events examples</string>
   <string name="activity_name_multithreading">Multithreading examples</string>
   <string name="activity_name_others">Other examples</string>
+  <string name="activity_name_contents">Content examples</string>
   <string name="activity_name_user_detail">User detail examples</string>
   <string name="activity_name_view_tracking">View tracking examples</string>
   <string name="activity_name_remote_config">Remote Config examples</string>

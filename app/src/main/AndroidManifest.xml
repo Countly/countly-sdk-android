@@ -73,6 +73,11 @@
         android:configChanges="orientation|screenSize"/>
 
     <activity
+        android:name=".ActivityExampleContents"
+        android:label="@string/activity_name_contents"
+        android:configChanges="orientation|screenSize"/>
+
+    <activity
         android:name=".ActivityExampleUserDetails"
         android:label="@string/activity_name_user_detail"
         android:configChanges="orientation|screenSize"/>
