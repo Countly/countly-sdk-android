@@ -1242,7 +1242,7 @@ public class Countly {
         return moduleUserProfile.userProfileInterface;
     }
 
-    public ModuleContent.Content content() {
+    public ModuleContent.Content contents() {
         if (!isInitialized()) {
             L.e("Countly.sharedInstance().init must be called before accessing content");
             return null;
