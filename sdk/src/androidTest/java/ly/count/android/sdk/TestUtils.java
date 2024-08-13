@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -492,12 +493,25 @@ public class TestUtils {
      * @return array of request params
      */
     protected static @NonNull Map<String, String>[] getCurrentRQ() {
+        return getCurrentRQ("");
+    }
+
+    /**
+     * Get current request queue from target folder
+     *
+     * @param filter Filter by given string
+     * @return array of request params
+     */
+    protected static @NonNull Map<String, String>[] getCurrentRQ(String filter) {
         //get all request files from target folder
         String[] requests = getCountyStore().getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 
         for (int i = 0; i < requests.length; i++) {
+            if (!requests[i].contains(filter)) {
+                continue;
+            }
 
             String[] params = requests[i].split("&");
 
@@ -617,5 +631,15 @@ public class TestUtils {
 
     protected static void assertRQSize(int size) {
         Assert.assertEquals(size, getCurrentRQ().length);
+    }
+
+    static SafeIDGenerator incrementalViewIdGenerator() {
+        AtomicInteger counter = new AtomicInteger(0);
+        return () -> "idv" + counter.incrementAndGet();
+    }
+
+    static SafeIDGenerator incrementalEventIdGenerator() {
+        AtomicInteger counter = new AtomicInteger(0);
+        return () -> "ide" + counter.incrementAndGet();
     }
 }

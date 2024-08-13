@@ -468,15 +468,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     }
 
     void stopRunningViewsAndSend() {
-        L.d("[ModuleViews] stopRunningViewsAndSend, going to the background and pausing");
+        L.d("[ModuleViews] stopRunningViewsAndSend, going to the background and stopping views");
         for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
             ViewData vd = entry.getValue();
             vd.willStartAgain = true;
-
-            if (vd.viewStartTimeSeconds > 0) {
-                //if the view is running
-                stopViewWithIDInternal(vd.viewID, null);
-            }
+            stopViewWithIDInternal(vd.viewID, null);
         }
     }
 
@@ -486,7 +482,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         Iterator<Map.Entry<String, ViewData>> iterator = viewDataMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, ViewData> value = iterator.next();
-            iterator.remove();
             ViewData vd = value.getValue();
             if (vd.willStartAgain) {
                 //if the view is paused
