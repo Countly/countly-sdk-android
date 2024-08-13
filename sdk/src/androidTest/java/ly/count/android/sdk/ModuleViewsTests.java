@@ -1695,6 +1695,69 @@ public class ModuleViewsTests {
         validateView("test", 0.0, 0, 1, true, false, expectedSegmentation, "idv1", "");
     }
 
+    /**
+     * "startView" with bg/fg switch case
+     * - Validate that after an auto stopped view is started and app gone to background
+     * running view should stop and send a stop view request
+     * - After coming from the background to foreground the stopped view should start again
+     * - When we stop the view it should be removed from the cached views
+     *
+     * @throws InterruptedException if the thread is interrupted
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_restartAfterActivityComesFromForeground() throws InterruptedException, JSONException {
+        CountlyConfig countlyConfig = TestUtils.createScenarioEventIDConfig(TestUtils.incrementalViewIdGenerator(), TestUtils.incrementalEventIdGenerator());
+        countlyConfig.setApplication(null);
+        countlyConfig.setContext(TestUtils.getContext());
+        countlyConfig.setGlobalViewSegmentation(TestUtils.map("try", "this", "maybe", false));
+
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "a", "a",
+            "b", 55,
+            "c", new JSONArray(Arrays.asList("aa", "asd", "ad8")),
+            "d", true
+        );
+
+        Activity activity = Mockito.mock(Activity.class);
+
+        TestUtils.assertRQSize(0);
+
+        countly.onStart(activity);
+        countly.views().startView("test", segmentation);
+
+        segmentation.put("try", "this");
+        segmentation.put("maybe", false);
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide1", "_CLY_", "", "_CLY_", 1, 3, 0, 1);
+        validateView("test", 0.0, 2, 3, true, true, segmentation, "idv1", "");
+
+        Thread.sleep(1000);
+
+        countly.onStop();
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
+        validateView("test", 1.0, 4, 5, false, false, TestUtils.map("try", "this", "maybe", false), "idv1", "");
+
+        countly.onStart(activity);
+
+        ModuleSessionsTests.validateSessionBeginRequest(5, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide2", "_CLY_", "idv1", "_CLY_", 6, 8, 0, 1);
+        validateView("test", 0.0, 7, 8, true, true, TestUtils.map("try", "this", "maybe", false), "idv2", "idv1");
+
+        Thread.sleep(1000);
+
+        countly.views().stopViewWithName("test");
+        validateView("test", 1.0, 8, 9, false, false, TestUtils.map("try", "this", "maybe", false), "idv2", "idv1");
+        countly.onStop();
+
+        ModuleSessionsTests.validateSessionEndRequest(9, 1, TestUtils.commonDeviceId);
+        TestUtils.assertRQSize(10);
+    }
+
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {
         Map<String, Object> viewSegmentation = TestUtils.map("name", viewName, "segment", "Android");
         if (start) {
