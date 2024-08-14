@@ -36,7 +36,10 @@ class UploadSymbolsPlugin implements Plugin<Project> {
           throw new StopExecutionException("Please specify your server in countly block.")
         }
         String buildVersion = project.android.defaultConfig.versionName
-        String url = "${ext.server}/i/crash_symbols/upload_symbol"
+        String url = ext.server;
+        String path = "i/crash_symbols/upload_symbol";
+        // Ensure there is exactly one "/" between the base URL and the path
+        url = url.endsWith("/") ? url + path : url + "/" + path;
         def filePath = "$project.buildDir/$ext.mappingFile"
         logger.debug("uploadJavaSymbols, Version name:[ {} ], Upload symbol url:[ {} ], Mapping file path:[ {} ]", buildVersion, url, filePath)
         File file = new File(filePath)
