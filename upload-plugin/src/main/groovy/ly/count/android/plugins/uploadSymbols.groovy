@@ -55,17 +55,27 @@ class UploadSymbolsPlugin implements Plugin<Project> {
             .build()
         request = new Request.Builder().url(url).post(formBody).build()
       }
-      logger.debug("uploadJavaSymbols, Generated request: {}", request.body().toString())
       doLast {
         if (request == null) {
           logger.error("Request not constructed")
           throw new StopActionException("Something happened while constructing the request. Please try again.")
         }
+
+        if (request.body() != null) {
+          logger.debug("uploadJavaSymbols, Generated request: {}", request.body().toString())
+        } else {
+          logger.error("uploadJavaSymbols, Request body is null which should not be the case")
+        }
+
         client = new OkHttpClient()
         Response response = client.newCall(request).execute()
 
         if (response.code() != 200) {
-          logger.error("An error occurred while uploading the mapping file: {}", response.body().string())
+          if (response.body() != null) {
+            logger.error("An error occurred while uploading the mapping file: {}", response.body().string())
+          } else {
+            logger.error("An error occurred while uploading the mapping file, response body null")
+          }
         } else {
           logger.debug("File upload successful")
         }
