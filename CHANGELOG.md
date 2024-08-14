@@ -1,3 +1,6 @@
+## XX.XX.XX
+* The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
+
 ## 24.7.1
 * ! Minor breaking change ! Unsupported types for user properties will now be omitted, they won't be converted to strings.
 
