@@ -476,8 +476,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
     }
 
-    void startAutoStoppedViews() {
-        L.d("[ModuleViews] startAutoStoppedViews, app is coming back to the foreground, starting views that were stopped");
+    void startStoppedViews() {
+        L.d("[ModuleViews] startStoppedViews, app is coming back to the foreground, starting views that were stopped");
 
         Iterator<Map.Entry<String, ViewData>> iterator = viewDataMap.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -549,7 +549,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (updatedActivityCount == 1) {
             //if we go to the background, stop all running views
-            startAutoStoppedViews();
+            startStoppedViews();
         }
     }
 
