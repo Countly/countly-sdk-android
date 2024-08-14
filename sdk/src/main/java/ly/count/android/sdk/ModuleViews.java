@@ -476,15 +476,15 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
     }
 
-    void startStoppedViews() {
-        L.d("[ModuleViews] startStoppedViews, app is coming back to the foreground, starting views that were paused");
+    void startAutoStoppedViews() {
+        L.d("[ModuleViews] startAutoStoppedViews, app is coming back to the foreground, starting views that were stopped");
 
         Iterator<Map.Entry<String, ViewData>> iterator = viewDataMap.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, ViewData> value = iterator.next();
             ViewData vd = value.getValue();
             if (vd.willStartAgain) {
-                //if the view is paused
+                //if the view is auto-stopped, start it again and remove from the cache
                 iterator.remove();
                 startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
             }
@@ -548,8 +548,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (updatedActivityCount == 1) {
-            //if we go to the background, pause all running views
-            startStoppedViews();
+            //if we go to the background, stop all running views
+            startAutoStoppedViews();
         }
     }
 
