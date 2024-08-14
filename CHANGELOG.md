@@ -1,3 +1,6 @@
+## 24.7.2
+* Fixed a bug in the upload plugin where upload was not possible. related to some early loggings
+
 ## 24.7.1
 * ! Minor breaking change ! Unsupported types for user properties will now be omitted, they won't be converted to strings.
 
