@@ -36,7 +36,10 @@ class UploadSymbolsPlugin implements Plugin<Project> {
           throw new StopExecutionException("Please specify your server in countly block.")
         }
         String buildVersion = project.android.defaultConfig.versionName
-        String url = "${ext.server}/i/crash_symbols/upload_symbol"
+        String url = ext.server;
+        String path = "i/crash_symbols/upload_symbol";
+        // Ensure there is exactly one "/" between the base URL and the path
+        url = url.endsWith("/") ? url + path : url + "/" + path;
         def filePath = "$project.buildDir/$ext.mappingFile"
         logger.debug("uploadJavaSymbols, Version name:[ {} ], Upload symbol url:[ {} ], Mapping file path:[ {} ]", buildVersion, url, filePath)
         File file = new File(filePath)
@@ -55,17 +58,27 @@ class UploadSymbolsPlugin implements Plugin<Project> {
             .build()
         request = new Request.Builder().url(url).post(formBody).build()
       }
-      logger.debug("uploadJavaSymbols, Generated request: {}", request.body().toString())
       doLast {
         if (request == null) {
           logger.error("Request not constructed")
           throw new StopActionException("Something happened while constructing the request. Please try again.")
         }
+
+        if (request.body() != null) {
+          logger.debug("uploadJavaSymbols, Generated request: {}", request.body().toString())
+        } else {
+          logger.error("uploadJavaSymbols, Request body is null which should not be the case")
+        }
+
         client = new OkHttpClient()
         Response response = client.newCall(request).execute()
 
         if (response.code() != 200) {
-          logger.error("An error occurred while uploading the mapping file: {}", response.body().string())
+          if (response.body() != null) {
+            logger.error("An error occurred while uploading the mapping file: {}", response.body().string())
+          } else {
+            logger.error("An error occurred while uploading the mapping file, response body null")
+          }
         } else {
           logger.debug("File upload successful")
         }
