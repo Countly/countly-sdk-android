@@ -813,9 +813,7 @@ public class ModuleEventsTests {
         Assert.assertTrue(dow >= 0 && dow < 7);
         Assert.assertTrue(hour >= 0 && hour < 24);
         Assert.assertTrue(timestamp >= 0);
-
-        System.out.println("Event: " + event.toString());
-
+        
         validateId(id, event.optString("id", ""), "Event ID");
         validateId(pvid, event.optString("pvid", ""), "Previous View ID");
         validateId(cvid, event.optString("cvid", ""), "Current View ID");

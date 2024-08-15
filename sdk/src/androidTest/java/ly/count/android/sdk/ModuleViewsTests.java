@@ -1722,7 +1722,7 @@ public class ModuleViewsTests {
             "d", true
         );
 
-        Activity activity = Mockito.mock(Activity.class);
+        Activity activity = mock(Activity.class);
 
         TestUtils.assertRQSize(0);
 
