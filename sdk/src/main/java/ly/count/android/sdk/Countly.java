@@ -48,7 +48,7 @@ import org.json.JSONObject;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.1-RC2";
+    private final static String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.1-RC2";
 
     /**
      * Used as request meta data on every request
