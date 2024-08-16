@@ -275,6 +275,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (!vd.willStartAgain) {
             viewDataMap.remove(vd.viewID);
         }
+
+        vd.viewSegmentation = null; // clear the segmentation to release cache
     }
 
     void recordViewEndEvent(ViewData vd, @Nullable Map<String, Object> customViewSegmentation, String viewRecordingSource) {
@@ -486,7 +488,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             if (vd.willStartAgain) {
                 //if the view is auto-stopped, start it again and remove from the cache
                 iterator.remove();
-                startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
+                startViewInternal(vd.viewName, null, vd.isAutoStoppedView);
             }
         }
     }
