@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -150,7 +152,9 @@ public class ModuleContent extends ModuleBase {
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
-        return response.has("placementCoordinates") && response.has("pathToHtml");
+        boolean success = response.optBoolean("result", false);
+        JSONArray hasContent = response.optJSONArray("content");
+        return success && hasContent != null && hasContent.length() > 0;
     }
 
     void validateAndCallFetch(JSONObject response) {
@@ -164,9 +168,15 @@ public class ModuleContent extends ModuleBase {
     }
 
     @NonNull
-    Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
+    Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) throws JSONException {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
-        String content = response.optString("pathToHtml");
+        JSONArray contents = response.optJSONArray("content");
+        assert contents != null;
+
+        JSONObject contentObj = contents.optJSONObject(0);
+        assert contentObj != null;
+
+        String content = contentObj.optString("pathToHtml");
 
         String contentChecksum = UtilsNetworking.sha256Hash(content); // TODO store this to prevent showing the same content again
         L.d("[ModuleContent] parseContent, checksum: [" + contentChecksum + "], current checksum: [" + currentContentChecksum + "]");
@@ -177,7 +187,7 @@ public class ModuleContent extends ModuleBase {
         }
         currentContentChecksum = contentChecksum;
 
-        JSONObject coordinates = response.optJSONObject("placementCoordinates");
+        JSONObject coordinates = contentObj.optJSONObject("placementCoordinates");
 
         assert coordinates != null;
         placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "portrait", content));
