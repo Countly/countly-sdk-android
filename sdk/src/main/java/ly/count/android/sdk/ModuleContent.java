@@ -25,7 +25,7 @@ public class ModuleContent extends ModuleBase {
     private final int contentUpdateInterval;
     private boolean shouldAddParamsToRequest = false;
     private final boolean experimental = true;
-    private String[] tags = null;
+    private String[] categories = null;
     private Intent intent = null;
     private final ContentCallback globalContentCallback;
 
@@ -41,8 +41,8 @@ public class ModuleContent extends ModuleBase {
         globalContentCallback = config.contents.globalContentCallback;
     }
 
-    void fetchContentsInternal(String[] tags) {
-        L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents:[" + shouldFetchContents + "], tags:[" + Arrays.toString(tags) + "]");
+    void fetchContentsInternal(String[] categories) {
+        L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents:[" + shouldFetchContents + "], categories:[" + Arrays.toString(categories) + "]");
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
         String requestData = prepareContentFetchRequest(displayMetrics);
@@ -80,7 +80,7 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void registerForContentUpdates(String[] tags) {
+    void registerForContentUpdates(String[] categories) {
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
             return;
@@ -91,12 +91,12 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
-        this.tags = tags;
+        this.categories = categories;
 
         countlyTimer.startTimer(contentUpdateInterval, () -> {
             if (experimental) {
                 L.v("[ModuleContent] registerForContentUpdates, experimental mode enabled, directly fetching contents");
-                fetchContentsInternal(tags);
+                fetchContentsInternal(categories);
             } else if (requestQueueProvider.isRequestQueueEmpty()) {
                 String requestData = requestQueueProvider.prepareEngagementQueueFetch();
 
@@ -148,7 +148,7 @@ public class ModuleContent extends ModuleBase {
         int landscapeWidth = portrait ? scaledHeight : scaledWidth;
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
-        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight);
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
@@ -161,8 +161,8 @@ public class ModuleContent extends ModuleBase {
         String checksum = response.optString("checksum", null);
         if (!checksum.equals(currentContentChecksum)) {
             currentContentChecksum = checksum;
-            if (tags != null) {
-                fetchContentsInternal(tags);
+            if (categories != null) {
+                fetchContentsInternal(categories);
             }
         }
     }
@@ -205,6 +205,8 @@ public class ModuleContent extends ModuleBase {
             int w = orientationPlacements.optInt("width");
             int h = orientationPlacements.optInt("height");
             L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
+            System.err.println("[ModuleContent] extractOrientationPlacements, without ceil " + y * density);
+            System.err.println("[ModuleContent] extractOrientationPlacements, with ceil " + (int) Math.ceil(y * density));
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
@@ -287,11 +289,11 @@ public class ModuleContent extends ModuleBase {
         /**
          * Opt in user for the content fetching and updates
          *
-         * @param tags tags for the content
+         * @param categories categories for the content
          */
         // TODO this is an experimental for now, will not expose it to the public API
-        protected void openForContent(@NonNull String... tags) {
-            L.d("[ModuleContent] openForContent, tags: [" + Arrays.toString(tags) + "]");
+        protected void openForContent(@NonNull String... categories) {
+            L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
@@ -299,7 +301,7 @@ public class ModuleContent extends ModuleBase {
             }
 
             shouldFetchContents = true;
-            registerForContentUpdates(tags);
+            registerForContentUpdates(categories);
         }
 
         /**
@@ -330,18 +332,18 @@ public class ModuleContent extends ModuleBase {
         /**
          * Change the content that is being shown
          *
-         * @param tags tags for the content
+         * @param categories categories for the content
          */
         // TODO this is an experimental for now, will not expose it to the public API
-        protected void changeContent(@NonNull String... tags) {
-            L.d("[ModuleContent] changeContent, tags: [" + Arrays.toString(tags) + "]");
+        protected void changeContent(@NonNull String... categories) {
+            L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
                 return;
             }
 
-            registerForContentUpdates(tags);
+            registerForContentUpdates(categories);
         }
 
         /**

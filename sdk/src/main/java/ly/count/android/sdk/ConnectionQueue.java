@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -828,7 +829,7 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
-    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight) {
+    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, @NonNull String[] categories) {
 
         JSONObject json = new JSONObject();
         try {
@@ -846,7 +847,7 @@ class ConnectionQueue implements RequestQueueProvider {
             L.e("Error while preparing fetch contents request");
         }
 
-        return prepareCommonRequestData() + "&method=queue" + "&res=" + UtilsNetworking.urlEncodeString(json.toString());
+        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&res=" + UtilsNetworking.urlEncodeString(json.toString());
     }
 
     @Override

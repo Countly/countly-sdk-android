@@ -70,7 +70,7 @@ interface RequestQueueProvider {
 
     String prepareHealthCheckRequest(String preparedMetrics);
 
-    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight);
+    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, @NonNull String[] categories);
 
     String prepareEngagementQueueFetch();
 
