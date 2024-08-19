@@ -25,7 +25,7 @@ public class ModuleContent extends ModuleBase {
     private final boolean experimental = true;
     private String[] tags = null;
     private Intent intent = null;
-    private ContentCallback globalContentCallback = null;
+    private final ContentCallback globalContentCallback;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -48,7 +48,7 @@ public class ModuleContent extends ModuleBase {
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/content/queue", cp, false, networkingIsEnabled, checkResponse -> {
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk/content", cp, false, networkingIsEnabled, checkResponse -> {
             L.d("[ModuleContent] fetchContentsInternal, processing fetched contents, received response is :[" + checkResponse + "]");
             if (checkResponse == null) {
                 return;

@@ -833,20 +833,20 @@ class ConnectionQueue implements RequestQueueProvider {
         JSONObject json = new JSONObject();
         try {
             JSONObject landscapeJson = new JSONObject();
-            landscapeJson.put("width", landscapeWidth);
-            landscapeJson.put("height", landscapeHeight);
+            landscapeJson.put("w", landscapeWidth);
+            landscapeJson.put("h", landscapeHeight);
 
             JSONObject portraitJson = new JSONObject();
-            portraitJson.put("width", portraitWidth);
-            portraitJson.put("height", portraitHeight);
+            portraitJson.put("w", portraitWidth);
+            portraitJson.put("h", portraitHeight);
 
-            json.put("landscape", landscapeJson);
-            json.put("portrait", portraitJson);
+            json.put("l", landscapeJson);
+            json.put("p", portraitJson);
         } catch (JSONException e) {
             L.e("Error while preparing fetch contents request");
         }
 
-        return prepareCommonRequestData() + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString());
+        return prepareCommonRequestData() + "&method=queue" + "&res=" + UtilsNetworking.urlEncodeString(json.toString());
     }
 
     @Override
