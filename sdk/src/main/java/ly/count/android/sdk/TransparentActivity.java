@@ -54,8 +54,24 @@ public class TransparentActivity extends Activity {
         int width = config.width;
         int height = config.height;
 
+        TransparentActivityConfig finalConfig = config;
         config.listeners.add((url, webView) -> {
             if (url.endsWith("&cly_x_close=1")) {
+                if (finalConfig.globalContentCallback != null) {
+                    finalConfig.globalContentCallback.onContentCallback(ContentStatus.CLOSED, null);
+                }
+                finish();
+                return true;
+            } else {
+                return false;
+            }
+        });
+
+        config.listeners.add((url, webView) -> {
+            if (url.endsWith("&cly_x_complete=1")) {
+                if (finalConfig.globalContentCallback != null) {
+                    finalConfig.globalContentCallback.onContentCallback(ContentStatus.COMPLETED, null);
+                }
                 finish();
                 return true;
             } else {

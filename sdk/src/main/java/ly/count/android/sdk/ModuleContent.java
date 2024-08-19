@@ -25,6 +25,7 @@ public class ModuleContent extends ModuleBase {
     private final boolean experimental = true;
     private String[] tags = null;
     private Intent intent = null;
+    private ContentCallback globalContentCallback = null;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -36,6 +37,7 @@ public class ModuleContent extends ModuleBase {
         countlyTimer = new CountlyTimer();
         contentUpdateInterval = config.contents.contentUpdateInterval;
         shouldFetchContents = config.contents.contentUpdatesEnabled;
+        globalContentCallback = config.contents.globalContentCallback;
     }
 
     void fetchContentsInternal(String[] tags) {
@@ -196,7 +198,8 @@ public class ModuleContent extends ModuleBase {
             L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
-            config.setUrl(content);
+            config.url = content;
+            config.globalContentCallback = globalContentCallback;
             return config;
         }
 
