@@ -1,3 +1,6 @@
+## 24.7.2
+* Mitigated an issue in the upload plugin that prevented the upload of a symbol file
+
 ## 24.7.1
 * ! Minor breaking change ! Unsupported types for user properties will now be omitted, they won't be converted to strings.
 
