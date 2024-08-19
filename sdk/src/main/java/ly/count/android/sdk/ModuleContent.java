@@ -36,7 +36,6 @@ public class ModuleContent extends ModuleBase {
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
         contentUpdateInterval = config.contents.contentUpdateInterval;
-        shouldFetchContents = config.contents.contentUpdatesEnabled;
         globalContentCallback = config.contents.globalContentCallback;
     }
 

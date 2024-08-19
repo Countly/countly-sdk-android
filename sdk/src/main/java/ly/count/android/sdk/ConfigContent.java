@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 public class ConfigContent {
 
     int contentUpdateInterval = 30;
-    boolean contentUpdatesEnabled = false;
     ContentCallback globalContentCallback = null;
 
     /**
@@ -16,16 +15,6 @@ public class ConfigContent {
         if (contentUpdateInterval > 0) {
             this.contentUpdateInterval = contentUpdateInterval;
         }
-        return this;
-    }
-
-    /**
-     * Enable periodic content updates
-     *
-     * @return config content to chain calls
-     */
-    public synchronized ConfigContent enableContentUpdates() {
-        contentUpdatesEnabled = true;
         return this;
     }
 
