@@ -207,6 +207,8 @@ public class TransparentActivity extends Activity {
         }
         String action = (String) clyAction;
 
+        boolean result = false;
+
         switch (action) {
             case "event":
                 if (query.containsKey("event")) {
@@ -240,7 +242,7 @@ public class TransparentActivity extends Activity {
 
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
                     view.getContext().startActivity(intent);
-                    return true;
+                    result = true;
                 }
                 break;
             case "resize_me":
@@ -277,7 +279,7 @@ public class TransparentActivity extends Activity {
             return true;
         }
 
-        return false;
+        return result;
     }
 
     private Map<String, Object> splitQuery(String url) {
@@ -289,7 +291,7 @@ public class TransparentActivity extends Activity {
 
         String[] pairs2 = pairs[1].split("&");
         for (String pair : pairs2) {
-            int idx = pair.indexOf("=");
+            int idx = pair.indexOf('=');
             String key = pair.substring(0, idx);
             String value = pair.substring(idx + 1);
 
