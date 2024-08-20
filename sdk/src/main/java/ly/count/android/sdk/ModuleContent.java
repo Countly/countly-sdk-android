@@ -233,7 +233,7 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleContent] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
-        if (!experimental && consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
             optOutFromContent();
         }
     }
@@ -295,7 +295,7 @@ public class ModuleContent extends ModuleBase {
         protected void openForContent(@NonNull String... categories) {
             L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
 
-            if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
                 return;
             }
@@ -321,7 +321,7 @@ public class ModuleContent extends ModuleBase {
          * </p>
          */
         public void exitFromContent() {
-            if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
                 return;
             }
@@ -338,7 +338,7 @@ public class ModuleContent extends ModuleBase {
         protected void changeContent(@NonNull String... categories) {
             L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
 
-            if (!experimental && !consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
                 return;
             }
