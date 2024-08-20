@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -19,6 +20,12 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
@@ -41,6 +48,8 @@ public class TransparentActivity extends Activity {
         currentOrientation = (int) intent.getSerializableExtra(ORIENTATION);
         configLandscape = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_LANDSCAPE);
         configPortrait = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_PORTRAIT);
+        Log.e("PIXEL", "placementCoordLAND x: " + configLandscape.x + " y: " + configLandscape.y + " width: " + configLandscape.width + " height: " + configLandscape.height);
+        Log.e("PIXEL", "placementCoordPORT x: " + configPortrait.x + " y: " + configPortrait.y + " width: " + configPortrait.width + " height: " + configPortrait.height);
 
         TransparentActivityConfig config;
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -54,29 +63,19 @@ public class TransparentActivity extends Activity {
         int width = config.width;
         int height = config.height;
 
-        TransparentActivityConfig finalConfig = config;
-        config.listeners.add((url, webView) -> {
-            if (url.endsWith("&cly_x_close=1")) {
-                if (finalConfig.globalContentCallback != null) {
-                    finalConfig.globalContentCallback.onContentCallback(ContentStatus.CLOSED, null);
-                }
-                finish();
-                return true;
-            } else {
-                return false;
+        // todo refactor those
+        configLandscape.listeners.add((url, webView) -> {
+            if (url.startsWith("https://countly_action_event")) {
+                return contentUrlAction(url, configLandscape, webView);
             }
+            return false;
         });
 
-        config.listeners.add((url, webView) -> {
-            if (url.endsWith("&cly_x_complete=1")) {
-                if (finalConfig.globalContentCallback != null) {
-                    finalConfig.globalContentCallback.onContentCallback(ContentStatus.COMPLETED, null);
-                }
-                finish();
-                return true;
-            } else {
-                return false;
+        configPortrait.listeners.add((url, webView) -> {
+            if (url.startsWith("https://countly_action_event")) {
+                return contentUrlAction(url, configPortrait, webView);
             }
+            return false;
         });
 
         // Configure window layout parameters
@@ -170,23 +169,143 @@ public class TransparentActivity extends Activity {
             currentOrientation = newConfig.orientation;
             Log.e("PIXEL", "Orientation changed");
             Log.e("PIXEL", "Current orientation: " + currentOrientation + " Landscape: " + Configuration.ORIENTATION_LANDSCAPE + " Portrait: " + Configuration.ORIENTATION_PORTRAIT);
-            switch (currentOrientation) {
-                case Configuration.ORIENTATION_LANDSCAPE:
-                    if (configLandscape != null) {
-                        configLandscape = setupConfig(configLandscape);
-                        changeOrientation(configLandscape);
-                    }
-                    break;
-                case Configuration.ORIENTATION_PORTRAIT:
-                    if (configPortrait != null) {
-                        configPortrait = setupConfig(configPortrait);
-                        changeOrientation(configPortrait);
-                    }
-                    break;
-                default:
-                    break;
-            }
+            changeOrientationInternal();
         }
+    }
+
+    private void changeOrientationInternal() {
+        switch (currentOrientation) {
+            case Configuration.ORIENTATION_LANDSCAPE:
+                if (configLandscape != null) {
+                    configLandscape = setupConfig(configLandscape);
+                    changeOrientation(configLandscape);
+                }
+                break;
+            case Configuration.ORIENTATION_PORTRAIT:
+                if (configPortrait != null) {
+                    configPortrait = setupConfig(configPortrait);
+                    changeOrientation(configPortrait);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private boolean contentUrlAction(String url, TransparentActivityConfig config, WebView view) {
+        Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: " + url);
+        Map<String, Object> query = splitQuery(url);
+
+        Object clyEvent = query.get("cly_x_action_event");
+
+        if (clyEvent == null || !clyEvent.equals("1")) {
+            return false;
+        }
+        Object clyAction = query.get("action");
+        if (!(clyAction instanceof String)) {
+            return false;
+        }
+        String action = (String) clyAction;
+
+        switch (action) {
+            case "event":
+                if (query.containsKey("event")) {
+                    JSONArray event = (JSONArray) query.get("event");
+                    assert event != null;
+                    for (int i = 0; i < Objects.requireNonNull(event).length(); i++) {
+                        try {
+                            JSONObject eventJson = event.getJSONObject(i);
+                            Map<String, Object> segmentation = new ConcurrentHashMap<>();
+                            if (eventJson.has("segmentation")) {
+                                JSONObject segmentationJson = eventJson.getJSONObject("sg");
+                                assert segmentationJson != null;
+                                //TODO check for null, and refactor here
+                                for (int j = 0; j < segmentationJson.names().length(); j++) {
+                                    String key = segmentationJson.names().getString(j);
+                                    Object value = segmentationJson.get(key);
+                                    segmentation.put(key, value);
+                                }
+                            }
+                            Countly.sharedInstance().events().recordEvent(eventJson.get("key").toString(), segmentation);
+                        } catch (JSONException e) {
+                            Log.e(Countly.TAG, "[TransparentActivity] contentUrlAction, Failed to parse event JSON", e);
+                        }
+                    }
+                }
+                break;
+            case "link":
+                if (query.containsKey("link")) {
+                    Object link = query.get("link");
+                    assert link != null;
+
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
+                    view.getContext().startActivity(intent);
+                    return true;
+                }
+                break;
+            case "resize_me":
+                if (query.containsKey("resize_me")) {
+                    Object resizeMe = query.get("resize_me");
+                    assert resizeMe != null;
+                    try {
+                        JSONObject resizeMeJson = (JSONObject) resizeMe;
+                        JSONObject portrait = resizeMeJson.getJSONObject("portrait");
+                        JSONObject landscape = resizeMeJson.getJSONObject("landscape");
+                        configPortrait.x = portrait.getInt("x");
+                        configPortrait.y = portrait.getInt("y");
+                        configPortrait.width = portrait.getInt("w");
+                        configPortrait.height = portrait.getInt("h");
+
+                        configLandscape.x = landscape.getInt("x");
+                        configLandscape.y = landscape.getInt("y");
+                        configLandscape.width = landscape.getInt("w");
+                        configLandscape.height = landscape.getInt("h");
+
+                        changeOrientationInternal();
+                    } catch (JSONException e) {
+                        Log.e(Countly.TAG, "[TransparentActivity] contentUrlAction, Failed to parse resize JSON", e);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+
+        if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
+            finish();
+            config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            return true;
+        }
+
+        return false;
+    }
+
+    private Map<String, Object> splitQuery(String url) {
+        Map<String, Object> query_pairs = new ConcurrentHashMap<>();
+        String[] pairs = url.split("https://countly_action_event?");
+        if (pairs.length != 2) {
+            return query_pairs;
+        }
+
+        String[] pairs2 = pairs[1].split("&");
+        for (String pair : pairs2) {
+            int idx = pair.indexOf("=");
+            String key = pair.substring(0, idx);
+            String value = pair.substring(idx + 1);
+
+            try {
+                if (key.equals("event")) {
+                    query_pairs.put(key, new JSONArray(value));
+                } else if (key.equals("resize_me")) {
+                    query_pairs.put(key, new JSONObject(value));
+                }
+            } catch (JSONException e) {
+                Log.e(Countly.TAG, "[TransparentActivity] splitQuery, Failed to parse event JSON", e);
+            }
+            query_pairs.put(pair.substring(0, idx), pair.substring(idx + 1));
+        }
+
+        return query_pairs;
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -203,21 +322,6 @@ public class TransparentActivity extends Activity {
         webView.clearCache(true);
         webView.clearHistory();
 
-        // TODO this might going to be used in the future
-        /*webView.addJavascriptInterface(new JavaScriptInterface(this, (url, view) -> {
-            if (url.endsWith("cly_x_close=1")) {
-                finish();
-                return true;
-            } else {
-                return false;
-            }
-        }), "Android");
-
-        String script = "window.addEventListener('message', function(event) {" +
-            "    Android.receiveMessage(JSON.stringify(event.data));" +
-            "}, false);";
-        webView.evaluateJavascript(script, null);*/
-
         CountlyWebViewClient client = new CountlyWebViewClient();
         client.registerWebViewUrlListeners(config.listeners);
 
@@ -225,33 +329,4 @@ public class TransparentActivity extends Activity {
         webView.loadUrl(config.url);
         return webView;
     }
-
-    // TODO this might going to be used in the future
-    /*
-    static class JavaScriptInterface {
-
-        WebViewUrlListener listener;
-        Context context;
-
-        JavaScriptInterface(Context context, WebViewUrlListener listener) {
-            this.listener = listener;
-            this.context = context;
-        }
-
-        @JavascriptInterface
-        public void receiveMessage(String message) {
-            // Handle the message received from postMessage
-            try {
-                JSONObject json = new JSONObject(message);
-                boolean isClose = json.optBoolean("close", false);
-                if (isClose) {
-                    // Close the activity
-                    listener.onUrl("cly_x_close=1", null);
-                    Log.d("PIXEL", "Close the activity");
-                }
-            } catch (JSONException e) {
-                Log.e("PIXEL", "Error parsing JSON: " + e.getMessage());
-            }
-        }
-    }*/
 }
