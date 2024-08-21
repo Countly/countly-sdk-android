@@ -275,8 +275,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (!vd.willStartAgain) {
             viewDataMap.remove(vd.viewID);
         }
-
-        vd.viewSegmentation = null; // clear the segmentation to release cache
     }
 
     void recordViewEndEvent(ViewData vd, @Nullable Map<String, Object> customViewSegmentation, String viewRecordingSource) {
