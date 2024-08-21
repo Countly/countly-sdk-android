@@ -195,84 +195,32 @@ public class TransparentActivity extends Activity {
     private boolean contentUrlAction(String url, TransparentActivityConfig config, WebView view) {
         Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: " + url);
         Map<String, Object> query = splitQuery(url);
+        Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: " + query);
 
         Object clyEvent = query.get("cly_x_action_event");
 
         if (clyEvent == null || !clyEvent.equals("1")) {
+            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, this is not a countly action event url");
             return false;
         }
         Object clyAction = query.get("action");
         if (!(clyAction instanceof String)) {
+            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, action is not a string");
             return false;
         }
-        String action = (String) clyAction;
 
+        String action = (String) clyAction;
         boolean result = false;
 
         switch (action) {
             case "event":
-                if (query.containsKey("event")) {
-                    JSONArray event = (JSONArray) query.get("event");
-                    assert event != null;
-                    for (int i = 0; i < Objects.requireNonNull(event).length(); i++) {
-                        try {
-                            JSONObject eventJson = event.getJSONObject(i);
-
-                            if (!eventJson.has("sg")) {
-                                Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, event JSON is missing segmentation data event:[" + eventJson + "]");
-                                continue;
-                            }
-
-                            Map<String, Object> segmentation = new ConcurrentHashMap<>();
-                            JSONObject segmentationJson = eventJson.getJSONObject("sg");
-                            assert segmentationJson != null;
-                            //TODO check for null, and refactor here
-                            for (int j = 0; j < segmentationJson.names().length(); j++) {
-                                String key = segmentationJson.names().getString(j);
-                                Object value = segmentationJson.get(key);
-                                segmentation.put(key, value);
-                            }
-
-                            Countly.sharedInstance().events().recordEvent(eventJson.get("key").toString(), segmentation);
-                        } catch (JSONException e) {
-                            Log.e(Countly.TAG, "[TransparentActivity] contentUrlAction, Failed to parse event JSON", e);
-                        }
-                    }
-                }
+                eventAction(query);
                 break;
             case "link":
-                if (query.containsKey("link")) {
-                    Object link = query.get("link");
-                    assert link != null;
-
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
-                    view.getContext().startActivity(intent);
-                    result = true;
-                }
+                result = linkAction(query, view);
                 break;
             case "resize_me":
-                if (query.containsKey("resize_me")) {
-                    Object resizeMe = query.get("resize_me");
-                    assert resizeMe != null;
-                    try {
-                        JSONObject resizeMeJson = (JSONObject) resizeMe;
-                        JSONObject portrait = resizeMeJson.getJSONObject("p");
-                        JSONObject landscape = resizeMeJson.getJSONObject("l");
-                        configPortrait.x = portrait.getInt("x");
-                        configPortrait.y = portrait.getInt("y");
-                        configPortrait.width = portrait.getInt("w");
-                        configPortrait.height = portrait.getInt("h");
-
-                        configLandscape.x = landscape.getInt("x");
-                        configLandscape.y = landscape.getInt("y");
-                        configLandscape.width = landscape.getInt("w");
-                        configLandscape.height = landscape.getInt("h");
-
-                        changeOrientationInternal();
-                    } catch (JSONException e) {
-                        Log.e(Countly.TAG, "[TransparentActivity] contentUrlAction, Failed to parse resize JSON", e);
-                    }
-                }
+                resizeMeAction(query);
                 break;
             default:
                 break;
@@ -285,6 +233,90 @@ public class TransparentActivity extends Activity {
         }
 
         return result;
+    }
+
+    private boolean linkAction(Map<String, Object> query, WebView view) {
+        Log.i(Countly.TAG, "[TransparentActivity] linkAction, link action detected");
+        if (!query.containsKey("link")) {
+            Log.w(Countly.TAG, "[TransparentActivity] linkAction, link action is missing link");
+            return false;
+        }
+        Object link = query.get("link");
+        if (!(link instanceof String)) {
+            Log.w(Countly.TAG, "[TransparentActivity] linkAction, link action is not a string");
+            return false;
+        }
+
+        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
+        view.getContext().startActivity(intent);
+        return true;
+    }
+
+    private void resizeMeAction(Map<String, Object> query) {
+        Log.i(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me action detected");
+        if (!query.containsKey("resize_me")) {
+            Log.w(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me action is missing resize_me");
+            return;
+        }
+        Object resizeMe = query.get("resize_me");
+        if (!(resizeMe instanceof JSONObject)) {
+            Log.w(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me action is not a JSON object");
+            return;
+        }
+        try {
+            JSONObject resizeMeJson = (JSONObject) resizeMe;
+            Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: " + resizeMeJson);
+            JSONObject portrait = resizeMeJson.getJSONObject("p");
+            JSONObject landscape = resizeMeJson.getJSONObject("l");
+            configPortrait.x = portrait.getInt("x");
+            configPortrait.y = portrait.getInt("y");
+            configPortrait.width = portrait.getInt("w");
+            configPortrait.height = portrait.getInt("h");
+
+            configLandscape.x = landscape.getInt("x");
+            configLandscape.y = landscape.getInt("y");
+            configLandscape.width = landscape.getInt("w");
+            configLandscape.height = landscape.getInt("h");
+
+            changeOrientationInternal();
+        } catch (JSONException e) {
+            Log.e(Countly.TAG, "[TransparentActivity] resizeMeAction, Failed to parse resize JSON", e);
+        }
+    }
+
+    private void eventAction(Map<String, Object> query) {
+        Log.i(Countly.TAG, "[TransparentActivity] eventAction, event action detected");
+        if (query.containsKey("event")) {
+            JSONArray event = (JSONArray) query.get("event");
+            assert event != null; // this is already checked above
+            for (int i = 0; i < Objects.requireNonNull(event).length(); i++) {
+                try {
+                    JSONObject eventJson = event.getJSONObject(i);
+                    Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: " + eventJson.toString());
+
+                    if (!eventJson.has("sg")) {
+                        Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event:[" + eventJson + "]");
+                        continue;
+                    }
+
+                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
+                    JSONObject segmentationJson = eventJson.getJSONObject("sg");
+                    assert segmentationJson != null; // this is already checked above
+
+                    for (int j = 0; j < segmentationJson.names().length(); j++) {
+                        String key = segmentationJson.names().getString(j);
+                        Object value = segmentationJson.get(key);
+                        segmentation.put(key, value);
+                    }
+
+                    Countly.sharedInstance().events().recordEvent(eventJson.get("key").toString(), segmentation);
+                } catch (JSONException e) {
+                    Log.e(Countly.TAG, "[TransparentActivity] eventAction, Failed to parse event JSON", e);
+                }
+            }
+        } else {
+            Log.w(Countly.TAG, "[TransparentActivity] eventAction, event action is missing event");
+        }
     }
 
     private Map<String, Object> splitQuery(String url) {
@@ -301,9 +333,9 @@ public class TransparentActivity extends Activity {
             String value = pair.substring(idx + 1);
 
             try {
-                if (key.equals("event")) {
+                if ("event".equals(key)) {
                     query_pairs.put(key, new JSONArray(value));
-                } else if (key.equals("resize_me")) {
+                } else if ("resize_me".equals(key)) {
                     query_pairs.put(key, new JSONObject(value));
                 }
             } catch (JSONException e) {

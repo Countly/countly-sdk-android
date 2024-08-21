@@ -68,6 +68,8 @@ public class ModuleContent extends ModuleBase {
                     intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     _cly.context_.startActivity(intent);
+                } else {
+                    L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
                 }
             } catch (Exception ex) {
                 L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
