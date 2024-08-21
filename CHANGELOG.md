@@ -1,3 +1,6 @@
+## XX.XX.XX
+* The Android SDK now supports Android 15 (API level 35)
+
 ## 24.7.2
 * Mitigated an issue in the upload plugin that prevented the upload of a symbol file
 
