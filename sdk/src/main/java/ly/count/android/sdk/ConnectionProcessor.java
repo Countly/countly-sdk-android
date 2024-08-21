@@ -65,6 +65,7 @@ public class ConnectionProcessor implements Runnable {
     private final SSLContext sslContext_;
 
     private final Map<String, String> requestHeaderCustomValues_;
+
     static String endPointOverrideTag = "&new_end_point=";
 
     ModuleLog L;
@@ -415,7 +416,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             // add the remaining request count
-            requestData = requestData + "&rr=" + (storedRequestCount - 1); // move this to the module request queue on request thing
+            requestData = requestData + "&rr=" + (storedRequestCount - 1);
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_06_remainingRequests", UtilsTime.getNanoTime() - pccTsStartRemainingRequests);
@@ -427,7 +428,6 @@ public class ConnectionProcessor implements Runnable {
                 //continue with sending the request to the server
                 URLConnection conn = null;
                 InputStream connInputStream = null;
-
                 try {
                     pccTsStartGetURLConnection = UtilsTime.getNanoTime();
 
@@ -473,6 +473,7 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     final RequestResult rRes;
+                    
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {
