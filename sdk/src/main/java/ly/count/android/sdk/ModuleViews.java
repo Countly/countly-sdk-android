@@ -488,7 +488,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             if (vd.willStartAgain) {
                 //if the view is auto-stopped, start it again and remove from the cache
                 iterator.remove();
-                startViewInternal(vd.viewName, null, vd.isAutoStoppedView);
+                startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
             }
         }
     }
