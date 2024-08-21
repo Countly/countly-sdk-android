@@ -127,7 +127,6 @@ public class ModuleContent extends ModuleBase {
         assert contentObj != null;
 
         String content = contentObj.optString("pathToHtml");
-
         JSONObject coordinates = contentObj.optJSONObject("placementCoordinates");
 
         assert coordinates != null;
@@ -214,9 +213,6 @@ public class ModuleContent extends ModuleBase {
 
         /**
          * Opt in user for the content fetching and updates
-         * <p>
-         * <strong>Important Note:</strong> This method is an experimental feature and it might be removed in the future.
-         * </p>
          */
         public void openForContent() {
             openForContent(new String[] {});
@@ -224,9 +220,6 @@ public class ModuleContent extends ModuleBase {
 
         /**
          * Opt out user from the content fetching and updates
-         * <p>
-         * <strong>Important Note:</strong> This method is an experimental feature and it might be removed in the future.
-         * </p>
          */
         public void exitFromContent() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {

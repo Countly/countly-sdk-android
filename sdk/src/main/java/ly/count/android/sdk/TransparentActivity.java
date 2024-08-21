@@ -217,17 +217,22 @@ public class TransparentActivity extends Activity {
                     for (int i = 0; i < Objects.requireNonNull(event).length(); i++) {
                         try {
                             JSONObject eventJson = event.getJSONObject(i);
-                            Map<String, Object> segmentation = new ConcurrentHashMap<>();
-                            if (eventJson.has("segmentation")) {
-                                JSONObject segmentationJson = eventJson.getJSONObject("sg");
-                                assert segmentationJson != null;
-                                //TODO check for null, and refactor here
-                                for (int j = 0; j < segmentationJson.names().length(); j++) {
-                                    String key = segmentationJson.names().getString(j);
-                                    Object value = segmentationJson.get(key);
-                                    segmentation.put(key, value);
-                                }
+
+                            if (!eventJson.has("sg")) {
+                                Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, event JSON is missing segmentation data event:[" + eventJson + "]");
+                                continue;
                             }
+
+                            Map<String, Object> segmentation = new ConcurrentHashMap<>();
+                            JSONObject segmentationJson = eventJson.getJSONObject("sg");
+                            assert segmentationJson != null;
+                            //TODO check for null, and refactor here
+                            for (int j = 0; j < segmentationJson.names().length(); j++) {
+                                String key = segmentationJson.names().getString(j);
+                                Object value = segmentationJson.get(key);
+                                segmentation.put(key, value);
+                            }
+
                             Countly.sharedInstance().events().recordEvent(eventJson.get("key").toString(), segmentation);
                         } catch (JSONException e) {
                             Log.e(Countly.TAG, "[TransparentActivity] contentUrlAction, Failed to parse event JSON", e);
@@ -251,8 +256,8 @@ public class TransparentActivity extends Activity {
                     assert resizeMe != null;
                     try {
                         JSONObject resizeMeJson = (JSONObject) resizeMe;
-                        JSONObject portrait = resizeMeJson.getJSONObject("portrait");
-                        JSONObject landscape = resizeMeJson.getJSONObject("landscape");
+                        JSONObject portrait = resizeMeJson.getJSONObject("p");
+                        JSONObject landscape = resizeMeJson.getJSONObject("l");
                         configPortrait.x = portrait.getInt("x");
                         configPortrait.y = portrait.getInt("y");
                         configPortrait.width = portrait.getInt("w");
