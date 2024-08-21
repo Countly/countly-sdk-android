@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
-import android.view.ViewConfiguration;
 import androidx.annotation.NonNull;
 import java.util.Arrays;
 import java.util.List;
@@ -16,15 +15,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
-
-    private String currentContentChecksum = null;
     private final ImmediateRequestGenerator iRGenerator;
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
     private final int contentUpdateInterval;
-    private boolean shouldAddParamsToRequest = false;
-    private final boolean experimental = true;
     private String[] categories = null;
     private Intent intent = null;
     private final ContentCallback globalContentCallback;
@@ -94,34 +89,8 @@ public class ModuleContent extends ModuleBase {
         this.categories = categories;
 
         countlyTimer.startTimer(contentUpdateInterval, () -> {
-            if (experimental) {
-                L.v("[ModuleContent] registerForContentUpdates, experimental mode enabled, directly fetching contents");
-                fetchContentsInternal(categories);
-            } else if (requestQueueProvider.isRequestQueueEmpty()) {
-                String requestData = requestQueueProvider.prepareEngagementQueueFetch();
-
-                ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
-                final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
-
-                iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/i/content/queue/check", cp, false, networkingIsEnabled, checkResponse -> {
-                    L.d("[ModuleContent] registerForContentUpdates, processing fetched contents, received response is :[" + checkResponse + "]");
-                    if (checkResponse == null) {
-                        return;
-                    }
-
-                    try {
-                        validateAndCallFetch(checkResponse);
-                    } catch (Exception ex) {
-                        L.e("[ModuleContent] registerForContentUpdates, Encountered internal issue while trying to fetch contents, [" + ex + "]");
-                    }
-                }, L);
-            } else {
-                L.d("[ModuleContent] registerForContentUpdates, request queue is not empty, skipping");
-                synchronized (this) {
-                    shouldAddParamsToRequest = true;
-                    requestQueueProvider.tick();
-                }
-            }
+            L.v("[ModuleContent] registerForContentUpdates, experimental mode enabled, directly fetching contents");
+            fetchContentsInternal(categories);
         }, L);
     }
 
@@ -130,15 +99,6 @@ public class ModuleContent extends ModuleBase {
         Resources resources = _cly.context_.getResources();
         int currentOrientation = resources.getConfiguration().orientation;
         boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
-        int navbarHeightScaled = 0;
-
-        if (!ViewConfiguration.get(_cly.context_).hasPermanentMenuKey()) {
-            int navbarHeightId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
-            if (navbarHeightId > 0) {
-                //disable this for now, as it is not working correctly
-                navbarHeightScaled = (int) Math.ceil(resources.getDimensionPixelSize(navbarHeightId) / displayMetrics.density);
-            }
-        }
 
         int scaledWidth = (int) Math.ceil(displayMetrics.widthPixels / displayMetrics.density);
         int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
@@ -157,16 +117,6 @@ public class ModuleContent extends ModuleBase {
         return success && hasContent != null && hasContent.length() > 0;
     }
 
-    void validateAndCallFetch(JSONObject response) {
-        String checksum = response.optString("checksum", null);
-        if (!checksum.equals(currentContentChecksum)) {
-            currentContentChecksum = checksum;
-            if (categories != null) {
-                fetchContentsInternal(categories);
-            }
-        }
-    }
-
     @NonNull
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) throws JSONException {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
@@ -177,15 +127,6 @@ public class ModuleContent extends ModuleBase {
         assert contentObj != null;
 
         String content = contentObj.optString("pathToHtml");
-
-        String contentChecksum = UtilsNetworking.sha256Hash(content); // TODO store this to prevent showing the same content again
-        L.d("[ModuleContent] parseContent, checksum: [" + contentChecksum + "], current checksum: [" + currentContentChecksum + "]");
-
-        if (!experimental && (currentContentChecksum != null && currentContentChecksum.equals(contentChecksum))) {
-            L.d("[ModuleContent] parseContent, content did not change, skipping");
-            return placementCoordinates;
-        }
-        currentContentChecksum = contentChecksum;
 
         JSONObject coordinates = contentObj.optJSONObject("placementCoordinates");
 
@@ -205,8 +146,6 @@ public class ModuleContent extends ModuleBase {
             int w = orientationPlacements.optInt("width");
             int h = orientationPlacements.optInt("height");
             L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
-            System.err.println("[ModuleContent] extractOrientationPlacements, without ceil " + y * density);
-            System.err.println("[ModuleContent] extractOrientationPlacements, with ceil " + (int) Math.ceil(y * density));
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
@@ -219,7 +158,6 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void halt() {
-        currentContentChecksum = null;
         contentInterface = null;
         countlyTimer.stopTimer(L);
         countlyTimer = null;
@@ -247,35 +185,6 @@ public class ModuleContent extends ModuleBase {
     }
 
     @Override
-    void onRequest(@NonNull StringBuilder request) {
-        L.d("[ModuleContent] onRequest, request:[" + request + "]");
-        if (experimental) {
-            L.v("[ModuleContent] onRequest, experimental mode enabled, skipping");
-            return;
-        }
-        synchronized (this) {
-            if (shouldAddParamsToRequest) {
-                request.append("&trigger=content-update");
-            }
-        }
-    }
-
-    @Override
-    void onResponse(@NonNull JSONObject response) {
-        L.d("[ModuleContent] onResponse, response:[" + response + "]");
-        if (experimental) {
-            L.v("[ModuleContent] onResponse, experimental mode enabled, skipping");
-            return;
-        }
-        synchronized (this) {
-            if (shouldAddParamsToRequest) {
-                shouldAddParamsToRequest = false;
-                validateAndCallFetch(response);
-            }
-        }
-    }
-
-    @Override
     void initFinished(@NotNull CountlyConfig config) {
         registerForContentUpdates(new String[] {});
     }
@@ -291,8 +200,7 @@ public class ModuleContent extends ModuleBase {
          *
          * @param categories categories for the content
          */
-        // TODO this is an experimental for now, will not expose it to the public API
-        protected void openForContent(@NonNull String... categories) {
+        public void openForContent(@NonNull String... categories) {
             L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -334,8 +242,7 @@ public class ModuleContent extends ModuleBase {
          *
          * @param categories categories for the content
          */
-        // TODO this is an experimental for now, will not expose it to the public API
-        protected void changeContent(@NonNull String... categories) {
+        public void changeContent(@NonNull String... categories) {
             L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -344,13 +251,6 @@ public class ModuleContent extends ModuleBase {
             }
 
             registerForContentUpdates(categories);
-        }
-
-        /**
-         * Change the content that is being shown
-         */
-        public void fetchContents() {
-            fetchContentsInternal(new String[] { "" });
         }
     }
 }

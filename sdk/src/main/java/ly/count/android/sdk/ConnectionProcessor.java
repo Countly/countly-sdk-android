@@ -65,11 +65,7 @@ public class ConnectionProcessor implements Runnable {
     private final SSLContext sslContext_;
 
     private final Map<String, String> requestHeaderCustomValues_;
-
     static String endPointOverrideTag = "&new_end_point=";
-
-    Consumer<StringBuilder> requestObserver;
-    Consumer<JSONObject> responseObserver;
 
     ModuleLog L;
 
@@ -352,13 +348,6 @@ public class ConnectionProcessor implements Runnable {
             final String originalRequest = storedRequests[0];
             String requestData = originalRequest;//todo rework to another param approach
 
-            // notify observers for the request
-            if (requestObserver != null) {
-                StringBuilder requestStringBuilder = new StringBuilder(requestData);
-                requestObserver.consume(requestStringBuilder);
-                requestData = requestStringBuilder.toString();
-            }
-
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
@@ -504,10 +493,6 @@ public class ConnectionProcessor implements Runnable {
                                 L.v("[ConnectionProcessor] Response was a unknown, will retry");
                                 rRes = RequestResult.RETRY;
                             } else {
-                                // notify observers for the response
-                                if (responseObserver != null) {
-                                    responseObserver.consume(jsonObject);
-                                }
                                 if (jsonObject.has("result")) {
                                     //contains result entry
                                     L.v("[ConnectionProcessor] Response was a success");

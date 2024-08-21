@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import androidx.annotation.NonNull;
 import java.util.List;
-import org.json.JSONObject;
 
 abstract class ModuleBase {
     final Countly _cly;
@@ -102,21 +101,5 @@ abstract class ModuleBase {
     }
 
     void initFinished(@NonNull CountlyConfig config) {
-    }
-
-    /**
-     * Called manually by a countly call, notifies a module just before sending a request
-     *
-     * @param request request that is about to be sent
-     */
-    void onRequest(@NonNull StringBuilder request) {
-    }
-
-    /**
-     * Called manually by a countly call, notifies a module just after receiving a response
-     *
-     * @param response response that was received and successfully parsed to a JSON object
-     */
-    void onResponse(@NonNull JSONObject response) {
     }
 }
