@@ -401,7 +401,7 @@ public class CountlyTests {
         assertEquals(0, mCountly.getActivityCount());
         assertTrue(mCountly.getPrevSessionDurationStartTime() > 0);
         verify(requestQueueProvider).endSession(0);
-        verify(requestQueueProvider, times(0)).recordEvents(anyString());
+        verify(requestQueueProvider, times(1)).recordEvents(anyString()); // not 0 anymore, it will send orientation event
     }
 
     /**
@@ -534,7 +534,7 @@ public class CountlyTests {
         mCountly.onTimer();
 
         verify(requestQueueProvider).updateSession(0);
-        verify(requestQueueProvider, times(0)).recordEvents(anyString());
+        verify(requestQueueProvider, times(1)).recordEvents(anyString()); // not 0 anymore, it will send orientation event
     }
 
     @Test
