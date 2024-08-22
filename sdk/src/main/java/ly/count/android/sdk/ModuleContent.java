@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,6 @@ public class ModuleContent extends ModuleBase {
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
     private final int contentUpdateInterval;
-    private String[] categories = null;
-    private Intent intent = null;
     private final ContentCallback globalContentCallback;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -34,11 +33,11 @@ public class ModuleContent extends ModuleBase {
         globalContentCallback = config.contents.globalContentCallback;
     }
 
-    void fetchContentsInternal(String[] categories) {
+    void fetchContentsInternal(@NonNull String[] categories) {
         L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(categories) + "]");
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
-        String requestData = prepareContentFetchRequest(displayMetrics);
+        String requestData = prepareContentFetchRequest(displayMetrics, categories);
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
@@ -56,11 +55,9 @@ public class ModuleContent extends ModuleBase {
                     if (placementCoordinates.isEmpty()) {
                         L.d("[ModuleContent] fetchContentsInternal, placement coordinates are empty, skipping");
                         return;
-                    } else if (intent != null) {
-                        _cly.context_.stopService(intent);
                     }
 
-                    intent = new Intent(_cly.context_, TransparentActivity.class);
+                    Intent intent = new Intent(_cly.context_, TransparentActivity.class);
                     intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
                     intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
                     intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
@@ -75,7 +72,7 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void registerForContentUpdates(String[] categories) {
+    void registerForContentUpdates(@Nullable String[] categories) {
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
             return;
@@ -86,16 +83,23 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
-        this.categories = categories;
+        String[] validCategories;
+
+        if (categories == null) {
+            L.w("[ModuleContent] registerForContentUpdates, categories is null, providing empty array");
+            validCategories = new String[] {};
+        } else {
+            validCategories = categories;
+        }
 
         countlyTimer.startTimer(contentUpdateInterval, () -> {
             L.v("[ModuleContent] registerForContentUpdates, experimental mode enabled, directly fetching contents");
-            fetchContentsInternal(categories);
+            fetchContentsInternal(validCategories);
         }, L);
     }
 
     @NonNull
-    private String prepareContentFetchRequest(@NonNull DisplayMetrics displayMetrics) {
+    private String prepareContentFetchRequest(@NonNull DisplayMetrics displayMetrics, @NonNull String[] categories) {
         Resources resources = _cly.context_.getResources();
         int currentOrientation = resources.getConfiguration().orientation;
         boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
@@ -103,8 +107,9 @@ public class ModuleContent extends ModuleBase {
         int scaledWidth = (int) Math.ceil(displayMetrics.widthPixels / displayMetrics.density);
         int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
 
+        // this calculation needs improvement for status bar and navigation bar
         int portraitWidth = portrait ? scaledWidth : scaledHeight;
-        int portraitHeight = (portrait ? scaledHeight : scaledWidth);
+        int portraitHeight = portrait ? scaledHeight : scaledWidth;
         int landscapeWidth = portrait ? scaledHeight : scaledWidth;
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
@@ -113,8 +118,8 @@ public class ModuleContent extends ModuleBase {
 
     boolean validateResponse(@NonNull JSONObject response) {
         boolean success = response.optBoolean("result", false);
-        JSONArray hasContent = response.optJSONArray("content");
-        return success && hasContent != null && hasContent.length() > 0;
+        JSONArray content = response.optJSONArray("content");
+        return success && content != null && content.length() > 0;
     }
 
     @NonNull
@@ -199,7 +204,7 @@ public class ModuleContent extends ModuleBase {
          *
          * @param categories categories for the content
          */
-        public void openForContent(@NonNull String... categories) {
+        public void openForContent(@Nullable String... categories) {
             L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -223,7 +228,7 @@ public class ModuleContent extends ModuleBase {
          */
         public void exitFromContent() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+                L.w("[ModuleContent] exitFromContent, Consent is not granted, skipping");
                 return;
             }
 
@@ -235,11 +240,11 @@ public class ModuleContent extends ModuleBase {
          *
          * @param categories categories for the content
          */
-        public void changeContent(@NonNull String... categories) {
+        public void changeContent(@Nullable String... categories) {
             L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+                L.w("[ModuleContent] changeContent, Consent is not granted, skipping");
                 return;
             }
 
