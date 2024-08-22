@@ -308,7 +308,7 @@ public class DeviceIdTests {
         assertEquals(6, TestUtils.getCurrentRQ().length); // not 5 anymore, it will send orientation event as well
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
-        ModuleEventsTests.validateEventInRQ("ff_merge", "[CLY]_orientation", 1, 0.0d, 0.0d, 2, 0, 1, -1);
+        ModuleEventsTests.validateEventInRQ("ff_merge", "[CLY]_orientation", null, 1, 0.0d, 0.0d, "_CLY_", "_CLY_", "_CLY_", "_CLY_", 2, -1, 0, 1);
         TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":123,\"prop1\":\"string\",\"prop3\":false}}"), 3);
         ModuleSessionsTests.validateSessionEndRequest(4, 3, "ff_merge");
 

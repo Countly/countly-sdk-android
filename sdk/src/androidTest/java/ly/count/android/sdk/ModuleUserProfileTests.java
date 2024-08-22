@@ -598,8 +598,7 @@ public class ModuleUserProfileTests {
         Countly.sharedInstance().userProfile().setProperties(TestUtils.map(ModuleUserProfile.PICTURE_KEY, picture));
         Countly.sharedInstance().userProfile().save();
 
-        validateUserProfileRequest(TestUtils.map(ModuleUserProfile.PICTURE_KEY, picture.substring(0, 4096)), TestUtils.map()
-        );
+        validateUserProfileRequest(TestUtils.map(ModuleUserProfile.PICTURE_KEY, picture.substring(0, 4096)), TestUtils.map());
     }
 
     /**
