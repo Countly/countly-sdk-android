@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -29,7 +28,6 @@ public class ModuleContent extends ModuleBase {
         L.v("[ModuleContent] Initialising");
         iRGenerator = config.immediateRequestGenerator;
 
-        L.d("[ModuleContent] Setting if remote config Automatic triggers enabled, " + config.enableRemoteConfigAutomaticDownloadTriggers + ", caching enabled: " + config.enableRemoteConfigValueCaching + ", auto enroll enabled: " + config.enableAutoEnrollFlag);
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
         contentUpdateInterval = config.contents.contentUpdateInterval;
@@ -37,7 +35,7 @@ public class ModuleContent extends ModuleBase {
     }
 
     void fetchContentsInternal(String[] categories) {
-        L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents:[" + shouldFetchContents + "], categories:[" + Arrays.toString(categories) + "]");
+        L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(categories) + "]");
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
         String requestData = prepareContentFetchRequest(displayMetrics);
@@ -120,7 +118,7 @@ public class ModuleContent extends ModuleBase {
     }
 
     @NonNull
-    Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) throws JSONException {
+    Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         JSONArray contents = response.optJSONArray("content");
         assert contents != null;
@@ -171,7 +169,7 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
-        L.d("[ModuleContent] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
+        L.d("[ModuleContent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
             optOutFromContent();
         }
@@ -179,7 +177,7 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void deviceIdChanged(boolean withoutMerge) {
-        L.d("[ModuleContent] deviceIdChanged, withoutMerge:[" + withoutMerge + "]");
+        L.d("[ModuleContent] deviceIdChanged, withoutMerge: [" + withoutMerge + "]");
         if (withoutMerge) {
             optOutFromContent();
         }

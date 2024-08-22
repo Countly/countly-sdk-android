@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -14,7 +13,6 @@ import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -31,6 +29,7 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
+    private static final String URL_START = "https://countly_action_event";
     int currentOrientation = 0;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
@@ -48,8 +47,9 @@ public class TransparentActivity extends Activity {
         currentOrientation = (int) intent.getSerializableExtra(ORIENTATION);
         configLandscape = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_LANDSCAPE);
         configPortrait = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_PORTRAIT);
-        Log.e("PIXEL", "placementCoordLAND x: " + configLandscape.x + " y: " + configLandscape.y + " width: " + configLandscape.width + " height: " + configLandscape.height);
-        Log.e("PIXEL", "placementCoordPORT x: " + configPortrait.x + " y: " + configPortrait.y + " width: " + configPortrait.width + " height: " + configPortrait.height);
+        Log.v(Countly.TAG, "[TransparentActivity] onCreate, orientation: " + currentOrientation);
+        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configLandscape  x: [" + configLandscape.x + "] y: [" + configLandscape.y + "] width: [" + configLandscape.width + "] height: [" + configLandscape.height + "]");
+        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configPortrait  x: [" + configPortrait.x + "] y: [" + configPortrait.y + "] width: [" + configPortrait.width + "] height: [" + configPortrait.height + "]");
 
         TransparentActivityConfig config;
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -63,16 +63,15 @@ public class TransparentActivity extends Activity {
         int width = config.width;
         int height = config.height;
 
-        // todo refactor those
         configLandscape.listeners.add((url, webView) -> {
-            if (url.startsWith("https://countly_action_event")) {
+            if (url.startsWith(URL_START)) {
                 return contentUrlAction(url, configLandscape, webView);
             }
             return false;
         });
 
         configPortrait.listeners.add((url, webView) -> {
-            if (url.startsWith("https://countly_action_event")) {
+            if (url.startsWith(URL_START)) {
                 return contentUrlAction(url, configPortrait, webView);
             }
             return false;
@@ -80,7 +79,7 @@ public class TransparentActivity extends Activity {
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        params.gravity = Gravity.TOP | Gravity.LEFT;
+        params.gravity = Gravity.TOP | Gravity.LEFT; // try out START
         params.x = config.x;
         params.y = config.y;
         params.height = height;
@@ -107,7 +106,7 @@ public class TransparentActivity extends Activity {
         display.getMetrics(metrics);
 
         if (config == null) {
-            Log.e("PIXEL", "Config is null");
+            Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values with full screen size");
             return new TransparentActivityConfig(0, 0, metrics.widthPixels, metrics.heightPixels);
         }
 
@@ -123,26 +122,11 @@ public class TransparentActivity extends Activity {
         if (config.y < 1) {
             config.y = 0;
         }
-        Rect rectangle = new Rect();
-        Window window = getWindow();
-        window.getDecorView().getWindowVisibleDisplayFrame(rectangle);
-        int statusBarHeight = rectangle.top;
-        int contentViewTop = window.findViewById(Window.ID_ANDROID_CONTENT).getTop();
-        int titleBarHeight = contentViewTop - statusBarHeight;
-
-        //config.y = metrics.heightPixels;
-        //config.height = config.height * 2;
-
-        Log.e("PIXEL", "screen width: " + metrics.widthPixels + " height: " + metrics.heightPixels);
-        Log.e("PIXEL", "density: " + metrics.density);
-        Log.e("PIXEL ", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
-
         return config;
     }
 
     private void changeOrientation(TransparentActivityConfig config) {
-        // Configure window layout parameters
-        Log.e("PIXEL", "x: " + config.x + " y: " + config.y + " width: " + config.width + " height: " + config.height);
+        Log.d(Countly.TAG, "[TransparentActivity] changeOrientation, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
         params.y = config.y;
@@ -164,11 +148,11 @@ public class TransparentActivity extends Activity {
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        Log.e("PIXEL", "onConfigurationChanged");
+        Log.d(Countly.TAG, "[TransparentActivity] onConfigurationChanged orientation: [" + newConfig.orientation + "], currentOrientation: [" + currentOrientation + "]");
+        Log.v(Countly.TAG, "[TransparentActivity] onConfigurationChanged, Landscape: [" + Configuration.ORIENTATION_LANDSCAPE + "] Portrait: [" + Configuration.ORIENTATION_PORTRAIT + "]");
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;
-            Log.e("PIXEL", "Orientation changed");
-            Log.e("PIXEL", "Current orientation: " + currentOrientation + " Landscape: " + Configuration.ORIENTATION_LANDSCAPE + " Portrait: " + Configuration.ORIENTATION_PORTRAIT);
+            Log.i(Countly.TAG, "[TransparentActivity] onConfigurationChanged, orientation changed to currentOrientation: [" + currentOrientation + "]");
             changeOrientationInternal();
         }
     }
@@ -193,9 +177,9 @@ public class TransparentActivity extends Activity {
     }
 
     private boolean contentUrlAction(String url, TransparentActivityConfig config, WebView view) {
-        Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: " + url);
+        Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: [" + url + "]");
         Map<String, Object> query = splitQuery(url);
-        Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: " + query);
+        Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: [" + query + "]");
 
         Object clyEvent = query.get("cly_x_action_event");
 
@@ -265,7 +249,7 @@ public class TransparentActivity extends Activity {
         }
         try {
             JSONObject resizeMeJson = (JSONObject) resizeMe;
-            Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: " + resizeMeJson);
+            Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: [" + resizeMeJson + "]");
             JSONObject portrait = resizeMeJson.getJSONObject("p");
             JSONObject landscape = resizeMeJson.getJSONObject("l");
             configPortrait.x = portrait.getInt("x");
@@ -292,10 +276,10 @@ public class TransparentActivity extends Activity {
             for (int i = 0; i < Objects.requireNonNull(event).length(); i++) {
                 try {
                     JSONObject eventJson = event.getJSONObject(i);
-                    Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: " + eventJson.toString());
+                    Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: [" + eventJson.toString() + "]");
 
                     if (!eventJson.has("sg")) {
-                        Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event:[" + eventJson + "]");
+                        Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event: [" + eventJson + "]");
                         continue;
                     }
 
