@@ -62,7 +62,7 @@ RUN echo "no" | avdmanager --verbose create avd --force --name "${EMULATOR_NAME}
 COPY . /
 
 RUN chmod a+x start_emu_headless.sh
-RUN sh start_emu_headless.sh
+RUN ./start_emu_headless.sh
 
 #=======================
 # framework entry point
