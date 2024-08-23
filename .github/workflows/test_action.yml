@@ -31,9 +31,6 @@ jobs:
       - name: Checkout SDK code
         uses: actions/checkout@v4
 
-      - name: LS
-        run: ls
-
       - name: Install Docker to the Runner
         run: cd .github/workflows/emulator_setup && docker build --build-arg TARGET=google_apis_playstore --build-arg API_LEVEL=31 --build-arg BUILD_TOOLS=31.0.0 -t android-emulator .
     
@@ -54,9 +51,6 @@ jobs:
 
       - name: Run Android Emulator Container
         run: docker run -it --privileged -d --publish 5555:5555/tcp --name androidContainer android-emulator
-      
-      - name: Run emulator in headless mode
-        run: docker exec --privileged -it -e EMULATOR_TIMEOUT=300 androidContainer bash -c "./start_emu_headless.sh"
 
       - name: Connect to the Emulator
         run: adb connect localhost:5555

@@ -56,17 +56,13 @@ ENV EMULATOR_NAME=$EMULATOR_NAME
 ENV DEVICE_NAME=$EMULATOR_DEVICE
 RUN echo "no" | avdmanager --verbose create avd --force --name "${EMULATOR_NAME}" --device "${EMULATOR_DEVICE}" --package "${EMULATOR_PACKAGE}"
 
-#===================
-# Alias
-#===================
-ENV EMU_HEADLESS=./start_emu_headless.sh
-
 #=========================
 # Copying Scripts to root
 #=========================
 COPY . /
 
 RUN chmod a+x start_emu_headless.sh
+RUN sh start_emu_headless.sh
 
 #=======================
 # framework entry point
