@@ -16,6 +16,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
     //used for tracking recorded custom event ID's. This is not updated when internal events are recorded
     String previousEventId = "";
+    String previousEventName = "";
 
     EventQueueProvider eventQueueProvider;
     ViewIdProvider viewIdProvider;
@@ -178,6 +179,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
+                    previousEventName = keyTruncated;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
