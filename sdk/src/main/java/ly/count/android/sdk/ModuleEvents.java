@@ -147,6 +147,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+                    if (segmentation == null) {
+                        segmentation = new HashMap<>();
+                    }
                     addVisibilityToSegmentation(segmentation);
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
@@ -205,9 +208,6 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             L.v("[ModuleEvents] addVisibilityToSegmentation, Visibility tracking is disabled, skipping");
         }
 
-        if (segmentation == null) {
-            segmentation = new HashMap<>();
-        }
         String appInBackground = deviceInfo.isInBackground();
         int state = 1; // in foreground
         if ("true".equals(appInBackground)) {
