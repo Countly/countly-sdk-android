@@ -1817,6 +1817,10 @@ public class ModuleViewsTests {
     }
 
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {
+        validateView(viewName, viewDuration, idx, size, start, visit, customSegmentation, id, pvid, null);
+    }
+
+    static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid, String pvn) throws JSONException {
         Map<String, Object> viewSegmentation = TestUtils.map("name", viewName, "segment", "Android");
         if (start) {
             viewSegmentation.put("start", "1");
@@ -1828,7 +1832,7 @@ public class ModuleViewsTests {
             viewSegmentation.putAll(customSegmentation);
         }
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", pvn, null, idx, size, 0, 1);
     }
 
     //todo extract orientation tests
