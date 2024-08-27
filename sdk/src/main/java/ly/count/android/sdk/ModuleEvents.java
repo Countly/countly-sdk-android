@@ -115,14 +115,20 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String pvid = null; // Previous View ID
         String cvid = null; // Current View ID
 
-        String previousViewName = _cly.moduleViews.previousViewName;
+        String previousViewName = null;
         String currentViewName = null;
+
+        if (viewNameRecordingEnabled) {
+            previousViewName = _cly.moduleViews.previousViewName;
+        }
 
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
         } else {
             cvid = viewIdProvider.getCurrentViewId();
-            currentViewName = _cly.moduleViews.currentViewName;
+            if (viewNameRecordingEnabled) {
+                currentViewName = _cly.moduleViews.currentViewName;
+            }
         }
 
         if (pcc != null) {
