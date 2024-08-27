@@ -212,13 +212,7 @@ public class scSE_SessionsTests {
 
         flowAutomaticSessions(countly);
 
-        try {
-            Assert.assertEquals(16, TestUtils.getCurrentRQ().length);
-        } catch (AssertionError e) {
-            // TODO add stability to this test
-            Assert.assertEquals(17, TestUtils.getCurrentRQ().length);
-        }
-
+        Assert.assertEquals(16, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
         boolean isOrientationRequest = TestUtils.getCurrentRQ()[1].containsKey("events");
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), isOrientationRequest ? 2 : 1);
