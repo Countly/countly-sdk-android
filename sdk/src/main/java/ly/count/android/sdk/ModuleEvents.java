@@ -115,13 +115,14 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String pvid = null; // Previous View ID
         String cvid = null; // Current View ID
 
-        String previousViewName = null;
+        String previousViewName = _cly.moduleViews.previousViewName;
         String currentViewName = null;
 
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
         } else {
             cvid = viewIdProvider.getCurrentViewId();
+            currentViewName = _cly.moduleViews.currentViewName;
         }
 
         if (pcc != null) {
@@ -135,31 +136,31 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
             case ModuleFeedback.RATING_EVENT_KEY: //these events can be reported from a lot of sources, therefore multiple consents could apply
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating) || consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
@@ -168,7 +169,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     if (segmentation != null) {
                         UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
                     }
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
@@ -179,7 +180,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         segmentation = new HashMap<>();
                     }
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
-                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
+                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId, previousViewName, currentViewName);
                     previousEventId = eventId;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
