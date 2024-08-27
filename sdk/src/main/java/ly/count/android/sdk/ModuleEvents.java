@@ -206,6 +206,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     private void addVisibilityToSegmentation(Map<String, Object> segmentation) {
         if (!visibilityTracking) {
             L.v("[ModuleEvents] addVisibilityToSegmentation, Visibility tracking is disabled, skipping");
+            return;
         }
 
         String appInBackground = deviceInfo.isInBackground();
