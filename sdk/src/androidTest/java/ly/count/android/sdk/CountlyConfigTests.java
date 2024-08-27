@@ -226,6 +226,33 @@ public class CountlyConfigTests {
         config.setAutoTrackingExceptions(new Class[] { null });
     }
 
+    /**
+     * "ConfigExperimental"
+     * Assert that interface not null and default values are set
+     * and using functions will change the values.
+     * And using them again will not change the values again.
+     */
+    @Test
+    public void config_testExperimentalInterface() {
+        CountlyConfig config = new CountlyConfig();
+        Assert.assertNotNull(config.experimental);
+
+        Assert.assertFalse(config.experimental.viewNameRecordingEnabled);
+        Assert.assertFalse(config.experimental.visibilityTrackingEnabled);
+
+        config.experimental.enableViewNameRecording();
+        Assert.assertTrue(config.experimental.viewNameRecordingEnabled);
+
+        config.experimental.enableVisibilityTracking();
+        Assert.assertTrue(config.experimental.visibilityTrackingEnabled);
+
+        config.experimental.enableViewNameRecording();
+        Assert.assertTrue(config.experimental.viewNameRecordingEnabled);
+
+        config.experimental.enableVisibilityTracking();
+        Assert.assertTrue(config.experimental.visibilityTrackingEnabled);
+    }
+
     void assertDefaultValues(CountlyConfig config, boolean includeConstructorValues) {
         if (includeConstructorValues) {
             Assert.assertNull(config.context);
