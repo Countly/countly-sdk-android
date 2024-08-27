@@ -149,8 +149,10 @@ public class ModuleEventsTests {
         ArgumentCaptor<String> arg8 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg9 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg10 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg11 = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> arg12 = ArgumentCaptor.forClass(String.class);
 
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture());
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture(), arg12.capture());
 
         if (count != null) {
             Assert.assertEquals(count, arg1.getValue());
@@ -193,7 +195,8 @@ public class ModuleEventsTests {
     public void startEndEvent_noSegments() throws InterruptedException {
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), any(String.class), any(String.class), any(String.class));
+        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), any(String.class), any(String.class), any(String.class),
+            any(String.class), any(String.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -211,7 +214,7 @@ public class ModuleEventsTests {
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
 
         ArgumentCaptor<Map> argS = ArgumentCaptor.forClass(Map.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), argS.capture(), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
+        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), argS.capture(), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""), isNull(String.class), isNull(String.class));
 
         Assert.assertEquals(startEvent.timestamp, (long) arg1.getValue());
         Assert.assertEquals(startEvent.hour, (int) arg2.getValue());
@@ -357,14 +360,14 @@ public class ModuleEventsTests {
         Map<String, Object> segm3 = new HashMap<>(segm1);
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
 
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm2), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), eq(""));
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm2), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), eq(""), isNull(String.class), isNull(String.class));
         eqp = TestUtils.setEventQueueProviderToMock(mCountly, mock(EventQueueProvider.class));
 
         segm3.clear();
         segm3.putAll(segm1);
 
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), any(String.class));
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), any(String.class), isNull(String.class), isNull(String.class));
     }
 
     /**
@@ -813,7 +816,7 @@ public class ModuleEventsTests {
         Assert.assertTrue(dow >= 0 && dow < 7);
         Assert.assertTrue(hour >= 0 && hour < 24);
         Assert.assertTrue(timestamp >= 0);
-        
+
         validateId(id, event.optString("id", ""), "Event ID");
         validateId(pvid, event.optString("pvid", ""), "Previous View ID");
         validateId(cvid, event.optString("cvid", ""), "Current View ID");
