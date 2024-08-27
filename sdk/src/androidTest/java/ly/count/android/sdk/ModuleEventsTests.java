@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -775,6 +776,109 @@ public class ModuleEventsTests {
         validateEventInRQ("key", TestUtils.map(), 1, 1.0d, 1.0d, 0);
     }
 
+    /**
+     * "recordEvent" with visibility tracking enabled
+     * Validate that visibility tracking events are recorded correctly
+     * and only added to "Events" and "Views"
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_onlyAddingItToViewsAndEvents() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.experimental.enableVisibilityTracking();
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map());
+        validateEventInRQ("rnd_key", TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 0);
+
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 1);
+
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 3);
+
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 4);
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 6);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, TestUtils.map());
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map(), 1, 0.0d, 0.0d, 7);
+    }
+
+    /**
+     * "recordEvent" with visibility tracking enabled
+     * Validate that visibility tracking events are recorded correctly
+     * And validate that the "cly_v" value is correctly set to 1 when the app is in the foreground
+     * and 0 when the app is in the background
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_bgFgSwitch() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        config.experimental.enableVisibilityTracking();
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.onStart(Mockito.mock(Activity.class)); //foreground
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent("fg", TestUtils.map());
+        validateEventInRQ("fg", TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 3);
+
+        countly.onStop(); //background
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent("bg", TestUtils.map());
+        validateEventInRQ("bg", TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 6);
+    }
+
+    /**
+     * "recordEvent" with visibility tracking disabled
+     * Validate that visibility tracking events are not recorded
+     * And validate that the "cly_v" value is not set
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_notEnabled() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.onStart(Mockito.mock(Activity.class)); //foreground
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent("fg", TestUtils.map());
+        validateEventInRQ("fg", TestUtils.map(), 1, 0.0d, 0.0d, 3);
+
+        countly.onStop(); //background
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent("bg", TestUtils.map());
+        validateEventInRQ("bg", TestUtils.map(), 1, 0.0d, 0.0d, 6);
+    }
+
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
         validateEventInRQ(eventName, expectedSegmentation, count, sum, duration, idx, idx + 1);
     }
@@ -813,7 +917,7 @@ public class ModuleEventsTests {
         Assert.assertTrue(dow >= 0 && dow < 7);
         Assert.assertTrue(hour >= 0 && hour < 24);
         Assert.assertTrue(timestamp >= 0);
-        
+
         validateId(id, event.optString("id", ""), "Event ID");
         validateId(pvid, event.optString("pvid", ""), "Previous View ID");
         validateId(cvid, event.optString("cvid", ""), "Current View ID");

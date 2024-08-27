@@ -22,7 +22,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     ViewIdProvider viewIdProvider;
 
     SafeIDGenerator safeEventIDGenerator;
-    boolean visibilityTracking = false;
+    boolean visibilityTracking;
 
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -147,8 +147,6 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
-                    assert segmentation != null;
-
                     addVisibilityToSegmentation(segmentation);
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
@@ -202,8 +200,11 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      *
      * @param segmentation segmentation to add visibility to
      */
-    private void addVisibilityToSegmentation(@NonNull Map<String, Object> segmentation) {
+    private void addVisibilityToSegmentation(Map<String, Object> segmentation) {
         if (visibilityTracking) {
+            if (segmentation == null) {
+                segmentation = new HashMap<>();
+            }
             String appInBackground = deviceInfo.isInBackground();
             int state = 1; // in foreground
             if ("true".equals(appInBackground)) {
