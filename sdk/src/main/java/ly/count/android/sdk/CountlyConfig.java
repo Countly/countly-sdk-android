@@ -1025,4 +1025,9 @@ public class CountlyConfig {
      * Crash Reporting configuration interface to be used with CountlyConfig
      */
     public final ConfigCrashes crashes = new ConfigCrashes();
+
+    /**
+     * Config for the experimental features
+     */
+    public final ConfigExperimental experimental = new ConfigExperimental();
 }
