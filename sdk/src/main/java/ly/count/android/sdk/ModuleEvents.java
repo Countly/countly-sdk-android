@@ -201,18 +201,20 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param segmentation segmentation to add visibility to
      */
     private void addVisibilityToSegmentation(Map<String, Object> segmentation) {
-        if (visibilityTracking) {
-            if (segmentation == null) {
-                segmentation = new HashMap<>();
-            }
-            String appInBackground = deviceInfo.isInBackground();
-            int state = 1; // in foreground
-            if ("true".equals(appInBackground)) {
-                state = 0; // in background
-            }
-            L.d("[ModuleEvents] addVisibilityToSegmentation, Adding visibility tracking to segmentation app in background:[" + appInBackground + "] cly_v:[" + state + "]");
-            segmentation.put(VISIBILITY_KEY, state);
+        if (!visibilityTracking) {
+            L.v("[ModuleEvents] addVisibilityToSegmentation, Visibility tracking is disabled, skipping");
         }
+
+        if (segmentation == null) {
+            segmentation = new HashMap<>();
+        }
+        String appInBackground = deviceInfo.isInBackground();
+        int state = 1; // in foreground
+        if ("true".equals(appInBackground)) {
+            state = 0; // in background
+        }
+        L.d("[ModuleEvents] addVisibilityToSegmentation, Adding visibility tracking to segmentation app in background:[" + appInBackground + "] cly_v:[" + state + "]");
+        segmentation.put(VISIBILITY_KEY, state);
     }
 
     boolean startEventInternal(final String key) {
