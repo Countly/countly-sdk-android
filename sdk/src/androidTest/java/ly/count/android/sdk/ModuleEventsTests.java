@@ -778,6 +778,71 @@ public class ModuleEventsTests {
         validateEventInRQ("key", TestUtils.map(), 1, 1.0d, 1.0d, 0);
     }
 
+    /**
+     * "recordEvent" scenario with previous and current view name tracking is disabled
+     * Validate that the event is recorded without view names
+     * EQ size is 1 to trigger request generation
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEventScenario_previous_current_ViewName_disabled() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.events().recordEvent("TEST");
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", null, null);
+
+        countly.views().startView("View1");
+        countly.events().recordEvent("TEST1");
+
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, null);
+
+        countly.views().startView("View2");
+        countly.events().recordEvent("TEST2");
+
+        ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, null);
+    }
+
+    /**
+     * "recordEvent" scenario with previous and current view name tracking is enabled
+     * Validate that the event is recorded with view names
+     * EQ size is 1 to trigger request generation
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEventScenario_previous_current_ViewName() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.experimental.enableViewNameRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.events().recordEvent("TEST");
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", "", "");
+
+        countly.views().startView("View1");
+        countly.events().recordEvent("TEST1");
+
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", "", "View1");
+
+        countly.views().startView("View2");
+        countly.events().recordEvent("TEST2");
+
+        ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", "View1");
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", "View1", "View2");
+    }
+
+    protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousViewName, String currentViewName) throws JSONException {
+        validateEventInRQ(TestUtils.commonDeviceId, eventName, TestUtils.map(), 1, 0.0, 0.0, "_CLY_", previousViewId, currentViewId, "_CLY_", previousViewName, currentViewName, idx, rqCount, 0, 1);
+    }
+
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
         validateEventInRQ(eventName, expectedSegmentation, count, sum, duration, idx, idx + 1);
     }
