@@ -21,7 +21,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     ViewIdProvider viewIdProvider;
     SafeIDGenerator safeEventIDGenerator;
     private final boolean viewNameRecordingEnabled;
-    boolean visibilityTracking;
+    private final boolean visibilityTracking;
 
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly, config);

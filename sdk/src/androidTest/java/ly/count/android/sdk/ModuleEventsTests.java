@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -777,7 +778,7 @@ public class ModuleEventsTests {
 
         validateEventInRQ("key", TestUtils.map(), 1, 1.0d, 1.0d, 0);
     }
-  
+
     /**
      * "recordEvent" with visibility tracking enabled
      * Validate that visibility tracking events are recorded correctly
