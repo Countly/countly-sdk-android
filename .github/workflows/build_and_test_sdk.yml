@@ -38,20 +38,17 @@ jobs:
         uses: android-actions/setup-android@v2.0.10
         with:
           api-level: 30
-          target: 'default'
-          arch: 'x86_64'
+          target: 'google-apis'
+          arch: 'arm64-v8a'
           channel: 'stable'
 
       - name: Start ADB Server
         run: adb start-server
 
-      - name: Set up AVD (Android Virtual Device)
+      - name: Install and configure ARM emulator
         run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
-          sdkmanager --install "system-images;android-30;default;x86_64" "platform-tools" "emulator"
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --force
-          echo "Emulator path is: $ANDROID_HOME/emulator"
+          sdkmanager --install "system-images;android-30;default;arm64-v8a"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;arm64-v8a" --force
           $ANDROID_HOME/emulator/emulator -avd test -no-window -no-audio -no-boot-anim -no-snapshot-load &
 
       - name: Wait for Emulator to start
