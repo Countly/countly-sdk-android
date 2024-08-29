@@ -63,7 +63,6 @@ jobs:
       - name: Wait for Emulator to start
         run: |
           adb wait-for-device
-          adb shell input keyevent 82
 
       - name: Run tests
         run: ./gradlew connectedCheck
