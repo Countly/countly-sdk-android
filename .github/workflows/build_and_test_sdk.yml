@@ -64,8 +64,13 @@ jobs:
         run: |
           adb wait-for-device
 
-      - name: Run tests
-        run: ./gradlew connectedCheck
+      - name: Build the SDK
+        if: always()
+        run: ./gradlew sdk:build
+        
+      - name: Run the Android Unit Tests
+        if: always()
+        run: ./gradlew sdk:connectedAndroidTest
 
       - name: Stop Emulator
         run: adb emu kill
