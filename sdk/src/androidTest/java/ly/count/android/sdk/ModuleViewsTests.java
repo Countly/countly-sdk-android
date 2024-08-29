@@ -1816,7 +1816,32 @@ public class ModuleViewsTests {
         TestUtils.assertRQSize(8);
     }
 
+    /**
+     * "startView" with enabled view name recording
+     * Validate that the previous view name is recorded when a new view is started
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordView_previousViewName() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.experimental.enableViewNameRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.views().startView("test");
+        validateView("test", 0.0, 0, 1, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
+
+        countly.views().startView("test2");
+        validateView("test2", 0.0, 1, 2, false, true, TestUtils.map(), "_CLY_", "_CLY_", "test");
+    }
+
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {
+        validateView(viewName, viewDuration, idx, size, start, visit, customSegmentation, id, pvid, null);
+    }
+
+    static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid, String pvn) throws JSONException {
         Map<String, Object> viewSegmentation = TestUtils.map("name", viewName, "segment", "Android");
         if (start) {
             viewSegmentation.put("start", "1");
@@ -1828,7 +1853,7 @@ public class ModuleViewsTests {
             viewSegmentation.putAll(customSegmentation);
         }
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", pvn, null, idx, size, 0, 1);
     }
 
     //todo extract orientation tests

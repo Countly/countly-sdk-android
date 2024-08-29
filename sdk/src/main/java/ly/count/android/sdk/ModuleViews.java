@@ -16,6 +16,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     private String currentViewID = null;
     private String previousViewID = null;
 
+    String previousViewName = "";
+    String currentViewName = "";
+
     private boolean firstView = true;
 
     boolean autoViewTracker = false;
@@ -206,7 +209,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         viewDataMap.put(currentViewData.viewID, currentViewData);
         previousViewID = currentViewID;
+        previousViewName = currentViewName;
         currentViewID = currentViewData.viewID;
+        currentViewName = viewName;
 
         Map<String, Object> accumulatedEventSegm = new HashMap<>(automaticViewSegmentation);
 

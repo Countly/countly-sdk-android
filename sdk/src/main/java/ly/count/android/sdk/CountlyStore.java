@@ -736,10 +736,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * NaN and infinity values will be quietly ignored.
      */
     public void recordEventToEventQueue(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur, final long timestamp, final int hour, final int dow, final @NonNull String eventID, final @Nullable String previousViewId,
-        final @Nullable String currentViewId, final @Nullable String previousEventId) {
+        final @Nullable String currentViewId, final @Nullable String previousEventId, final @Nullable String previousViewName, final @Nullable String currentViewName) {
 
         L.d("[CountlyStore] recordEventToEventQueue, key[" + key + "], segmentation[" + segmentation + "], count[" + count + "], sum[" + sum + "], dur[" + dur + "], timestamp[" + timestamp + "], hour[" + hour + "], dow[" + dow + "]");
         L.d("[CountlyStore] recordEventToEventQueue, eventID[" + eventID + "], previousViewId[" + previousViewId + "], currentViewId[" + currentViewId + "], previousEventId[" + previousEventId + "]");
+        L.d("[CountlyStore] recordEventToEventQueue, previousViewName[" + previousViewName + "], currentViewName[" + currentViewName + "]");
 
         long tsStart = 0L;
         if (pcc != null) {
@@ -759,6 +760,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         event.pvid = previousViewId;
         event.cvid = currentViewId;
         event.peid = previousEventId;
+        event.cly_cvn = currentViewName;
+        event.cly_pvn = previousViewName;
 
         addEvent(event);
 
