@@ -25,12 +25,6 @@ jobs:
     name: Build and Test the SDK
 
     steps:
-      - name: Install Docker to the Runner
-        run: sudo apt-get install docker
-
-      - name: Pull Emulator from the Repo
-        run: docker pull ${{ env.EMULATOR_REPO }}
-    
       - name: Checkout SDK code
         uses: actions/checkout@v4
 
@@ -46,25 +40,19 @@ jobs:
       - name: Start ADB Server
         run: adb start-server
 
-      - name: Run Android Emulator Container
-        run: docker run -d -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 5555:5555/tcp ${{ env.EMULATOR_REPO }}
-      
-      - name: Connect to the Emulator
-        run: adb connect localhost:5555
-  
-      - name: Build the SDK
-        if: always()
-        run: ./gradlew sdk:build
+      - name: Set up AVD (Android Virtual Device)
+        run: |
+          sdkmanager --install "system-images;android-30;default;x86_64"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --force
+          emulator -avd test -no-window -no-audio -no-boot-anim -no-snapshot-load &
 
-      - name: Run the Android Unit Tests
-        if: always()
-        run: ./gradlew sdk:connectedAndroidTest
+      - name: Wait for Emulator to start
+        run: |
+          adb wait-for-device
+          adb shell input keyevent 82
 
-      - name: Publish Test Results to PR
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
-        with:
-          check_name: "Unit Test Results :rocket:"
-          comment_title: "Unit Test Results :rocket:"
-          files: |
-            sdk/build/outputs/androidTest-results/**/*.xml
+      - name: Run tests
+        run: ./gradlew connectedCheck
+
+      - name: Stop Emulator
+        run: adb emu kill
