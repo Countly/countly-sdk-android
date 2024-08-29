@@ -36,6 +36,11 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.10
+        with:
+          api-level: 30
+          target: 'default'
+          arch: 'x86_64'
+          channel: 'stable'
 
       - name: Start ADB Server
         run: adb start-server
