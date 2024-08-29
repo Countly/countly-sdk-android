@@ -20,9 +20,12 @@ on:
       - staging
 
 jobs:
-  setup:
+  test:
     runs-on: ubuntu-latest
     name: Build and Test the SDK
+    strategy:
+      matrix:
+        api-level: [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]
 
     steps:
       - name: Checkout SDK code
@@ -43,7 +46,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.10
         with:
-          api-level: 30
+          api-level: ${{ matrix.api-level }}
           target: 'google-apis'
           arch: 'x86_64'
           channel: 'stable'
@@ -55,8 +58,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
-          sdkmanager --install "system-images;android-30;default;x86_64" "platform-tools" "emulator"
-          echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --force
+          sdkmanager --install "system-images;android-${{ matrix.api-level }};default;x86_64" "platform-tools" "emulator"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-${{ matrix.api-level }};default;x86_64" --force
           echo "Emulator path is: $ANDROID_HOME/emulator"
           $ANDROID_HOME/emulator/emulator -avd test -no-window -no-audio -no-boot-anim -no-snapshot-load &
 
@@ -67,10 +70,20 @@ jobs:
       - name: Build the SDK
         if: always()
         run: ./gradlew sdk:build
-        
+
       - name: Run the Android Unit Tests
         if: always()
         run: ./gradlew sdk:connectedAndroidTest
 
       - name: Stop Emulator
+        if: always()
         run: adb emu kill
+      
+      - name: Publish Test Results to PR
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: "Unit Test Results ${{ matrix.api-level }} :rocket:"
+          comment_title: "Unit Test Results ${{ matrix.api-level }} :rocket:"
+          files: |
+            sdk/build/outputs/androidTest-results/**/*.xml
