@@ -42,9 +42,12 @@ jobs:
 
       - name: Set up AVD (Android Virtual Device)
         run: |
-          sdkmanager --install "system-images;android-30;default;x86_64"
+          sudo apt-get update
+          sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+          sdkmanager --install "system-images;android-30;default;x86_64" "platform-tools" "emulator"
           echo "no" | avdmanager create avd -n test -k "system-images;android-30;default;x86_64" --force
-          emulator -avd test -no-window -no-audio -no-boot-anim -no-snapshot-load &
+          echo "Emulator path is: $ANDROID_HOME/emulator"
+          $ANDROID_HOME/emulator/emulator -avd test -no-window -no-audio -no-boot-anim -no-snapshot-load &
 
       - name: Wait for Emulator to start
         run: |
