@@ -205,7 +205,7 @@ public class ModuleContent extends ModuleBase {
          * @param categories categories for the content
          * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
          */
-        private void subscribeToContentBlock(@Nullable String... categories) {
+        private void enterContentZone(@Nullable String... categories) {
             L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -222,8 +222,8 @@ public class ModuleContent extends ModuleBase {
          *
          * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
          */
-        public void subscribeToContentBlock() {
-            subscribeToContentBlock(new String[] {});
+        public void enterContentZone() {
+            enterContentZone(new String[] {});
         }
 
         /**
@@ -231,7 +231,7 @@ public class ModuleContent extends ModuleBase {
          *
          * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
          */
-        public void exitFromContentBlock() {
+        public void exitContentZone() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] exitFromContent, Consent is not granted, skipping");
                 return;
