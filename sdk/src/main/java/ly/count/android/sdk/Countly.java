@@ -1227,6 +1227,12 @@ public class Countly {
         return moduleUserProfile.userProfileInterface;
     }
 
+    /**
+     * Content feature interface
+     *
+     * @return content module
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     */
     public ModuleContent.Content contents() {
         if (!isInitialized()) {
             L.e("Countly.sharedInstance().init must be called before accessing content");

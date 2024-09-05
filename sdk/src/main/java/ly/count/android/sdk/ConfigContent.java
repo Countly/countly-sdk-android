@@ -10,8 +10,9 @@ public class ConfigContent {
      *
      * @param contentUpdateInterval in seconds
      * @return config content to chain calls
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
-    public synchronized ConfigContent setContentUpdateInterval(int contentUpdateInterval) {
+    private synchronized ConfigContent setContentUpdateInterval(int contentUpdateInterval) {
         if (contentUpdateInterval > 0) {
             this.contentUpdateInterval = contentUpdateInterval;
         }
@@ -23,6 +24,7 @@ public class ConfigContent {
      *
      * @param callback to be called when content is updated
      * @return config content to chain calls
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public synchronized ConfigContent setGlobalContentCallback(ContentCallback callback) {
         this.globalContentCallback = callback;

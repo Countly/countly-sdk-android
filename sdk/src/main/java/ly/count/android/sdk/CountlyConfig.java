@@ -1028,6 +1028,8 @@ public class CountlyConfig {
 
     /**
      * Crash Reporting configuration interface to be used with CountlyConfig
+     *
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public final ConfigContent contents = new ConfigContent();
 

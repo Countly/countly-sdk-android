@@ -203,6 +203,7 @@ public class ModuleContent extends ModuleBase {
          * Opt in user for the content fetching and updates
          *
          * @param categories categories for the content
+         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
          */
         private void subscribeToContentBlock(@Nullable String... categories) {
             L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
@@ -218,6 +219,8 @@ public class ModuleContent extends ModuleBase {
 
         /**
          * Opt in user for the content fetching and updates
+         *
+         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
          */
         public void subscribeToContentBlock() {
             subscribeToContentBlock(new String[] {});
@@ -225,6 +228,8 @@ public class ModuleContent extends ModuleBase {
 
         /**
          * Opt out user from the content fetching and updates
+         *
+         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
          */
         public void exitFromContentBlock() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -239,6 +244,7 @@ public class ModuleContent extends ModuleBase {
          * Change the content that is being shown
          *
          * @param categories categories for the content
+         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
          */
         private void changeContent(@Nullable String... categories) {
             L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
