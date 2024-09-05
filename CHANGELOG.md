@@ -1,7 +1,8 @@
-## XX.XX.XX
+## 24.7.3
 * The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
 * The previous view name and the current view name have been added to the events. Additionally, the previous view name has been incorporated into the views. (Experimental!)
 * Added visibility tracking option to views and events. (Experimental!)
+* Introduced a content feature designed to enhance user engagement. (Experimental!)
 
 ## 24.7.2
 * Mitigated an issue in the upload plugin that prevented the upload of a symbol file
