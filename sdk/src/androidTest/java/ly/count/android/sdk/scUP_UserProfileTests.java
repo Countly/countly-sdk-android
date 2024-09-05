@@ -335,7 +335,7 @@ public class scUP_UserProfileTests {
 
         TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 4);
 
-        ModuleEventsTests.validateEventInRQ("merge_id", "C", 1, 0.0d, 0.0d, 5, 0, 1, 8);
+        ModuleEventsTests.validateEventInRQ("merge_id", "C", 5, 0, 1);
 
         validateUserDataRequest(6, 8, "4", "merge_id");
 
@@ -388,7 +388,7 @@ public class scUP_UserProfileTests {
         ModuleSessionsTests.validateSessionEndRequest(4, null, TestUtils.commonDeviceId);
         TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 5);
 
-        ModuleEventsTests.validateEventInRQ("merge_id", "C", 1, 0.0d, 0.0d, 6, 0, 1, 9);
+        ModuleEventsTests.validateEventInRQ("merge_id", "C", 6, 0, 1);
 
         validateUserDataRequest(7, 9, "4", "merge_id");
 

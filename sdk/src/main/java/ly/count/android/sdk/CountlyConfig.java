@@ -1030,4 +1030,6 @@ public class CountlyConfig {
      * Crash Reporting configuration interface to be used with CountlyConfig
      */
     public final ConfigContent contents = new ConfigContent();
+
+    public final ConfigExperimental experimental = new ConfigExperimental();
 }

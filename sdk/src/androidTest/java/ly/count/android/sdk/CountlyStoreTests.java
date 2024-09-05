@@ -80,7 +80,7 @@ public class CountlyStoreTests {
      */
     void RecordEvent(String eventKey, CountlyStore cs) {
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        cs.recordEventToEventQueue(eventKey, null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null, null);
+        cs.recordEventToEventQueue(eventKey, null, 1, 0.0d, 10.0d, instant.timestampMs, instant.hour, instant.dow, null, null, null, null, null, null);
     }
 
     /**
@@ -92,7 +92,7 @@ public class CountlyStoreTests {
      * @param cs
      */
     void RecordEvent(Event e, CountlyStore cs) {
-        cs.recordEventToEventQueue(e.key, e.segmentation, e.count, e.sum, e.dur, e.timestamp, e.hour, e.dow, e.id, e.pvid, e.cvid, e.peid);
+        cs.recordEventToEventQueue(e.key, e.segmentation, e.count, e.sum, e.dur, e.timestamp, e.hour, e.dow, e.id, e.pvid, e.cvid, e.peid, e.cly_pvn, e.cly_cvn);
     }
 
     /**
@@ -639,7 +639,7 @@ public class CountlyStoreTests {
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
-        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34_545L, 4, 2, null, null, null, null);
+        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34_545L, 4, 2, null, null, null, null, null, null);
         assertTrue(sp.anythingSetInStorage());
         store.clear();
 
@@ -701,7 +701,7 @@ public class CountlyStoreTests {
         sp.replaceRequestList(new ArrayList<String>());
         assertTrue(sp.anythingSetInStorage());
 
-        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34_545L, 4, 2, null, null, null, null);
+        store.recordEventToEventQueue("dfdf", null, 5, 5, 3, 34_545L, 4, 2, null, null, null, null, null, null);
         assertTrue(sp.anythingSetInStorage());
 
         sp.setStarRatingPreferences("dfg");
