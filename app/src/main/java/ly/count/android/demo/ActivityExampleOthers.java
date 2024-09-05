@@ -139,10 +139,10 @@ public class ActivityExampleOthers extends AppCompatActivity {
     }
 
     public void onClickFetchContents(View v) {
-        Countly.sharedInstance().contents().openForContent();
+        Countly.sharedInstance().contents().subscribeToContentBlock();
     }
 
     public void onClickExitContents(View v) {
-        Countly.sharedInstance().contents().exitFromContent();
+        Countly.sharedInstance().contents().exitFromContentBlock();
     }
 }

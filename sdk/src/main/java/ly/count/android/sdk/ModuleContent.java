@@ -204,7 +204,7 @@ public class ModuleContent extends ModuleBase {
          *
          * @param categories categories for the content
          */
-        public void openForContent(@Nullable String... categories) {
+        private void subscribeToContentBlock(@Nullable String... categories) {
             L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -219,14 +219,14 @@ public class ModuleContent extends ModuleBase {
         /**
          * Opt in user for the content fetching and updates
          */
-        public void openForContent() {
-            openForContent(new String[] {});
+        public void subscribeToContentBlock() {
+            subscribeToContentBlock(new String[] {});
         }
 
         /**
          * Opt out user from the content fetching and updates
          */
-        public void exitFromContent() {
+        public void exitFromContentBlock() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
                 L.w("[ModuleContent] exitFromContent, Consent is not granted, skipping");
                 return;
@@ -240,7 +240,7 @@ public class ModuleContent extends ModuleBase {
          *
          * @param categories categories for the content
          */
-        public void changeContent(@Nullable String... categories) {
+        private void changeContent(@Nullable String... categories) {
             L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
 
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
