@@ -1000,6 +1000,7 @@ public class CountlyConfig {
      * With this mode enable, the SDK will acquire additional configuration from it's Countly server
      *
      * @return Returns the same config object for convenient linking
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public synchronized CountlyConfig enableServerConfiguration() {
         serverConfigurationEnabled = true;
