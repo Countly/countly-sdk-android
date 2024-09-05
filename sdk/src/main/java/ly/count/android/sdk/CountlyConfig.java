@@ -1027,11 +1027,16 @@ public class CountlyConfig {
     public final ConfigCrashes crashes = new ConfigCrashes();
 
     /**
-     * Crash Reporting configuration interface to be used with CountlyConfig
+     * Content configuration interface to be used with CountlyConfig
      *
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public final ConfigContent contents = new ConfigContent();
 
+    /**
+     * Experimental configuration interface to be used with CountlyConfig
+     *
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     */
     public final ConfigExperimental experimental = new ConfigExperimental();
 }
