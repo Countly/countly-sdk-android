@@ -213,6 +213,7 @@ public class TransparentActivity extends Activity {
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
             finish();
             config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            Countly.sharedInstance().contents().exitContentZone();
             return true;
         }
 
@@ -298,6 +299,8 @@ public class TransparentActivity extends Activity {
                     Log.e(Countly.TAG, "[TransparentActivity] eventAction, Failed to parse event JSON", e);
                 }
             }
+
+            Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
         } else {
             Log.w(Countly.TAG, "[TransparentActivity] eventAction, event action is missing event");
         }

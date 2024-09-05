@@ -30,7 +30,7 @@ class CountlyTimer {
         }
     }
 
-    protected void startTimer(long timerDelay, @NonNull Runnable runnable, @NonNull ModuleLog L) {
+    protected void startTimer(long timerDelay, long initialDelay, @NonNull Runnable runnable, @NonNull ModuleLog L) {
         long timerDelayInternal = timerDelay * 1000;
 
         if (timerDelayInternal < UtilsTime.ONE_SECOND_IN_MS) {
@@ -50,5 +50,9 @@ class CountlyTimer {
 
         timerService = Executors.newSingleThreadScheduledExecutor();
         timerService.scheduleWithFixedDelay(runnable, 0, timerDelayInternal, TimeUnit.MILLISECONDS);
+    }
+    
+    protected void startTimer(long timerDelay, @NonNull Runnable runnable, @NonNull ModuleLog L) {
+        startTimer(timerDelay, 0, runnable, L);
     }
 }

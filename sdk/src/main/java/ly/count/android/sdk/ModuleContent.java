@@ -63,6 +63,8 @@ public class ModuleContent extends ModuleBase {
                     intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     _cly.context_.startActivity(intent);
+
+                    countlyTimer.stopTimer(L); // stop the timer after a new content is fetched
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
                 }
@@ -72,7 +74,7 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void registerForContentUpdates(@Nullable String[] categories) {
+    void registerForContentUpdates(@Nullable String[] categories, long initialDelay) {
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
             return;
@@ -92,7 +94,7 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, () -> {
+        countlyTimer.startTimer(contentUpdateInterval, initialDelay, () -> {
             L.v("[ModuleContent] registerForContentUpdates, experimental mode enabled, directly fetching contents");
             fetchContentsInternal(validCategories);
         }, L);
@@ -168,7 +170,7 @@ public class ModuleContent extends ModuleBase {
     }
 
     private void optOutFromContent() {
-        exitFromContentInternal();
+        exitContentZoneInternal();
         shouldFetchContents = false;
     }
 
@@ -190,11 +192,11 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void initFinished(@NotNull CountlyConfig config) {
-        registerForContentUpdates(new String[] {});
+        registerForContentUpdates(new String[] {}, 0);
     }
 
-    protected void exitFromContentInternal() {
-        countlyTimer.stopTimer(L);
+    protected void exitContentZoneInternal() {
+        registerForContentUpdates(new String[] {}, contentUpdateInterval * 2L); // 60 seconds initial delay
     }
 
     public class Content {
@@ -214,7 +216,7 @@ public class ModuleContent extends ModuleBase {
             }
 
             shouldFetchContents = true;
-            registerForContentUpdates(categories);
+            registerForContentUpdates(categories, 0);
         }
 
         /**
@@ -237,7 +239,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            exitFromContentInternal();
+            exitContentZoneInternal();
         }
 
         /**
@@ -254,7 +256,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            registerForContentUpdates(categories);
+            registerForContentUpdates(categories, 0);
         }
     }
 }
