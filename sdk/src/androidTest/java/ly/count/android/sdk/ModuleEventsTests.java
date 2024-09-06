@@ -928,23 +928,23 @@ public class ModuleEventsTests {
         Countly countly = new Countly().init(countlyConfig);
 
         countly.events().recordEvent("TEST");
-        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", "", "");
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", null, "");
 
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
         ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
-        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", "", "View1");
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, "TEST");
 
         countly.views().startView("View2");
         countly.events().recordEvent("TEST2");
 
         ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", "View1");
-        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", "View1", "View2");
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, "TEST1");
     }
 
-    protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousViewName, String currentViewName) throws JSONException {
-        validateEventInRQ(TestUtils.commonDeviceId, eventName, TestUtils.map(), 1, 0.0, 0.0, "_CLY_", previousViewId, currentViewId, "_CLY_", previousViewName, currentViewName, idx, rqCount, 0, 1);
+    protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousViewName, String previousEventName) throws JSONException {
+        validateEventInRQ(TestUtils.commonDeviceId, eventName, TestUtils.map(), 1, 0.0, 0.0, "_CLY_", previousViewId, currentViewId, "_CLY_", previousViewName, previousEventName, idx, rqCount, 0, 1);
     }
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
@@ -955,7 +955,7 @@ public class ModuleEventsTests {
         validateEventInRQ(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, 0, 1);
     }
 
-    protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, String pvn, String cvn, int idx, int rqCount, int eventIdx, int eventCount)
+    protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, String pvn, String pen, int idx, int rqCount, int eventIdx, int eventCount)
         throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         if (rqCount > -1) {
@@ -993,7 +993,7 @@ public class ModuleEventsTests {
         validateId(peid, event.optString("peid", ""), "Previous Event ID");
 
         Assert.assertEquals(pvn, event.optString("cly_pvn", null));
-        Assert.assertEquals(cvn, event.optString("cly_cvn", null));
+        Assert.assertEquals(pen, event.optString("cly_pen", null));
     }
 
     protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {

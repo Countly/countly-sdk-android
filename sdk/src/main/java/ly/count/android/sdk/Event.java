@@ -50,7 +50,7 @@ class Event {
     protected static final String PV_ID_KEY = "pvid";
     protected static final String CV_ID_KEY = "cvid";
     protected static final String PE_ID_KEY = "peid";
-    protected static final String CV_NAME_KEY = "cly_cvn";
+    protected static final String PE_NAME_KEY = "cly_pen";
     protected static final String PV_NAME_KEY = "cly_pvn";
 
     public String key;
@@ -65,7 +65,7 @@ class Event {
     public String pvid;
     public String cvid;
     public String peid;
-    public String cly_cvn;
+    public String cly_pen;
     public String cly_pvn;
 
     Event() {
@@ -110,8 +110,8 @@ class Event {
                 json.put(PE_ID_KEY, peid);
             }
 
-            if (cly_cvn != null) {
-                json.put(CV_NAME_KEY, cly_cvn);
+            if (cly_pen != null) {
+                json.put(PE_NAME_KEY, cly_pen);
             }
 
             if (cly_pvn != null) {
@@ -188,8 +188,8 @@ class Event {
                 event.peid = json.getString(PE_ID_KEY);
             }
 
-            if (!json.isNull(CV_NAME_KEY)) {
-                event.cly_cvn = json.getString(CV_NAME_KEY);
+            if (!json.isNull(PE_NAME_KEY)) {
+                event.cly_pen = json.getString(PE_NAME_KEY);
             }
 
             if (!json.isNull(PV_NAME_KEY)) {
@@ -250,7 +250,7 @@ class Event {
             Objects.equals(pvid, e.pvid) &&
             Objects.equals(cvid, e.cvid) &&
             Objects.equals(peid, e.peid) &&
-            Objects.equals(cly_cvn, e.cly_cvn) &&
+            Objects.equals(cly_pen, e.cly_pen) &&
             Objects.equals(cly_pvn, e.cly_pvn) &&
             Objects.equals(segmentation, e.segmentation);
     }
@@ -263,7 +263,7 @@ class Event {
             (pvid != null ? pvid.hashCode() : 1) ^
             (cvid != null ? cvid.hashCode() : 1) ^
             (peid != null ? peid.hashCode() : 1) ^
-            (cly_cvn != null ? cly_cvn.hashCode() : 1) ^
+            (cly_pen != null ? cly_pen.hashCode() : 1) ^
             (cly_pvn != null ? cly_pvn.hashCode() : 1) ^
             (timestamp != 0 ? (int) timestamp : 1);
     }

@@ -17,6 +17,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
     //used for tracking recorded custom event ID's. This is not updated when internal events are recorded
     String previousEventId = "";
+    String previousEventName = "";
     EventQueueProvider eventQueueProvider;
     ViewIdProvider viewIdProvider;
     SafeIDGenerator safeEventIDGenerator;
@@ -118,19 +119,18 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String pvid = null; // Previous View ID
         String cvid = null; // Current View ID
 
-        String previousViewName = null;
-        String currentViewName = null;
-
-        if (viewNameRecordingEnabled) {
-            previousViewName = _cly.moduleViews.previousViewName;
-        }
+        String pvn = null;
+        String pen = null;
 
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
+            if (viewNameRecordingEnabled) {
+                pvn = _cly.moduleViews.previousViewName;
+            }
         } else {
             cvid = viewIdProvider.getCurrentViewId();
             if (viewNameRecordingEnabled) {
-                currentViewName = _cly.moduleViews.currentViewName;
+                pen = previousEventName;
             }
         }
 
@@ -145,13 +145,13 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
             case ModuleFeedback.RATING_EVENT_KEY: //these events can be reported from a lot of sources, therefore multiple consents could apply
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating) || consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
@@ -161,19 +161,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         segmentation = new HashMap<>();
                     }
                     addVisibilityToSegmentation(segmentation);
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
@@ -182,7 +182,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     if (segmentation != null) {
                         UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
                     }
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, previousViewName, currentViewName);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
@@ -194,8 +194,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     }
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
                     addVisibilityToSegmentation(segmentation);
-                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId, previousViewName, currentViewName);
+                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId, pvn, pen);
                     previousEventId = eventId;
+                    previousEventName = keyTruncated;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
