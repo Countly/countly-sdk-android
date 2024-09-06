@@ -240,13 +240,13 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.experimental.viewNameRecordingEnabled);
         Assert.assertFalse(config.experimental.visibilityTrackingEnabled);
 
-        config.experimental.enableViewNameRecording();
+        config.experimental.enablePreviousNameRecording();
         Assert.assertTrue(config.experimental.viewNameRecordingEnabled);
 
         config.experimental.enableVisibilityTracking();
         Assert.assertTrue(config.experimental.visibilityTrackingEnabled);
 
-        config.experimental.enableViewNameRecording();
+        config.experimental.enablePreviousNameRecording();
         Assert.assertTrue(config.experimental.viewNameRecordingEnabled);
 
         config.experimental.enableVisibilityTracking();

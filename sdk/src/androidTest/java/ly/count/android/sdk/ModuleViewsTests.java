@@ -1825,7 +1825,7 @@ public class ModuleViewsTests {
     @Test
     public void recordView_previousViewName() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
-        countlyConfig.experimental.enableViewNameRecording();
+        countlyConfig.experimental.enablePreviousNameRecording();
         countlyConfig.setEventQueueSizeToSend(1);
 
         Countly countly = new Countly().init(countlyConfig);

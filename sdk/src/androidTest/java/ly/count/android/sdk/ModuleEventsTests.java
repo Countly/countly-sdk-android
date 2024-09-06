@@ -922,7 +922,7 @@ public class ModuleEventsTests {
     @Test
     public void recordEventScenario_previous_current_ViewName() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig();
-        countlyConfig.experimental.enableViewNameRecording();
+        countlyConfig.experimental.enablePreviousNameRecording();
         countlyConfig.setEventQueueSizeToSend(1);
 
         Countly countly = new Countly().init(countlyConfig);
