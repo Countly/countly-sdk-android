@@ -1,8 +1,11 @@
 ## 24.7.3
-* The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
-* The previous view name and the current view name have been added to the events. Additionally, the previous view name has been incorporated into the views. (Experimental!)
-* Added visibility tracking option to views and events. (Experimental!)
-* Introduced a content feature designed to enhance user engagement. (Experimental!)
+* Automatic view pause/resumes are changed with stop/start for better data consistency.
+* Added the config interface 'experimental' to group experimental features.
+* Added a flag (enableViewNameRecording) to add view names to each event. (Experimental!)
+* Added a flag (enableVisibilityTracking) to add app visibility info to views and events. (Experimental!)
+* Added Content feature methods:
+  - enterContentZone, to start Content checks(Experimental!)
+	- exitContentZone, to stop content checks (Experimental!)
 
 ## 24.7.2
 * Mitigated an issue in the upload plugin that prevented the upload of a symbol file

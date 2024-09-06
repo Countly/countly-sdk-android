@@ -21,6 +21,7 @@ public class ModuleContent extends ModuleBase {
     private boolean shouldFetchContents = false;
     private final int contentUpdateInterval;
     private final ContentCallback globalContentCallback;
+    static int waitForDelay = 0;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -64,7 +65,7 @@ public class ModuleContent extends ModuleBase {
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     _cly.context_.startActivity(intent);
 
-                    countlyTimer.stopTimer(L); // stop the timer after a new content is fetched
+                    shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
                 }
@@ -74,14 +75,9 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void registerForContentUpdates(@Nullable String[] categories, long initialDelay) {
+    void registerForContentUpdates(@Nullable String[] categories) {
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
-            return;
-        }
-
-        if (!shouldFetchContents) {
-            L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
             return;
         }
 
@@ -94,8 +90,19 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, initialDelay, () -> {
-            L.v("[ModuleContent] registerForContentUpdates, experimental mode enabled, directly fetching contents");
+        countlyTimer.startTimer(contentUpdateInterval, () -> {
+            L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+
+            if (waitForDelay > 0) {
+                waitForDelay--;
+                return;
+            }
+
+            if (!shouldFetchContents) {
+                L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
+                return;
+            }
+
             fetchContentsInternal(validCategories);
         }, L);
     }
@@ -192,7 +199,7 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void initFinished(@NotNull CountlyConfig config) {
-        registerForContentUpdates(new String[] {}, 0);
+        registerForContentUpdates(new String[] {});
     }
 
     protected void exitContentZoneInternal() {
@@ -217,7 +224,7 @@ public class ModuleContent extends ModuleBase {
             }
 
             shouldFetchContents = true;
-            registerForContentUpdates(categories, 0);
+            registerForContentUpdates(categories);
         }
 
         /**
@@ -257,16 +264,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            registerForContentUpdates(categories, 0);
-        }
-
-        /**
-         * Register to content updates with 1-minute initial delay
-         *
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes, This is for internal use only
-         */
-        protected void registerForContentZone() {
-            registerForContentUpdates(new String[] {}, contentUpdateInterval * 2L); // 60 seconds initial delay
+            registerForContentUpdates(categories);
         }
     }
 }

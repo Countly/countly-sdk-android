@@ -213,7 +213,7 @@ public class TransparentActivity extends Activity {
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
             finish();
             config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
-            Countly.sharedInstance().contents().registerForContentZone();
+            ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
             return true;
         }
 
