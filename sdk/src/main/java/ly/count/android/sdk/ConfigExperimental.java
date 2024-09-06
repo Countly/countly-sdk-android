@@ -5,7 +5,7 @@ public class ConfigExperimental {
     protected boolean visibilityTrackingEnabled = false;
 
     /**
-     * This will enabled view name recording for previous view for event and views
+     * This will enabled view name recording for previous view name for views
      * and current view name for events.
      *
      * @return ConfigExperimental instance for chaining
