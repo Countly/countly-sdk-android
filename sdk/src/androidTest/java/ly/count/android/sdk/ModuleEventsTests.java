@@ -928,19 +928,19 @@ public class ModuleEventsTests {
         Countly countly = new Countly().init(countlyConfig);
 
         countly.events().recordEvent("TEST");
-        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", "", "");
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", null, "");
 
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
         ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
-        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", "", "View1");
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, "View1");
 
         countly.views().startView("View2");
         countly.events().recordEvent("TEST2");
 
         ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", "View1");
-        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", "View1", "View2");
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, "View2");
     }
 
     protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousViewName, String currentViewName) throws JSONException {
