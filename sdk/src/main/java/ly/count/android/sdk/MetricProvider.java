@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.content.Context;
+import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -57,4 +58,6 @@ interface MetricProvider {
     String hasHinge(Context context);
 
     String getRunningTime();
+
+    DisplayMetrics getDisplayMetrics(Context context);
 }

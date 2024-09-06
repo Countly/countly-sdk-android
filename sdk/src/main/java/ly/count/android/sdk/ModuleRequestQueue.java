@@ -301,6 +301,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         storageProvider.esWriteCacheToStorage(callback);
     }
 
+    boolean doesBelongToCurrentAppKeyOrDeviceId(@NonNull String request) {
+        return request.contains(APP_KEY_KEY + "=" + baseInfoProvider.getAppKey()) && request.contains(DEVICE_ID_KEY + "=" + deviceIdProvider.getDeviceId());
+    }
+
     @Override
     void halt() {
         requestQueueInterface = null;

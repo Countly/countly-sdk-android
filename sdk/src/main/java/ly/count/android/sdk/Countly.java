@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.2";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.3-RC1";
 
     /**
      * Used as request meta data on every request
@@ -178,6 +178,7 @@ public class Countly {
     ModuleUserProfile moduleUserProfile = null;
     ModuleConfiguration moduleConfiguration = null;
     ModuleHealthCheck moduleHealthCheck = null;
+    ModuleContent moduleContent = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -226,6 +227,7 @@ public class Countly {
         public static final String apm = "apm";
         public static final String feedback = "feedback";
         public static final String remoteConfig = "remote-config";
+        public static final String content = "content";
         //public static final String accessoryDevices = "accessory-devices";
     }
 
@@ -564,6 +566,7 @@ public class Countly {
             moduleLocation = new ModuleLocation(this, config);
             moduleFeedback = new ModuleFeedback(this, config);
             moduleAttribution = new ModuleAttribution(this, config);
+            moduleContent = new ModuleContent(this, config);
 
             modules.clear();
             modules.add(moduleConfiguration);
@@ -581,6 +584,7 @@ public class Countly {
             modules.add(moduleLocation);
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
+            modules.add(moduleContent);
 
             modules.add(moduleHealthCheck);//set this at the end to detect any health issues with other modules before sending the report
 
@@ -882,6 +886,7 @@ public class Countly {
         moduleRequestQueue = null;
         moduleConfiguration = null;
         moduleHealthCheck = null;
+        moduleContent = null;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
@@ -1220,6 +1225,21 @@ public class Countly {
         }
 
         return moduleUserProfile.userProfileInterface;
+    }
+
+    /**
+     * Content feature interface
+     *
+     * @return content module
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     */
+    public ModuleContent.Content contents() {
+        if (!isInitialized()) {
+            L.e("Countly.sharedInstance().init must be called before accessing content");
+            return null;
+        }
+
+        return moduleContent.contentInterface;
     }
 
     public static void applicationOnCreate() {
