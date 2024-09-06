@@ -4,8 +4,8 @@
 * Added a flag (enableViewNameRecording) to add view names to each event. (Experimental!)
 * Added a flag (enableVisibilityTracking) to add app visibility info to views and events. (Experimental!)
 * Added Content feature methods:
-  - enterContentZone, to start Content checks(Experimental!)
-  - exitContentZone, to stop content checks (Experimental!)
+  * enterContentZone, to start Content checks (Experimental!)
+  * exitContentZone, to stop Content checks (Experimental!)
 
 ## 24.7.2
 * Mitigated an issue in the upload plugin that prevented the upload of a symbol file
