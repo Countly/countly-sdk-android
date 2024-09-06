@@ -1032,7 +1032,7 @@ public class CountlyConfig {
      *
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
-    public final ConfigContent contents = new ConfigContent();
+    public final ConfigContent content = new ConfigContent();
 
     /**
      * Experimental configuration interface to be used with CountlyConfig

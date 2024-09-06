@@ -30,8 +30,8 @@ public class ModuleContent extends ModuleBase {
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
-        contentUpdateInterval = config.contents.contentUpdateInterval;
-        globalContentCallback = config.contents.globalContentCallback;
+        contentUpdateInterval = config.content.contentUpdateInterval;
+        globalContentCallback = config.content.globalContentCallback;
     }
 
     void fetchContentsInternal(@NonNull String[] categories) {
