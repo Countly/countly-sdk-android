@@ -940,7 +940,7 @@ public class ModuleEventsTests {
         countly.events().recordEvent("TEST2");
 
         ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", "View1");
-        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, "TEST2");
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, "TEST1");
     }
 
     protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousViewName, String previousEventName) throws JSONException {
