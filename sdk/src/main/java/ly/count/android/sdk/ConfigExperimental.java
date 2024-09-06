@@ -11,7 +11,7 @@ public class ConfigExperimental {
      * @return ConfigExperimental instance for chaining
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
-    public ConfigExperimental enableViewNameRecording() {
+    public ConfigExperimental enablePreviousNameRecording() {
         viewNameRecordingEnabled = true;
         return this;
     }
