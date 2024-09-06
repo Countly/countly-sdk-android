@@ -196,7 +196,8 @@ public class ModuleContent extends ModuleBase {
     }
 
     protected void exitContentZoneInternal() {
-        registerForContentUpdates(new String[] {}, contentUpdateInterval * 2L); // 60 seconds initial delay
+        shouldFetchContents = false;
+        countlyTimer.stopTimer(L);
     }
 
     public class Content {
@@ -257,6 +258,15 @@ public class ModuleContent extends ModuleBase {
             }
 
             registerForContentUpdates(categories, 0);
+        }
+
+        /**
+         * Register to content updates with 1-minute initial delay
+         *
+         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes, This is for internal use only
+         */
+        protected void registerForContentZone() {
+            registerForContentUpdates(new String[] {}, contentUpdateInterval * 2L); // 60 seconds initial delay
         }
     }
 }

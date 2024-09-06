@@ -213,7 +213,7 @@ public class TransparentActivity extends Activity {
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
             finish();
             config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
-            Countly.sharedInstance().contents().exitContentZone();
+            Countly.sharedInstance().contents().registerForContentZone();
             return true;
         }
 
