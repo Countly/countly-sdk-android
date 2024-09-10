@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -625,7 +626,72 @@ public class TestUtils {
 
         validateRequiredParams(getCurrentRQ()[idx], deviceId);
         for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
-            Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
+            if (entry.getValue() instanceof Map) {
+                assertEqualsMap((Map<String, Object>) entry.getValue(), parseMap(request.get(entry.getKey())));
+            } else {
+                Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
+            }
+        }
+    }
+
+    private static Map<String, Object> parseMap(String mapCandidate) {
+        Map<String, Object> map = new ConcurrentHashMap<>();
+        try {
+            JSONObject json = new JSONObject(mapCandidate);
+            Iterator<String> keys = json.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                map.put(key, json.get(key));
+            }
+        } catch (JSONException e) {
+            Assert.fail(e.getMessage());
+        }
+
+        return map;
+    }
+
+    protected static void assertArraysEquals(Object arr1, Object arr2) {
+        // Check if both are arrays
+        if (!arr1.getClass().isArray() || !arr2.getClass().isArray()) {
+            Assert.fail("Both parameters must be arrays.");
+        }
+
+        // Handle primitive arrays
+        if (arr1 instanceof int[] && arr2 instanceof int[]) {
+            Assert.assertTrue(Arrays.equals((int[]) arr1, (int[]) arr2));
+        } else if (arr1 instanceof long[] && arr2 instanceof long[]) {
+            Assert.assertTrue(Arrays.equals((long[]) arr1, (long[]) arr2));
+        } else if (arr1 instanceof double[] && arr2 instanceof double[]) {
+            Assert.assertTrue(Arrays.equals((double[]) arr1, (double[]) arr2));
+        } else if (arr1 instanceof float[] && arr2 instanceof float[]) {
+            Assert.assertTrue(Arrays.equals((float[]) arr1, (float[]) arr2));
+        } else if (arr1 instanceof char[] && arr2 instanceof char[]) {
+            Assert.assertTrue(Arrays.equals((char[]) arr1, (char[]) arr2));
+        } else if (arr1 instanceof byte[] && arr2 instanceof byte[]) {
+            Assert.assertTrue(Arrays.equals((byte[]) arr1, (byte[]) arr2));
+        } else if (arr1 instanceof short[] && arr2 instanceof short[]) {
+            Assert.assertTrue(Arrays.equals((short[]) arr1, (short[]) arr2));
+        } else if (arr1 instanceof boolean[] && arr2 instanceof boolean[]) {
+            Assert.assertTrue(Arrays.equals((boolean[]) arr1, (boolean[]) arr2));
+        }
+        // Handle reference type arrays (like String[], Object[])
+        else if (arr1 instanceof Object[] && arr2 instanceof Object[]) {
+            Assert.assertTrue(Arrays.equals((Object[]) arr1, (Object[]) arr2));
+        }
+        // If the arrays are of different types
+        else {
+            Assert.fail("Array types do not match.");
+        }
+    }
+
+    protected static void assertEqualsMap(Map<String, Object> map1, Map<String, Object> map2) {
+        Assert.assertEquals(map1.size(), map2.size());
+        for (Map.Entry<String, Object> entry : map1.entrySet()) {
+            if (entry.getValue().getClass().isArray()) {
+                assertArraysEquals(entry.getValue(), map2.get(entry.getKey()));
+            } else {
+                Assert.assertEquals(entry.getValue(), map2.get(entry.getKey()));
+            }
         }
     }
 

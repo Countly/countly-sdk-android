@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.Map;
 import org.json.JSONException;
 import org.junit.After;
 import org.junit.Assert;
@@ -248,9 +249,10 @@ public class ModuleConsentTests {
     }
 
     protected static void validateConsentRequest(String deviceId, int idx, boolean[] consents) {
-        String consentParam = "{\"sessions\":%b,\"crashes\":%b,\"users\":%b,\"push\":%b,\"feedback\":%b,\"scrolls\":%b,\"remote-config\":%b,\"attribution\":%b,\"clicks\":%b,\"location\":%b,\"star-rating\":%b,\"events\":%b,\"views\":%b,\"apm\":%b}";
-        String consentsStr = String.format(consentParam, consents[0], consents[1], consents[2], consents[3], consents[4], consents[5], consents[6], consents[7], consents[8], consents[9], consents[10], consents[11], consents[12], consents[13]);
-        TestUtils.validateRequest(deviceId, TestUtils.map("consent", consentsStr), idx);
+        Map<String, Object> consentsMap =
+            TestUtils.map("sessions", consents[0], "crashes", consents[1], "users", consents[2], "push", consents[3], "feedback", consents[4], "scrolls", consents[5], "remote-config", consents[6], "attribution", consents[7], "clicks", consents[8], "location", consents[9], "star-rating",
+                consents[10], "events", consents[11], "views", consents[12], "apm", consents[13]);
+        TestUtils.validateRequest(deviceId, TestUtils.map("consent", consentsMap), idx);
     }
 
     protected static void validateNoConsentRequest(String deviceId, int idx) {

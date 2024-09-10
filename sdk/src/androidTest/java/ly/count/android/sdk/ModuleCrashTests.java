@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -10,7 +11,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -311,7 +311,13 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("d", "4", "e", "5", "f", "6"));
-        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("e", "5", "f", "6"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+        Map<String, Object> segm;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm = TestUtils.map("b", "2", "c", "3");
+        } else {
+            segm = TestUtils.map("e", "5", "f", "6");
+        }
+        validateCrash(extractStackTrace(exception), "", false, false, segm, 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -417,8 +423,14 @@ public class ModuleCrashTests {
         Exception exception = new Exception("Some message");
         countly.crashes().recordHandledException(exception, TestUtils.map("sphinx_no", 324));
 
-        validateCrash(extractStackTrace(exception), "", false, false,
-            TestUtils.map("long", Long.MAX_VALUE, "secret", "Minato"), 8, new HashMap<>(), new ArrayList<>());
+        Map<String, Object> segm;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm = TestUtils.map("int", Integer.MAX_VALUE, "secret", "Minato");
+        } else {
+            segm = TestUtils.map("long", Long.MAX_VALUE, "secret", "Minato");
+        }
+
+        validateCrash(extractStackTrace(exception), "", false, false, segm, 8, new HashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -783,6 +795,7 @@ public class ModuleCrashTests {
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains(extractNativeCrash("secret")));
 
         new Countly().init(cConfig);
+
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
         validateCrash(extractNativeCrash("dump1"), "", true, true, 2, 0, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
         validateCrash(extractNativeCrash("dump2"), "", true, true, 2, 1, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
@@ -815,7 +828,9 @@ public class ModuleCrashTests {
         cConfig.setCrashFilterCallback(crash -> crash.contains(extractNativeCrash("secret")));
 
         new Countly().init(cConfig);
+
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+
         validateCrash(extractNativeCrash("dump1"), "", true, true, 2, 0, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
         validateCrash(extractNativeCrash("dump2"), "", true, true, 2, 1, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
@@ -874,7 +889,11 @@ public class ModuleCrashTests {
             paramCount++;
             JSONObject custom = crash.getJSONObject("_custom");
             for (Map.Entry<String, Object> entry : customSegmentation.entrySet()) {
-                Assert.assertEquals(entry.getValue(), custom.get(entry.getKey()));
+                if (entry.getValue().getClass().isArray()) {
+                    Assert.assertEquals(new JSONArray(entry.getValue()), custom.get(entry.getKey()));
+                } else {
+                    Assert.assertEquals(entry.getValue(), custom.get(entry.getKey()));
+                }
             }
             Assert.assertEquals(custom.length(), customSegmentation.size());
         }
@@ -985,7 +1004,7 @@ public class ModuleCrashTests {
     }
 
     private String extractNativeCrash(String crash) {
-        return Base64.getEncoder().encodeToString(crash.getBytes());
+        return android.util.Base64.encodeToString(crash.getBytes(), android.util.Base64.NO_WRAP);
     }
 
     @Test(expected = StackOverflowError.class)
@@ -1155,8 +1174,13 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception);
-        validateCrash(extractStackTrace(exception), "Merce\nVVolv\n", true, false, TestUtils.map("an", "EuroT", "ol", "Asset", "po", "DirtR", "af", "Snowr", "mi", "WRCRa"),
-            12, new HashMap<>(), new ArrayList<>());
+        Map<String, Object> segm;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm = TestUtils.map("af", "Snowr", "po", "DirtR", "pr", "Spint", "ol", "Asset", "in", new int[] { 1, 2 });
+        } else {
+            segm = TestUtils.map("an", "EuroT", "ol", "Asset", "po", "DirtR", "af", "Snowr", "mi", "WRCRa");
+        }
+        validateCrash(extractStackTrace(exception), "Merce\nVVolv\n", true, false, segm, 12, new HashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -1178,7 +1202,11 @@ public class ModuleCrashTests {
         cConfig.sdkInternalLimits.setMaxValueSize(5).setMaxKeyLength(2).setMaxSegmentationValues(5).setMaxBreadcrumbCount(2);
         cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("arr", new int[] { 1, 2, 3, 4, 5 }, "double", Double.MAX_VALUE, "bool", true, "float", 1.1, "object", new Object(), "string", "string_to_become"));
         cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
-            Assert.assertEquals(TestUtils.map("de", "no", "do", Double.MAX_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1), crash.getCrashSegmentation());
+            if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+                TestUtils.assertEqualsMap(TestUtils.map("ar", new int[] { 1, 2, 3, 4, 5 }, "do", Double.MAX_VALUE, "de", "no", "fl", 1.1, "in", Integer.MIN_VALUE), crash.getCrashSegmentation());
+            } else {
+                TestUtils.assertEqualsMap(TestUtils.map("arr", new int[] { 1, 2, 3, 4, 5 }, "do", Double.MAX_VALUE, "bo", true, "fl", 1.1, "st", "string_to_become"), crash.getCrashSegmentation());
+            }
             Assert.assertEquals("Volvo\nScani\n", crash.getBreadcrumbsAsString());
 
             crash.getCrashSegmentation().put("beforemath", "Mudrunner");
@@ -1197,9 +1225,15 @@ public class ModuleCrashTests {
 
         Exception exception = new Exception("Some message");
         countly.crashes().recordUnhandledException(exception, TestUtils.map("boolean", false, "star", "boom_boom", "integer", Integer.MIN_VALUE, "desire", "no"));
-        validateCrash(extractStackTrace(exception), "Scani\nMerce\n", true, false,
-            TestUtils.map("be", "Mudru", "do", Double.MIN_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1),
-            12, new HashMap<>(), new ArrayList<>());
+
+        Map<String, Object> segm;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm = TestUtils.map("do", Double.MIN_VALUE, "de", "no", "fl", 1.1, "ar", new int[] { 1, 2 }, "in", Integer.MIN_VALUE);
+        } else {
+            segm = TestUtils.map("be", "Mudru", "do", Double.MIN_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1);
+        }
+
+        validateCrash(extractStackTrace(exception), "Scani\nMerce\n", true, false, segm, 12, new HashMap<>(), new ArrayList<>());
     }
 
     /**

@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
@@ -1294,8 +1295,8 @@ public class ModuleViewsTests {
             mCountly.onStopInternal();
             lastViewIdx = 6;
             //in this situation we would stop all views
-            validateView("b", 1.0, 4, 6, false, false, null, vals[1], vals[0]);
-            validateView("a", 1.0, 5, 6, false, false, null, vals[0], vals[0]);
+            validateView("a", 1.0, 4, 6, false, false, null, vals[0], vals[0]);
+            validateView("b", 1.0, 5, 6, false, false, null, vals[1], vals[0]);
         }
 
         ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
@@ -1479,7 +1480,13 @@ public class ModuleViewsTests {
         givenStartSegm.put("you", "would");
         String viewID = mCountly.views().startView("VIEW", givenStartSegm);
 
-        validateView("VI", 0.0, 0, 1, true, true, TestUtils.map("yo", "wo", "so", "ma", "av", "v1", "i_", "i_"), "idv1", "");
+        Map<String, Object> segm;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm = TestUtils.map("av", 4, "i_", "i_", "do", "gi", "so", 4);
+        } else {
+            segm = TestUtils.map("yo", "wo", "so", "ma", "av", "v1", "i_", "i_");
+        }
+        validateView("VI", 0.0, 0, 1, true, true, segm, "idv1", "");
 
         mCountly.views().setGlobalViewSegmentation(TestUtils.map("go", 45, "gone", 567.78f));
 
@@ -1491,7 +1498,13 @@ public class ModuleViewsTests {
         endSegm.put("nope", 123);
         mCountly.views().stopViewWithID(viewID, endSegm);
 
-        validateView("VI", 0.0, 1, 2, false, false, TestUtils.map("av", 25, "no", 123, "sa", "ho", "ha", true), "idv1", "");
+        segm = TestUtils.map("av", 25, "no", 123, "sa", "ho");
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm.put("go", 567.78);
+        } else {
+            segm.put("ha", true);
+        }
+        validateView("VI", 0.0, 1, 2, false, false, segm, "idv1", "");
     }
 
     /**

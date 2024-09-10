@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.os.Build;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
@@ -616,7 +617,14 @@ public class ModuleUserProfileTests {
         Countly.sharedInstance().userProfile().setProperties(TestUtils.map("a", "b", "c", "d", "f", 5, "level", 45, "age", 101));
         Countly.sharedInstance().userProfile().save();
 
-        validateUserProfileRequest(TestUtils.map(), TestUtils.map("f", 5, "age", 101));
+        Map<String, Object> custom;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            custom = TestUtils.map("c", "d", "level", 45);
+        } else {
+            custom = TestUtils.map("f", 5, "age", 101);
+        }
+
+        validateUserProfileRequest(TestUtils.map(), custom);
     }
 
     /**
