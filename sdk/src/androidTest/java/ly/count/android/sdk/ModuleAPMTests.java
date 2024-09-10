@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.os.Build;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,7 +105,13 @@ public class ModuleAPMTests {
 
         String metricString = ModuleAPM.customMetricsToString(customMetrics);
 
-        Assert.assertEquals(",\"a11\":2,\"aaa\":23,\"a351\":22,\"a1__f1\":24,\"a114\":21", metricString);
+        String expected;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            expected = ",\"a1__f1\":24,\"aaa\":23,\"a11\":2,\"a114\":21,\"a351\":22";
+        } else {
+            expected = ",\"a11\":2,\"aaa\":23,\"a351\":22,\"a1__f1\":24,\"a114\":21";
+        }
+        Assert.assertEquals(expected, metricString);
     }
 
     @Test
