@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Looper;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -267,6 +268,9 @@ public class ModuleFeedback extends ModuleBase {
 
                     ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
                     webView.getSettings().setJavaScriptEnabled(true);
+                    webView.clearCache(true);
+                    webView.clearHistory();
+                    webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                     webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
                     webView.loadUrl(preparedWidgetUrl);
                     webView.requestFocus();

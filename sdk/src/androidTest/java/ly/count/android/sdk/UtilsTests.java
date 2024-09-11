@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.os.Build;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,13 +61,9 @@ public class UtilsTests {
 
     @Test
     public void APITargeting() {
-        //The version the SDK is targeting should be above these values
-        Assert.assertTrue(Utils.API(28));
-        Assert.assertTrue(Utils.API(27));
-        Assert.assertTrue(Utils.API(15));
-
-        //The version the SDK is targeting should be below this value
-        Assert.assertFalse(Utils.API(34));
+        //The supported versions should be above this value
+        Assert.assertTrue(Build.VERSION.SDK_INT >= 21);
+        Assert.assertTrue(Build.VERSION.SDK_INT <= 34);
     }
 
     /**

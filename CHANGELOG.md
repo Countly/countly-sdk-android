@@ -1,6 +1,14 @@
-## XX.XX.XX
-* The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
-* Added visibility tracking option to views and events. (Experimental!)
+## XX.XX.XX
+* Disabled caching for webviews.
+
+## 24.7.3
+* Automatic view pause/resumes are changed with stop/start for better data consistency.
+* Added the config interface 'experimental' to group experimental features.
+* Added a flag (enablePreviousNameRecording) to add previous event and view names as segmentation. (Experimental!)
+* Added a flag (enableVisibilityTracking) to add app visibility info to views and events. (Experimental!)
+* Added Content feature methods:
+  * enterContentZone, to start Content checks (Experimental!)
+  * exitContentZone, to stop Content checks (Experimental!)
 
 ## 24.7.2
 * Mitigated an issue in the upload plugin that prevented the upload of a symbol file
