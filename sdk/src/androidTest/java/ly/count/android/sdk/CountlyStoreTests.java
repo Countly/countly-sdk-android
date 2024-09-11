@@ -92,7 +92,7 @@ public class CountlyStoreTests {
      * @param cs
      */
     void RecordEvent(Event e, CountlyStore cs) {
-        cs.recordEventToEventQueue(e.key, e.segmentation, e.count, e.sum, e.dur, e.timestamp, e.hour, e.dow, e.id, e.pvid, e.cvid, e.peid, e.cly_pvn, e.cly_cvn);
+        cs.recordEventToEventQueue(e.key, e.segmentation, e.count, e.sum, e.dur, e.timestamp, e.hour, e.dow, e.id, e.pvid, e.cvid, e.peid, e.cly_pvn, e.cly_pen);
     }
 
     /**

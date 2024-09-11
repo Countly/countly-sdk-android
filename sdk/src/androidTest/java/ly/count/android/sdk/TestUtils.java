@@ -44,7 +44,7 @@ public class TestUtils {
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
     public final static String SDK_NAME = "java-native-android";
-    public final static String SDK_VERSION = "24.7.2";
+    public final static String SDK_VERSION = "24.7.3";
     public static final int MAX_THREAD_COUNT_PER_STACK_TRACE = 50;
 
     public static class Activity2 extends Activity {

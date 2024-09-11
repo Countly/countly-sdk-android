@@ -12,6 +12,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.RatingBar;
@@ -515,6 +516,9 @@ public class ModuleRatings extends ModuleBase {
                                 L.d("[ModuleRatings] Calling on main thread");
 
                                 RatingDialogWebView webView = new RatingDialogWebView(activity);
+                                webView.clearCache(true);
+                                webView.clearHistory();
+                                webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                                 webView.getSettings().setJavaScriptEnabled(true);
                                 webView.loadUrl(ratingWidgetUrl);
 

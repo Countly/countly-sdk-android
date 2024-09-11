@@ -31,6 +31,7 @@ public class ModuleConsentTests {
         Countly.CountlyFeatureNames.feedback,
         Countly.CountlyFeatureNames.clicks,
         Countly.CountlyFeatureNames.scrolls,
+        Countly.CountlyFeatureNames.content,
     };
 
     @Before
@@ -256,11 +257,11 @@ public class ModuleConsentTests {
     }
 
     protected static void validateNoConsentRequest(String deviceId, int idx) {
-        validateConsentRequest(deviceId, idx, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false });
+        validateConsentRequest(deviceId, idx, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
     }
 
     protected static void validateAllConsentRequest(String deviceId, int idx) {
-        validateConsentRequest(deviceId, idx, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, true, true });
+        validateConsentRequest(deviceId, idx, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, true, true, true });
     }
 
     // TODO test that makes sure that the consent change request is created correctly

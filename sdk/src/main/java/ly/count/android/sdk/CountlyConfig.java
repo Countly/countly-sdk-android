@@ -1000,6 +1000,7 @@ public class CountlyConfig {
      * With this mode enable, the SDK will acquire additional configuration from it's Countly server
      *
      * @return Returns the same config object for convenient linking
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public synchronized CountlyConfig enableServerConfiguration() {
         serverConfigurationEnabled = true;
@@ -1027,7 +1028,16 @@ public class CountlyConfig {
     public final ConfigCrashes crashes = new ConfigCrashes();
 
     /**
-     * Config for the experimental features
+     * Content configuration interface to be used with CountlyConfig
+     *
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     */
+    public final ConfigContent content = new ConfigContent();
+
+    /**
+     * Experimental configuration interface to be used with CountlyConfig
+     *
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public final ConfigExperimental experimental = new ConfigExperimental();
 }
