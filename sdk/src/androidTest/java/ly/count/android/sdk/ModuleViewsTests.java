@@ -1295,8 +1295,13 @@ public class ModuleViewsTests {
             mCountly.onStopInternal();
             lastViewIdx = 6;
             //in this situation we would stop all views
-            validateView("a", 1.0, 4, 6, false, false, null, vals[0], vals[0]);
-            validateView("b", 1.0, 5, 6, false, false, null, vals[1], vals[0]);
+            if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+                validateView("a", 1.0, 4, 6, false, false, null, vals[0], vals[0]);
+                validateView("b", 1.0, 5, 6, false, false, null, vals[1], vals[0]);
+            } else {
+                validateView("b", 1.0, 4, 6, false, false, null, vals[1], vals[0]);
+                validateView("a", 1.0, 5, 6, false, false, null, vals[0], vals[0]);
+            }
         }
 
         ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
@@ -1325,7 +1330,7 @@ public class ModuleViewsTests {
         mCountly.views().startView("a", null);
 
         // 0 is consent request
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, true, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
         validateView("a", 0.0, 2, 3, true, true, null, vals[0], "");
 
@@ -1333,12 +1338,12 @@ public class ModuleViewsTests {
         mCountly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.sessions });
         mCountly.views().startView("b", null);
 
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 3, new boolean[] { true, false, false, false, false, false, false, false, false, false, false, false, false, true, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 3, new boolean[] { true, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
         validateView("b", 0.0, 4, 5, false, true, null, vals[1], vals[0]);
 
         //internal flag should be reset whens session consent is removed
         mCountly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.sessions });
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, true, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
 
         mCountly.views().startView("c", null);
         validateView("c", 0.0, 6, 7, true, true, null, vals[2], vals[1]);

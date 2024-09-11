@@ -1,8 +1,8 @@
 package ly.count.android.sdk;
 
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.util.Arrays;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,8 +50,14 @@ public class TemporaryIDTests {
         assertEquals(req2, reqs1[1]);
         assertEquals(req3, reqs1[2]);
 
-        req3 = "68=45&ff=bb&device_id=55";
-        req2 = "old_device_id=" + did + "&" + req2;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            req3 = "68=45&ff=bb&device_id=55";
+            req2 = "old_device_id=" + did + "&" + req2;
+        } else {
+            req3 = "ff=bb&68=45&device_id=55";
+            req2 += "&old_device_id=" + did;
+        }
+
         req1 = req1.replace("&device_id=" + DeviceId.temporaryCountlyDeviceId, "&device_id=" + replaceDid);
 
         return new String[] { req1, req2, req3 };

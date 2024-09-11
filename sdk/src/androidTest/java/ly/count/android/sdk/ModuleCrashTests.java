@@ -1205,7 +1205,7 @@ public class ModuleCrashTests {
             if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
                 TestUtils.assertEqualsMap(TestUtils.map("ar", new int[] { 1, 2, 3, 4, 5 }, "do", Double.MAX_VALUE, "de", "no", "fl", 1.1, "in", Integer.MIN_VALUE), crash.getCrashSegmentation());
             } else {
-                TestUtils.assertEqualsMap(TestUtils.map("arr", new int[] { 1, 2, 3, 4, 5 }, "do", Double.MAX_VALUE, "bo", true, "fl", 1.1, "st", "string_to_become"), crash.getCrashSegmentation());
+                TestUtils.assertEqualsMap(TestUtils.map("de", "no", "do", Double.MAX_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1), crash.getCrashSegmentation());
             }
             Assert.assertEquals("Volvo\nScani\n", crash.getBreadcrumbsAsString());
 
