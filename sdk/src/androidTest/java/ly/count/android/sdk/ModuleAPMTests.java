@@ -277,9 +277,15 @@ public class ModuleAPMTests {
         mCountly.apm().endTrace(key, customMetrics);
 
         customMetrics.clear();
-        customMetrics.put("look_", 3);
-        customMetrics.put("a_tra", 2);
-        customMetrics.put("micro", 4);
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            customMetrics.put("micro", 4);
+            customMetrics.put("berse", 5);
+            customMetrics.put("look_", 3);
+        } else {
+            customMetrics.put("look_", 3);
+            customMetrics.put("a_tra", 2);
+            customMetrics.put("micro", 4);
+        }
         verify(requestQueueProvider).sendAPMCustomTrace(eq("a_tra"), anyLong(), anyLong(), anyLong(), eq(customMetricsToString(customMetrics)));
     }
 
@@ -375,6 +381,7 @@ public class ModuleAPMTests {
             ret.append(value);
         }
 
+        System.err.println("ret: " + ret.toString());
         return ret.toString();
     }
 }
