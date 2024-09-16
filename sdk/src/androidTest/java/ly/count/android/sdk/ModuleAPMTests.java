@@ -381,7 +381,6 @@ public class ModuleAPMTests {
             ret.append(value);
         }
 
-        System.err.println("ret: " + ret.toString());
         return ret.toString();
     }
 }
