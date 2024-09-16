@@ -30,6 +30,8 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
     private static final String URL_START = "https://countly_action_event";
+    private static final String CONTENT_SHOWN_KEY = "[CLY]_content_shown";
+    private static final String CONTENT_INTERACTED_KEY = "[CLY]_content_interacted";
     int currentOrientation = 0;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
@@ -279,8 +281,7 @@ public class TransparentActivity extends Activity {
                     JSONObject eventJson = event.getJSONObject(i);
                     Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: [" + eventJson.toString() + "]");
 
-                    if (!eventJson.has("sg")) {
-                        Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event: [" + eventJson + "]");
+                    if (!validateEvent(eventJson)) {
                         continue;
                     }
 
@@ -304,6 +305,28 @@ public class TransparentActivity extends Activity {
         } else {
             Log.w(Countly.TAG, "[TransparentActivity] eventAction, event action is missing event");
         }
+    }
+
+    private boolean validateEvent(JSONObject eventJson) {
+        if (!eventJson.has("key")) {
+            Log.w(Countly.TAG, "[TransparentActivity] validateEvent, event JSON is missing key event: [" + eventJson + "]");
+            return false;
+        }
+
+        if (!eventJson.has("sg")) {
+            Log.w(Countly.TAG, "[TransparentActivity] validateEvent, event JSON is missing segmentation data event: [" + eventJson + "]");
+            return false;
+        }
+
+        String eventKey = eventJson.optString("key", "");
+        boolean isValidKey = CONTENT_SHOWN_KEY.equals(eventKey) || CONTENT_INTERACTED_KEY.equals(eventKey);
+
+        if (!isValidKey) {
+            Log.w(Countly.TAG, "[TransparentActivity] validateEvent, event JSON key is not valid event: [" + eventJson + "]");
+            return false;
+        }
+
+        return true;
     }
 
     private Map<String, Object> splitQuery(String url) {
