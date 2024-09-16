@@ -1853,7 +1853,11 @@ public class ModuleViewsTests {
             viewSegmentation.putAll(customSegmentation);
         }
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", pvn, null, idx, size, 0, 1);
+        if (pvn != null) {
+            viewSegmentation.put("cly_pvn", pvn);
+        }
+
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
     }
 
     //todo extract orientation tests

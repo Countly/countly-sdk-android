@@ -150,10 +150,8 @@ public class ModuleEventsTests {
         ArgumentCaptor<String> arg8 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg9 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> arg10 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> arg11 = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<String> arg12 = ArgumentCaptor.forClass(String.class);
 
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture(), arg11.capture(), arg12.capture());
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), arg7.capture(), arg8.capture(), arg9.capture(), arg10.capture());
 
         if (count != null) {
             Assert.assertEquals(count, arg1.getValue());
@@ -196,8 +194,7 @@ public class ModuleEventsTests {
     public void startEndEvent_noSegments() throws InterruptedException {
         boolean res = mCountly.events().startEvent(eventKey);
         Assert.assertTrue(res);
-        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), any(String.class), any(String.class), any(String.class),
-            any(String.class), any(String.class));
+        verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), any(String.class), any(String.class), any(String.class));
 
         Assert.assertEquals(1, ModuleEvents.timedEvents.size());
         Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
@@ -215,7 +212,7 @@ public class ModuleEventsTests {
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
 
         ArgumentCaptor<Map> argS = ArgumentCaptor.forClass(Map.class);
-        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), argS.capture(), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""), isNull(String.class), isNull(String.class));
+        verify(eventQueueProvider).recordEventToEventQueue(eq(eventKey), argS.capture(), eq(1), eq(0.0d), argD.capture(), arg1.capture(), arg2.capture(), arg3.capture(), any(String.class), isNull(String.class), eq(""), eq(""));
 
         Assert.assertEquals(startEvent.timestamp, (long) arg1.getValue());
         Assert.assertEquals(startEvent.hour, (int) arg2.getValue());
@@ -361,14 +358,14 @@ public class ModuleEventsTests {
         Map<String, Object> segm3 = new HashMap<>(segm1);
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
 
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm2), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), eq(""), isNull(String.class), isNull(String.class));
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm2), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), eq(""));
         eqp = TestUtils.setEventQueueProviderToMock(mCountly, mock(EventQueueProvider.class));
 
         segm3.clear();
         segm3.putAll(segm1);
 
         mCountly.config_.eventProvider.recordEventInternal(eventKey, segm3, 123, 321.22d, 342.32d, null, null);
-        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), any(String.class), isNull(String.class), isNull(String.class));
+        verify(eqp).recordEventToEventQueue(eq(eventKey), eq(segm3), eq(123), eq(321.22d), eq(342.32d), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), isNull(String.class), eq(""), any(String.class));
     }
 
     /**
@@ -897,19 +894,19 @@ public class ModuleEventsTests {
         Countly countly = new Countly().init(countlyConfig);
 
         countly.events().recordEvent("TEST");
-        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", null, null);
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", null);
 
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
         ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
-        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, null);
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null);
 
         countly.views().startView("View2");
         countly.events().recordEvent("TEST2");
 
         ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
-        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, null);
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null);
     }
 
     /**
@@ -928,23 +925,27 @@ public class ModuleEventsTests {
         Countly countly = new Countly().init(countlyConfig);
 
         countly.events().recordEvent("TEST");
-        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", null, "");
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", "");
 
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
         ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
-        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, "TEST");
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", "TEST");
 
         countly.views().startView("View2");
         countly.events().recordEvent("TEST2");
 
         ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", "View1");
-        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, "TEST1");
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", "TEST1");
     }
 
-    protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousViewName, String previousEventName) throws JSONException {
-        validateEventInRQ(TestUtils.commonDeviceId, eventName, TestUtils.map(), 1, 0.0, 0.0, "_CLY_", previousViewId, currentViewId, "_CLY_", previousViewName, previousEventName, idx, rqCount, 0, 1);
+    protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousEventName) throws JSONException {
+        Map<String, Object> segmentation = TestUtils.map();
+        if (previousEventName != null) {
+            segmentation.put("cly_pen", previousEventName);
+        }
+        validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", previousViewId, currentViewId, "_CLY_", idx, rqCount, 0, 1);
     }
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
@@ -955,7 +956,7 @@ public class ModuleEventsTests {
         validateEventInRQ(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, 0, 1);
     }
 
-    protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, String pvn, String pen, int idx, int rqCount, int eventIdx, int eventCount)
+    protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventIdx, int eventCount)
         throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         if (rqCount > -1) {
@@ -991,13 +992,6 @@ public class ModuleEventsTests {
         validateId(pvid, event.optString("pvid", ""), "Previous View ID");
         validateId(cvid, event.optString("cvid", ""), "Current View ID");
         validateId(peid, event.optString("peid", ""), "Previous Event ID");
-
-        Assert.assertEquals(pvn, event.optString("cly_pvn", null));
-        Assert.assertEquals(pen, event.optString("cly_pen", null));
-    }
-
-    protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {
-        validateEventInRQ(deviceId, eventName, expectedSegmentation, count, sum, duration, id, pvid, cvid, peid, null, null, idx, rqCount, eventIdx, eventCount);
     }
 
     private static void validateId(String id, String gonnaValidate, String name) {
