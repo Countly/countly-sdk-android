@@ -30,8 +30,7 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
     private static final String URL_START = "https://countly_action_event";
-    private static final String CONTENT_SHOWN_KEY = "[CLY]_content_shown";
-    private static final String CONTENT_INTERACTED_KEY = "[CLY]_content_interacted";
+
     int currentOrientation = 0;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
@@ -300,8 +299,6 @@ public class TransparentActivity extends Activity {
                     Log.e(Countly.TAG, "[TransparentActivity] eventAction, Failed to parse event JSON", e);
                 }
             }
-
-            Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
         } else {
             Log.w(Countly.TAG, "[TransparentActivity] eventAction, event action is missing event");
         }
@@ -319,7 +316,7 @@ public class TransparentActivity extends Activity {
         }
 
         String eventKey = eventJson.optString("key", "");
-        boolean isValidKey = CONTENT_SHOWN_KEY.equals(eventKey) || CONTENT_INTERACTED_KEY.equals(eventKey);
+        boolean isValidKey = ModuleContent.CONTENT_INTERACTED_KEY.equals(eventKey) || ModuleContent.CONTENT_SHOWN_KEY.equals(eventKey);
 
         if (!isValidKey) {
             Log.w(Countly.TAG, "[TransparentActivity] validateEvent, event JSON key is not valid event: [" + eventJson + "]");

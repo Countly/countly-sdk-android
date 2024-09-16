@@ -186,6 +186,13 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
+            case ModuleContent.CONTENT_INTERACTED_KEY:
+            case ModuleContent.CONTENT_SHOWN_KEY:
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                }
+                break;
             default:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
                     String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");

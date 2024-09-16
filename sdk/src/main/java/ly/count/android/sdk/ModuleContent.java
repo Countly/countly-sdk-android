@@ -22,6 +22,8 @@ public class ModuleContent extends ModuleBase {
     private final int contentUpdateInterval;
     private final ContentCallback globalContentCallback;
     static int waitForDelay = 0;
+    static final String CONTENT_SHOWN_KEY = "[CLY]_content_shown";
+    static final String CONTENT_INTERACTED_KEY = "[CLY]_content_interacted";
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
