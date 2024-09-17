@@ -220,8 +220,9 @@ public class scSE_SessionsTests {
         validateSessionEndRequest(3, 2, "newID");
 
         validateSessionBeginRequest(4, "newID_2");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 5);
         // orientation request
+        isOrientationRequest = TestUtils.getCurrentRQ()[5].containsKey("events");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), isOrientationRequest ? 6 : 5);
         validateSessionEndRequest(7, 2, "newID");
 
         validateSessionBeginRequest(8, "newID_2");
@@ -386,7 +387,9 @@ public class scSE_SessionsTests {
 
     private void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
         TestUtils.validateRequest(deviceId, TestUtils.map("consent",
-            "{\"sessions\":" + consentForSession + ",\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"), idx);
+            "{\"sessions\":"
+                + consentForSession
+                + ",\"crashes\":false,\"users\":false,\"push\":false,\"content\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"), idx);
     }
 
     private void validateRequest(Map<String, Object> expectedExtras, int idx) {

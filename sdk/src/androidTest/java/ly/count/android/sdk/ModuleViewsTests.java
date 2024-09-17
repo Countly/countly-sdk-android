@@ -1324,7 +1324,7 @@ public class ModuleViewsTests {
         mCountly.views().startView("a", null);
 
         // 0 is consent request
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, true, false });
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
         validateView("a", 0.0, 2, 3, true, true, null, vals[0], "");
 
@@ -1332,12 +1332,12 @@ public class ModuleViewsTests {
         mCountly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.sessions });
         mCountly.views().startView("b", null);
 
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 3, new boolean[] { true, false, false, false, false, false, false, false, false, false, false, false, true, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 3, new boolean[] { true, false, false, false, false, false, false, false, false, false, false, false, false, true, false });
         validateView("b", 0.0, 4, 5, false, true, null, vals[1], vals[0]);
 
         //internal flag should be reset whens session consent is removed
         mCountly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.sessions });
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, true, false });
 
         mCountly.views().startView("c", null);
         validateView("c", 0.0, 6, 7, true, true, null, vals[2], vals[1]);
@@ -1816,7 +1816,32 @@ public class ModuleViewsTests {
         TestUtils.assertRQSize(8);
     }
 
+    /**
+     * "startView" with enabled view name recording
+     * Validate that the previous view name is recorded when a new view is started
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordView_previousViewName() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.experimental.enablePreviousNameRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.views().startView("test");
+        validateView("test", 0.0, 0, 1, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
+
+        countly.views().startView("test2");
+        validateView("test2", 0.0, 1, 2, false, true, TestUtils.map(), "_CLY_", "_CLY_", "test");
+    }
+
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {
+        validateView(viewName, viewDuration, idx, size, start, visit, customSegmentation, id, pvid, null);
+    }
+
+    static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid, String pvn) throws JSONException {
         Map<String, Object> viewSegmentation = TestUtils.map("name", viewName, "segment", "Android");
         if (start) {
             viewSegmentation.put("start", "1");
@@ -1828,7 +1853,7 @@ public class ModuleViewsTests {
             viewSegmentation.putAll(customSegmentation);
         }
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", pvn, null, idx, size, 0, 1);
     }
 
     //todo extract orientation tests

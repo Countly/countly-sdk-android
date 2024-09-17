@@ -29,7 +29,7 @@ public class ModuleBaseTests {
     //making sure all needed modules are added
     @Test
     public void checkup() {
-        Assert.assertEquals(16, mCountly.modules.size());
+        Assert.assertEquals(17, mCountly.modules.size());
     }
 
     //just making sure nothing throws exceptions
