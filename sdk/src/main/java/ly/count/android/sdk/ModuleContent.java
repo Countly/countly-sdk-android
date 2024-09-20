@@ -126,7 +126,7 @@ public class ModuleContent extends ModuleBase {
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
-        boolean success = response.optBoolean("result", false);
+        boolean success = response.optString("result", "error").equals("success");
         JSONArray content = response.optJSONArray("content");
         return success && content != null && content.length() > 0;
     }
