@@ -13,6 +13,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     final static String VISIBILITY_KEY = "cly_v";
     final static String PREVIOUS_EVENT_NAME_KEY = "cly_pen";
     final static String PREVIOUS_VIEW_NAME_KEY = "cly_pvn";
+    final static String CURRENT_VIEW_NAME_KEY = "cly_cvn";
 
     //interface for SDK users
     final Events eventsInterface;
@@ -123,6 +124,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
         String pvn = null;
         String pen = null;
+        String cvn = null;
 
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
@@ -136,8 +138,12 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             cvid = viewIdProvider.getCurrentViewId();
             if (viewNameRecordingEnabled) {
                 pen = previousEventName;
+                cvn = _cly.moduleViews.currentViewName;
                 if (pen == null) {
                     pen = "";
+                }
+                if (cvn == null) {
+                    cvn = "";
                 }
             }
         }
@@ -223,6 +229,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
 
                     if (viewNameRecordingEnabled) {
+                        segmentation.put(CURRENT_VIEW_NAME_KEY, cvn);
                         segmentation.put(PREVIOUS_EVENT_NAME_KEY, pen);
                     }
 
