@@ -1,6 +1,8 @@
 ## XX.XX.XX
 * Disabled caching for webviews.
 
+* Mitigated an issue where content fetching was enabled after initialization of the SDK.
+
 ## 24.7.3
 * Automatic view pause/resumes are changed with stop/start for better data consistency.
 * Added the config interface 'experimental' to group experimental features.
