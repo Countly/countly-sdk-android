@@ -1,5 +1,6 @@
 ## XX.XX.XX
 * Disabled caching for webviews.
+* Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
 
 ## 24.7.3
 * Automatic view pause/resumes are changed with stop/start for better data consistency.
