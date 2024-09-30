@@ -2,6 +2,8 @@
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
 
+* Mitigated an issue where session was starting after without merge while app was in background.
+
 ## 24.7.3
 * Automatic view pause/resumes are changed with stop/start for better data consistency.
 * Added the config interface 'experimental' to group experimental features.
