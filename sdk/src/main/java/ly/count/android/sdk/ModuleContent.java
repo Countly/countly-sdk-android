@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -195,11 +194,6 @@ public class ModuleContent extends ModuleBase {
         if (withoutMerge) {
             optOutFromContent();
         }
-    }
-
-    @Override
-    void initFinished(@NotNull CountlyConfig config) {
-        registerForContentUpdates(new String[] {});
     }
 
     protected void exitContentZoneInternal() {
