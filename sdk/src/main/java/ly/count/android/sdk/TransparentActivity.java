@@ -249,19 +249,26 @@ public class TransparentActivity extends Activity {
             return;
         }
         try {
+            final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+            final Display display = wm.getDefaultDisplay();
+            final DisplayMetrics metrics = new DisplayMetrics();
+            display.getMetrics(metrics);
+
+            float density = metrics.density;
+
             JSONObject resizeMeJson = (JSONObject) resizeMe;
             Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: [" + resizeMeJson + "]");
             JSONObject portrait = resizeMeJson.getJSONObject("p");
             JSONObject landscape = resizeMeJson.getJSONObject("l");
-            configPortrait.x = portrait.getInt("x");
-            configPortrait.y = portrait.getInt("y");
-            configPortrait.width = portrait.getInt("w");
-            configPortrait.height = portrait.getInt("h");
+            configPortrait.x = (int) Math.ceil(portrait.getInt("x") * density);
+            configPortrait.y = (int) Math.ceil(portrait.getInt("y") * density);
+            configPortrait.width = (int) Math.ceil(portrait.getInt("w") * density);
+            configPortrait.height = (int) Math.ceil(portrait.getInt("h") * density);
 
-            configLandscape.x = landscape.getInt("x");
-            configLandscape.y = landscape.getInt("y");
-            configLandscape.width = landscape.getInt("w");
-            configLandscape.height = landscape.getInt("h");
+            configLandscape.x = (int) Math.ceil(landscape.getInt("x") * density);
+            configLandscape.y = (int) Math.ceil(landscape.getInt("y") * density);
+            configLandscape.width = (int) Math.ceil(landscape.getInt("w") * density);
+            configLandscape.height = (int) Math.ceil(landscape.getInt("h") * density);
 
             changeOrientationInternal();
         } catch (JSONException e) {

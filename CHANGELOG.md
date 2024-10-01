@@ -4,6 +4,9 @@
 
 * Mitigated an issue where content fetching was enabled after initialization of the SDK.
 
+* Fixed an issue where the validation of the parameters during content retrieval was improper.
+* Mitigated an issue that density calculation was missing while resizing content.
+
 ## 24.7.3
 * Automatic view pause/resumes are changed with stop/start for better data consistency.
 * Added the config interface 'experimental' to group experimental features.
