@@ -6,12 +6,12 @@ plugins {
 }
 
 android {
-  compileSdkVersion 33
+  compileSdkVersion 35
 
   defaultConfig {
     applicationId "ly.count.android.demo.kotlin"
     minSdk 21
-    targetSdkVersion 34
+    targetSdkVersion 35
     versionCode 1
     versionName "1.0"
 
