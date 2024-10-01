@@ -2,7 +2,7 @@
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
 
-* Mitigated an issue where the session could have started after without merge while the app could be in the background.
+* Mitigated an issue where a session could have started while the app was in the background when the device ID was changed (non-merge).
 * Mitigated an issue where content fetching was enabled after initialization of the SDK.
 
 ## 24.7.3
