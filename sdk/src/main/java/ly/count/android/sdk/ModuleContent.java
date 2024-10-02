@@ -125,18 +125,19 @@ public class ModuleContent extends ModuleBase {
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
-        boolean success = response.optString("result", "error").equals("success");
-        JSONArray content = response.optJSONArray("content");
-        return success && content != null && content.length() > 0;
+        return response.has("geo");
+        //boolean success = response.optString("result", "error").equals("success");
+        //JSONArray content = response.optJSONArray("content");
+        //return success && content != null && content.length() > 0;
     }
 
     @NonNull
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         JSONArray contents = response.optJSONArray("content");
-        assert contents != null;
+        //assert contents != null; TODO enable later
 
-        JSONObject contentObj = contents.optJSONObject(0);
+        JSONObject contentObj = response; //contents.optJSONObject(0); TODO this will be changed
         assert contentObj != null;
 
         String content = contentObj.optString("html");
