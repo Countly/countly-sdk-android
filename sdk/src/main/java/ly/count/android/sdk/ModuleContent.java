@@ -139,12 +139,12 @@ public class ModuleContent extends ModuleBase {
         JSONObject contentObj = contents.optJSONObject(0);
         assert contentObj != null;
 
-        String content = contentObj.optString("pathToHtml");
-        JSONObject coordinates = contentObj.optJSONObject("placementCoordinates");
+        String content = contentObj.optString("html");
+        JSONObject coordinates = contentObj.optJSONObject("geo");
 
         assert coordinates != null;
-        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "portrait", content));
-        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, extractOrientationPlacements(coordinates, displayMetrics.density, "landscape", content));
+        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "p", content));
+        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, extractOrientationPlacements(coordinates, displayMetrics.density, "l", content));
 
         return placementCoordinates;
     }
@@ -155,8 +155,8 @@ public class ModuleContent extends ModuleBase {
             assert orientationPlacements != null;
             int x = orientationPlacements.optInt("x");
             int y = orientationPlacements.optInt("y");
-            int w = orientationPlacements.optInt("width");
-            int h = orientationPlacements.optInt("height");
+            int w = orientationPlacements.optInt("w");
+            int h = orientationPlacements.optInt("h");
             L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
