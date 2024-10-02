@@ -2,10 +2,9 @@
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
 
-* Mitigated an issue where content fetching was enabled after initialization of the SDK.
-
 * Fixed an issue where the validation of the parameters during content retrieval was improper.
 * Mitigated an issue that density calculation was missing while resizing content.
+* Mitigated an issue where content fetching was enabled after initialization of the SDK.
 
 ## 24.7.3
 * Automatic view pause/resumes are changed with stop/start for better data consistency.
