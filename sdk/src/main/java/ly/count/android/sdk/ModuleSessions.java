@@ -177,7 +177,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void deviceIdChanged(boolean withoutMerge) {
-        if (!manualSessionControlEnabled && withoutMerge) {
+        if (!manualSessionControlEnabled && withoutMerge && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             L.d("[ModuleSessions] deviceIdChanged, automatic session control enabled and device id changed without merge, starting a new session");
             beginSessionInternal();
         }
