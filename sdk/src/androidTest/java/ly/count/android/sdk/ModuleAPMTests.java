@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.os.Build;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
@@ -104,7 +105,13 @@ public class ModuleAPMTests {
 
         String metricString = ModuleAPM.customMetricsToString(customMetrics);
 
-        Assert.assertEquals(",\"a11\":2,\"aaa\":23,\"a351\":22,\"a1__f1\":24,\"a114\":21", metricString);
+        String expected;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            expected = ",\"a1__f1\":24,\"aaa\":23,\"a11\":2,\"a114\":21,\"a351\":22";
+        } else {
+            expected = ",\"a11\":2,\"aaa\":23,\"a351\":22,\"a1__f1\":24,\"a114\":21";
+        }
+        Assert.assertEquals(expected, metricString);
     }
 
     @Test
@@ -270,9 +277,15 @@ public class ModuleAPMTests {
         mCountly.apm().endTrace(key, customMetrics);
 
         customMetrics.clear();
-        customMetrics.put("look_", 3);
-        customMetrics.put("a_tra", 2);
-        customMetrics.put("micro", 4);
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            customMetrics.put("micro", 4);
+            customMetrics.put("berse", 5);
+            customMetrics.put("look_", 3);
+        } else {
+            customMetrics.put("look_", 3);
+            customMetrics.put("a_tra", 2);
+            customMetrics.put("micro", 4);
+        }
         verify(requestQueueProvider).sendAPMCustomTrace(eq("a_tra"), anyLong(), anyLong(), anyLong(), eq(customMetricsToString(customMetrics)));
     }
 
