@@ -181,39 +181,40 @@ public class TransparentActivity extends Activity {
         Map<String, Object> query = splitQuery(url);
         Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: [" + query + "]");
 
-        Object clyEvent = query.get("cly_x_action_event");
+        Object clyEvent = query.get("?cly_x_action_event");
 
         if (clyEvent == null || !clyEvent.equals("1")) {
-            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, this is not a countly action event url");
+            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, event:[" + clyEvent + "] this is not a countly action event url");
             return false;
         }
+
         Object clyAction = query.get("action");
-        if (!(clyAction instanceof String)) {
-            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, action is not a string");
-            return false;
-        }
-
-        String action = (String) clyAction;
         boolean result = false;
+        if (clyAction instanceof String) {
+            Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, action string:[" + clyAction + "]");
+            String action = (String) clyAction;
 
-        switch (action) {
-            case "event":
-                eventAction(query);
-                break;
-            case "link":
-                result = linkAction(query, view);
-                break;
-            case "resize_me":
-                resizeMeAction(query);
-                break;
-            default:
-                break;
+            switch (action) {
+                case "event":
+                    eventAction(query);
+                    break;
+                case "link":
+                    linkAction(query, view);
+                    break;
+                case "resize_me":
+                    resizeMeAction(query);
+                    break;
+                default:
+                    break;
+            }
         }
 
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
-            finish();
-            config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            if (config.globalContentCallback != null) { // TODO: verify this later
+                config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            }
             ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
+            finish();
             return true;
         }
 
@@ -315,7 +316,7 @@ public class TransparentActivity extends Activity {
 
     private Map<String, Object> splitQuery(String url) {
         Map<String, Object> query_pairs = new ConcurrentHashMap<>();
-        String[] pairs = url.split("https://countly_action_event?");
+        String[] pairs = url.split("https://countly_action_event/?");
         if (pairs.length != 2) {
             return query_pairs;
         }
