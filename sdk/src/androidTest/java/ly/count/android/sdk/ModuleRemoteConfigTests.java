@@ -51,7 +51,9 @@ public class ModuleRemoteConfigTests {
         countly.consent().removeConsentAll();
 
         Assert.assertEquals(2, countly.remoteConfig().getValues().size()); // values are cache cleared
-        countly.remoteConfig().getValues().forEach((k, v) -> Assert.assertTrue(v.isCurrentUsersData));
+        for (Map.Entry<String, RCData> kv : countly.remoteConfig().getValues().entrySet()) {
+            Assert.assertTrue(kv.getValue().isCurrentUsersData);
+        }
     }
 
     /**

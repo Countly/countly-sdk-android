@@ -108,6 +108,7 @@ public class ModuleAPM extends ModuleBase {
                 }
 
                 String metricString = customMetricsToString(customMetrics);
+                System.err.println(metricString);
                 String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
                 String modifiedTraceKey = validateAndModifyTraceKey(truncatedTraceKey);
 

@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Collections;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
@@ -309,7 +310,7 @@ public class DeviceIdTests {
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "1234"), 1);
         ModuleEventsTests.validateEventInRQ("ff_merge", "[CLY]_orientation", null, 1, 0.0d, 0.0d, "_CLY_", "_CLY_", "_CLY_", "_CLY_", 2, -1, 0, 1);
-        TestUtils.validateRequest("ff_merge", TestUtils.map("user_details", "{\"custom\":{\"prop2\":123,\"prop1\":\"string\",\"prop3\":false}}"), 3);
+        ModuleUserProfileTests.validateUserProfileRequest("ff_merge", 3, 6, TestUtils.map(), TestUtils.map("prop2", 123, "prop1", "string", "prop3", false));
         ModuleSessionsTests.validateSessionEndRequest(4, 3, "ff_merge");
 
         Thread.sleep(1000);
@@ -340,9 +341,9 @@ public class DeviceIdTests {
 
         assertEquals(11, TestUtils.getCurrentRQ().length);
 
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop4\":[\"sd\"]}}"), 7);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{}}"), 8);
-        TestUtils.validateRequest("ff", TestUtils.map("user_details", "{\"custom\":{\"prop2\":456,\"prop1\":\"string_a\",\"prop3\":true}}"), 9);
+        ModuleUserProfileTests.validateUserProfileRequest("ff", 7, 11, TestUtils.map(), TestUtils.map("prop4", new JSONArray(Collections.singletonList("sd"))));
+        ModuleUserProfileTests.validateUserProfileRequest("ff", 8, 11, TestUtils.map(), TestUtils.map());
+        ModuleUserProfileTests.validateUserProfileRequest("ff", 9, 11, TestUtils.map(), TestUtils.map("prop2", 456, "prop1", "string_a", "prop3", true));
 
         TestUtils.validateRequest("ff_merge", TestUtils.map("old_device_id", "ff"), 10);
 
