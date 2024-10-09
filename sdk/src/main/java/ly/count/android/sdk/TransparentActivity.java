@@ -342,6 +342,22 @@ public class TransparentActivity extends Activity {
         return query_pairs;
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Pause the WebView when the activity is paused
+        webView.onPause();
+        webView.pauseTimers();  // Pauses all layout, parsing, and JavaScript timers
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Resume the WebView when the activity is resumed
+        webView.onResume();
+        webView.resumeTimers(); // Resumes all timers paused by pauseTimers()
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private WebView createWebView(TransparentActivityConfig config) {
         WebView webView = new CountlyWebView(this);
