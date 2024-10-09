@@ -520,7 +520,6 @@ public class ModuleRatings extends ModuleBase {
                                 webView.clearHistory();
                                 webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                                 webView.getSettings().setJavaScriptEnabled(true);
-                                webView.getSettings().setMediaPlaybackRequiresUserGesture(true);
                                 webView.loadUrl(ratingWidgetUrl);
 
                                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);

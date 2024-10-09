@@ -369,7 +369,6 @@ public class TransparentActivity extends Activity {
         webView.setBackgroundColor(Color.TRANSPARENT);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-        webView.getSettings().setMediaPlaybackRequiresUserGesture(true);
         webView.clearCache(true);
         webView.clearHistory();
 

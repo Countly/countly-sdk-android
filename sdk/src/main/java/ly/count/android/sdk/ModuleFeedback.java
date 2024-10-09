@@ -268,7 +268,6 @@ public class ModuleFeedback extends ModuleBase {
 
                     ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
                     webView.getSettings().setJavaScriptEnabled(true);
-                    webView.getSettings().setMediaPlaybackRequiresUserGesture(true);
                     webView.clearCache(true);
                     webView.clearHistory();
                     webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
