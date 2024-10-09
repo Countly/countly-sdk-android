@@ -2,6 +2,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="ly.count.android.sdk">
 
+  <uses-permission android:name="android.permission.INTERNET"/>
+  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+  <permission
+      android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
+      android:protectionLevel="signature"/>
+  
   <application>
     <activity
         android:name=".messaging.CountlyPushActivity"
@@ -11,14 +17,9 @@
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:exported="false"/>
     <uses-library android:name="android.test.runner"/>
-    <activity android:name=".TransparentActivity"
-              android:configChanges="orientation|screenSize"
-              android:theme="@android:style/Theme.Translucent.NoTitleBar">
-    </activity>
+    <activity
+        android:name=".TransparentActivity"
+        android:configChanges="orientation|screenSize"
+        android:theme="@android:style/Theme.Translucent.NoTitleBar"/>
   </application>
-
-  <permission
-      android:name="${applicationId}.CountlyPush.BROADCAST_PERMISSION"
-      android:protectionLevel="signature"/>
-
 </manifest>
