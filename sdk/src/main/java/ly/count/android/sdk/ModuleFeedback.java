@@ -597,21 +597,21 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     /**
-     * Present a feedback widget based on the provided selector, internal function to use
+     * Present a feedback widget based on the provided nameIDorTag, internal function to use
      *
      * @param type the type of the feedback widget to present
-     * @param selector the widget id, widget name or widget tag of the feedback widget to present
+     * @param nameIDorTag the widget id, widget name or widget tag of the feedback widget to present
      */
-    private void presentFeedbackWidgetSelector(@NonNull Context context, @NonNull FeedbackWidgetType type, @NonNull String selector) {
+    private void presentFeedbackWidgetnameIDorTag(@NonNull Context context, @NonNull FeedbackWidgetType type, @NonNull String nameIDorTag) {
         getAvailableFeedbackWidgetsInternal(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
                 if (error != null) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetSelector, Failed to retrieve feedback widget list, [" + error + "]");
+                    L.e("[ModuleFeedback] presentFeedbackWidgetnameIDorTag, Failed to retrieve feedback widget list, [" + error + "]");
                     return;
                 }
 
                 if (retrievedWidgets.isEmpty()) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetSelector, No feedback widgets available");
+                    L.e("[ModuleFeedback] presentFeedbackWidgetnameIDorTag, No feedback widgets available");
                     return;
                 }
 
@@ -619,14 +619,14 @@ public class ModuleFeedback extends ModuleBase {
 
                 for (CountlyFeedbackWidget widget : retrievedWidgets) {
                     if (widget.type == type) {
-                        if (!selector.isEmpty()) {
-                            if (widget.widgetId.equals(selector) || widget.name.equals(selector)) {
+                        if (!nameIDorTag.isEmpty()) {
+                            if (widget.widgetId.equals(nameIDorTag) || widget.name.equals(nameIDorTag)) {
                                 selectedWidget = widget;
                                 break;
                             }
 
                             for (String tag : widget.tags) {
-                                if (tag.equals(selector)) {
+                                if (tag.equals(nameIDorTag)) {
                                     selectedWidget = widget;
                                     break;
                                 }
@@ -639,7 +639,7 @@ public class ModuleFeedback extends ModuleBase {
                 }
 
                 if (selectedWidget == null) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetSelector, No feedback widget found with the provided selector");
+                    L.e("[ModuleFeedback] presentFeedbackWidgetnameIDorTag, No feedback widget found with the provided nameIDorTag");
                     return;
                 }
 
@@ -720,15 +720,15 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         /**
-         * Present an NPS feedback widget from the top of the list of available NPS widgets by the selector string
+         * Present an NPS feedback widget from the top of the list of available NPS widgets by the nameIDorTag string
          *
          * @param context the context to use for displaying the feedback widget
-         * @param selector the widget id, widget name or widget tag of the NPS feedback widget to present, if empty, the top widget will be presented
+         * @param nameIDorTag the widget id, widget name or widget tag of the NPS feedback widget to present, if empty, the top widget will be presented
          */
-        public void presentNPS(@NonNull Context context, @NonNull String selector) {
+        public void presentNPS(@NonNull Context context, @NonNull String nameIDorTag) {
             synchronized (_cly) {
-                L.i("[Feedback] presentNPS, got selector:[" + selector + "]");
-                presentFeedbackWidgetSelector(context, FeedbackWidgetType.nps, selector);
+                L.i("[Feedback] presentNPS, got nameIDorTag:[" + nameIDorTag + "]");
+                presentFeedbackWidgetnameIDorTag(context, FeedbackWidgetType.nps, nameIDorTag);
             }
         }
 
@@ -742,15 +742,15 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         /**
-         * Present a Survey feedback widget from the top of the list of available Survey widgets by the selector string
+         * Present a Survey feedback widget from the top of the list of available Survey widgets by the nameIDorTag string
          *
          * @param context the context to use for displaying the feedback widget
-         * @param selector the widget id, widget name or widget tag of the Survey feedback widget to present, if empty, the top widget will be presented
+         * @param nameIDorTag the widget id, widget name or widget tag of the Survey feedback widget to present, if empty, the top widget will be presented
          */
-        public void presentSurvey(@NonNull Context context, @NonNull String selector) {
+        public void presentSurvey(@NonNull Context context, @NonNull String nameIDorTag) {
             synchronized (_cly) {
-                L.i("[Feedback] presentSurvey, got selector:[" + selector + "]");
-                presentFeedbackWidgetSelector(context, FeedbackWidgetType.survey, selector);
+                L.i("[Feedback] presentSurvey, got nameIDorTag:[" + nameIDorTag + "]");
+                presentFeedbackWidgetnameIDorTag(context, FeedbackWidgetType.survey, nameIDorTag);
             }
         }
 
@@ -764,15 +764,15 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         /**
-         * Present a Rating feedback widget from the top of the list of available Rating widgets by the selector string
+         * Present a Rating feedback widget from the top of the list of available Rating widgets by the nameIDorTag string
          *
          * @param context the context to use for displaying the feedback widget
-         * @param selector the widget id, widget name or widget tag of the Rating feedback widget to present, if empty, the top widget will be presented
+         * @param nameIDorTag the widget id, widget name or widget tag of the Rating feedback widget to present, if empty, the top widget will be presented
          */
-        public void presentRating(@NonNull Context context, @NonNull String selector) {
+        public void presentRating(@NonNull Context context, @NonNull String nameIDorTag) {
             synchronized (_cly) {
-                L.i("[Feedback] presentRating, got selector:[" + selector + "]");
-                presentFeedbackWidgetSelector(context, FeedbackWidgetType.rating, selector);
+                L.i("[Feedback] presentRating, got nameIDorTag:[" + nameIDorTag + "]");
+                presentFeedbackWidgetnameIDorTag(context, FeedbackWidgetType.rating, nameIDorTag);
             }
         }
 
