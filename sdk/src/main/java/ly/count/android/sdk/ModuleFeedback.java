@@ -602,16 +602,16 @@ public class ModuleFeedback extends ModuleBase {
      * @param type the type of the feedback widget to present
      * @param nameIDorTag the widget id, widget name or widget tag of the feedback widget to present
      */
-    private void presentFeedbackWidgetnameIDorTag(@NonNull Context context, @NonNull FeedbackWidgetType type, @NonNull String nameIDorTag) {
+    private void presentFeedbackWidgetNameIDorTag(@NonNull Context context, @NonNull FeedbackWidgetType type, @NonNull String nameIDorTag) {
         getAvailableFeedbackWidgetsInternal(new RetrieveFeedbackWidgets() {
             @Override public void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error) {
                 if (error != null) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetnameIDorTag, Failed to retrieve feedback widget list, [" + error + "]");
+                    L.e("[ModuleFeedback] presentFeedbackWidgetNameIDorTag, Failed to retrieve feedback widget list, [" + error + "]");
                     return;
                 }
 
                 if (retrievedWidgets.isEmpty()) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetnameIDorTag, No feedback widgets available");
+                    L.e("[ModuleFeedback] presentFeedbackWidgetNameIDorTag, No feedback widgets available");
                     return;
                 }
 
@@ -639,7 +639,7 @@ public class ModuleFeedback extends ModuleBase {
                 }
 
                 if (selectedWidget == null) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetnameIDorTag, No feedback widget found with the provided nameIDorTag");
+                    L.e("[ModuleFeedback] presentFeedbackWidgetNameIDorTag, No feedback widget found with the provided nameIDorTag or type");
                     return;
                 }
 
@@ -728,7 +728,7 @@ public class ModuleFeedback extends ModuleBase {
         public void presentNPS(@NonNull Context context, @NonNull String nameIDorTag) {
             synchronized (_cly) {
                 L.i("[Feedback] presentNPS, got nameIDorTag:[" + nameIDorTag + "]");
-                presentFeedbackWidgetnameIDorTag(context, FeedbackWidgetType.nps, nameIDorTag);
+                presentFeedbackWidgetNameIDorTag(context, FeedbackWidgetType.nps, nameIDorTag);
             }
         }
 
@@ -750,7 +750,7 @@ public class ModuleFeedback extends ModuleBase {
         public void presentSurvey(@NonNull Context context, @NonNull String nameIDorTag) {
             synchronized (_cly) {
                 L.i("[Feedback] presentSurvey, got nameIDorTag:[" + nameIDorTag + "]");
-                presentFeedbackWidgetnameIDorTag(context, FeedbackWidgetType.survey, nameIDorTag);
+                presentFeedbackWidgetNameIDorTag(context, FeedbackWidgetType.survey, nameIDorTag);
             }
         }
 
@@ -772,7 +772,7 @@ public class ModuleFeedback extends ModuleBase {
         public void presentRating(@NonNull Context context, @NonNull String nameIDorTag) {
             synchronized (_cly) {
                 L.i("[Feedback] presentRating, got nameIDorTag:[" + nameIDorTag + "]");
-                presentFeedbackWidgetnameIDorTag(context, FeedbackWidgetType.rating, nameIDorTag);
+                presentFeedbackWidgetNameIDorTag(context, FeedbackWidgetType.rating, nameIDorTag);
             }
         }
 

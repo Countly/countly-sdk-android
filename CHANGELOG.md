@@ -1,8 +1,14 @@
 ## XX.XX.XX 
-* Added tweak functions to enhance the feedback module for more precise adjustments:
-  * presentNPS
-  * presentSurvey
-  * presentRating
+* Implemented new tweak functions to improve the feedback module, allowing for more precise control. These functions
+ accept a second parameter that filters widgets based on their ID, name, or tag. If the second parameter is provided 
+ as an empty string, no filtering is applied. The first widget that matches the filter criteria will be displayed 
+ from the widget list.
+  * presentNPS(Context)
+  * presentNPS(Context, String)
+  * presentSurvey(Context)
+  * presentSurvey(Context, String)
+  * presentRating(Context)
+  * presentRating(Context, String)
 
 ## 24.7.4
 * Disabled caching for webviews.
