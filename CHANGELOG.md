@@ -1,8 +1,5 @@
 ## XX.XX.XX 
-* Implemented new tweak functions to improve the feedback module, allowing for more precise control. These functions
- accept a second parameter that filters widgets based on their ID, name, or tag. If the second parameter is provided 
- as an empty string, no filtering is applied. The first widget that matches the filter criteria will be displayed 
- from the widget list.
+* Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
   * presentNPS(Context)
   * presentNPS(Context, String)
   * presentSurvey(Context)
