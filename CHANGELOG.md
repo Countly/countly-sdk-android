@@ -1,3 +1,9 @@
+## XX.XX.XX 
+* Added tweak functions to enhance the feedback module for more precise adjustments:
+  * presentNPS
+  * presentSurvey
+  * presentRating
+
 ## 24.7.4
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
