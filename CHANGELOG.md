@@ -1,3 +1,12 @@
+## XX.XX.XX 
+* Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
+  * presentNPS(Context)
+  * presentNPS(Context, String)
+  * presentSurvey(Context)
+  * presentSurvey(Context, String)
+  * presentRating(Context)
+  * presentRating(Context, String)
+
 ## 24.7.4
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
