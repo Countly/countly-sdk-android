@@ -558,6 +558,18 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
     }
 
+    @Override
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        L.d("[ModuleViews] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.views)) {
+            if (!newConsent) {
+                L.d("[ModuleViews] onConsentChanged, stopping all views because consent was removed");
+
+                stopAllViewsInternal(null);
+            }
+        }
+    }
+
     /**
      * Needed for mocking test result
      *
