@@ -10,11 +10,11 @@ import android.os.Bundle;
 import java.util.ArrayList;
 import ly.count.android.sdk.Countly;
 
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_CLASS_NAMES;
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_PACKAGE_NAMES;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_ACTION_INDEX;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_INTENT;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_MESSAGE;
-import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_CLASS_NAMES;
-import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_PACKAGE_NAMES;
 import static ly.count.android.sdk.messaging.CountlyPush.useAdditionalIntentRedirectionChecks;
 
 public class CountlyPushActivity extends Activity {
@@ -46,7 +46,7 @@ public class CountlyPushActivity extends Activity {
         }
 
         if (useAdditionalIntentRedirectionChecks) {
-            ComponentName componentName = intent.getComponent();
+            ComponentName componentName = getCallingActivity();
             String intentPackageName = componentName.getPackageName();
             String intentClassName = componentName.getClassName();
             String contextPackageName = context.getPackageName();
@@ -92,6 +92,15 @@ public class CountlyPushActivity extends Activity {
                 }
                 if (!isTrustedClass) {
                     Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent class");
+                    return;
+                }
+            }
+        } else {
+            ComponentName componentName = getCallingActivity();
+            if (componentName != null) {
+                String callingPackage = componentName.getPackageName();
+                if (!getPackageName().equals(callingPackage)) {
+                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
                     return;
                 }
             }
