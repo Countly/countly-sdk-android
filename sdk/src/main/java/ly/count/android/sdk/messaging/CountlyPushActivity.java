@@ -45,8 +45,23 @@ public class CountlyPushActivity extends Activity {
             return;
         }
 
+        ComponentName componentName = getCallingActivity();
+        if (componentName != null) {
+            String callingPackage = componentName.getPackageName();
+            if (!getPackageName().equals(callingPackage)) {
+                Countly.sharedInstance().L.w("[CountlyPushActivity] performPushAction, Untrusted intent package");
+                return;
+            }
+        }
+
+        ComponentName targetComponent = intent.resolveActivity(context.getPackageManager());
+        if (targetComponent == null || !targetComponent.getPackageName().equals(getPackageName())) {
+            Countly.sharedInstance().L.w("[CountlyPushActivity] performPushAction, Untrusted target component");
+            return;
+        }
+
         if (useAdditionalIntentRedirectionChecks) {
-            ComponentName componentName = getCallingActivity();
+            componentName = intent.getComponent();
             String intentPackageName = componentName.getPackageName();
             String intentClassName = componentName.getClassName();
             String contextPackageName = context.getPackageName();
@@ -92,15 +107,6 @@ public class CountlyPushActivity extends Activity {
                 }
                 if (!isTrustedClass) {
                     Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent class");
-                    return;
-                }
-            }
-        } else {
-            ComponentName componentName = getCallingActivity();
-            if (componentName != null) {
-                String callingPackage = componentName.getPackageName();
-                if (!getPackageName().equals(callingPackage)) {
-                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Untrusted intent package");
                     return;
                 }
             }
