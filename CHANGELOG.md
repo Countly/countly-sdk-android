@@ -1,3 +1,6 @@
+## XX.XX.XX
+* ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
+
 ## 24.7.4
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
