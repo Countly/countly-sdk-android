@@ -1,4 +1,4 @@
-## XX.XX.XX 
+## XX.XX.XX
 * Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
   * presentNPS(Context)
   * presentNPS(Context, String)
@@ -6,6 +6,8 @@
   * presentSurvey(Context, String)
   * presentRating(Context)
   * presentRating(Context, String)
+
+* Mitigated a security issue for intent redirection vulnarability.
 
 ## 24.7.4
 * Disabled caching for webviews.
