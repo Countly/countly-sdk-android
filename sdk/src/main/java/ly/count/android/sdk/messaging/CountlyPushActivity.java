@@ -52,16 +52,17 @@ public class CountlyPushActivity extends Activity {
         }
 
         ComponentName componentName = getCallingActivity();
+        String packageNameCurrent = getPackageName();
         if (componentName != null) {
             String callingPackage = componentName.getPackageName();
-            if (!getPackageName().equals(callingPackage)) {
+            if (!callingPackage.startsWith(packageNameCurrent) || !packageNameCurrent.equals(callingPackage)) {
                 Countly.sharedInstance().L.w("[CountlyPushActivity] performPushAction, Untrusted intent package");
                 return;
             }
         }
 
         ComponentName targetComponent = intent.resolveActivity(context.getPackageManager());
-        if (targetComponent == null || !targetComponent.getPackageName().equals(getPackageName())) {
+        if (targetComponent == null || !targetComponent.getPackageName().startsWith(packageNameCurrent) || !targetComponent.getPackageName().equals(packageNameCurrent)) {
             Countly.sharedInstance().L.w("[CountlyPushActivity] performPushAction, Untrusted target component");
             return;
         }
