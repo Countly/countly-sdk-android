@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated a security issue for intent redirection vulnarability.
+
 ## 24.7.4
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
