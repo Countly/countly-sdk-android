@@ -42,6 +42,12 @@ public class CountlyPushActivity extends Activity {
         int flags = intent.getFlags();
         if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) || ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
             Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Attempt to get URI permissions");
+            // Remove not trusted URI flags
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                intent.removeFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.removeFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            }
+
             return;
         }
 
@@ -138,7 +144,7 @@ public class CountlyPushActivity extends Activity {
 
         try {
             //try/catch required due to Android 12
-            if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                 //this needs to be called before Android 12
                 Intent closeNotificationsPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
                 context.sendBroadcast(closeNotificationsPanel);
