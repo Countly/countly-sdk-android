@@ -272,6 +272,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - vd.viewStartTimeSeconds) + "] s, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            L.w("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
             return;
         }
 
@@ -295,7 +296,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         //only record view if the view name is not null
         if (vd.viewName == null) {
-            L.e("[ModuleViews] stopViewWithIDInternal, view has no internal name, ignoring it");
+            L.e("[ModuleViews] recordViewEndEvent, view has no internal name, ignoring it");
             return;
         }
 
@@ -507,6 +508,13 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     }
 
     @Override
+    void consentWillChange(@NonNull List<String> consentThatWillChange, final boolean isConsentGiven) {
+        if (consentThatWillChange.contains(Countly.CountlyFeatureNames.views) && !isConsentGiven) {
+            stopAllViewsInternal(null);
+        }
+    }
+
+    @Override
     void onActivityStopped(int updatedActivityCount) {
         if (autoViewTracker) {
             //main purpose of this is handling transitions when the app is getting closed/minimised
@@ -555,18 +563,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         if (updatedActivityCount == 1) {
             //if we go to the background, stop all running views
             startStoppedViews();
-        }
-    }
-
-    @Override
-    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
-        L.d("[ModuleViews] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
-        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.views)) {
-            if (!newConsent) {
-                L.d("[ModuleViews] onConsentChanged, stopping all views because consent was removed");
-
-                stopAllViewsInternal(null);
-            }
         }
     }
 
