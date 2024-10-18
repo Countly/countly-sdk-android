@@ -91,16 +91,16 @@ public class TransparentActivity extends Activity {
             return new TransparentActivityConfig(0, 0, metrics.widthPixels, metrics.heightPixels);
         }
 
-        if (config.width < 1) {
+        if (config.width == null || config.width < 1) {
             config.width = metrics.widthPixels;
         }
-        if (config.height < 1) {
+        if (config.height == null || config.height < 1) {
             config.height = metrics.heightPixels;
         }
-        if (config.x < 1) {
+        if (config.x == null || config.x < 1) {
             config.x = 0;
         }
-        if (config.y < 1) {
+        if (config.y == null || config.y < 1) {
             config.y = 0;
         }
         return config;
