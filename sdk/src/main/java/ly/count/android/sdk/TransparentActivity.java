@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -18,10 +17,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
-import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,7 +24,7 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
-    private static final String URL_START = "https://countly_action_event";
+
     int currentOrientation = 0;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
@@ -62,20 +57,6 @@ public class TransparentActivity extends Activity {
 
         int width = config.width;
         int height = config.height;
-
-        configLandscape.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configLandscape, webView);
-            }
-            return false;
-        });
-
-        configPortrait.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configPortrait, webView);
-            }
-            return false;
-        });
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
@@ -176,175 +157,43 @@ public class TransparentActivity extends Activity {
         }
     }
 
-    private boolean contentUrlAction(String url, TransparentActivityConfig config, WebView view) {
-        Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: [" + url + "]");
-        Map<String, Object> query = splitQuery(url);
-        Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: [" + query + "]");
-
-        Object clyEvent = query.get("?cly_x_action_event");
-
-        if (clyEvent == null || !clyEvent.equals("1")) {
-            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, event:[" + clyEvent + "] this is not a countly action event url");
-            return false;
-        }
-
-        Object clyAction = query.get("action");
-        boolean result = false;
-        if (clyAction instanceof String) {
-            Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, action string:[" + clyAction + "]");
-            String action = (String) clyAction;
-
-            switch (action) {
-                case "event":
-                    eventAction(query);
-                    break;
-                case "link":
-                    linkAction(query, view);
-                    break;
-                case "resize_me":
-                    resizeMeAction(query);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
-            if (config.globalContentCallback != null) { // TODO: verify this later
-                config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
-            }
-            ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
-            finish();
-            return true;
-        }
-
-        return result;
-    }
-
-    private boolean linkAction(Map<String, Object> query, WebView view) {
-        Log.i(Countly.TAG, "[TransparentActivity] linkAction, link action detected");
-        if (!query.containsKey("link")) {
-            Log.w(Countly.TAG, "[TransparentActivity] linkAction, link action is missing link");
-            return false;
-        }
-        Object link = query.get("link");
-        if (!(link instanceof String)) {
-            Log.w(Countly.TAG, "[TransparentActivity] linkAction, link action is not a string");
-            return false;
-        }
-
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
-        view.getContext().startActivity(intent);
-        return true;
-    }
-
-    private void resizeMeAction(Map<String, Object> query) {
-        Log.i(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me action detected");
-        if (!query.containsKey("resize_me")) {
-            Log.w(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me action is missing resize_me");
-            return;
-        }
-        Object resizeMe = query.get("resize_me");
-        if (!(resizeMe instanceof JSONObject)) {
-            Log.w(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me action is not a JSON object");
-            return;
-        }
-        try {
-            final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-            final Display display = wm.getDefaultDisplay();
-            final DisplayMetrics metrics = new DisplayMetrics();
-            display.getMetrics(metrics);
-
-            float density = metrics.density;
-
-            JSONObject resizeMeJson = (JSONObject) resizeMe;
-            Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: [" + resizeMeJson + "]");
-            JSONObject portrait = resizeMeJson.getJSONObject("p");
-            JSONObject landscape = resizeMeJson.getJSONObject("l");
-            configPortrait.x = (int) Math.ceil(portrait.getInt("x") * density);
-            configPortrait.y = (int) Math.ceil(portrait.getInt("y") * density);
-            configPortrait.width = (int) Math.ceil(portrait.getInt("w") * density);
-            configPortrait.height = (int) Math.ceil(portrait.getInt("h") * density);
-
-            configLandscape.x = (int) Math.ceil(landscape.getInt("x") * density);
-            configLandscape.y = (int) Math.ceil(landscape.getInt("y") * density);
-            configLandscape.width = (int) Math.ceil(landscape.getInt("w") * density);
-            configLandscape.height = (int) Math.ceil(landscape.getInt("h") * density);
-
-            changeOrientationInternal();
-        } catch (JSONException e) {
-            Log.e(Countly.TAG, "[TransparentActivity] resizeMeAction, Failed to parse resize JSON", e);
-        }
-    }
-
-    private void eventAction(Map<String, Object> query) {
-        Log.i(Countly.TAG, "[TransparentActivity] eventAction, event action detected");
-        if (query.containsKey("event")) {
-            JSONArray event = (JSONArray) query.get("event");
-            assert event != null; // this is already checked above
-            for (int i = 0; i < Objects.requireNonNull(event).length(); i++) {
-                try {
-                    JSONObject eventJson = event.getJSONObject(i);
-                    Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: [" + eventJson.toString() + "]");
-
-                    if (!eventJson.has("sg")) {
-                        Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event: [" + eventJson + "]");
-                        continue;
-                    }
-
-                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
-                    JSONObject segmentationJson = eventJson.getJSONObject("sg");
-                    assert segmentationJson != null; // this is already checked above
-
-                    for (int j = 0; j < segmentationJson.names().length(); j++) {
-                        String key = segmentationJson.names().getString(j);
-                        Object value = segmentationJson.get(key);
-                        segmentation.put(key, value);
-                    }
-
-                    Countly.sharedInstance().events().recordEvent(eventJson.get("key").toString(), segmentation);
-                } catch (JSONException e) {
-                    Log.e(Countly.TAG, "[TransparentActivity] eventAction, Failed to parse event JSON", e);
-                }
-            }
-
-            Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
-        } else {
-            Log.w(Countly.TAG, "[TransparentActivity] eventAction, event action is missing event");
-        }
-    }
-
-    private Map<String, Object> splitQuery(String url) {
-        Map<String, Object> query_pairs = new ConcurrentHashMap<>();
-        String[] pairs = url.split("https://countly_action_event/?");
-        if (pairs.length != 2) {
-            return query_pairs;
-        }
-
-        String[] pairs2 = pairs[1].split("&");
-        for (String pair : pairs2) {
-            int idx = pair.indexOf('=');
-            String key = pair.substring(0, idx);
-            String value = pair.substring(idx + 1);
-
-            try {
-                if ("event".equals(key)) {
-                    query_pairs.put(key, new JSONArray(value));
-                } else if ("resize_me".equals(key)) {
-                    query_pairs.put(key, new JSONObject(value));
-                }
-            } catch (JSONException e) {
-                Log.e(Countly.TAG, "[TransparentActivity] splitQuery, Failed to parse event JSON", e);
-            }
-            query_pairs.put(pair.substring(0, idx), pair.substring(idx + 1));
-        }
-
-        return query_pairs;
+    private void extractCoordinateParams(float density, JSONObject coordinates, TransparentActivityConfig config) {
+        config.x = (int) Math.ceil(coordinates.optInt("x") * density);
+        config.y = (int) Math.ceil(coordinates.optInt("y") * density);
+        config.width = (int) Math.ceil(coordinates.optInt("w") * density);
+        config.height = (int) Math.ceil(coordinates.optInt("h") * density);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private WebView createWebView(TransparentActivityConfig config) {
-        WebView webView = new CountlyWebView(this);
+        WebView webView = new CountlyWebView(this, new ActivityCallback() {
+            @Override public void closeActivity() {
+                Log.d(Countly.TAG, "[TransparentActivity] closeActivity");
+                finish();
+            }
+
+            @Override public void resizeActivity(JSONObject coordinates) {
+                Log.d(Countly.TAG, "[TransparentActivity] resizeActivity");
+                final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                final Display display = wm.getDefaultDisplay();
+                final DisplayMetrics metrics = new DisplayMetrics();
+                display.getMetrics(metrics);
+
+                float density = metrics.density;
+
+                try {
+                    JSONObject portrait = coordinates.getJSONObject("p");
+                    JSONObject landscape = coordinates.getJSONObject("l");
+
+                    extractCoordinateParams(density, portrait, configPortrait);
+                    extractCoordinateParams(density, landscape, configLandscape);
+                } catch (JSONException e) {
+                    Log.e(Countly.TAG, "[TransparentActivity] resizeActivity, error: " + e);
+                }
+
+                changeOrientationInternal();
+            }
+        });
         RelativeLayout.LayoutParams webLayoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
@@ -357,7 +206,7 @@ public class TransparentActivity extends Activity {
         webView.clearHistory();
 
         CountlyWebViewClient client = new CountlyWebViewClient();
-        client.registerWebViewUrlListeners(config.listeners);
+        client.listeners.addAll(config.listeners);
 
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);
