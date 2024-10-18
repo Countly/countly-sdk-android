@@ -841,7 +841,7 @@ class ConnectionQueue implements RequestQueueProvider {
             L.e("Error while preparing fetch contents request");
         }
 
-        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&res=" + UtilsNetworking.urlEncodeString(json.toString());
+        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString());
     }
 
     @Override

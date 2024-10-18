@@ -181,39 +181,40 @@ public class TransparentActivity extends Activity {
         Map<String, Object> query = splitQuery(url);
         Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: [" + query + "]");
 
-        Object clyEvent = query.get("cly_x_action_event");
+        Object clyEvent = query.get("?cly_x_action_event");
 
         if (clyEvent == null || !clyEvent.equals("1")) {
-            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, this is not a countly action event url");
+            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, event:[" + clyEvent + "] this is not a countly action event url");
             return false;
         }
+
         Object clyAction = query.get("action");
-        if (!(clyAction instanceof String)) {
-            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, action is not a string");
-            return false;
-        }
-
-        String action = (String) clyAction;
         boolean result = false;
+        if (clyAction instanceof String) {
+            Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, action string:[" + clyAction + "]");
+            String action = (String) clyAction;
 
-        switch (action) {
-            case "event":
-                eventAction(query);
-                break;
-            case "link":
-                result = linkAction(query, view);
-                break;
-            case "resize_me":
-                resizeMeAction(query);
-                break;
-            default:
-                break;
+            switch (action) {
+                case "event":
+                    eventAction(query);
+                    break;
+                case "link":
+                    linkAction(query, view);
+                    break;
+                case "resize_me":
+                    resizeMeAction(query);
+                    break;
+                default:
+                    break;
+            }
         }
 
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
-            finish();
-            config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            if (config.globalContentCallback != null) { // TODO: verify this later
+                config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            }
             ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
+            finish();
             return true;
         }
 
@@ -249,19 +250,26 @@ public class TransparentActivity extends Activity {
             return;
         }
         try {
+            final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+            final Display display = wm.getDefaultDisplay();
+            final DisplayMetrics metrics = new DisplayMetrics();
+            display.getMetrics(metrics);
+
+            float density = metrics.density;
+
             JSONObject resizeMeJson = (JSONObject) resizeMe;
             Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: [" + resizeMeJson + "]");
             JSONObject portrait = resizeMeJson.getJSONObject("p");
             JSONObject landscape = resizeMeJson.getJSONObject("l");
-            configPortrait.x = portrait.getInt("x");
-            configPortrait.y = portrait.getInt("y");
-            configPortrait.width = portrait.getInt("w");
-            configPortrait.height = portrait.getInt("h");
+            configPortrait.x = (int) Math.ceil(portrait.getInt("x") * density);
+            configPortrait.y = (int) Math.ceil(portrait.getInt("y") * density);
+            configPortrait.width = (int) Math.ceil(portrait.getInt("w") * density);
+            configPortrait.height = (int) Math.ceil(portrait.getInt("h") * density);
 
-            configLandscape.x = landscape.getInt("x");
-            configLandscape.y = landscape.getInt("y");
-            configLandscape.width = landscape.getInt("w");
-            configLandscape.height = landscape.getInt("h");
+            configLandscape.x = (int) Math.ceil(landscape.getInt("x") * density);
+            configLandscape.y = (int) Math.ceil(landscape.getInt("y") * density);
+            configLandscape.width = (int) Math.ceil(landscape.getInt("w") * density);
+            configLandscape.height = (int) Math.ceil(landscape.getInt("h") * density);
 
             changeOrientationInternal();
         } catch (JSONException e) {
@@ -308,7 +316,7 @@ public class TransparentActivity extends Activity {
 
     private Map<String, Object> splitQuery(String url) {
         Map<String, Object> query_pairs = new ConcurrentHashMap<>();
-        String[] pairs = url.split("https://countly_action_event?");
+        String[] pairs = url.split("https://countly_action_event/?");
         if (pairs.length != 2) {
             return query_pairs;
         }
