@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 class CountlyWebViewClient extends WebViewClient {
-    private final List<WebViewUrlListener> listeners;
+    final List<WebViewUrlListener> listeners;
 
     public CountlyWebViewClient() {
         super();
@@ -30,26 +30,24 @@ class CountlyWebViewClient extends WebViewClient {
     }
 
     @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, String url) { return null ; }
+    public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+        return null;
+    }
 
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         String url = request.getUrl().toString();
-        Log.d(Countly.TAG, "[WebClient] Intercepted request URL: [" + url + "]");
+        Log.d(Countly.TAG, "[CountlyWebViewClient] shouldInterceptRequest, Intercepted request URL: [" + url + "]");
 
         // Call listeners for specific actions
         for (WebViewUrlListener listener : listeners) {
             boolean handled = listener.onUrl(url, view);
             if (handled) {
-                Log.d(Countly.TAG, "Request handled by listener: " + url);
+                Log.d(Countly.TAG, "[CountlyWebViewClient] shouldInterceptRequest, Request handled by listener: " + url);
                 break;
             }
         }
 
         return super.shouldInterceptRequest(view, request);
-    }
-
-    public void registerWebViewUrlListeners(List<WebViewUrlListener> listener) {
-        this.listeners.addAll(listener);
     }
 }
