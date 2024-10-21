@@ -272,6 +272,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - vd.viewStartTimeSeconds) + "] s, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            L.w("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
             return;
         }
 
@@ -295,7 +296,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         //only record view if the view name is not null
         if (vd.viewName == null) {
-            L.e("[ModuleViews] stopViewWithIDInternal, view has no internal name, ignoring it");
+            L.e("[ModuleViews] recordViewEndEvent, view has no internal name, ignoring it");
             return;
         }
 
@@ -503,6 +504,13 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             if (orient != null) {
                 updateOrientation(orient);
             }
+        }
+    }
+
+    @Override
+    void consentWillChange(@NonNull List<String> consentThatWillChange, final boolean isConsentGiven) {
+        if (consentThatWillChange.contains(Countly.CountlyFeatureNames.views) && !isConsentGiven) {
+            stopAllViewsInternal(null);
         }
     }
 

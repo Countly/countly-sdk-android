@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
+
 * The Android SDK now supports Android 15 (API level 35)
 * The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
 
