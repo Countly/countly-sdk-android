@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Build;
 import androidx.annotation.NonNull;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1882,6 +1883,82 @@ public class ModuleViewsTests {
         validateView("test", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
         validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
         ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 6);
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * "startAutoStoppedView" with consent removal
+     * Validate that running view is stopped when the view consent is removed
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startAutoStoppedView_consentRemoval() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setRequiresConsent(true);
+        countlyConfig.setLoggingEnabled(true);
+        countlyConfig.giveAllConsents();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.views().startAutoStoppedView("test");
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        validateView("test", 0.0, 1, 2, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.views().startAutoStoppedView("test2");
+        validateView("test", 0.0, 2, 4, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView("test2", 0.0, 3, 4, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
+        validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 6);
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * Auto view tracking with consent removal
+     * Validate that running view is stopped when the view consent is removed
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void autoViewTracking_consentRemoval() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig(TestUtils.getContext());
+        countlyConfig.setRequiresConsent(true);
+        countlyConfig.setLoggingEnabled(true);
+        countlyConfig.enableAutomaticViewTracking();
+        countlyConfig.giveAllConsents();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        launchActivity(TestUtils.Activity2.class, countly);
+
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0, 0, 2, 4);
+
+        validateView("ly.count.android.sdk.TestUtils$Activity2", 0.0, 3, 4, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        launchActivity(TestUtils.Activity2.class, countly);
+        validateView("ly.count.android.sdk.TestUtils$Activity2", 1.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView("ly.count.android.sdk.TestUtils$Activity2", 0.0, 5, 6, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
+        validateView("ly.count.android.sdk.TestUtils$Activity2", 0.0, 6, 8, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 7, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
+
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 8);
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
     }
 
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {
@@ -1907,5 +1984,14 @@ public class ModuleViewsTests {
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
     }
 
+    private <T extends Activity> void launchActivity(Class<T> activityClass, Countly countly) {
+        try (ActivityScenario<T> scenario = ActivityScenario.launch(activityClass)) {
+            scenario.onActivity(new ActivityScenario.ActivityAction<T>() {
+                @Override public void perform(T activity) {
+                    countly.onStart(activity);
+                }
+            });
+        }
+    }
     //todo extract orientation tests
 }
