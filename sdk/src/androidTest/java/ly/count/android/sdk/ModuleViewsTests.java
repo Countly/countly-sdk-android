@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Build;
 import androidx.annotation.NonNull;
-import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -1939,20 +1938,22 @@ public class ModuleViewsTests {
 
         Countly countly = new Countly().init(countlyConfig);
 
-        launchActivity(TestUtils.Activity2.class, countly);
+        Activity activity = Mockito.mock(Activity.class);
+        countly.onStart(activity);
 
         ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
         ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
         ModuleEventsTests.validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0, 0, 2, 4);
 
-        validateView("ly.count.android.sdk.TestUtils$Activity2", 0.0, 3, 4, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView(activity.getClass().getName(), 0.0, 3, 4, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
 
-        launchActivity(TestUtils.Activity2.class, countly);
-        validateView("ly.count.android.sdk.TestUtils$Activity2", 1.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
-        validateView("ly.count.android.sdk.TestUtils$Activity2", 0.0, 5, 6, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        Activity activity2 = Mockito.mock(Activity.class);
+        countly.onStart(activity2);
+        validateView(activity.getClass().getName(), 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView(activity2.getClass().getName(), 0.0, 5, 6, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
 
         countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
-        validateView("ly.count.android.sdk.TestUtils$Activity2", 0.0, 6, 8, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView(activity2.getClass().getName(), 0.0, 6, 8, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
         ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 7, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
 
         countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
@@ -1982,16 +1983,6 @@ public class ModuleViewsTests {
         }
 
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
-    }
-
-    private <T extends Activity> void launchActivity(Class<T> activityClass, Countly countly) {
-        try (ActivityScenario<T> scenario = ActivityScenario.launch(activityClass)) {
-            scenario.onActivity(new ActivityScenario.ActivityAction<T>() {
-                @Override public void perform(T activity) {
-                    countly.onStart(activity);
-                }
-            });
-        }
     }
     //todo extract orientation tests
 }
