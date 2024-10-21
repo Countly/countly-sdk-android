@@ -11,11 +11,11 @@ buildscript {
 }
 
 android {
-  compileSdkVersion 33
+  compileSdkVersion 35
 
   defaultConfig {
     minSdk 21
-    targetSdkVersion 34
+    targetSdkVersion 35
 
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
   }
