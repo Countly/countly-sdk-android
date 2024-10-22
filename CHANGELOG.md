@@ -10,6 +10,8 @@
   * presentRating(Context)
   * presentRating(Context, String)
 
+* Mitigated an issue where content communication was done twice.
+
 ## 24.7.4
 * Disabled caching for webviews.
 * Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)

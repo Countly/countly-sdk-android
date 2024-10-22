@@ -205,6 +205,7 @@ public class TransparentActivity extends Activity {
                     resizeMeAction(query);
                     break;
                 default:
+                    Log.e(Countly.TAG, "[TransparentActivity] contentUrlAction, unknown action:[" + action + "]");
                     break;
             }
         }
@@ -332,11 +333,12 @@ public class TransparentActivity extends Activity {
                     query_pairs.put(key, new JSONArray(value));
                 } else if ("resize_me".equals(key)) {
                     query_pairs.put(key, new JSONObject(value));
+                } else {
+                    query_pairs.put(key, value);
                 }
             } catch (JSONException e) {
                 Log.e(Countly.TAG, "[TransparentActivity] splitQuery, Failed to parse event JSON", e);
             }
-            query_pairs.put(pair.substring(0, idx), pair.substring(idx + 1));
         }
 
         return query_pairs;
