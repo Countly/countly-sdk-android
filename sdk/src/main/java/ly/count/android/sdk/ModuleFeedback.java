@@ -3,9 +3,7 @@ package ly.count.android.sdk;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.Handler;
-import android.os.Looper;
-import android.webkit.WebSettings;
+import android.content.Intent;
 import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -245,61 +243,42 @@ public class ModuleFeedback extends ModuleBase {
         JSONObject customObjectToSendWithTheWidget = new JSONObject();
         try {
             customObjectToSendWithTheWidget.put("tc", 1);
+            customObjectToSendWithTheWidget.put("xb", 1);
+            customObjectToSendWithTheWidget.put("rw", 1);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
         widgetListUrl.append("&custom=");
-        widgetListUrl.append(customObjectToSendWithTheWidget.toString());
+        widgetListUrl.append(customObjectToSendWithTheWidget);
 
         final String preparedWidgetUrl = widgetListUrl.toString();
 
         L.d("[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
 
-        //enable for chrome debugging
-        //WebView.setWebContentsDebuggingEnabled(true);
+        TransparentActivityConfig configLandscape = prepareConfig(preparedWidgetUrl, widgetInfo, context, devCallback);
+        TransparentActivityConfig configPortrait = prepareConfig(preparedWidgetUrl, widgetInfo, context, devCallback);
 
-        final boolean useAlertDialog = true;
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            public void run() {
-                L.d("[ModuleFeedback] Calling on main thread");
+        Intent intent = new Intent(_cly.context_, TransparentActivity.class);
+        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, configLandscape);
+        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, configPortrait);
+        intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        _cly.context_.startActivity(intent);
+    }
 
-                try {
+    private TransparentActivityConfig prepareConfig(String widgetUrl, CountlyFeedbackWidget widgetInfo, Context context, FeedbackCallback devCallback) {
+        TransparentActivityConfig config = new TransparentActivityConfig(null, null, null, null);
+        config.url = widgetUrl;
+        config.listeners.add(new FeedbackWidgetUrlAction(new Runnable() {
+            @Override public void run() {
+                reportFeedbackWidgetCancelButton(widgetInfo, deviceInfo.mp.getAppVersion(context));
 
-                    ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
-                    webView.getSettings().setJavaScriptEnabled(true);
-                    webView.clearCache(true);
-                    webView.clearHistory();
-                    webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-                    webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
-                    webView.loadUrl(preparedWidgetUrl);
-                    webView.requestFocus();
-
-                    AlertDialog.Builder builder = prepareAlertDialog(context, webView, closeButtonText, widgetInfo, devCallback);
-
-                    if (useAlertDialog) {
-                        // use alert dialog to host the webView
-                        L.d("[ModuleFeedback] Creating standalone Alert dialog");
-                        builder.show();
-                    } else {
-                        // use dialog fragment to host the webView
-                        L.d("[ModuleFeedback] Creating Alert dialog in dialogFragment");
-
-                        //CountlyDialogFragment newFragment = CountlyDialogFragment.newInstance(builder);
-                        //newFragment.show(fragmentManager, "CountlyFragmentDialog");
-                    }
-
-                    if (devCallback != null) {
-                        devCallback.onFinished(null);
-                    }
-                } catch (Exception ex) {
-                    L.e("[ModuleFeedback] Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
-                    if (devCallback != null) {
-                        devCallback.onFinished("Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
-                    }
+                if (devCallback != null) {
+                    devCallback.onClosed();
                 }
             }
-        });
+        }));
+        return config;
     }
 
     AlertDialog.Builder prepareAlertDialog(@NonNull final Context context, @NonNull WebView webView, @Nullable String closeButtonText, @NonNull final CountlyFeedbackWidget widgetInfo, @Nullable final FeedbackCallback devCallback) {

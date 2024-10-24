@@ -162,7 +162,7 @@ public class ModuleContent extends ModuleBase {
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
-            config.globalContentCallback = globalContentCallback;
+            config.listeners.add(new ContentUrlAction(globalContentCallback));
             return config;
         }
 

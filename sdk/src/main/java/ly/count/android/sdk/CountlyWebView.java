@@ -4,8 +4,11 @@ import android.content.Context;
 import android.webkit.WebView;
 
 class CountlyWebView extends WebView {
-    public CountlyWebView(Context context) {
+    ActivityCallback callback;
+
+    public CountlyWebView(Context context, ActivityCallback callback) {
         super(context);
+        this.callback = callback;
     }
 
     /**
