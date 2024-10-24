@@ -245,6 +245,8 @@ public class ModuleFeedback extends ModuleBase {
         JSONObject customObjectToSendWithTheWidget = new JSONObject();
         try {
             customObjectToSendWithTheWidget.put("tc", 1);
+            customObjectToSendWithTheWidget.put("rw", 1);
+            customObjectToSendWithTheWidget.put("xb", 1);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -271,23 +273,24 @@ public class ModuleFeedback extends ModuleBase {
                     webView.clearCache(true);
                     webView.clearHistory();
                     webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-                    webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
+                    ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient();
+                    webView.setWebViewClient(webViewClient);
                     webView.loadUrl(preparedWidgetUrl);
                     webView.requestFocus();
 
                     AlertDialog.Builder builder = prepareAlertDialog(context, webView, closeButtonText, widgetInfo, devCallback);
+                    AlertDialog alert = builder.create();
+                    webViewClient.listener = new WebViewUrlListener() {
+                        @Override public boolean onUrl(String url, WebView webView) {
+                            if (url.equals("https://countly_action_event/?cly_widget_command&close=1")) {
+                                alert.cancel();
+                                return true;
+                            }
 
-                    if (useAlertDialog) {
-                        // use alert dialog to host the webView
-                        L.d("[ModuleFeedback] Creating standalone Alert dialog");
-                        builder.show();
-                    } else {
-                        // use dialog fragment to host the webView
-                        L.d("[ModuleFeedback] Creating Alert dialog in dialogFragment");
-
-                        //CountlyDialogFragment newFragment = CountlyDialogFragment.newInstance(builder);
-                        //newFragment.show(fragmentManager, "CountlyFragmentDialog");
-                    }
+                            return false;
+                        }
+                    };
+                    alert.show();
 
                     if (devCallback != null) {
                         devCallback.onFinished(null);
@@ -314,7 +317,6 @@ public class ModuleFeedback extends ModuleBase {
             @Override public void onClick(DialogInterface dialogInterface, int i) {
                 L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
                 reportFeedbackWidgetCancelButton(widgetInfo, deviceInfo.mp.getAppVersion(context));
-
                 if (devCallback != null) {
                     devCallback.onClosed();
                 }
