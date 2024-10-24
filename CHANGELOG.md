@@ -1,4 +1,7 @@
-## XX.XX.XX 
+## XX.XX.XX
+* The Android SDK now supports Android 15 (API level 35)
+* The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
+
 * Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
   * presentNPS(Context)
   * presentNPS(Context, String)
