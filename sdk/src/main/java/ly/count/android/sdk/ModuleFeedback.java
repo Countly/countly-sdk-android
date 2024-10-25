@@ -283,10 +283,10 @@ public class ModuleFeedback extends ModuleBase {
                     webViewClient.listener = new WebViewUrlListener() {
                         @Override
                         public boolean onUrl(String url, WebView webView) {
+                            if (url.equals("https://countly_action_event/?cly_widget_command&close=1")) {
                                 if (devCallback != null) {
                                     devCallback.onFinished(null);
                                 }
-                            if (url.equals("https://countly_action_event/?cly_widget_command&close=1")) {
                                 alert.cancel();
                                 return true;
                             }
