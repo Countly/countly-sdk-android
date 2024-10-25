@@ -281,7 +281,11 @@ public class ModuleFeedback extends ModuleBase {
                     AlertDialog.Builder builder = prepareAlertDialog(context, webView, closeButtonText, widgetInfo, devCallback);
                     AlertDialog alert = builder.create();
                     webViewClient.listener = new WebViewUrlListener() {
-                        @Override public boolean onUrl(String url, WebView webView) {
+                        @Override
+                        public boolean onUrl(String url, WebView webView) {
+                                if (devCallback != null) {
+                                    devCallback.onFinished(null);
+                                }
                             if (url.equals("https://countly_action_event/?cly_widget_command&close=1")) {
                                 alert.cancel();
                                 return true;
