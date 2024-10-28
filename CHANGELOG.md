@@ -7,10 +7,13 @@
 * Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
   * presentNPS(Context)
   * presentNPS(Context, String)
+  * presentNPS(Context, String, FeedbackCallback)
   * presentSurvey(Context)
   * presentSurvey(Context, String)
+  * presentSurvey(Context, String, FeedbackCallback)
   * presentRating(Context)
   * presentRating(Context, String)
+  * presentRating(Context, String, FeedbackCallback)
 
 ## 24.7.4
 * Disabled caching for webviews.
