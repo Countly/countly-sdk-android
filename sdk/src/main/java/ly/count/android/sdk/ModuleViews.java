@@ -36,7 +36,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
-    Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
+    final Map<String, ViewData> viewDataMap = new ConcurrentHashMap<>(); // map viewIDs to its viewData
 
     SafeIDGenerator safeViewIDGenerator;
 
