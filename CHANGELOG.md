@@ -1,4 +1,4 @@
-## 24.10.0
+## XX.XX.XX
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
 
 * The Android SDK now supports Android 15 (API level 35)
