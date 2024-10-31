@@ -16,6 +16,7 @@
   * presentRating(Context, String, FeedbackCallback)
 
 * Mitigated an issue where content communication was done twice.
+* Mitigated a concurrency issue while restarting stopped views.
 
 ## 24.7.4
 * Disabled caching for webviews.
