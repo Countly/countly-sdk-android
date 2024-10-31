@@ -1,8 +1,9 @@
-## XX.XX.XX
+## 24.7.5-RC1
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
 
 * The Android SDK now supports Android 15 (API level 35)
 * The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
+* Added further intent redirection vulnarability checks.
 * Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
   * presentNPS(Context)
   * presentNPS(Context, String)
@@ -15,7 +16,6 @@
   * presentRating(Context, String, FeedbackCallback)
 
 * Mitigated an issue where content communication was done twice.
-* Mitigated a security issue for intent redirection vulnarability.
 
 ## 24.7.4
 * Disabled caching for webviews.
