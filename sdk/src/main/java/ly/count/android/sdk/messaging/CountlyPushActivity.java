@@ -44,9 +44,11 @@ public class CountlyPushActivity extends Activity {
             Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Attempt to get URI permissions");
             // Remove not trusted URI flags
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Removed URI permissions");
                 intent.removeFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 intent.removeFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             } else {
+                Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Can not remove URI permissions. Aborting");
                 return;
             }
         }
