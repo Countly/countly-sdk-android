@@ -46,6 +46,8 @@ public class CountlyPushActivity extends Activity {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 intent.removeFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 intent.removeFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } else {
+                return;
             }
         }
 
