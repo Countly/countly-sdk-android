@@ -10,11 +10,11 @@ import android.os.Bundle;
 import java.util.ArrayList;
 import ly.count.android.sdk.Countly;
 
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_CLASS_NAMES;
+import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_PACKAGE_NAMES;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_ACTION_INDEX;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_INTENT;
 import static ly.count.android.sdk.messaging.CountlyPush.EXTRA_MESSAGE;
-import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_CLASS_NAMES;
-import static ly.count.android.sdk.messaging.CountlyPush.ALLOWED_PACKAGE_NAMES;
 import static ly.count.android.sdk.messaging.CountlyPush.useAdditionalIntentRedirectionChecks;
 
 public class CountlyPushActivity extends Activity {
@@ -42,11 +42,35 @@ public class CountlyPushActivity extends Activity {
         int flags = intent.getFlags();
         if (((flags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0) || ((flags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0)) {
             Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Attempt to get URI permissions");
+            // Remove not trusted URI flags
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Removed URI permissions");
+                intent.removeFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                intent.removeFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+            } else {
+                Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Can not remove URI permissions. Aborting");
+                return;
+            }
+        }
+
+        ComponentName componentName = getCallingActivity();
+        String packageNameCurrent = getPackageName();
+        if (componentName != null) {
+            String callingPackage = componentName.getPackageName();
+            if (!callingPackage.startsWith(packageNameCurrent) || !packageNameCurrent.equals(callingPackage)) {
+                Countly.sharedInstance().L.w("[CountlyPushActivity] performPushAction, Untrusted intent package");
+                return;
+            }
+        }
+
+        ComponentName targetComponent = intent.resolveActivity(context.getPackageManager());
+        if (targetComponent == null || !targetComponent.getPackageName().startsWith(packageNameCurrent) || !targetComponent.getPackageName().equals(packageNameCurrent)) {
+            Countly.sharedInstance().L.w("[CountlyPushActivity] performPushAction, Untrusted target component");
             return;
         }
 
         if (useAdditionalIntentRedirectionChecks) {
-            ComponentName componentName = intent.getComponent();
+            componentName = intent.getComponent();
             String intentPackageName = componentName.getPackageName();
             String intentClassName = componentName.getClassName();
             String contextPackageName = context.getPackageName();
@@ -123,7 +147,7 @@ public class CountlyPushActivity extends Activity {
 
         try {
             //try/catch required due to Android 12
-            if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
                 //this needs to be called before Android 12
                 Intent closeNotificationsPanel = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
                 context.sendBroadcast(closeNotificationsPanel);
