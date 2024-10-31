@@ -2,9 +2,9 @@ package ly.count.android.sdk;
 
 import android.util.Log;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +19,15 @@ class CountlyWebViewClient extends WebViewClient {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
         String url = request.getUrl().toString();
+        Log.v(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, url: [" + url + "]");
+        try {
+            url = URLDecoder.decode(url, "UTF-8");
+        } catch (Exception e) {
+            Log.e(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, Failed to decode url", e);
+            return false;
+        }
+
+        Log.d(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, urlDecoded: [" + url + "]");
 
         for (WebViewUrlListener listener : listeners) {
             if (listener.onUrl(url, view)) {
@@ -27,26 +36,6 @@ class CountlyWebViewClient extends WebViewClient {
         }
 
         return false;
-    }
-
-    @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, String url) { return null ; }
-
-    @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        String url = request.getUrl().toString();
-        Log.d(Countly.TAG, "[WebClient] Intercepted request URL: [" + url + "]");
-
-        // Call listeners for specific actions
-        for (WebViewUrlListener listener : listeners) {
-            boolean handled = listener.onUrl(url, view);
-            if (handled) {
-                Log.d(Countly.TAG, "Request handled by listener: " + url);
-                break;
-            }
-        }
-
-        return super.shouldInterceptRequest(view, request);
     }
 
     public void registerWebViewUrlListeners(List<WebViewUrlListener> listener) {

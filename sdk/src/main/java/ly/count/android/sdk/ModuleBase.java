@@ -95,6 +95,9 @@ abstract class ModuleBase {
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
     }
 
+    void consentWillChange(@NonNull List<String> consentThatWillChange, final boolean isConsentGiven) {
+    }
+
     //notify the SDK modules that internal configuration was updated
     void sdkConfigurationChanged() {
 
