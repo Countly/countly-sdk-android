@@ -47,8 +47,6 @@ public class CountlyPushActivity extends Activity {
                 intent.removeFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 intent.removeFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
             }
-
-            return;
         }
 
         ComponentName componentName = getCallingActivity();
