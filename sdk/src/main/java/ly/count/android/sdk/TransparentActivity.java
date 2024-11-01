@@ -29,7 +29,6 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
-    private static final String URL_START = "https://countly_action_event";
     int currentOrientation = 0;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
@@ -64,14 +63,14 @@ public class TransparentActivity extends Activity {
         int height = config.height;
 
         configLandscape.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
+            if (url.startsWith(Utils.COMM_URL)) {
                 return contentUrlAction(url, configLandscape, webView);
             }
             return false;
         });
 
         configPortrait.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
+            if (url.startsWith(Utils.COMM_URL)) {
                 return contentUrlAction(url, configPortrait, webView);
             }
             return false;
