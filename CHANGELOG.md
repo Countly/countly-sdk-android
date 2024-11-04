@@ -17,7 +17,7 @@
 
 * Mitigated an issue where content communication was done twice.
 * Mitigated a concurrency issue while restarting stopped views.
-* Fixed an issue where SDK was not able to set experimental visibility flag correclty by adding additional foreground state capture.
+* Fixed an issue where SDK was not able to set experimental visibility flag correctly by adding additional foreground state capture.
 
 ## 24.7.4
 * Disabled caching for webviews.
