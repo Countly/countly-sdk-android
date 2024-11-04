@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 24.7.5-RC2
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
 
 * The Android SDK now supports Android 15 (API level 35)
@@ -17,7 +17,7 @@
 
 * Mitigated an issue where content communication was done twice.
 * Mitigated a concurrency issue while restarting stopped views.
-* Fixed an issue preventing foreground state capture when initializing the SDK after app creation.
+* Fixed an issue where SDK was not able to set experimental visibility flag correclty by adding additional foreground state capture.
 
 ## 24.7.4
 * Disabled caching for webviews.
