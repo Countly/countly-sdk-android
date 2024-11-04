@@ -52,9 +52,7 @@ jobs:
         run: adb connect localhost:5555
 
       - name: Set AAPT2 for android 35
-        run: |
-          sudo mkdir -p /usr/local/.gradle && \
-          echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" >> /usr/local/.gradle/gradle.properties
+        run: echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2"  | tee -a ${{ github.workspace }}/gradle.properties
   
       - name: Build the SDK
         if: always()
