@@ -53,9 +53,9 @@ jobs:
 
       - name: Set AAPT2 for android 35
         run: |
-          mkdir -p ${{ github.workspace }}/.gradle && \
-          touch ${{ github.workspace }}/.gradle/gradle.properties && \
-          echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" >> ${{ github.workspace }}/.gradle/gradle.properties
+          mkdir -p /usr/local/.gradle && \
+          touch /usr/local/.gradle/gradle.properties && \
+          echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" >> /usr/local/.gradle/gradle.properties
   
       - name: Build the SDK
         if: always()
