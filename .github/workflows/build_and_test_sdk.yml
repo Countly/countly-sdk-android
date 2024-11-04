@@ -52,7 +52,7 @@ jobs:
         run: adb connect localhost:5555
 
       - name: Set AAPT2 for android 35
-        run: sudo mkdir -p $GRADLE_USER_HOME/.gradle && touch $GRADLE_USER_HOME/.gradle/gradle.properties && echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" >> $GRADLE_USER_HOME/.gradle/gradle.properties
+        run: sudo mkdir -p $GRADLE_USER_HOME/.gradle && sudo touch $GRADLE_USER_HOME/.gradle/gradle.properties && sudo echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" >> $GRADLE_USER_HOME/.gradle/gradle.properties
   
       - name: Build the SDK
         if: always()
