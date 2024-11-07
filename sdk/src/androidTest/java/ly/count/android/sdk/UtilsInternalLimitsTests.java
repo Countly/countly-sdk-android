@@ -352,13 +352,16 @@ public class UtilsInternalLimitsTests {
 
         Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
 
-        Assert.assertEquals(6, segmentation.size());
+        Assert.assertEquals(9, segmentation.size());
         Assert.assertEquals(aa1, segmentation.get("aa1"));
         Assert.assertEquals(aa2, segmentation.get("aa2"));
         Assert.assertEquals(aa3, segmentation.get("aa3"));
         Assert.assertEquals(aa4, segmentation.get("aa4"));
         Assert.assertEquals(aa5, segmentation.get("aa5"));
         Assert.assertEquals(aa6, segmentation.get("aa6"));
+        Assert.assertEquals(Arrays.asList(1, 2, "ABC", true, 3.3d, 4.4f, 5L), segmentation.get("aa7"));
+        Assert.assertEquals(new ArrayList<>(), segmentation.get("aa8"));
+        Assert.assertEquals(new ArrayList<>(), segmentation.get("aa9"));
     }
 
     @Test
@@ -425,7 +428,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(9, segmentation.size());
 
         Assert.assertTrue(UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, Mockito.mock(ModuleLog.class)));
-        Assert.assertEquals(8, segmentation.size());
+        Assert.assertEquals(9, segmentation.size());
         Assert.assertEquals(empty, segmentation.get("empty"));
         Assert.assertEquals(arrInt, segmentation.get("arrInt"));
         Assert.assertEquals(arrStr, segmentation.get("arrStr"));
@@ -434,6 +437,7 @@ public class UtilsInternalLimitsTests {
         Assert.assertEquals(arrFloat, segmentation.get("arrFloat"));
         Assert.assertEquals(arrLong, segmentation.get("arrLong"));
         Assert.assertEquals(arrObj, segmentation.get("arrObj"));
+        Assert.assertEquals(new JSONArray(), segmentation.get("arrObjUltra"));
     }
 
     @Test
