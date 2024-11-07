@@ -1,4 +1,4 @@
-## 24.7.5-RC2
+## 24.7.5
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
 
 * The Android SDK now supports Android 15 (API level 35)
@@ -16,6 +16,7 @@
   * presentRating(Context, String, FeedbackCallback)
 
 * Mitigated an issue where content communication was done twice.
+* Mititgated an issue where a segmentation key was removed if it included a list with an unsupported value instead of sanitizing.
 * Mitigated a concurrency issue while restarting stopped views.
 * Fixed an issue where SDK was not able to set experimental visibility flag correctly by adding additional foreground state capture.
 
