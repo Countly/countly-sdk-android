@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ModuleViews extends ModuleBase implements ViewIdProvider {
     private String currentViewID = null;
     private String previousViewID = null;
+
+    String previousViewName = "";
+    String currentViewName = "";
 
     private boolean firstView = true;
 
@@ -32,7 +36,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
-    Map<String, ViewData> viewDataMap = new HashMap<>(); // map viewIDs to its viewData
+    final Map<String, ViewData> viewDataMap = new ConcurrentHashMap<>(); // map viewIDs to its viewData
 
     SafeIDGenerator safeViewIDGenerator;
 
@@ -51,8 +55,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         long viewStartTimeSeconds; // if this is 0 then the view is not started yet or was paused
         String viewName;
         boolean isAutoStoppedView = false;//views started with "startAutoStoppedView" would have this as "true". If set to "true" views should be automatically closed when another one is started.
-        boolean isAutoPaused = false;//this marks that this view automatically paused when going to the background
         Map<String, Object> viewSegmentation = null; // segmentation that can be updated while a view is on
+        boolean willStartAgain = false; // if this is true, the view will be started again when the app comes back to the foreground
     }
 
     //interface for SDK users
@@ -205,7 +209,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         viewDataMap.put(currentViewData.viewID, currentViewData);
         previousViewID = currentViewID;
+        previousViewName = currentViewName;
         currentViewID = currentViewData.viewID;
+        currentViewName = viewName;
 
         Map<String, Object> accumulatedEventSegm = new HashMap<>(automaticViewSegmentation);
 
@@ -266,12 +272,15 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - vd.viewStartTimeSeconds) + "] s, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            L.w("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
             return;
         }
 
         recordViewEndEvent(vd, customViewSegmentation, "stopViewWithIDInternal");
 
-        viewDataMap.remove(vd.viewID);
+        if (!vd.willStartAgain) {
+            viewDataMap.remove(vd.viewID);
+        }
     }
 
     void recordViewEndEvent(ViewData vd, @Nullable Map<String, Object> customViewSegmentation, String viewRecordingSource) {
@@ -287,7 +296,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         //only record view if the view name is not null
         if (vd.viewName == null) {
-            L.e("[ModuleViews] stopViewWithIDInternal, view has no internal name, ignoring it");
+            L.e("[ModuleViews] recordViewEndEvent, view has no internal name, ignoring it");
             return;
         }
 
@@ -304,7 +313,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         eventProvider.recordEventInternal(VIEW_EVENT_KEY, segments, 1, 0, viewDurationSeconds, null, vd.viewID);
     }
 
-    void pauseViewWithIDInternal(String viewID, boolean pausedAutomatically) {
+    void pauseViewWithIDInternal(String viewID) {
         if (viewID == null || viewID.isEmpty()) {
             L.e("[ModuleViews] pauseViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
             return;
@@ -317,7 +326,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         ViewData vd = viewDataMap.get(viewID);
         if (vd == null) {
-            L.e("[ModuleViews] pauseViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening, auto paused:[" + pausedAutomatically + "]");
+            L.e("[ModuleViews] pauseViewWithIDInternal, view id:[" + viewID + "] has a 'null' value. This should not be happening");
             return;
         }
 
@@ -331,8 +340,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.w("[ModuleViews] pauseViewWithIDInternal, pausing a view that is already paused. ID:[" + viewID + "], name:[" + vd.viewName + "]");
             return;
         }
-
-        vd.isAutoPaused = pausedAutomatically;
 
         recordViewEndEvent(vd, null, "pauseViewWithIDInternal");
 
@@ -368,7 +375,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         vd.viewStartTimeSeconds = UtilsTime.currentTimestampSeconds();
-        vd.isAutoPaused = false;
     }
 
     public void addSegmentationToViewWithIDInternal(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
@@ -467,26 +473,26 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         updateOrientation(newOrientation, false);
     }
 
-    void pauseRunningViewsAndSend() {
-        L.d("[ModuleViews] pauseRunningViewsAndSend, going to the background and pausing");
+    void stopRunningViewsAndSend() {
+        L.d("[ModuleViews] stopRunningViewsAndSend, going to the background and stopping views");
         for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
             ViewData vd = entry.getValue();
-
-            if (vd.viewStartTimeSeconds > 0) {
-                //if the view is running
-                pauseViewWithIDInternal(vd.viewID, true);
-            }
+            vd.willStartAgain = true;
+            stopViewWithIDInternal(vd.viewID, null);
         }
     }
 
-    void resumeAutoPausedViews() {
-        L.d("[ModuleViews] resumeAutoPausedViews, going to the foreground and resuming");
-        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
-            ViewData vd = entry.getValue();
+    void startStoppedViews() {
+        L.d("[ModuleViews] startStoppedViews, app is coming back to the foreground, starting views that were stopped");
 
-            if (vd.isAutoPaused) {
-                //if the view was automatically paused, resume it
-                resumeViewWithIDInternal(vd.viewID);
+        Iterator<Map.Entry<String, ViewData>> iterator = viewDataMap.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, ViewData> value = iterator.next();
+            ViewData vd = value.getValue();
+            if (vd.willStartAgain) {
+                //if the view is auto-stopped, start it again and remove from the cache
+                iterator.remove();
+                startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
             }
         }
     }
@@ -502,6 +508,13 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     }
 
     @Override
+    void consentWillChange(@NonNull List<String> consentThatWillChange, final boolean isConsentGiven) {
+        if (consentThatWillChange.contains(Countly.CountlyFeatureNames.views) && !isConsentGiven) {
+            stopAllViewsInternal(null);
+        }
+    }
+
+    @Override
     void onActivityStopped(int updatedActivityCount) {
         if (autoViewTracker) {
             //main purpose of this is handling transitions when the app is getting closed/minimised
@@ -513,8 +526,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (updatedActivityCount <= 0) {
-            //if we go to the background, pause all running views
-            pauseRunningViewsAndSend();
+            //if we go to the background, stop all running views
+            stopRunningViewsAndSend();
         }
     }
 
@@ -548,8 +561,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (updatedActivityCount == 1) {
-            //if we go to the background, pause all running views
-            resumeAutoPausedViews();
+            //if we go to the background, stop all running views
+            startStoppedViews();
         }
     }
 
@@ -829,7 +842,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             synchronized (_cly) {
                 L.i("[Views] Calling pauseViewWithID vi[" + viewID + "]");
 
-                pauseViewWithIDInternal(viewID, false);
+                pauseViewWithIDInternal(viewID);
             }
         }
 

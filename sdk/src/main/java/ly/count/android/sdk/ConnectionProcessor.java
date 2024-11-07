@@ -473,7 +473,7 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     final RequestResult rRes;
-
+        
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {

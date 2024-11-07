@@ -297,6 +297,7 @@ public class UtilsInternalLimits {
         assert data != null;
 
         StringBuilder removedKeys = new StringBuilder();
+        Map<String, Object> gonnaReplace = new ConcurrentHashMap<>();
 
         for (Iterator<Map.Entry<String, Object>> it = data.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<String, Object> entry = it.next();
@@ -307,9 +308,37 @@ public class UtilsInternalLimits {
                 //found unsupported data type or null key or value, removing
                 it.remove();
                 removedKeys.append("key:[").append(key).append("] value:[").append(value).append("] type:[").append(value == null ? "null" : value.getClass().getSimpleName()).append("] ,");
+            } else if (value instanceof List) {
+                List<?> list = (List<?>) value;
+                list = new ArrayList<>(list);
+                int a = list.size();
+                for (int i = 0; i < a; i++) {
+                    Object element = list.get(i);
+                    if (!isSupportedDataTypeBasic(element)) {
+                        removedKeys.append("from_list").append(list).append("index:[").append(i).append("] value:[").append(element).append("] type:[").append(element == null ? "null" : element.getClass().getSimpleName()).append("] ,");
+                        list.remove(i);
+                        i--;
+                        a--;
+                    }
+                }
+                gonnaReplace.put(key, list);
+            } else if (value instanceof JSONArray) {
+                JSONArray jsonArray = (JSONArray) value;
+                int a = jsonArray.length();
+                for (int i = 0; i < a; i++) {
+                    Object element = jsonArray.opt(i);
+                    if (!isSupportedDataTypeBasic(element)) {
+                        removedKeys.append("from_list").append(jsonArray).append("index:[").append(i).append("] value:[").append(element).append("] type:[").append(element == null ? "null" : element.getClass().getSimpleName()).append("] ,");
+                        jsonArray.remove(i);
+                        i--;
+                        a--;
+                    }
+                }
+                gonnaReplace.put(key, jsonArray);
             }
         }
         String removedKeysStr = removedKeys.toString();
+        data.putAll(gonnaReplace);
 
         if (!removedKeysStr.isEmpty()) {
             L.w("[UtilsInternalLimits] removeUnsupportedDataTypes, removed " + removedKeysStr + " from the provided data map.");
@@ -359,6 +388,7 @@ public class UtilsInternalLimits {
      * - User profile custom properties
      * - User profile custom properties modifiers
      * - Feedback widgets' results
+     * This function also removes unsupported data types inside the collections
      *
      * @param value to check
      * @return true if the value is a supported data type
@@ -366,27 +396,12 @@ public class UtilsInternalLimits {
     static boolean isSupportedDataType(@Nullable Object value) {
         if (isSupportedDataTypeBasic(value)) {
             return true;
-        } else if (value instanceof List) {
-            List<?> list = (List<?>) value;
-            for (Object element : list) {
-                if (!isSupportedDataTypeBasic(element)) {
-                    return false;
-                }
-            }
+        } else if (value instanceof List || value instanceof JSONArray) {
             return true;
         } else if (value != null && value.getClass().isArray()) {
             Class<?> componentType = value.getClass().getComponentType();
             return componentType == String.class || componentType == Integer.class || componentType == Double.class || componentType == Boolean.class || componentType == Float.class || componentType == Long.class
                 || componentType == int.class || componentType == double.class || componentType == boolean.class || componentType == float.class || componentType == long.class;
-        } else if (value instanceof JSONArray) {
-            JSONArray jsonArray = (JSONArray) value;
-            for (int i = 0; i < jsonArray.length(); i++) {
-                Object element = jsonArray.opt(i);
-                if (!isSupportedDataTypeBasic(element)) {
-                    return false;
-                }
-            }
-            return true;
         }
         return false;
     }

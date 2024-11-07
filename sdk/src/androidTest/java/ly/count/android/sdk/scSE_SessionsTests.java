@@ -208,9 +208,11 @@ public class scSE_SessionsTests {
     @Test
     public void SE_204_CNR_A_id_change() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        TestLifecycleObserver testLifecycleObserver = new TestLifecycleObserver();
+        config.lifecycleObserver = testLifecycleObserver;
         Countly countly = new Countly().init(config);
 
-        flowAutomaticSessions(countly);
+        flowAutomaticSessions(countly, testLifecycleObserver);
 
         Assert.assertEquals(16, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
@@ -220,8 +222,9 @@ public class scSE_SessionsTests {
         validateSessionEndRequest(3, 2, "newID");
 
         validateSessionBeginRequest(4, "newID_2");
-        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), 5);
         // orientation request
+        isOrientationRequest = TestUtils.getCurrentRQ()[5].containsKey("events");
+        TestUtils.validateRequest("newID", TestUtils.map("old_device_id", "newID_2"), isOrientationRequest ? 6 : 5);
         validateSessionEndRequest(7, 2, "newID");
 
         validateSessionBeginRequest(8, "newID_2");
@@ -265,7 +268,7 @@ public class scSE_SessionsTests {
         CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" });
         Countly countly = new Countly().init(config);
 
-        flowAutomaticSessions(countly);
+        flowAutomaticSessions(countly, new TestLifecycleObserver());
 
         Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
         validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
@@ -307,9 +310,9 @@ public class scSE_SessionsTests {
         CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setRequiresConsent(true);
         Countly countly = new Countly().init(config);
 
-        flowAutomaticSessions(countly);
+        flowAutomaticSessions(countly, new TestLifecycleObserver());
 
-        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
         validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 2);
@@ -338,8 +341,8 @@ public class scSE_SessionsTests {
         countly.sessions().updateSession();
     }
 
-    private void flowAutomaticSessions(Countly countly) throws InterruptedException {
-
+    private void flowAutomaticSessions(Countly countly, TestLifecycleObserver testLifecycleObserver) throws InterruptedException {
+        testLifecycleObserver.bringToForeground();
         countly.onStart(null);
 
         Thread.sleep(1000);
@@ -352,15 +355,19 @@ public class scSE_SessionsTests {
         countly.deviceId().changeWithoutMerge("newID_2");
         Thread.sleep(1000);
 
+        testLifecycleObserver.goToBackground();
         countly.onStop();
 
         Thread.sleep(1000);
 
+        testLifecycleObserver.bringToForeground();
         countly.onStart(null);
 
         countly.deviceId().changeWithMerge("newID");
+        testLifecycleObserver.goToBackground();
         countly.onStop();
         Thread.sleep(1000);
+        testLifecycleObserver.bringToForeground();
         countly.onStart(null);
     }
 
@@ -385,8 +392,7 @@ public class scSE_SessionsTests {
     }
 
     private void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
-        TestUtils.validateRequest(deviceId, TestUtils.map("consent",
-            "{\"sessions\":" + consentForSession + ",\"crashes\":false,\"users\":false,\"push\":false,\"feedback\":false,\"scrolls\":false,\"remote-config\":false,\"attribution\":false,\"clicks\":false,\"location\":false,\"star-rating\":false,\"events\":false,\"views\":false,\"apm\":false}"), idx);
+        ModuleConsentTests.validateConsentRequest(deviceId, idx, new boolean[] { consentForSession, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
     }
 
     private void validateRequest(Map<String, Object> expectedExtras, int idx) {

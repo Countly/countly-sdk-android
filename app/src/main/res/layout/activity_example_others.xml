@@ -112,6 +112,13 @@
     />
 
     <Button
+        android:id="@+id/button75"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickExitContents"
+        android:text="Exit Content"
+    />
+    <Button
         android:id="@+id/button72"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -126,5 +133,14 @@
         android:onClick="onClickEndSession"
         android:text="End Session"
     />
+
+    <Button
+        android:id="@+id/button74"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickFetchContents"
+        android:text="Show Avaliable Content"
+    />
+
   </LinearLayout>
 </ScrollView>

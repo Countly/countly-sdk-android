@@ -179,6 +179,8 @@ public class ScenarioEventIDTests {
         ArgumentCaptor<String> argPvid = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> argCvid = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> argPeid = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> argPreviousViewName = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> argCurrentViewName = ArgumentCaptor.forClass(String.class);
 
         verify(eqp, times(entryCount)).recordEventToEventQueue(argEventKey.capture(), arg02.capture(), arg1.capture(), arg2.capture(), arg3.capture(), arg4.capture(), arg5.capture(), arg6.capture(), argEid.capture(), argPvid.capture(), argCvid.capture(), argPeid.capture());
 

@@ -145,8 +145,9 @@ public class Utils {
     /**
      * Returns true if the version you are checking is at or below the build version
      *
-     * @param version
-     * @return
+     * @param version version to check
+     * @return true if the version you are checking is at or below the build version
+     * @deprecated This method is deprecated and will be removed in the future
      */
     @androidx.annotation.ChecksSdkIntAtLeast(parameter = 0)
     public static boolean API(int version) {

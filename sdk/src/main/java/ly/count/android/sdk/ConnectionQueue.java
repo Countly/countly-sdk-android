@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,6 +33,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 /**
  * ConnectionQueue queues session and event data and periodically sends that data to
@@ -50,9 +53,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
     BaseInfoProvider baseInfoProvider;
-
     HealthTracker healthTracker;
-
     public PerformanceCounterCollector pcc;
 
     private Map<String, String> requestHeaderCustomValues;
@@ -64,7 +65,6 @@ class ConnectionQueue implements RequestQueueProvider {
     protected DeviceInfo deviceInfo = null;//todo ?remove in the future?
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
-
     RequestInfoProvider requestInfoProvider;
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
@@ -823,6 +823,27 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
+    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories) {
+
+        JSONObject json = new JSONObject();
+        try {
+            JSONObject landscapeJson = new JSONObject();
+            landscapeJson.put("w", landscapeWidth);
+            landscapeJson.put("h", landscapeHeight);
+
+            JSONObject portraitJson = new JSONObject();
+            portraitJson.put("w", portraitWidth);
+            portraitJson.put("h", portraitHeight);
+
+            json.put("l", landscapeJson);
+            json.put("p", portraitJson);
+        } catch (JSONException e) {
+            L.e("Error while preparing fetch contents request");
+        }
+
+        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString());
+    }
+
     @Override
     public String prepareServerConfigRequest() {
         return prepareCommonRequestDataShort() + "&method=sc";
@@ -897,11 +918,7 @@ class ConnectionQueue implements RequestQueueProvider {
      */
     boolean isRequestQueueEmpty() {
         String rawRequestQueue = storageProvider.getRequestQueueRaw();
-        if (rawRequestQueue.length() > 0) {
-            return false;
-        } else {
-            return true;
-        }
+        return rawRequestQueue.isEmpty();
     }
 
     // for unit testing

@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
@@ -258,7 +259,7 @@ public class ModuleViewsTests {
     }
 
     @Test
-    public void onActivityStartedStopped() throws InterruptedException {
+    public void onActivityStartedStopped() throws InterruptedException, JSONException {
         Map<String, Object> globalSegm = new HashMap<>();
         globalSegm.put("aa", "11");
         globalSegm.put("aagfg", "1133");
@@ -267,30 +268,16 @@ public class ModuleViewsTests {
         globalSegm.put("3", true);
 
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, globalSegm);
+        cc.setEventQueueSizeToSend(1);
         Countly mCountly = new Countly().init(cc);
-
-        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
-
         @NonNull Activity act = mock(Activity.class);
 
-        int start = UtilsTime.currentTimestampSeconds();
         mCountly.moduleViews.onActivityStarted(act, 1);//activity count = 1
-        Thread.sleep(100);
+        Thread.sleep(1000);
         mCountly.moduleViews.onActivityStopped(0);//activity count = 0
-        double viewDuration = UtilsTime.currentTimestampSeconds() - start;
 
-        final Map<String, Object> segm = new HashMap<>();
-        ClearFillSegmentationViewStart(segm, act.getClass().getSimpleName(), true, globalSegm);
-        segm.put("aa", "11");
-        segm.put("aagfg", "1133");
-        segm.put("1", 123);
-        segm.put("2", 234.0d);
-        segm.put("3", true);
-
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 2);
-
-        ClearFillSegmentationViewEnd(segm, act.getClass().getSimpleName(), globalSegm);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, viewDuration, segm, vals[0], 1, 2);
+        validateView(act.getClass().getSimpleName(), 0.0, 0, 2, true, true, TestUtils.map("aa", "11", "aagfg", "1133", "1", 123, "2", 234, "3", true), "idv1", "");
+        validateView(act.getClass().getSimpleName(), 1.0, 1, 2, false, false, TestUtils.map("aa", "11", "aagfg", "1133", "1", 123, "2", 234, "3", true), "idv1", "");
     }
 
     /**
@@ -589,67 +576,61 @@ public class ModuleViewsTests {
      * @throws InterruptedException
      */
     @Test
-    public void autoSessionFlow_1() throws InterruptedException {
+    public void autoSessionFlow_1() throws InterruptedException, JSONException {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null);
+        cc.setEventQueueSizeToSend(1);
         Countly mCountly = new Countly().init(cc);
-        @NonNull EventProvider ep;
-
-        ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         @NonNull Activity act = mock(Activity.class);
         @NonNull Activity act2 = mock(TestUtils.Activity2.class);
         @NonNull Activity act3 = mock(TestUtils.Activity3.class);
 
-        String viewNames[] = { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
+        String[] viewNames = { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
         final Map<String, Object> segm = new HashMap<>();
 
+        TestUtils.getCountyStore().clear();
+        TestUtils.assertRQSize(0);
         //go from one activity to another in the expected way and then "go to background"
         ///////// 1
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, "", "");
         mCountly.onStartInternal(act);
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[0], "");
 
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+
         // there should be the first view start
-        ClearFillSegmentationViewStart(segm, viewNames[0], true);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
-        clearInvocations(ep);
+        validateView(viewNames[0], 0.0, 1, 2, true, true, null, "idv1", "");
 
         ///////// 2
         Thread.sleep(1000);
         mCountly.onStartInternal(act2);
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[1], vals[0]);
-        mCountly.onStopInternal();
+
+        validateView(viewNames[0], 1.0, 2, 4, false, false, null, "idv1", "");// validate stop event of act1
+        validateView(viewNames[1], 0.0, 3, 4, false, true, null, "idv2", "idv1"); // validate start event of act2
+
+        mCountly.onStopInternal(); // it does not end the view with this call but will end it on next start
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[1], vals[0]);
-
-        //we are transitioning to the next view
-        //first the next activities 'onStart' is called
-        //we would report the duration of the first view and then start the next one
-        ClearFillSegmentationViewEnd(segm, viewNames[0], null);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 0, 2);
-
-        ClearFillSegmentationViewStart(segm, viewNames[1], false);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 1, 2);
-        clearInvocations(ep);
+        //WARN - Possible error for next view starting, this view will not end
 
         Thread.sleep(2000);
         mCountly.onStartInternal(act3);
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
-        mCountly.onStopInternal();
+
+        validateView(viewNames[1], 2.0, 4, 6, false, false, null, "idv2", "idv1");// validate stop event of act2
+        validateView(viewNames[2], 0.0, 5, 6, false, true, null, "idv3", "idv2"); // validate start event of act3
+
+        mCountly.onStopInternal(); // onStop call will not end previous view
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
-
-        ClearFillSegmentationViewEnd(segm, viewNames[1], null);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[1], 0, 2);
-
-        ClearFillSegmentationViewStart(segm, viewNames[2], false);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 1, 2);
-        clearInvocations(ep);
 
         Thread.sleep(1000);
-        mCountly.onStopInternal();
+        mCountly.onStopInternal(); // but this will end
         TestUtils.verifyCurrentPreviousViewID(mCountly.moduleViews, vals[2], vals[1]);
 
-        ClearFillSegmentationViewEnd(segm, viewNames[2], null);
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[2], 0, 1);
+        ModuleSessionsTests.validateSessionEndRequest(6, 4, TestUtils.commonDeviceId);
+        validateView(viewNames[2], 1.0, 7, 8, false, false, null, "idv3", "idv2");// validate stop event of act3
+
+        Assert.assertEquals(8, TestUtils.getCurrentRQ("events").length);
     }
 
     void ClearFillSegmentationViewStart(final Map<String, Object> segm, String viewName, boolean firstView) {
@@ -1283,20 +1264,17 @@ public class ModuleViewsTests {
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
     }
 
-    public void clearFirstViewFlagSessionEndBase(boolean manualSessions) throws InterruptedException {
+    public void clearFirstViewFlagSessionEndBase(boolean manualSessions) throws InterruptedException, JSONException {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
+        cc.setEventQueueSizeToSend(1);
         if (manualSessions) {
             cc.enableManualSessionControl();
         }
         Countly mCountly = new Countly().init(cc);
-        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        TestUtils.assertRQSize(0);
 
         mCountly.views().startView("a", null);
-        Map<String, Object> segm = new HashMap<>();
-        ClearFillSegmentationViewStart(segm, "a", true);
-
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
-        clearInvocations(ep);
+        validateView("a", 0.0, 0, 1, true, true, null, vals[0], "");
 
         if (manualSessions) {
             mCountly.sessions().beginSession();
@@ -1304,78 +1282,71 @@ public class ModuleViewsTests {
             mCountly.onStartInternal(mock(TestUtils.Activity2.class));
         }
 
+        ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
+
         mCountly.views().startView("b", null);
-        ClearFillSegmentationViewStart(segm, "b", false);
-
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
-        clearInvocations(ep);
-
+        validateView("b", 0.0, 2, 3, false, true, null, vals[1], vals[0]);
         Thread.sleep(1000);
 
+        int lastViewIdx = 4;
         if (manualSessions) {
             mCountly.sessions().endSession();
         } else {
             mCountly.onStopInternal();
-
-            //in this situation we would pause all views
-            ClearFillSegmentationViewEnd(segm, "a", null);
-            TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 1, 2);
-
-            ClearFillSegmentationViewEnd(segm, "b", null);
-            TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);
-
-            clearInvocations(ep);
+            lastViewIdx = 6;
+            //in this situation we would stop all views
+            if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+                validateView("a", 1.0, 4, 6, false, false, null, vals[0], vals[0]);
+                validateView("b", 1.0, 5, 6, false, false, null, vals[1], vals[0]);
+            } else {
+                validateView("b", 1.0, 4, 6, false, false, null, vals[1], vals[0]);
+                validateView("a", 1.0, 5, 6, false, false, null, vals[0], vals[0]);
+            }
         }
 
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
         mCountly.views().startView("c", null);
-        ClearFillSegmentationViewStart(segm, "c", true);
-
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 0, 1);
-        clearInvocations(ep);
+        validateView("c", 0.0, lastViewIdx, lastViewIdx + 1, true, true, null, vals[2], vals[1]);
     }
 
     @Test
-    public void clearFirstViewFlagSessionEndManual() throws InterruptedException {
+    public void clearFirstViewFlagSessionEndManual() throws InterruptedException, JSONException {
         clearFirstViewFlagSessionEndBase(true);
     }
 
     @Test
-    public void clearFirstViewFlagSessionEndAutomatic() throws InterruptedException {
+    public void clearFirstViewFlagSessionEndAutomatic() throws InterruptedException, JSONException {
         clearFirstViewFlagSessionEndBase(false);
     }
 
     @Test
-    public void clearFirstViewFlagSessionConsentRemoved() {
+    public void clearFirstViewFlagSessionConsentRemoved() throws JSONException {
         @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
         cc.setRequiresConsent(true);
         cc.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.views });
+        cc.setEventQueueSizeToSend(1);
         Countly mCountly = new Countly().init(cc);
-        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
         mCountly.views().startView("a", null);
-        Map<String, Object> segm = new HashMap<>();
-        ClearFillSegmentationViewStart(segm, "a", true);
 
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
-        clearInvocations(ep);
+        // 0 is consent request
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
+        validateView("a", 0.0, 2, 3, true, true, null, vals[0], "");
 
         //nothing should happen when session consent is given
         mCountly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.sessions });
-
         mCountly.views().startView("b", null);
-        ClearFillSegmentationViewStart(segm, "b", false);
 
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[1], 0, 1);
-        clearInvocations(ep);
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 3, new boolean[] { true, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
+        validateView("b", 0.0, 4, 5, false, true, null, vals[1], vals[0]);
 
         //internal flag should be reset whens session consent is removed
         mCountly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.sessions });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
 
         mCountly.views().startView("c", null);
-        ClearFillSegmentationViewStart(segm, "c", true);
-
-        TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[2], 0, 1);
-        clearInvocations(ep);
+        validateView("c", 0.0, 6, 7, true, true, null, vals[2], vals[1]);
     }
 
     /**
@@ -1471,11 +1442,7 @@ public class ModuleViewsTests {
         givenStartSegm.put("sop", 4);
         String viewID = mCountly.views().startView("VIEW", givenStartSegm);
 
-        Map<String, Object> expectedSegm = new ConcurrentHashMap<>();
-        ClearFillSegmentationViewStart(expectedSegm, "VI", true);
-        expectedSegm.putAll(TestUtils.map("av", "v1", "so", 4));
-
-        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0);
+        validateView("VI", 0.0, 0, 1, true, true, TestUtils.map("av", "v1", "so", 4), "idv1", "");
 
         mCountly.views().setGlobalViewSegmentation(TestUtils.map("sunburn", true, "sunflower", "huh"));
 
@@ -1483,10 +1450,7 @@ public class ModuleViewsTests {
         endSegm.put("satellite", "hoho");
         endSegm.put("avu", 25);
         mCountly.views().stopViewWithID(viewID, endSegm);
-        ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
-        expectedSegm.putAll(TestUtils.map("av", 25, "sa", "hoho", "su", "huh"));
-
-        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
+        validateView("VI", 0.0, 1, 2, false, false, TestUtils.map("av", 25, "sa", "hoho", "su", "huh"), "idv1", "");
     }
 
     /**
@@ -1521,11 +1485,13 @@ public class ModuleViewsTests {
         givenStartSegm.put("you", "would");
         String viewID = mCountly.views().startView("VIEW", givenStartSegm);
 
-        Map<String, Object> expectedSegm = new HashMap<>();
-        ClearFillSegmentationViewStart(expectedSegm, "VI", true);
-        expectedSegm.putAll(TestUtils.map("yo", "wo", "so", "ma", "av", "v1", "i_", "i_"));
-
-        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 0);
+        Map<String, Object> segm;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm = TestUtils.map("av", 4, "i_", "i_", "do", "gi", "so", 4);
+        } else {
+            segm = TestUtils.map("yo", "wo", "so", "ma", "av", "v1", "i_", "i_");
+        }
+        validateView("VI", 0.0, 0, 1, true, true, segm, "idv1", "");
 
         mCountly.views().setGlobalViewSegmentation(TestUtils.map("go", 45, "gone", 567.78f));
 
@@ -1536,10 +1502,14 @@ public class ModuleViewsTests {
         endSegm.put("happy_life", false);
         endSegm.put("nope", 123);
         mCountly.views().stopViewWithID(viewID, endSegm);
-        ClearFillSegmentationViewEnd(expectedSegm, "VI", null);
-        expectedSegm.putAll(TestUtils.map("av", 25, "no", 123, "sa", "ho", "ha", true));
 
-        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegm, 1);
+        segm = TestUtils.map("av", 25, "no", 123, "sa", "ho");
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm.put("go", 567.78);
+        } else {
+            segm.put("ha", true);
+        }
+        validateView("VI", 0.0, 1, 2, false, false, segm, "idv1", "");
     }
 
     /**
@@ -1723,7 +1693,7 @@ public class ModuleViewsTests {
      */
     @Test
     public void startView_unsupportedDataTypesSegmentation() throws JSONException {
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        CountlyConfig countlyConfig = TestUtils.createScenarioEventIDConfig(TestUtils.incrementalViewIdGenerator(), TestUtils.incrementalEventIdGenerator());
         countlyConfig.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(countlyConfig);
 
@@ -1740,8 +1710,279 @@ public class ModuleViewsTests {
         Map<String, Object> expectedSegmentation = TestUtils.map();
         ClearFillSegmentationViewStart(expectedSegmentation, "test", true);
 
-        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, expectedSegmentation, 0);
+        validateView("test", 0.0, 0, 1, true, false, expectedSegmentation, "idv1", "");
     }
 
+    /**
+     * "startView" with bg/fg switch case
+     * - Validate that after an auto stopped view is started and app gone to background
+     * running view should stop and send a stop view request
+     * - After coming from the background to foreground the stopped view should start again
+     * - When we stop the view it should be removed from the cached views
+     *
+     * @throws InterruptedException if the thread is interrupted
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_restartAfterActivityComesFromForeground() throws InterruptedException, JSONException {
+        CountlyConfig countlyConfig = TestUtils.createScenarioEventIDConfig(TestUtils.incrementalViewIdGenerator(), TestUtils.incrementalEventIdGenerator());
+        countlyConfig.setApplication(null);
+        countlyConfig.setContext(TestUtils.getContext());
+        countlyConfig.setGlobalViewSegmentation(TestUtils.map("try", "this", "maybe", false));
+
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "a", "a",
+            "b", 55,
+            "c", new JSONArray(Arrays.asList("aa", "asd", "ad8")),
+            "d", true
+        );
+
+        Activity activity = mock(Activity.class);
+
+        TestUtils.assertRQSize(0);
+
+        countly.onStart(activity);
+        countly.views().startView("test", segmentation);
+
+        segmentation.put("try", "this");
+        segmentation.put("maybe", false);
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide1", "_CLY_", "", "_CLY_", 1, 3, 0, 1);
+        validateView("test", 0.0, 2, 3, true, true, segmentation, "idv1", "");
+
+        Thread.sleep(1000);
+
+        countly.onStop();
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
+        validateView("test", 1.0, 4, 5, false, false, TestUtils.map("try", "this", "maybe", false), "idv1", "");
+
+        countly.onStart(activity);
+
+        ModuleSessionsTests.validateSessionBeginRequest(5, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide2", "_CLY_", "idv1", "_CLY_", 6, 8, 0, 1);
+        validateView("test", 0.0, 7, 8, true, true, TestUtils.map("try", "this", "maybe", false), "idv2", "idv1");
+
+        Thread.sleep(1000);
+
+        countly.views().stopViewWithName("test");
+        validateView("test", 1.0, 8, 9, false, false, TestUtils.map("try", "this", "maybe", false), "idv2", "idv1");
+        countly.onStop();
+
+        ModuleSessionsTests.validateSessionEndRequest(9, 1, TestUtils.commonDeviceId);
+        TestUtils.assertRQSize(10);
+    }
+
+    /**
+     * "startView" with bg/fg switch case
+     * - Validate that after an auto stopped view is started and app gone to background
+     * running view should stop and send a stop view request
+     * - After coming from the background to foreground the stopped view should start again,
+     * and it should contain the previous segmentation
+     * - When we stop the view it should be removed from the cached views
+     *
+     * @throws InterruptedException if the thread is interrupted
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_restartAfterActivityComesFromForeground_copyPreviousSegmentation() throws InterruptedException, JSONException {
+        CountlyConfig countlyConfig = TestUtils.createScenarioEventIDConfig(TestUtils.incrementalViewIdGenerator(), TestUtils.incrementalEventIdGenerator());
+        countlyConfig.setApplication(null);
+        countlyConfig.setContext(TestUtils.getContext());
+        countlyConfig.setGlobalViewSegmentation(TestUtils.map("try", "this", "maybe", false));
+
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Map<String, Object> segmentation = TestUtils.map(
+            "a", "a",
+            "b", 55,
+            "c", new JSONArray(Arrays.asList("aa", "asd", "ad8")),
+            "d", true
+        );
+
+        Activity activity = mock(Activity.class);
+
+        TestUtils.assertRQSize(0);
+
+        countly.onStart(activity);
+        countly.views().startView("test", segmentation);
+
+        countly.views().addSegmentationToViewWithName("test", TestUtils.map("yama", "de", "kuda", "sai"));
+
+        segmentation.put("try", "this");
+        segmentation.put("maybe", false);
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide1", "_CLY_", "", "_CLY_", 1, 3, 0, 1);
+        validateView("test", 0.0, 2, 3, true, true, segmentation, "idv1", "");
+
+        Thread.sleep(1000);
+
+        countly.onStop();
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
+        validateView("test", 1.0, 4, 5, false, false, TestUtils.map("try", "this", "maybe", false, "yama", "de", "kuda", "sai"), "idv1", "");
+
+        countly.onStart(activity);
+
+        ModuleSessionsTests.validateSessionBeginRequest(5, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide2", "_CLY_", "idv1", "_CLY_", 6, 8, 0, 1);
+        validateView("test", 0.0, 7, 8, true, true, TestUtils.map("try", "this", "maybe", false, "yama", "de", "kuda", "sai"), "idv2", "idv1");
+        TestUtils.assertRQSize(8);
+    }
+
+    /**
+     * "startView" with enabled view name recording
+     * Validate that the previous view name is recorded when a new view is started
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordView_previousViewName() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.experimental.enablePreviousNameRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.views().startView("test");
+        validateView("test", 0.0, 0, 1, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
+
+        countly.views().startView("test2");
+        validateView("test2", 0.0, 1, 2, false, true, TestUtils.map(), "_CLY_", "_CLY_", "test");
+    }
+
+    /**
+     * "startView" with consent removal
+     * Validate that all running views are stopped when the view consent is removed
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_consentRemoval() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setRequiresConsent(true);
+        countlyConfig.setLoggingEnabled(true);
+        countlyConfig.giveAllConsents();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.views().startView("test");
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        validateView("test", 0.0, 1, 2, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.views().startView("test2");
+        validateView("test2", 0.0, 2, 3, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
+        validateView("test", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 6);
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * "startAutoStoppedView" with consent removal
+     * Validate that running view is stopped when the view consent is removed
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startAutoStoppedView_consentRemoval() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setRequiresConsent(true);
+        countlyConfig.setLoggingEnabled(true);
+        countlyConfig.giveAllConsents();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.views().startAutoStoppedView("test");
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        validateView("test", 0.0, 1, 2, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.views().startAutoStoppedView("test2");
+        validateView("test", 0.0, 2, 4, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView("test2", 0.0, 3, 4, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
+        validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 6);
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * Auto view tracking with consent removal
+     * Validate that running view is stopped when the view consent is removed
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void autoViewTracking_consentRemoval() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig(TestUtils.getContext());
+        countlyConfig.setRequiresConsent(true);
+        countlyConfig.setLoggingEnabled(true);
+        countlyConfig.enableAutomaticViewTracking();
+        countlyConfig.giveAllConsents();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        Activity activity = Mockito.mock(Activity.class);
+        countly.onStart(activity);
+
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 0);
+        ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0, 0, 2, 4);
+
+        validateView(activity.getClass().getName(), 0.0, 3, 4, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        Activity activity2 = Mockito.mock(Activity.class);
+        countly.onStart(activity2);
+        validateView(activity.getClass().getName(), 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateView(activity2.getClass().getName(), 0.0, 5, 6, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+
+        countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
+        validateView(activity2.getClass().getName(), 0.0, 6, 8, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 7, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
+
+        ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 8);
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+    }
+
+    static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {
+        validateView(viewName, viewDuration, idx, size, start, visit, customSegmentation, id, pvid, null);
+    }
+
+    static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid, String pvn) throws JSONException {
+        Map<String, Object> viewSegmentation = TestUtils.map("name", viewName, "segment", "Android");
+        if (start) {
+            viewSegmentation.put("start", "1");
+        }
+        if (visit) {
+            viewSegmentation.put("visit", "1");
+        }
+        if (customSegmentation != null) {
+            viewSegmentation.putAll(customSegmentation);
+        }
+
+        if (pvn != null) {
+            viewSegmentation.put("cly_pvn", pvn);
+        }
+
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
+    }
     //todo extract orientation tests
 }

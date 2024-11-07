@@ -10,17 +10,22 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     static final Map<String, Event> timedEvents = new HashMap<>();
 
     final static String ACTION_EVENT_KEY = "[CLY]_action";
+    final static String VISIBILITY_KEY = "cly_v";
+    final static String PREVIOUS_EVENT_NAME_KEY = "cly_pen";
+    final static String PREVIOUS_VIEW_NAME_KEY = "cly_pvn";
+    final static String CURRENT_VIEW_NAME_KEY = "cly_cvn";
 
     //interface for SDK users
     final Events eventsInterface;
 
     //used for tracking recorded custom event ID's. This is not updated when internal events are recorded
     String previousEventId = "";
-
+    String previousEventName = "";
     EventQueueProvider eventQueueProvider;
     ViewIdProvider viewIdProvider;
-
     SafeIDGenerator safeEventIDGenerator;
+    private final boolean viewNameRecordingEnabled;
+    private final boolean visibilityTracking;
 
     ModuleEvents(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -30,6 +35,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         config.eventProvider = this;
         eventQueueProvider = config.eventQueueProvider;
         safeEventIDGenerator = config.safeEventIDGenerator;
+        viewNameRecordingEnabled = config.experimental.viewNameRecordingEnabled;
+        visibilityTracking = config.experimental.visibilityTrackingEnabled;
 
         eventsInterface = new Events();
     }
@@ -115,10 +122,30 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String pvid = null; // Previous View ID
         String cvid = null; // Current View ID
 
+        String pvn = null;
+        String pen = null;
+        String cvn = null;
+
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
+            if (viewNameRecordingEnabled) {
+                pvn = _cly.moduleViews.previousViewName;
+                if (pvn == null) {
+                    pvn = "";
+                }
+            }
         } else {
             cvid = viewIdProvider.getCurrentViewId();
+            if (viewNameRecordingEnabled) {
+                pen = previousEventName;
+                cvn = _cly.moduleViews.currentViewName;
+                if (pen == null) {
+                    pen = "";
+                }
+                if (cvn == null) {
+                    cvn = "";
+                }
+            }
         }
 
         if (pcc != null) {
@@ -127,6 +154,21 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
         //before each event is recorded, check if user profile data needs to be saved
         _cly.moduleUserProfile.saveInternal();
+
+        if (visibilityTracking) {
+            String appInBackground = deviceInfo.isInBackground();
+            int state = 1; // in foreground
+            if ("true".equals(appInBackground)) {
+                state = 0; // in background
+            }
+            L.d("[ModuleEvents] recordEventInternal, Adding visibility tracking to segmentation app in background:[" + appInBackground + "] cly_v:[" + state + "]");
+
+            if (segmentation == null) {
+                segmentation = new HashMap<>();
+            }
+
+            segmentation.put(VISIBILITY_KEY, state);
+        }
 
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
@@ -144,6 +186,15 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+
+                    if (segmentation == null) {
+                        segmentation = new HashMap<>();
+                    }
+
+                    if (viewNameRecordingEnabled) {
+                        segmentation.put(PREVIOUS_VIEW_NAME_KEY, pvn);
+                    }
+
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
@@ -176,8 +227,15 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         segmentation = new HashMap<>();
                     }
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
+
+                    if (viewNameRecordingEnabled) {
+                        segmentation.put(CURRENT_VIEW_NAME_KEY, cvn);
+                        segmentation.put(PREVIOUS_EVENT_NAME_KEY, pen);
+                    }
+
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
+                    previousEventName = keyTruncated;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;

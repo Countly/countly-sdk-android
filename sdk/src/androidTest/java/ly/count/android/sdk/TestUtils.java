@@ -7,12 +7,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ApplicationProvider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -42,7 +44,7 @@ public class TestUtils {
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
     public final static String SDK_NAME = "java-native-android";
-    public final static String SDK_VERSION = "24.7.2";
+    public final static String SDK_VERSION = "24.7.5";
     public static final int MAX_THREAD_COUNT_PER_STACK_TRACE = 50;
 
     public static class Activity2 extends Activity {
@@ -492,12 +494,25 @@ public class TestUtils {
      * @return array of request params
      */
     protected static @NonNull Map<String, String>[] getCurrentRQ() {
+        return getCurrentRQ("");
+    }
+
+    /**
+     * Get current request queue from target folder
+     *
+     * @param filter Filter by given string
+     * @return array of request params
+     */
+    protected static @NonNull Map<String, String>[] getCurrentRQ(String filter) {
         //get all request files from target folder
         String[] requests = getCountyStore().getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 
         for (int i = 0; i < requests.length; i++) {
+            if (!requests[i].contains(filter)) {
+                continue;
+            }
 
             String[] params = requests[i].split("&");
 
@@ -611,11 +626,86 @@ public class TestUtils {
 
         validateRequiredParams(getCurrentRQ()[idx], deviceId);
         for (Map.Entry<String, Object> entry : expectedExtras.entrySet()) {
-            Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
+            if (entry.getValue() instanceof Map) {
+                assertEqualsMap((Map<String, Object>) entry.getValue(), parseMap(request.get(entry.getKey())));
+            } else {
+                Assert.assertEquals(entry.getValue(), request.get(entry.getKey()));
+            }
+        }
+    }
+
+    private static Map<String, Object> parseMap(String mapCandidate) {
+        Map<String, Object> map = new ConcurrentHashMap<>();
+        try {
+            JSONObject json = new JSONObject(mapCandidate);
+            Iterator<String> keys = json.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                map.put(key, json.get(key));
+            }
+        } catch (JSONException e) {
+            Assert.fail(e.getMessage());
+        }
+
+        return map;
+    }
+
+    protected static void assertArraysEquals(Object arr1, Object arr2) {
+        // Check if both are arrays
+        if (!arr1.getClass().isArray() || !arr2.getClass().isArray()) {
+            Assert.fail("Both parameters must be arrays.");
+        }
+
+        // Handle primitive arrays
+        if (arr1 instanceof int[] && arr2 instanceof int[]) {
+            Assert.assertTrue(Arrays.equals((int[]) arr1, (int[]) arr2));
+        } else if (arr1 instanceof long[] && arr2 instanceof long[]) {
+            Assert.assertTrue(Arrays.equals((long[]) arr1, (long[]) arr2));
+        } else if (arr1 instanceof double[] && arr2 instanceof double[]) {
+            Assert.assertTrue(Arrays.equals((double[]) arr1, (double[]) arr2));
+        } else if (arr1 instanceof float[] && arr2 instanceof float[]) {
+            Assert.assertTrue(Arrays.equals((float[]) arr1, (float[]) arr2));
+        } else if (arr1 instanceof char[] && arr2 instanceof char[]) {
+            Assert.assertTrue(Arrays.equals((char[]) arr1, (char[]) arr2));
+        } else if (arr1 instanceof byte[] && arr2 instanceof byte[]) {
+            Assert.assertTrue(Arrays.equals((byte[]) arr1, (byte[]) arr2));
+        } else if (arr1 instanceof short[] && arr2 instanceof short[]) {
+            Assert.assertTrue(Arrays.equals((short[]) arr1, (short[]) arr2));
+        } else if (arr1 instanceof boolean[] && arr2 instanceof boolean[]) {
+            Assert.assertTrue(Arrays.equals((boolean[]) arr1, (boolean[]) arr2));
+        }
+        // Handle reference type arrays (like String[], Object[])
+        else if (arr1 instanceof Object[] && arr2 instanceof Object[]) {
+            Assert.assertTrue(Arrays.equals((Object[]) arr1, (Object[]) arr2));
+        }
+        // If the arrays are of different types
+        else {
+            Assert.fail("Array types do not match.");
+        }
+    }
+
+    protected static void assertEqualsMap(Map<String, Object> map1, Map<String, Object> map2) {
+        Assert.assertEquals(map1.size(), map2.size());
+        for (Map.Entry<String, Object> entry : map1.entrySet()) {
+            if (entry.getValue().getClass().isArray()) {
+                assertArraysEquals(entry.getValue(), map2.get(entry.getKey()));
+            } else {
+                Assert.assertEquals(entry.getValue(), map2.get(entry.getKey()));
+            }
         }
     }
 
     protected static void assertRQSize(int size) {
         Assert.assertEquals(size, getCurrentRQ().length);
+    }
+
+    static SafeIDGenerator incrementalViewIdGenerator() {
+        AtomicInteger counter = new AtomicInteger(0);
+        return () -> "idv" + counter.incrementAndGet();
+    }
+
+    static SafeIDGenerator incrementalEventIdGenerator() {
+        AtomicInteger counter = new AtomicInteger(0);
+        return () -> "ide" + counter.incrementAndGet();
     }
 }

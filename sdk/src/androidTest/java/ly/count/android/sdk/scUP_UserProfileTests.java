@@ -96,6 +96,7 @@ public class scUP_UserProfileTests {
      * Related user properties should be saved before event recordings
      * call order, user property with "dark_mode", event, user property with "light_mode"
      * generated request order first user property request + 3 events + user property request with light_mode + begin session
+     * UPDATE: no begin session anymore because isForeground is false, and it is added to begin session to validate that device in foreground
      */
     @Test
     public void eventSaveScenario_changeDeviceIDWithoutMerge() throws JSONException {
@@ -115,8 +116,8 @@ public class scUP_UserProfileTests {
         countly.deviceId().changeWithoutMerge("new_device_id"); // this will begin a new session
 
         // first user property request + 3 events + user property request with light_mode
-        ModuleUserProfileTests.validateUserProfileRequest(0, 4, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        ModuleUserProfileTests.validateUserProfileRequest(2, 4, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(0, 3, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(2, 3, TestUtils.map(), TestUtils.map("theme", "light_mode"));
     }
 
     /**
@@ -335,7 +336,7 @@ public class scUP_UserProfileTests {
 
         TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 4);
 
-        ModuleEventsTests.validateEventInRQ("merge_id", "C", 1, 0.0d, 0.0d, 5, 0, 1, 8);
+        ModuleEventsTests.validateEventInRQ("merge_id", "C", 5, 0, 1);
 
         validateUserDataRequest(6, 8, "4", "merge_id");
 
@@ -388,7 +389,7 @@ public class scUP_UserProfileTests {
         ModuleSessionsTests.validateSessionEndRequest(4, null, TestUtils.commonDeviceId);
         TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 5);
 
-        ModuleEventsTests.validateEventInRQ("merge_id", "C", 1, 0.0d, 0.0d, 6, 0, 1, 9);
+        ModuleEventsTests.validateEventInRQ("merge_id", "C", 6, 0, 1);
 
         validateUserDataRequest(7, 9, "4", "merge_id");
 

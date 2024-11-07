@@ -1,11 +1,14 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import ly.count.android.sdk.messaging.ModulePush;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -773,12 +776,199 @@ public class ModuleEventsTests {
         validateEventInRQ("key", TestUtils.map(), 1, 1.0d, 1.0d, 0);
     }
 
-    protected static JSONObject validateEventInRQ(String deviceId, String eventName, int count, double sum, double duration, int idx, int eventIdx, int eventCount, int rqCount) throws JSONException {
+    /**
+     * "recordEvent" with visibility tracking enabled
+     * Validate that visibility tracking events are recorded correctly
+     * and only added to "Events" and "Views"
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_onlyAddingItToViewsAndEvents() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.experimental.enableVisibilityTracking();
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map());
+        validateEventInRQ("rnd_key", TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 0);
+
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 1);
+
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 3);
+
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 4);
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 6);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, TestUtils.map());
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, TestUtils.map(), 1, 0.0d, 0.0d, 7);
+    }
+
+    /**
+     * "recordEvent" with visibility tracking enabled
+     * Validate that visibility tracking events are recorded correctly
+     * And validate that the "cly_v" value is correctly set to 1 when the app is in the foreground
+     * and 0 when the app is in the background
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_bgFgSwitch() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        config.experimental.enableVisibilityTracking();
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.onStart(Mockito.mock(Activity.class)); //foreground
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent("fg", TestUtils.map());
+        validateEventInRQ("fg", TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 3);
+
+        countly.onStop(); //background
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent("bg", TestUtils.map());
+        validateEventInRQ("bg", TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 6);
+    }
+
+    /**
+     * "recordEvent" with visibility tracking disabled
+     * Validate that visibility tracking events are not recorded
+     * And validate that the "cly_v" value is not set
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_notEnabled() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.onStart(Mockito.mock(Activity.class)); //foreground
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent("fg", TestUtils.map());
+        validateEventInRQ("fg", TestUtils.map(), 1, 0.0d, 0.0d, 3);
+
+        countly.onStop(); //background
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent("bg", TestUtils.map());
+        validateEventInRQ("bg", TestUtils.map(), 1, 0.0d, 0.0d, 6);
+    }
+
+    /**
+     * "recordEvent" scenario with previous and current view name tracking is disabled
+     * Validate that the event is recorded without view names
+     * EQ size is 1 to trigger request generation
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEventScenario_previous_current_ViewName_disabled() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.events().recordEvent("TEST");
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", null, null);
+
+        countly.views().startView("View1");
+        countly.events().recordEvent("TEST1");
+
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, null);
+
+        countly.views().startView("View2");
+        countly.events().recordEvent("TEST2");
+
+        ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", null, null);
+    }
+
+    /**
+     * "recordEvent" scenario with previous and current view name tracking is enabled
+     * Validate that the event is recorded with view names
+     * EQ size is 1 to trigger request generation
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEventScenario_previous_current_ViewName() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.experimental.enablePreviousNameRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        countly.events().recordEvent("TEST");
+        validateEventInRQ("TEST", 0, 1, "_CLY_", "_CLY_", "", "");
+
+        countly.views().startView("View1");
+        countly.events().recordEvent("TEST1");
+
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
+        validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", "TEST", "View1");
+
+        countly.views().startView("View2");
+        countly.events().recordEvent("TEST2");
+
+        ModuleViewsTests.validateView("View2", 0.0, 3, 5, false, true, TestUtils.map(), "_CLY_", "_CLY_", "View1");
+        validateEventInRQ("TEST2", 4, 5, "_CLY_", "_CLY_", "TEST1", "View2");
+    }
+
+    protected static void validateEventInRQ(String eventName, int idx, int rqCount, String previousViewId, String currentViewId, String previousEventName, String currentViewName) throws JSONException {
+        Map<String, Object> segmentation = TestUtils.map();
+        if (previousEventName != null) {
+            segmentation.put("cly_pen", previousEventName);
+        }
+        if (currentViewName != null) {
+            segmentation.put("cly_cvn", currentViewName);
+        }
+        validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", previousViewId, currentViewId, "_CLY_", idx, rqCount, 0, 1);
+    }
+
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
+        validateEventInRQ(eventName, expectedSegmentation, count, sum, duration, idx, idx + 1);
+    }
+
+    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx, int rqCount) throws JSONException {
+        validateEventInRQ(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, 0, 1);
+    }
+
+    protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventIdx, int eventCount)
+        throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         if (rqCount > -1) {
             Assert.assertEquals(rqCount, RQ.length);
         }
         TestUtils.validateRequiredParams(RQ[idx], deviceId);
+        if (!RQ[idx].containsKey("events")) {
+            Assert.fail("Not an event request idx:[" + idx + "], request:[" + RQ[idx] + "]");
+        }
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(eventCount, events.length());
         JSONObject event = events.getJSONObject(eventIdx);
@@ -786,21 +976,62 @@ public class ModuleEventsTests {
         Assert.assertEquals(count, event.getInt("count"));
         Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
         Assert.assertEquals(duration, event.optDouble("dur", 0.0d), 0.0001);
-        return event;
-    }
-
-    protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx) throws JSONException {
-        JSONObject event = validateEventInRQ(TestUtils.commonDeviceId, eventName, count, sum, duration, idx, 0, 1, idx + 1);
-        if (!expectedSegmentation.isEmpty()) {
+        if (expectedSegmentation != null && !expectedSegmentation.isEmpty()) {
             JSONObject segmentation = event.getJSONObject("segmentation");
-            Assert.assertEquals(expectedSegmentation.size(), segmentation.length());
+            Assert.assertEquals("Expected segmentation: " + expectedSegmentation + ", got: " + segmentation, expectedSegmentation.size(), segmentation.length());
             for (Map.Entry<String, Object> entry : expectedSegmentation.entrySet()) {
                 Assert.assertEquals(entry.getValue(), segmentation.get(entry.getKey()));
             }
         }
-        Assert.assertEquals(count, event.getInt("count"));
-        Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);
-        Assert.assertEquals(duration, event.optDouble("dur", 0.0d), 0.0001);
+
+        int dow = event.getInt("dow");
+        int hour = event.getInt("hour");
+        long timestamp = event.getLong("timestamp");
+        Assert.assertTrue(dow >= 0 && dow < 7);
+        Assert.assertTrue(hour >= 0 && hour < 24);
+        Assert.assertTrue(timestamp >= 0);
+
+        validateId(id, event.optString("id", ""), "Event ID");
+        validateId(pvid, event.optString("pvid", ""), "Previous View ID");
+        validateId(cvid, event.optString("cvid", ""), "Current View ID");
+        validateId(peid, event.optString("peid", ""), "Previous Event ID");
+    }
+
+    private static void validateId(String id, String gonnaValidate, String name) {
+        if (id != null && id.equals("_CLY_")) {
+            if (gonnaValidate != null && !gonnaValidate.isEmpty()) {
+                validateSafeRandomVal(gonnaValidate);
+            }
+        } else {
+            Assert.assertEquals(name + " is not validated", id, gonnaValidate);
+        }
+    }
+
+    /**
+     * Validates a random generated safe value,
+     * Value length should be 21
+     * Value should contain a timestamp at the end
+     * Value should be base64 encoded and first 8 should be it
+     *
+     * @param val
+     */
+    static void validateSafeRandomVal(String val) {
+        Assert.assertEquals(val, 21, val.length());
+
+        Pattern base64Pattern = Pattern.compile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{4})$");
+
+        String timestampStr = val.substring(val.length() - 13);
+        String base64Str = val.substring(0, val.length() - 13);
+
+        Matcher matcher = base64Pattern.matcher(base64Str);
+        if (matcher.matches()) {
+            UtilsTime.Instant instant = UtilsTime.Instant.get(Long.parseLong(timestampStr));
+            Assert.assertTrue(instant.dow >= 0 && instant.dow < 7);
+            Assert.assertTrue(instant.hour >= 0 && instant.hour < 24);
+            Assert.assertTrue(instant.timestampMs > 0);
+        } else {
+            Assert.fail("No match for " + val);
+        }
     }
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int idx) throws JSONException {
@@ -808,7 +1039,11 @@ public class ModuleEventsTests {
     }
 
     protected static void validateEventInRQ(String eventName, int rqIdx, int eventIdx, int eventCount) throws JSONException {
-        validateEventInRQ(TestUtils.commonDeviceId, eventName, 1, 0.0d, 0.0d, rqIdx, eventIdx, eventCount, -1);
+        validateEventInRQ(TestUtils.commonDeviceId, eventName, null, 1, 0.0d, 0.0d, "_CLY_", "_CLY_", "_CLY_", "_CLY_", rqIdx, -1, eventIdx, eventCount);
+    }
+
+    protected static void validateEventInRQ(String deviceId, String eventName, int rqIdx, int eventIdx, int eventCount) throws JSONException {
+        validateEventInRQ(deviceId, eventName, null, 1, 0.0d, 0.0d, "_CLY_", "_CLY_", "_CLY_", "_CLY_", rqIdx, -1, eventIdx, eventCount);
     }
 
 /*

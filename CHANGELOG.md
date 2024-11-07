@@ -1,3 +1,43 @@
+## 24.7.5
+* ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
+
+* The Android SDK now supports Android 15 (API level 35)
+* The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
+* Added further intent redirection vulnarability checks.
+* Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
+  * presentNPS(Context)
+  * presentNPS(Context, String)
+  * presentNPS(Context, String, FeedbackCallback)
+  * presentSurvey(Context)
+  * presentSurvey(Context, String)
+  * presentSurvey(Context, String, FeedbackCallback)
+  * presentRating(Context)
+  * presentRating(Context, String)
+  * presentRating(Context, String, FeedbackCallback)
+
+* Mitigated an issue where content communication was done twice.
+* Mititgated an issue where a segmentation key was removed if it included a list with an unsupported value instead of sanitizing.
+* Mitigated a concurrency issue while restarting stopped views.
+* Fixed an issue where SDK was not able to set experimental visibility flag correctly by adding additional foreground state capture.
+
+## 24.7.4
+* Disabled caching for webviews.
+* Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
+
+* Fixed an issue where the validation of the parameters during content retrieval was improper.
+* Mitigated an issue where a session could have started while the app was in the background when the device ID was changed (non-merge).
+* Mitigated an issue that density calculation was missing while resizing content.
+* Mitigated an issue where content fetching was enabled after initialization of the SDK.
+
+## 24.7.3
+* Automatic view pause/resumes are changed with stop/start for better data consistency.
+* Added the config interface 'experimental' to group experimental features.
+* Added a flag (enablePreviousNameRecording) to add previous event and view names as segmentation. (Experimental!)
+* Added a flag (enableVisibilityTracking) to add app visibility info to views and events. (Experimental!)
+* Added Content feature methods:
+  * enterContentZone, to start Content checks (Experimental!)
+  * exitContentZone, to stop Content checks (Experimental!)
+
 ## 24.7.2
 * Mitigated an issue in the upload plugin that prevented the upload of a symbol file
 
