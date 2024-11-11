@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* Mitigated an issue where visibility tracking for end view requests has been removed to improve functionality.
+* Mitigated an issue where sending visibility information with the end views too were creating improper results. (Experimental!)
 
 ## 24.7.5
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
