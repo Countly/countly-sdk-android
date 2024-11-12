@@ -4,4 +4,6 @@ interface ConfigurationProvider {
     boolean getNetworkingEnabled();
 
     boolean getTrackingEnabled();
+
+    boolean getCrashReportingEnabled();
 }

@@ -338,8 +338,10 @@ public class ModuleCrash extends ModuleBase {
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         //enable unhandled crash reporting
-        if (config.crashes.enableUnhandledCrashReporting) {
+        if (config.crashes.enableUnhandledCrashReporting && (config.configProvider == null || config.configProvider.getCrashReportingEnabled())) {
             enableCrashReporting();
+        } else if (config.crashes.enableUnhandledCrashReporting) {
+            L.w("[ModuleCrash] initFinished, Crash reporting is enabled in the configuration, but it is not enabled in the config provider");
         }
 
         //check for previous native crash dumps
