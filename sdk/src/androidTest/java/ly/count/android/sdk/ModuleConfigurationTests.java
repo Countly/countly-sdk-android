@@ -64,7 +64,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void init_enabled_storageAllowing() throws JSONException {
-        countlyStore.setServerConfig(getStorageString(true, true));
+        countlyStore.setServerConfig(getStorageString(true, true, true));
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
         Countly countly = (new Countly()).init(config);
 
@@ -82,7 +82,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void init_enabled_storageForbidding() throws JSONException {
-        countlyStore.setServerConfig(getStorageString(false, false));
+        countlyStore.setServerConfig(getStorageString(false, false, false));
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
         Countly countly = (new Countly()).init(config);
 
@@ -90,6 +90,7 @@ public class ModuleConfigurationTests {
         Assert.assertNotNull(countlyStore.getServerConfig());
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertFalse(countly.moduleConfiguration.getCrashReportingEnabled());
     }
 
     /**
@@ -101,7 +102,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void init_disabled_storageAllowing() throws JSONException {
-        countlyStore.setServerConfig(getStorageString(true, true));
+        countlyStore.setServerConfig(getStorageString(true, true, true));
         CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
         Countly countly = Countly.sharedInstance().init(config);
 
@@ -119,7 +120,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void init_disabled_storageForbidding() throws JSONException {
-        countlyStore.setServerConfig(getStorageString(false, false));
+        countlyStore.setServerConfig(getStorageString(false, false, false));
         CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
         Countly countly = (new Countly()).init(config);
 
@@ -165,13 +166,14 @@ public class ModuleConfigurationTests {
         Assert.assertEquals("", countlyStore.getRequestQueueRaw());
         Assert.assertEquals(0, countlyStore.getEvents().length);
 
-        countlyStore.setServerConfig(getStorageString(false, false));
+        countlyStore.setServerConfig(getStorageString(false, false, false));
 
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
         Countly countly = (new Countly()).init(config);
 
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertFalse(countly.moduleConfiguration.getCrashReportingEnabled());
 
         //try events
         countly.events().recordEvent("d");
@@ -187,6 +189,41 @@ public class ModuleConfigurationTests {
 
         Assert.assertEquals("", countlyStore.getRequestQueueRaw());
         Assert.assertEquals(0, countlyStore.getEvents().length);
+    }
+
+    /**
+     * Only disable crashes to try out unhandled crash reporting
+     * Make sure that call is called but no request is added to the RQ
+     */
+    @Test
+    public void validatingCrashReportingConfig() throws JSONException {
+        //nothing in queues initially
+        Assert.assertEquals("", countlyStore.getRequestQueueRaw());
+        Assert.assertEquals(0, countlyStore.getEvents().length);
+
+        countlyStore.setServerConfig(getStorageString(true, true, false));
+
+        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
+        Countly countly = (new Countly()).init(config);
+
+        Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
+        Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertFalse(countly.moduleConfiguration.getCrashReportingEnabled());
+
+        //try events
+        countly.events().recordEvent("d");
+        countly.events().recordEvent("1");
+
+        //try a non event recording
+        countly.crashes().recordHandledException(new Exception());
+
+        //try a direct request
+        countly.requestQueue().addDirectRequest(new HashMap<>());
+
+        countly.requestQueue().attemptToSendStoredRequests();
+
+        Assert.assertEquals("", countlyStore.getRequestQueueRaw());
+        Assert.assertEquals(2, countlyStore.getEvents().length);
     }
 
     /**
@@ -239,6 +276,7 @@ public class ModuleConfigurationTests {
     void assertConfigDefault(Countly countly) {
         Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertTrue(countly.moduleConfiguration.getCrashReportingEnabled());
     }
 
     ImmediateRequestGenerator createIRGForSpecificResponse(final String targetResponse) {
@@ -267,12 +305,13 @@ public class ModuleConfigurationTests {
     }
 
     //creates the stringified storage object with all the required properties
-    String getStorageString(boolean tracking, boolean networking) throws JSONException {
+    String getStorageString(boolean tracking, boolean networking, boolean crashes) throws JSONException {
         JSONObject jsonObject = new JSONObject();
         JSONObject jsonObjectConfig = new JSONObject();
 
         jsonObjectConfig.put("tracking", tracking);
         jsonObjectConfig.put("networking", networking);
+        jsonObjectConfig.put("crashes", crashes);
 
         jsonObject.put("v", 1);
         jsonObject.put("t", 1_681_808_287_464L);
