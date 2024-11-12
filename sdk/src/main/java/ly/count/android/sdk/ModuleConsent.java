@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleConsent extends ModuleBase implements ConsentProvider {
     Consent consentInterface = null;
@@ -213,6 +214,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         List<String> consentThatWillChange = new ArrayList<>(featureNames.length);
+        Map<String, Boolean> consentUpdateMap = new ConcurrentHashMap<>();
 
         for (String featureName : featureNames) {
             if (!isValidFeatureName(featureName)) {
@@ -223,11 +225,16 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             if (getConsentTrue(featureName) != isConsentGiven) {
                 //if the current consent does not match the one give, add it to the list
                 consentThatWillChange.add(featureName);
-
-                //set new consent value
-                featureConsentValues.put(featureName, isConsentGiven);
+                //set new consent values later because some modules need to do operation before changing consent
+                consentUpdateMap.put(featureName, isConsentGiven);
             }
         }
+
+        for (ModuleBase module : _cly.modules) {
+            module.consentWillChange(consentThatWillChange, isConsentGiven);
+        }
+
+        featureConsentValues.putAll(consentUpdateMap);
 
         for (ModuleBase module : _cly.modules) {
             module.onConsentChanged(consentThatWillChange, isConsentGiven, changeSource);

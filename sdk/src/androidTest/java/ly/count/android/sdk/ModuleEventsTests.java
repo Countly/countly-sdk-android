@@ -807,8 +807,8 @@ public class ModuleEventsTests {
         countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map());
         validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 4);
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0, "visit", 1), 1, 0.0d, 0.0d, 5);
 
         countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map());
         validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 6);
@@ -834,16 +834,16 @@ public class ModuleEventsTests {
 
         countly.onStart(Mockito.mock(Activity.class)); //foreground
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 2);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 1, "visit", 1), 1, 0.0d, 0.0d, 2);
 
         countly.events().recordEvent("fg", TestUtils.map());
         validateEventInRQ("fg", TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 3);
 
         countly.onStop(); //background
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0, "visit", 1), 1, 0.0d, 0.0d, 5);
 
         countly.events().recordEvent("bg", TestUtils.map());
         validateEventInRQ("bg", TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 6);
@@ -864,16 +864,16 @@ public class ModuleEventsTests {
 
         countly.onStart(Mockito.mock(Activity.class)); //foreground
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 2);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1), 1, 0.0d, 0.0d, 2);
 
         countly.events().recordEvent("fg", TestUtils.map());
         validateEventInRQ("fg", TestUtils.map(), 1, 0.0d, 0.0d, 3);
 
         countly.onStop(); //background
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 5);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1), 1, 0.0d, 0.0d, 5);
 
         countly.events().recordEvent("bg", TestUtils.map());
         validateEventInRQ("bg", TestUtils.map(), 1, 0.0d, 0.0d, 6);

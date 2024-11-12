@@ -1,14 +1,27 @@
 ## XX.XX.XX
+* Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
+
+## 24.7.5
+* ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
+
 * The Android SDK now supports Android 15 (API level 35)
 * The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
-
+* Added further intent redirection vulnarability checks.
 * Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
   * presentNPS(Context)
   * presentNPS(Context, String)
+  * presentNPS(Context, String, FeedbackCallback)
   * presentSurvey(Context)
   * presentSurvey(Context, String)
+  * presentSurvey(Context, String, FeedbackCallback)
   * presentRating(Context)
   * presentRating(Context, String)
+  * presentRating(Context, String, FeedbackCallback)
+
+* Mitigated an issue where content communication was done twice.
+* Mititgated an issue where a segmentation key was removed if it included a list with an unsupported value instead of sanitizing.
+* Mitigated a concurrency issue while restarting stopped views.
+* Fixed an issue where SDK was not able to set experimental visibility flag correctly by adding additional foreground state capture.
 
 ## 24.7.4
 * Disabled caching for webviews.
