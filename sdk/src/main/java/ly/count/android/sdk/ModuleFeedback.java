@@ -172,7 +172,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final String closeButtonText, @Nullable final FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
             L.e("[ModuleFeedback] Can't present widget with null widget info");
 
@@ -296,6 +296,7 @@ public class ModuleFeedback extends ModuleBase {
                                     if (devCallback != null) {
                                         devCallback.onFinished(null);
                                     }
+                                    reportFeedbackWidgetCancelButton(widgetInfo, cachedAppVersion);
                                     alert.cancel();
                                     return true;
                                 }
@@ -639,7 +640,7 @@ public class ModuleFeedback extends ModuleBase {
                     return;
                 }
 
-                presentFeedbackWidgetInternal(selectedWidget, context, null, devCallback);
+                presentFeedbackWidgetInternal(selectedWidget, context, devCallback);
             }
         });
     }
@@ -675,12 +676,28 @@ public class ModuleFeedback extends ModuleBase {
          * @param context
          * @param closeButtonText if this is null, no "close" button will be shown
          * @param devCallback
+         * @deprecated use {@link #presentFeedbackWidget(CountlyFeedbackWidget, Context, FeedbackCallback)} instead
          */
         public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable String closeButtonText, @Nullable FeedbackCallback devCallback) {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to present feedback widget in an alert dialog");
 
-                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
+                presentFeedbackWidget(widgetInfo, context, devCallback);
+            }
+        }
+
+        /**
+         * Present a chosen feedback widget in an alert dialog
+         *
+         * @param widgetInfo the widget to present
+         * @param context the context to use for displaying the feedback widget
+         * @param devCallback callback to be called when the feedback widget is closed
+         */
+        public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable FeedbackCallback devCallback) {
+            synchronized (_cly) {
+                L.i("[Feedback] Trying to present feedback widget in an alert dialog");
+
+                presentFeedbackWidgetInternal(widgetInfo, context, devCallback);
             }
         }
 

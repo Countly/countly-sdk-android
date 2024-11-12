@@ -1,5 +1,9 @@
 ## XX.XX.XX
+* The feedback widgets now have transparent backgrounds for a cleaner look.
+
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
+
+* Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
 
 ## 24.7.5
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
