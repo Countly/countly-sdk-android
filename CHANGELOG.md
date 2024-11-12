@@ -1,5 +1,6 @@
 ## XX.XX.XX
 * Added a new server configuration to manage uncaught crash reporting.
+* Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 
 ## 24.7.5
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
