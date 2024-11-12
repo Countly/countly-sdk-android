@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Added a new server configuration to manage uncaught crash reporting.
+
 ## 24.7.5
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
 

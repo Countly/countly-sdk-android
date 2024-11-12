@@ -15,6 +15,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     //config keys
     final static String keyTracking = "tracking";
     final static String keyNetworking = "networking";
+    final static String keyCrashReporting = "crashes";
 
     //request keys
     final static String keyRTimestamp = "t";
@@ -23,9 +24,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     final static boolean defaultVTracking = true;
     final static boolean defaultVNetworking = true;
+    final static boolean defaultVCrashReporting = true;
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
+    boolean currentVCrashReporting = true;
     boolean configurationFetched = false;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -92,6 +95,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         //set all to defaults
         currentVNetworking = defaultVNetworking;
         currentVTracking = defaultVTracking;
+        currentVCrashReporting = defaultVCrashReporting;
 
         if (latestRetrievedConfiguration == null) {
             //no config, don't continue
@@ -103,7 +107,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             try {
                 currentVNetworking = latestRetrievedConfiguration.getBoolean(keyNetworking);
             } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'networking', " + e);
+                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'networking', " + e);
             }
         }
 
@@ -112,7 +116,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             try {
                 currentVTracking = latestRetrievedConfiguration.getBoolean(keyTracking);
             } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'tracking', " + e);
+                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'tracking', " + e);
+            }
+        }
+
+        //tracking
+        if (latestRetrievedConfiguration.has(keyCrashReporting)) {
+            try {
+                currentVCrashReporting = latestRetrievedConfiguration.getBoolean(keyCrashReporting);
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'crash_reporting', " + e);
             }
         }
     }
@@ -230,5 +243,13 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             return defaultVTracking;
         }
         return currentVTracking;
+    }
+
+    @Override
+    public boolean getCrashReportingEnabled() {
+        if (!serverConfigEnabled) {
+            return defaultVCrashReporting;
+        }
+        return currentVCrashReporting;
     }
 }
