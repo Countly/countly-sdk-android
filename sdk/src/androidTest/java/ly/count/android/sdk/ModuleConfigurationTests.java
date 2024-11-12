@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -10,20 +11,21 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.mockito.Mockito.mock;
-
 @RunWith(AndroidJUnit4.class)
 public class ModuleConfigurationTests {
     CountlyStore countlyStore;
 
     @Before
     public void setUp() {
-        countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
+        countlyStore = TestUtils.getCountyStore();
         countlyStore.clear();
+        Countly.sharedInstance().halt();
     }
 
     @After
     public void tearDown() {
+        TestUtils.getCountyStore().clear();
+        Countly.sharedInstance().halt();
     }
 
     /**
@@ -194,25 +196,46 @@ public class ModuleConfigurationTests {
     /**
      * Only disable crashes to try out unhandled crash reporting
      * Make sure that call is called but no request is added to the RQ
+     * Call count to the unhandled crash reporting call should be 1 because countly SDK won't call and override the default handler
+     * And validate that no crash request is generated
      */
     @Test
     public void validatingCrashReportingConfig() throws JSONException {
-        //nothing in queues initially
-        Assert.assertEquals("", countlyStore.getRequestQueueRaw());
-        Assert.assertEquals(0, countlyStore.getEvents().length);
+        AtomicInteger callCount = new AtomicInteger(0);
+        RuntimeException unhandledException = new RuntimeException("Simulated unhandled exception");
+        // Create a new thread to simulate unhandled exception
+        Thread threadThrows = new Thread(() -> {
+            // This will throw an unhandled exception in this thread
+            throw unhandledException;
+        });
 
-        countlyStore.setServerConfig(getStorageString(true, true, false));
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            Assert.assertEquals(unhandledException, throwable);
+            Assert.assertEquals(threadThrows, thread);
+            callCount.incrementAndGet();
+        });
 
-        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
-        Countly countly = (new Countly()).init(config);
+        TestUtils.getCountyStore().setServerConfig(getStorageString(true, true, false));
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.enableServerConfiguration().setEventQueueSizeToSend(2);
+        config.crashes.enableCrashReporting(); // this call will enable unhandled crash reporting
+        Countly countly = new Countly().init(config);
 
         Assert.assertTrue(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getCrashReportingEnabled());
 
+        // Start the thread and wait for it to terminate
+        threadThrows.start();
+        try {
+            threadThrows.join(); // Wait for thread to finish
+        } catch (InterruptedException ignored) {
+        }
+
         //try events
         countly.events().recordEvent("d");
         countly.events().recordEvent("1");
+        Assert.assertEquals(1, callCount.get());
 
         //try a non event recording
         countly.crashes().recordHandledException(new Exception());
@@ -222,8 +245,10 @@ public class ModuleConfigurationTests {
 
         countly.requestQueue().attemptToSendStoredRequests();
 
-        Assert.assertEquals("", countlyStore.getRequestQueueRaw());
-        Assert.assertEquals(2, countlyStore.getEvents().length);
+        // There are two requests in total, but they are not containing unhandled exception
+        Assert.assertEquals(2, TestUtils.getCurrentRQ("Simulated unhandled exception").length);
+        Assert.assertNull(TestUtils.getCurrentRQ("Simulated unhandled exception")[0]);
+        Assert.assertNull(TestUtils.getCurrentRQ("Simulated unhandled exception")[1]);
     }
 
     /**
