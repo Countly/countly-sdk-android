@@ -16,4 +16,8 @@ interface HealthTracker {
     void clearAndSave();
 
     void saveState();
+
+    void logDeviceIdWithMergeChange();
+
+    void logDeviceIdWithoutMergeChange();
 }
