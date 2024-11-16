@@ -162,7 +162,9 @@ public class ModuleContent extends ModuleBase {
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
-            config.globalContentCallback = globalContentCallback;
+            // TODO, passing callback with an intent is impossible, need to find a way to pass it
+            // Currently, the callback is set as a static variable in TransparentActivity
+            TransparentActivity.globalContentCallback = globalContentCallback;
             return config;
         }
 

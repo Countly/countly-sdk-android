@@ -35,6 +35,7 @@ public class TransparentActivity extends Activity {
     TransparentActivityConfig configPortrait = null;
     WebView webView;
     RelativeLayout relativeLayout;
+    static ContentCallback globalContentCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -211,8 +212,8 @@ public class TransparentActivity extends Activity {
         }
 
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
-            if (config.globalContentCallback != null) { // TODO: verify this later
-                config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            if (globalContentCallback != null) { // TODO: verify this later
+                globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
             }
             ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
             finish();
