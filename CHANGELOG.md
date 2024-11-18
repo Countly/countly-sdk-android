@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* Introduced new health checks to monitor how device ID changes are handled.
+
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 
 ## 24.7.5
