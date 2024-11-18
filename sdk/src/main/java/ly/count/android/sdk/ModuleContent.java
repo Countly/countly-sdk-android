@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
@@ -121,7 +122,9 @@ public class ModuleContent extends ModuleBase {
         int landscapeWidth = portrait ? scaledHeight : scaledWidth;
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
-        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories);
+        String language = Locale.getDefault().getLanguage().toLowerCase();
+
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
