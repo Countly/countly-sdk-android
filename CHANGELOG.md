@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* Added support for localization of content blocks.
+
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 * Fixed a bug where passing the global content callback was not possible.
 
