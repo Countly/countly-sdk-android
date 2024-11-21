@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* Added language support for the contents. 
+* Added support for localization of content blocks.
 
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 
