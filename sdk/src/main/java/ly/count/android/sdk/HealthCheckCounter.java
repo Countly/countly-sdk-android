@@ -10,16 +10,22 @@ public class HealthCheckCounter implements HealthTracker {
     public long countLogError = 0;
     public int statusCode = -1;
     public String errorMessage = "";
-    
+    public int mergeCount = 0;
+    public int withoutMergeCount = 0;
+
     final String keyLogError = "LErr";
     final String keyLogWarning = "LWar";
     final String keyStatusCode = "RStatC";
     final String keyErrorMessage = "REMsg";
+    final String keyMergeCount = "MCount";
+    final String keyWithoutMergeCount = "WMCount";
 
     final String requestKeyErrorCount = "el";
     final String requestKeyWarningCount = "wl";
     final String requestKeyStatusCode = "sc";
     final String requestKeyRequestError = "em";
+    final String requestKeyChangeWithMerge = "mc";
+    final String requestKeyChangeWithoutMerge = "wmc";
 
     StorageProvider storageProvider;
     ModuleLog L;
@@ -47,6 +53,8 @@ public class HealthCheckCounter implements HealthTracker {
             countLogError = jsonObject.optLong(keyLogError, 0);
             statusCode = jsonObject.optInt(keyStatusCode, -1);
             errorMessage = jsonObject.optString(keyErrorMessage, "");
+            mergeCount = jsonObject.optInt(keyMergeCount, 0);
+            withoutMergeCount = jsonObject.optInt(keyWithoutMergeCount, 0);
 
             L.d("[HealthCheckCounter] Loaded initial health check state: [" + jsonObject.toString() + "]");
         } catch (Exception e) {
@@ -67,7 +75,7 @@ public class HealthCheckCounter implements HealthTracker {
         assert statusCode > 0;
         assert statusCode < 1000;
         assert errorResponse != null;
-        
+
         this.statusCode = statusCode;
 
         if (errorResponse.length() > 1000) {
@@ -102,11 +110,21 @@ public class HealthCheckCounter implements HealthTracker {
             jsonObject.put(keyLogError, countLogError);
             jsonObject.put(keyStatusCode, statusCode);
             jsonObject.put(keyErrorMessage, errorMessage);
+            jsonObject.put(keyMergeCount, mergeCount);
+            jsonObject.put(keyWithoutMergeCount, withoutMergeCount);
 
             storageProvider.setHealthCheckCounterState(jsonObject.toString());
         } catch (Exception e) {
             L.w("[HealthCheckCounter] Failed to save current state, " + e);
         }
+    }
+
+    @Override public void logDeviceIdWithMergeChange() {
+        mergeCount++;
+    }
+
+    @Override public void logDeviceIdWithoutMergeChange() {
+        withoutMergeCount++;
     }
 
     void clearValues() {
@@ -115,6 +133,8 @@ public class HealthCheckCounter implements HealthTracker {
         countLogError = 0;
         statusCode = -1;
         errorMessage = "";
+        mergeCount = 0;
+        withoutMergeCount = 0;
     }
 
     @NonNull String createRequestParam() {
@@ -128,6 +148,8 @@ public class HealthCheckCounter implements HealthTracker {
             jsonObject.put(requestKeyWarningCount, countLogWarning);
             jsonObject.put(requestKeyStatusCode, statusCode);
             jsonObject.put(requestKeyRequestError, errorMessage);
+            jsonObject.put(requestKeyChangeWithMerge, mergeCount);
+            jsonObject.put(requestKeyChangeWithoutMerge, withoutMergeCount);
         } catch (JSONException e) {
             L.w("[HealthCheckCounter] Failed to create param for hc request, " + e);
         }
