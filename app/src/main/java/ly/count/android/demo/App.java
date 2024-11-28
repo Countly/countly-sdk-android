@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyConfig;
-import ly.count.android.sdk.CrashFilterCallback;
+import ly.count.android.sdk.CrashData;
+import ly.count.android.sdk.GlobalCrashFilterCallback;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.messaging.CountlyConfigPush;
 import ly.count.android.sdk.messaging.CountlyPush;
@@ -171,17 +172,6 @@ public class App extends Application {
                     }
                 }
             })
-
-            .enableCrashReporting()
-            .setRecordAllThreadsWithCrash()
-            .setCustomCrashSegment(customCrashSegmentation)
-            .setCrashFilterCallback(new CrashFilterCallback() {
-                @Override
-                public boolean filterCrash(String crash) {
-                    return crash.contains("crash");
-                }
-            })
-
             .enableAutomaticViewTracking()
             // uncomment the line below to enable auto enrolling the user to AB experiments when downloading RC data
             //.enrollABOnRCDownload()
@@ -233,6 +223,16 @@ public class App extends Application {
             //.enableServerConfiguration()
 
             .setUserProperties(customUserProperties);
+
+        config.crashes
+            .enableCrashReporting()
+            .enableRecordAllThreadsWithCrash()
+            .setCustomCrashSegmentation(customCrashSegmentation)
+            .setGlobalCrashFilterCallback(new GlobalCrashFilterCallback() {
+                @Override public boolean filterCrash(CrashData crash) {
+                    return crash.getStackTrace().contains("secret");
+                }
+            });
 
         config.apm.enableAppStartTimeTracking()
             .enableForegroundBackgroundTracking()
