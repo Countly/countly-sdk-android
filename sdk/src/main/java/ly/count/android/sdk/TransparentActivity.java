@@ -293,7 +293,9 @@ public class TransparentActivity extends Activity {
 
                     if (sgJson != null) {
                         segmentationJson = sgJson;
-                    } else if (segmentationJson == null) {
+                    }
+
+                    if (segmentationJson == null) {
                         Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event: [" + eventJson + "]");
                         continue;
                     }
