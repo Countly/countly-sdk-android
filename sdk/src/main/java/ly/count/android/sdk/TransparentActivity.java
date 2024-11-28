@@ -287,14 +287,16 @@ public class TransparentActivity extends Activity {
                     JSONObject eventJson = event.getJSONObject(i);
                     Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: [" + eventJson.toString() + "]");
 
-                    if (!eventJson.has("sg")) {
+                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
+                    JSONObject sgJson = eventJson.optJSONObject("sg");
+                    JSONObject segmentationJson = eventJson.optJSONObject("segmentation");
+
+                    if (sgJson != null) {
+                        segmentationJson = sgJson;
+                    } else if (segmentationJson == null) {
                         Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event: [" + eventJson + "]");
                         continue;
                     }
-
-                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
-                    JSONObject segmentationJson = eventJson.getJSONObject("sg");
-                    assert segmentationJson != null; // this is already checked above
 
                     for (int j = 0; j < segmentationJson.names().length(); j++) {
                         String key = segmentationJson.names().getString(j);
