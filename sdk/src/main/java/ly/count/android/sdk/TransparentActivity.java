@@ -190,7 +190,6 @@ public class TransparentActivity extends Activity {
         }
 
         Object clyAction = query.get("action");
-        boolean result = false;
         if (clyAction instanceof String) {
             Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, action string:[" + clyAction + "]");
             String action = (String) clyAction;
@@ -217,10 +216,9 @@ public class TransparentActivity extends Activity {
             }
             ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
             finish();
-            return true;
         }
 
-        return result;
+        return true;
     }
 
     private boolean linkAction(Map<String, Object> query, WebView view) {
