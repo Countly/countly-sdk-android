@@ -1,4 +1,5 @@
 ## 24.7.7
+* Mitigated an issue where an automaticly closed autostopped view's duration could have increased when opening new views
 * Mitigated an issue where, on Android 35 and above, the navigation bar was overlapping with the content display.
 
 ## 24.7.6
