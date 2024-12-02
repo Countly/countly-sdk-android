@@ -1,5 +1,5 @@
 ## 24.7.7
-* Mitigated an issue where a previously closed automatic view could repeatedly stop under specific conditions, such as when the app went into the background and a new view start was triggered.
+* Mitigated an issue where an automaticly closed autostopped view's duration could have increased when opening new views
 
 ## 24.7.6
 * Added support for localization of content blocks.
