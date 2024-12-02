@@ -154,7 +154,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
             ViewData vd = entry.getValue();
-            if (closeAllViews || vd.isAutoStoppedView) {
+            if (!vd.willStartAgain && (closeAllViews || vd.isAutoStoppedView)) {
                 viewsToRemove.add(vd.viewID);
             }
         }
