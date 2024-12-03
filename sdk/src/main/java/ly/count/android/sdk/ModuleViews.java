@@ -18,9 +18,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     String previousViewName = "";
     String currentViewName = "";
-
     private boolean firstView = true;
-
     boolean autoViewTracker = false;
     boolean automaticTrackingShouldUseShortName = false;
 
@@ -223,9 +221,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         applyLimitsToViewSegmentation(customViewSegmentation, "startViewInternal", accumulatedEventSegm);
 
-        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, accumulatedEventSegm);
+        boolean firstViewInSession = firstView && _cly.moduleSessions.sessionIsRunning();
 
-        if (firstView) {
+        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstViewInSession, true, accumulatedEventSegm);
+
+        if (firstViewInSession) {
             L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");
             firstView = false;
         }
