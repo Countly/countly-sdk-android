@@ -899,7 +899,8 @@ public class ModuleEventsTests {
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
-        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        // start false because session did not start
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
         validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, null);
 
         countly.views().startView("View2");
@@ -930,7 +931,8 @@ public class ModuleEventsTests {
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
-        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
+        // start false because session did not start
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, false, true, TestUtils.map(), "_CLY_", "_CLY_", "");
         validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", "TEST", "View1");
 
         countly.views().startView("View2");

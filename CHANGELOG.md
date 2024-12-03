@@ -1,4 +1,6 @@
 ## 24.7.7
+* ! Minor breaking change ! Going forward, only the first page viewed in a session will have a 'start' parameter. Pages viewed outside of a session will no longer include this parameter.
+
 * Mitigated an issue where an automaticly closed autostopped view's duration could have increased when opening new views
 * Mitigated an issue where, on Android 35 and above, the navigation bar was overlapping with the content display.
 
