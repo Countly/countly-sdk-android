@@ -1,3 +1,15 @@
+## 24.7.7
+* Mitigated an issue where an automatically closed autostopped view's duration could have increased when opening new views
+* Mitigated an issue where, on Android 35 and above, the navigation bar was overlapping with the content display.
+
+## 24.7.6
+* Added support for localization of content blocks.
+
+* Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
+* Fixed a bug where passing the global content callback was not possible.
+* Mitigated an issue related to content actions navigation.
+* Mitigated an issue that parsing internal content event segmentation.
+
 ## 24.7.5
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
 

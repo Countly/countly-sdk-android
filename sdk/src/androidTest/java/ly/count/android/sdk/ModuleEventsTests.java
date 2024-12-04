@@ -807,8 +807,8 @@ public class ModuleEventsTests {
         countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map());
         validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 4);
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0, "visit", 1), 1, 0.0d, 0.0d, 5);
 
         countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map());
         validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 6);
@@ -834,16 +834,16 @@ public class ModuleEventsTests {
 
         countly.onStart(Mockito.mock(Activity.class)); //foreground
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 2);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 1, "visit", 1), 1, 0.0d, 0.0d, 2);
 
         countly.events().recordEvent("fg", TestUtils.map());
         validateEventInRQ("fg", TestUtils.map("cly_v", 1), 1, 0.0d, 0.0d, 3);
 
         countly.onStop(); //background
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 5);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("cly_v", 0, "visit", 1), 1, 0.0d, 0.0d, 5);
 
         countly.events().recordEvent("bg", TestUtils.map());
         validateEventInRQ("bg", TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 6);
@@ -864,16 +864,16 @@ public class ModuleEventsTests {
 
         countly.onStart(Mockito.mock(Activity.class)); //foreground
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 2);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1), 1, 0.0d, 0.0d, 2);
 
         countly.events().recordEvent("fg", TestUtils.map());
         validateEventInRQ("fg", TestUtils.map(), 1, 0.0d, 0.0d, 3);
 
         countly.onStop(); //background
 
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map());
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map(), 1, 0.0d, 0.0d, 5);
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1));
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, TestUtils.map("visit", 1), 1, 0.0d, 0.0d, 5);
 
         countly.events().recordEvent("bg", TestUtils.map());
         validateEventInRQ("bg", TestUtils.map(), 1, 0.0d, 0.0d, 6);
@@ -899,7 +899,8 @@ public class ModuleEventsTests {
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
-        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        // start false because session did not start
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, false, true, TestUtils.map(), "_CLY_", "_CLY_", null);
         validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", null, null);
 
         countly.views().startView("View2");
@@ -930,7 +931,8 @@ public class ModuleEventsTests {
         countly.views().startView("View1");
         countly.events().recordEvent("TEST1");
 
-        ModuleViewsTests.validateView("View1", 0.0, 1, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", "");
+        // start false because session did not start
+        ModuleViewsTests.validateView("View1", 0.0, 1, 3, false, true, TestUtils.map(), "_CLY_", "_CLY_", "");
         validateEventInRQ("TEST1", 2, 3, "_CLY_", "_CLY_", "TEST", "View1");
 
         countly.views().startView("View2");

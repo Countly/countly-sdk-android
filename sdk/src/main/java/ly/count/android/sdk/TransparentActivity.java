@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -35,6 +36,7 @@ public class TransparentActivity extends Activity {
     TransparentActivityConfig configPortrait = null;
     WebView webView;
     RelativeLayout relativeLayout;
+    static ContentCallback globalContentCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,16 +54,24 @@ public class TransparentActivity extends Activity {
         Log.v(Countly.TAG, "[TransparentActivity] onCreate, configPortrait  x: [" + configPortrait.x + "] y: [" + configPortrait.y + "] width: [" + configPortrait.width + "] height: [" + configPortrait.height + "]");
 
         TransparentActivityConfig config;
+        int navBarHeight = 0;
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             config = configLandscape;
         } else {
+            // This is only needed for the portrait mode and
+            // after android 35 the function that gives height gives the full height of the screen
+            // so we need to subtract the height of the navigation bar
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                navBarHeight = getNavigationBarHeight();
+            }
+
             config = configPortrait;
         }
 
         config = setupConfig(config);
 
         int width = config.width;
-        int height = config.height;
+        int height = config.height - navBarHeight;
 
         configLandscape.listeners.add((url, webView) -> {
             if (url.startsWith(URL_START)) {
@@ -125,23 +135,23 @@ public class TransparentActivity extends Activity {
         return config;
     }
 
-    private void changeOrientation(TransparentActivityConfig config) {
+    private void changeOrientation(TransparentActivityConfig config, int navBarHeight) {
         Log.d(Countly.TAG, "[TransparentActivity] changeOrientation, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
         params.y = config.y;
-        params.height = config.height;
+        params.height = config.height - navBarHeight;
         params.width = config.width;
         getWindow().setAttributes(params);
 
         ViewGroup.LayoutParams layoutParams = relativeLayout.getLayoutParams();
         layoutParams.width = config.width;
-        layoutParams.height = config.height;
+        layoutParams.height = config.height - navBarHeight;
         relativeLayout.setLayoutParams(layoutParams);
 
         ViewGroup.LayoutParams webLayoutParams = webView.getLayoutParams();
         webLayoutParams.width = config.width;
-        webLayoutParams.height = config.height;
+        webLayoutParams.height = config.height - navBarHeight;
         webView.setLayoutParams(webLayoutParams);
     }
 
@@ -162,13 +172,21 @@ public class TransparentActivity extends Activity {
             case Configuration.ORIENTATION_LANDSCAPE:
                 if (configLandscape != null) {
                     configLandscape = setupConfig(configLandscape);
-                    changeOrientation(configLandscape);
+                    changeOrientation(configLandscape, 0);
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:
                 if (configPortrait != null) {
                     configPortrait = setupConfig(configPortrait);
-                    changeOrientation(configPortrait);
+                    // This is only needed for the portrait mode and
+                    // after android 35 the function that gives height gives the full height of the screen
+                    // so we need to subtract the height of the navigation bar
+                    // this is implemented twice because in the future resize_me action will be able to change the height of the content
+                    int navBarHeight = 0;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                        navBarHeight = getNavigationBarHeight();
+                    }
+                    changeOrientation(configPortrait, navBarHeight);
                 }
                 break;
             default:
@@ -189,7 +207,6 @@ public class TransparentActivity extends Activity {
         }
 
         Object clyAction = query.get("action");
-        boolean result = false;
         if (clyAction instanceof String) {
             Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, action string:[" + clyAction + "]");
             String action = (String) clyAction;
@@ -211,15 +228,14 @@ public class TransparentActivity extends Activity {
         }
 
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
-            if (config.globalContentCallback != null) { // TODO: verify this later
-                config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            if (globalContentCallback != null) { // TODO: verify this later
+                globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
             }
             ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
             finish();
-            return true;
         }
 
-        return result;
+        return true;
     }
 
     private boolean linkAction(Map<String, Object> query, WebView view) {
@@ -288,14 +304,18 @@ public class TransparentActivity extends Activity {
                     JSONObject eventJson = event.getJSONObject(i);
                     Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: [" + eventJson.toString() + "]");
 
-                    if (!eventJson.has("sg")) {
+                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
+                    JSONObject sgJson = eventJson.optJSONObject("sg");
+                    JSONObject segmentationJson = eventJson.optJSONObject("segmentation");
+
+                    if (sgJson != null) {
+                        segmentationJson = sgJson;
+                    }
+
+                    if (segmentationJson == null) {
                         Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event: [" + eventJson + "]");
                         continue;
                     }
-
-                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
-                    JSONObject segmentationJson = eventJson.getJSONObject("sg");
-                    assert segmentationJson != null; // this is already checked above
 
                     for (int j = 0; j < segmentationJson.names().length(); j++) {
                         String key = segmentationJson.names().getString(j);
@@ -364,5 +384,13 @@ public class TransparentActivity extends Activity {
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);
         return webView;
+    }
+
+    private int getNavigationBarHeight() {
+        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            return getResources().getDimensionPixelSize(resourceId);
+        }
+        return 0;
     }
 }
