@@ -2,19 +2,19 @@ package ly.count.android.sdk;
 
 public class ConfigContent {
 
-    int contentUpdateInterval = 30;
+    int zoneTimerInterval = 30;
     ContentCallback globalContentCallback = null;
 
     /**
      * Set the interval for the automatic content update calls
      *
-     * @param contentUpdateInterval in seconds
+     * @param zoneTimerInterval in seconds
      * @return config content to chain calls
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
-    private synchronized ConfigContent setContentUpdateInterval(int contentUpdateInterval) {
-        if (contentUpdateInterval > 0) {
-            this.contentUpdateInterval = contentUpdateInterval;
+    public synchronized ConfigContent setZoneTimerInterval(int zoneTimerInterval) {
+        if (zoneTimerInterval > 15) {
+            this.zoneTimerInterval = zoneTimerInterval;
         }
         return this;
     }
