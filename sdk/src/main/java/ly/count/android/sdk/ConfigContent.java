@@ -13,8 +13,8 @@ public class ConfigContent {
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public synchronized ConfigContent setZoneTimerInterval(int zoneTimerIntervalSeconds) {
-        if (zoneTimerInterval > 15) {
-            this.zoneTimerInterval = zoneTimerInterval;
+        if (zoneTimerIntervalSeconds > 15) {
+            this.zoneTimerInterval = zoneTimerIntervalSeconds;
         }
         return this;
     }
