@@ -8,11 +8,11 @@ public class ConfigContent {
     /**
      * Set the interval for the automatic content update calls
      *
-     * @param zoneTimerInterval in seconds
+     * @param zoneTimerIntervalSeconds in seconds
      * @return config content to chain calls
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
-    public synchronized ConfigContent setZoneTimerInterval(int zoneTimerInterval) {
+    public synchronized ConfigContent setZoneTimerInterval(int zoneTimerIntervalSeconds) {
         if (zoneTimerInterval > 15) {
             this.zoneTimerInterval = zoneTimerInterval;
         }
