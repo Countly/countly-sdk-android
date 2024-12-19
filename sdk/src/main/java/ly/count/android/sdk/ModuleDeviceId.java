@@ -151,6 +151,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         } else {
             // setting a custom device ID
             deviceIdInstance.changeToCustomId(deviceId);
+            healthTracker.logDeviceIdWithoutMergeChange();
         }
 
         //clear automated star rating session values because now we have a new user
@@ -201,6 +202,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
             requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId());
             deviceIdInstance.changeToCustomId(deviceId);
+            healthTracker.logDeviceIdWithMergeChange();
             _cly.notifyDeviceIdChange(false);
         }
     }

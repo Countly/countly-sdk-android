@@ -1,4 +1,5 @@
 ## XX.XX.XX
+* Introduced new health checks to monitor how device ID changes are handled.
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
 
 ## 24.7.7
@@ -7,7 +8,7 @@
 
 ## 24.7.6
 * Added support for localization of content blocks.
-
+* 
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 * Fixed a bug where passing the global content callback was not possible.
 * Mitigated an issue related to content actions navigation.
