@@ -70,5 +70,5 @@ interface RequestQueueProvider {
 
     String prepareHealthCheckRequest(String preparedMetrics);
 
-    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories);
+    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language);
 }

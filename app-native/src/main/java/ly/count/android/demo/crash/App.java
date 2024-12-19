@@ -25,9 +25,11 @@ public class App extends Application {
 
         CountlyConfig config = new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL).setDeviceId("4432")
             .setLoggingEnabled(true)
-            .enableCrashReporting()
-            .setViewTracking(true)
+            .enableAutomaticViewTracking()
             .setRequiresConsent(false);
+
+        config.crashes.enableCrashReporting();
+
         Countly.sharedInstance().init(config);
 
         CountlyNative.initNative(getApplicationContext());

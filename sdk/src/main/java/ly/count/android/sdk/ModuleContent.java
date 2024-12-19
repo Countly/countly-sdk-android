@@ -8,6 +8,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
@@ -18,7 +19,7 @@ public class ModuleContent extends ModuleBase {
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
-    private final int contentUpdateInterval;
+    private final int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     static int waitForDelay = 0;
 
@@ -29,7 +30,7 @@ public class ModuleContent extends ModuleBase {
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
-        contentUpdateInterval = config.content.contentUpdateInterval;
+        zoneTimerInterval = config.content.zoneTimerInterval;
         globalContentCallback = config.content.globalContentCallback;
     }
 
@@ -89,7 +90,7 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, () -> {
+        countlyTimer.startTimer(zoneTimerInterval, () -> {
             L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
 
             if (waitForDelay > 0) {
@@ -121,7 +122,9 @@ public class ModuleContent extends ModuleBase {
         int landscapeWidth = portrait ? scaledHeight : scaledWidth;
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
-        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories);
+        String language = Locale.getDefault().getLanguage().toLowerCase();
+
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
@@ -162,7 +165,9 @@ public class ModuleContent extends ModuleBase {
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
-            config.globalContentCallback = globalContentCallback;
+            // TODO, passing callback with an intent is impossible, need to find a way to pass it
+            // Currently, the callback is set as a static variable in TransparentActivity
+            TransparentActivity.globalContentCallback = globalContentCallback;
             return config;
         }
 

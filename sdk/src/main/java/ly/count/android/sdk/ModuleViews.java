@@ -18,9 +18,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     String previousViewName = "";
     String currentViewName = "";
-
     private boolean firstView = true;
-
     boolean autoViewTracker = false;
     boolean automaticTrackingShouldUseShortName = false;
 
@@ -150,12 +148,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     void autoCloseRequiredViews(boolean closeAllViews, @Nullable Map<String, Object> customViewSegmentation) {
         L.d("[ModuleViews] autoCloseRequiredViews");
-        List<String> viewsToRemove = new ArrayList<>(1);
+        List<ViewData> viewsToRemove = new ArrayList<>(1);
 
         for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
             ViewData vd = entry.getValue();
-            if (closeAllViews || vd.isAutoStoppedView) {
-                viewsToRemove.add(vd.viewID);
+            if (closeAllViews || (!vd.willStartAgain && vd.isAutoStoppedView)) {
+                viewsToRemove.add(vd);
             }
         }
 
@@ -164,7 +162,13 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         for (int a = 0; a < viewsToRemove.size(); a++) {
-            stopViewWithIDInternal(viewsToRemove.get(a), customViewSegmentation);
+            ViewData vd = viewsToRemove.get(a);
+            if (!vd.willStartAgain) {
+                stopViewWithIDInternal(vd.viewID, customViewSegmentation);
+            } else if (closeAllViews) {
+                //if we are closing all views, we should remove the view from the cache
+                viewDataMap.remove(vd.viewID);
+            }
         }
     }
 
@@ -217,9 +221,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         applyLimitsToViewSegmentation(customViewSegmentation, "startViewInternal", accumulatedEventSegm);
 
-        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, accumulatedEventSegm);
+        boolean firstViewInSession = firstView && _cly.moduleSessions.sessionIsRunning();
 
-        if (firstView) {
+        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstViewInSession, true, accumulatedEventSegm);
+
+        if (firstViewInSession) {
             L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");
             firstView = false;
         }

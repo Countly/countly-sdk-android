@@ -3,6 +3,7 @@ package ly.count.android.demo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.List;
@@ -23,6 +24,27 @@ public class ActivityExampleFeedback extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_example_feedback);
+
+        final Button presentSurvey = findViewById(R.id.presentSurvey);
+        presentSurvey.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Countly.sharedInstance().feedback().presentSurvey(ActivityExampleFeedback.this);
+            }
+        });
+
+        final Button presentRating = findViewById(R.id.presentRating);
+        presentRating.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Countly.sharedInstance().feedback().presentRating(ActivityExampleFeedback.this);
+            }
+        });
+
+        final Button presentNPS = findViewById(R.id.presentNPS);
+        presentNPS.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                Countly.sharedInstance().feedback().presentNPS(ActivityExampleFeedback.this);
+            }
+        });
     }
 
     public void onClickViewOther02(View v) {

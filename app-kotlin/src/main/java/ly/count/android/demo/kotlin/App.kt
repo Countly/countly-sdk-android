@@ -27,10 +27,9 @@ class App : Application() {
       .setDeviceId(
         "myDeviceId"
       )
-      .enableCrashReporting()
-      .setRecordAllThreadsWithCrash()
       .setLoggingEnabled(true)
-      .setViewTracking(false)
+
+    countlyConfig.crashes.enableCrashReporting().enableRecordAllThreadsWithCrash()
 
     Countly.sharedInstance().init(countlyConfig)
   }

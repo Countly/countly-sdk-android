@@ -11,7 +11,6 @@ class TransparentActivityConfig implements Serializable {
     Integer height;
     String url;
     List<WebViewUrlListener> listeners;
-    ContentCallback globalContentCallback;
 
     TransparentActivityConfig(Integer x, Integer y, Integer width, Integer height) {
         this.x = x;
@@ -19,6 +18,5 @@ class TransparentActivityConfig implements Serializable {
         this.width = width;
         this.height = height;
         this.listeners = new ArrayList<>();
-        this.globalContentCallback = null;
     }
 }
