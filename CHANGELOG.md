@@ -1,4 +1,7 @@
 ## XX.XX.XX
+* Mitigated an issue where, on Android 35 and above, the action bar was overlapping with the content display.
+
+## XX.XX.XX
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
 
 ## 24.7.7
