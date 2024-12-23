@@ -19,7 +19,7 @@ public class ModuleContent extends ModuleBase {
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
-    private final int contentUpdateInterval;
+    private final int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     static int waitForDelay = 0;
 
@@ -30,7 +30,7 @@ public class ModuleContent extends ModuleBase {
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
-        contentUpdateInterval = config.content.contentUpdateInterval;
+        zoneTimerInterval = config.content.zoneTimerInterval;
         globalContentCallback = config.content.globalContentCallback;
     }
 
@@ -90,7 +90,7 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, () -> {
+        countlyTimer.startTimer(zoneTimerInterval, () -> {
             L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
 
             if (waitForDelay > 0) {
