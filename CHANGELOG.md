@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 24.7.8
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
 
 ## 24.7.7
