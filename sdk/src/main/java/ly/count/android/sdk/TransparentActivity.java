@@ -170,17 +170,12 @@ public class TransparentActivity extends Activity {
         final Display display = wm.getDefaultDisplay();
         final DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
-        boolean portrait = newConfig.orientation == Configuration.ORIENTATION_PORTRAIT;
 
         if (metrics.widthPixels != lastWidth || metrics.heightPixels != lastHeight) {
             int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
             int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
 
-            int portraitWidth = portrait ? scaledWidth : scaledHeight;
-            int portraitHeight = portrait ? scaledHeight : scaledWidth;
-            int landscapeWidth = portrait ? scaledHeight : scaledWidth;
-            int landscapeHeight = portrait ? scaledWidth : scaledHeight;
-            webView.loadUrl("javascript:resizeContent(" + portraitWidth + "," + portraitHeight + "," + landscapeWidth + "," + landscapeHeight + ");");
+            webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
 
             lastWidth = metrics.widthPixels;
             lastHeight = metrics.heightPixels;
