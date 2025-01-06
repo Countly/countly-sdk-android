@@ -37,6 +37,8 @@ public class TransparentActivity extends Activity {
     WebView webView;
     RelativeLayout relativeLayout;
     static ContentCallback globalContentCallback;
+    private int lastWidth = -1;
+    private int lastHeight = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,6 +116,8 @@ public class TransparentActivity extends Activity {
         final Display display = wm.getDefaultDisplay();
         final DisplayMetrics metrics = new DisplayMetrics(); // this gets all
         display.getMetrics(metrics);
+        lastWidth = metrics.widthPixels;
+        lastHeight = metrics.heightPixels;
 
         if (config == null) {
             Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values with full screen size");
@@ -160,6 +164,28 @@ public class TransparentActivity extends Activity {
         super.onConfigurationChanged(newConfig);
         Log.d(Countly.TAG, "[TransparentActivity] onConfigurationChanged orientation: [" + newConfig.orientation + "], currentOrientation: [" + currentOrientation + "]");
         Log.v(Countly.TAG, "[TransparentActivity] onConfigurationChanged, Landscape: [" + Configuration.ORIENTATION_LANDSCAPE + "] Portrait: [" + Configuration.ORIENTATION_PORTRAIT + "]");
+
+        // CHANGE SCREEN SIZE
+        final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        final Display display = wm.getDefaultDisplay();
+        final DisplayMetrics metrics = new DisplayMetrics();
+        display.getMetrics(metrics);
+        boolean portrait = newConfig.orientation == Configuration.ORIENTATION_PORTRAIT;
+
+        if (metrics.widthPixels != lastWidth || metrics.heightPixels != lastHeight) {
+            int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
+            int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
+
+            int portraitWidth = portrait ? scaledWidth : scaledHeight;
+            int portraitHeight = portrait ? scaledHeight : scaledWidth;
+            int landscapeWidth = portrait ? scaledHeight : scaledWidth;
+            int landscapeHeight = portrait ? scaledWidth : scaledHeight;
+            webView.loadUrl("javascript:resizeContent(" + portraitWidth + "," + portraitHeight + "," + landscapeWidth + "," + landscapeHeight + ");");
+
+            lastWidth = metrics.widthPixels;
+            lastHeight = metrics.heightPixels;
+        }
+
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;
             Log.i(Countly.TAG, "[TransparentActivity] onConfigurationChanged, orientation changed to currentOrientation: [" + currentOrientation + "]");
