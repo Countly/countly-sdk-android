@@ -58,15 +58,22 @@ jobs:
         if: always()
         run: ./gradlew sdk:build
 
-      - name: Run the Android Unit Tests
-        if: always()
-        run: ./gradlew sdk:connectedAndroidTest
+      - name: Build the Android Test Apk
+        run: ./gradlew sdk:assembleAndroidTest
 
-      - name: Publish Test Results to PR
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
         with:
-          check_name: "Unit Test Results :rocket:"
-          comment_title: "Unit Test Results :rocket:"
-          files: |
-            sdk/build/outputs/androidTest-results/**/*.xml
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}' #service account json
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: '>= 363.0.0'
+
+      - name: Set current project
+        run: gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }}
+  
+      - name: Run Instrumentation Tests in Firebase Test Lab
+        run: gcloud firebase test android run --type instrumentation --app sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --test sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --device model=Medium Phone,version=26 --device model=Medium Phone,version=27 --device model=Medium Phone,version=28 --device model=Medium Phone,version=29 --device model=Medium Phone,version=30 --device model=Medium Phone,version=31 --device model=Medium Phone,version=32 --device model=Medium Phone,version=33 --device model=Medium Phone,version=34 --device model=Medium Phone,version=35
+  

@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="ly.count.android.sdk">
 
-  <application>
+  <application android:allowBackup="true">
     <activity
         android:name=".TestUtils$Activity2"
         android:excludeFromRecents="true"
@@ -10,6 +10,17 @@
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:launchMode="singleTop"
         android:exported="false"/>
+    <activity
+        android:name=".TestMainActivity"
+        android:exported="true"
+        android:excludeFromRecents="true"
+        android:noHistory="true">
+      <!-- Intent filter for launcher activity -->
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN"/>
+        <category android:name="android.intent.category.LAUNCHER"/>
+      </intent-filter>
+    </activity>
     <uses-library android:name="android.test.runner"/>
   </application>
 
