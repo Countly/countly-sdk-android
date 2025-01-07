@@ -37,8 +37,6 @@ public class TransparentActivity extends Activity {
     WebView webView;
     RelativeLayout relativeLayout;
     static ContentCallback globalContentCallback;
-    private int lastWidth = -1;
-    private int lastHeight = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,8 +114,6 @@ public class TransparentActivity extends Activity {
         final Display display = wm.getDefaultDisplay();
         final DisplayMetrics metrics = new DisplayMetrics(); // this gets all
         display.getMetrics(metrics);
-        lastWidth = metrics.widthPixels;
-        lastHeight = metrics.heightPixels;
 
         if (config == null) {
             Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values with full screen size");
@@ -139,7 +135,7 @@ public class TransparentActivity extends Activity {
         return config;
     }
 
-    private void changeOrientation(TransparentActivityConfig config, int navBarHeight) {
+    private void resizeContent(TransparentActivityConfig config, int navBarHeight) {
         Log.d(Countly.TAG, "[TransparentActivity] changeOrientation, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
@@ -163,7 +159,10 @@ public class TransparentActivity extends Activity {
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Log.d(Countly.TAG, "[TransparentActivity] onConfigurationChanged orientation: [" + newConfig.orientation + "], currentOrientation: [" + currentOrientation + "]");
-        Log.v(Countly.TAG, "[TransparentActivity] onConfigurationChanged, Landscape: [" + Configuration.ORIENTATION_LANDSCAPE + "] Portrait: [" + Configuration.ORIENTATION_PORTRAIT + "]");
+
+        if (currentOrientation != newConfig.orientation) {
+            currentOrientation = newConfig.orientation;
+        }
 
         // CHANGE SCREEN SIZE
         final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
@@ -171,29 +170,19 @@ public class TransparentActivity extends Activity {
         final DisplayMetrics metrics = new DisplayMetrics();
         display.getMetrics(metrics);
 
-        if (metrics.widthPixels != lastWidth || metrics.heightPixels != lastHeight) {
-            int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
-            int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
+        int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
+        int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
 
-            webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
-
-            lastWidth = metrics.widthPixels;
-            lastHeight = metrics.heightPixels;
-        }
-
-        if (currentOrientation != newConfig.orientation) {
-            currentOrientation = newConfig.orientation;
-            Log.i(Countly.TAG, "[TransparentActivity] onConfigurationChanged, orientation changed to currentOrientation: [" + currentOrientation + "]");
-            changeOrientationInternal();
-        }
+        // refactor in the future to use the resize_me action
+        webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
     }
 
-    private void changeOrientationInternal() {
+    private void resizeContentInternal() {
         switch (currentOrientation) {
             case Configuration.ORIENTATION_LANDSCAPE:
                 if (configLandscape != null) {
                     configLandscape = setupConfig(configLandscape);
-                    changeOrientation(configLandscape, 0);
+                    resizeContent(configLandscape, 0);
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:
@@ -207,7 +196,7 @@ public class TransparentActivity extends Activity {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                         navBarHeight = getNavigationBarHeight();
                     }
-                    changeOrientation(configPortrait, navBarHeight);
+                    resizeContent(configPortrait, navBarHeight);
                 }
                 break;
             default:
@@ -309,7 +298,7 @@ public class TransparentActivity extends Activity {
             configLandscape.width = (int) Math.ceil(landscape.getInt("w") * density);
             configLandscape.height = (int) Math.ceil(landscape.getInt("h") * density);
 
-            changeOrientationInternal();
+            resizeContentInternal();
         } catch (JSONException e) {
             Log.e(Countly.TAG, "[TransparentActivity] resizeMeAction, Failed to parse resize JSON", e);
         }

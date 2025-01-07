@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Improved content size management of content blocks.
+
 ## 24.7.8
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
 
