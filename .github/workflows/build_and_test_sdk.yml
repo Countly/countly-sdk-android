@@ -24,12 +24,6 @@ jobs:
     name: Build and Test the SDK
 
     steps:
-      - name: Install Docker to the Runner
-        run: sudo apt-get install docker
-
-      - name: Pull Emulator from the Repo
-        run: docker pull ${{ env.EMULATOR_REPO }}
-    
       - name: Checkout SDK code
         uses: actions/checkout@v4
 
@@ -41,15 +35,6 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.10
-
-      - name: Start ADB Server
-        run: adb start-server
-
-      - name: Run Android Emulator Container
-        run: docker run -d -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 5555:5555/tcp ${{ env.EMULATOR_REPO }}
-      
-      - name: Connect to the Emulator
-        run: adb connect localhost:5555
 
       - name: Set AAPT2 for android 35
         run: echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2"  | tee -a ${{ github.workspace }}/gradle.properties
@@ -75,5 +60,5 @@ jobs:
         run: gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }}
   
       - name: Run Instrumentation Tests in Firebase Test Lab
-        run: gcloud firebase test android run --type instrumentation --app sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --test sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --device model=Medium Phone,version=26 --device model=Medium Phone,version=27 --device model=Medium Phone,version=28 --device model=Medium Phone,version=29 --device model=Medium Phone,version=30 --device model=Medium Phone,version=31 --device model=Medium Phone,version=32 --device model=Medium Phone,version=33 --device model=Medium Phone,version=34 --device model=Medium Phone,version=35
+        run: gcloud firebase test android run --type instrumentation --app sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --test sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --device model=MediumPhone.arm,version=26 --device model=MediumPhone.arm,version=27 --device model=MediumPhone.arm,version=28 --device model=MediumPhone.arm,version=29 --device model=MediumPhone.arm,version=30 --device model=MediumPhone.arm,version=31 --device model=MediumPhone.arm,version=32 --device model=MediumPhone.arm,version=33 --device model=MediumPhone.arm,version=34 --device model=MediumPhone.arm,version=35
   
