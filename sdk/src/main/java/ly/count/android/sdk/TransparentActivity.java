@@ -41,6 +41,11 @@ public class TransparentActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(Countly.TAG, "[TransparentActivity] onCreate, content received, showing it");
+
+        // there is a stripe at the top of the screen for contents
+        // we eliminate it with no action bar full screen and this adds more smoothness
+        // the stripe is because of our transparency
+        setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 

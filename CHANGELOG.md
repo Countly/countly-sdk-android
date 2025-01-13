@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue where, the action bar was overlapping with the content display.
+
 ## 24.7.8
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
 
