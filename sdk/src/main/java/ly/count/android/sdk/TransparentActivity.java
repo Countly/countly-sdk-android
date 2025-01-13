@@ -13,6 +13,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
@@ -45,7 +46,8 @@ public class TransparentActivity extends Activity {
         // there is a stripe at the top of the screen for contents
         // we eliminate it with no action bar full screen and this adds more smoothness
         // the stripe is because of our transparency
-        setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
+        //setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
+        hideSystemUI();
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -114,6 +116,18 @@ public class TransparentActivity extends Activity {
         setContentView(relativeLayout);
     }
 
+    private void hideSystemUI() {
+        // Enables regular immersive mode
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+        );
+    }
+    
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
         final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         final Display display = wm.getDefaultDisplay();
