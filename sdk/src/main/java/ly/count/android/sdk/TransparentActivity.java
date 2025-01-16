@@ -66,6 +66,7 @@ public class TransparentActivity extends Activity {
         }
 
         config = setupConfig(config);
+
         WebViewUrlListener listener = new WebViewUrlListener() {
             @Override public boolean onUrl(String url, WebView webView) {
                 if (url.startsWith(URL_START)) {
