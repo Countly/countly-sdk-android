@@ -44,9 +44,7 @@ public class TransparentActivity extends Activity {
         Log.d(Countly.TAG, "[TransparentActivity] onCreate, content received, showing it");
 
         // there is a stripe at the top of the screen for contents
-        // we eliminate it with no action bar full screen and this adds more smoothness
-        // the stripe is because of our transparency
-        //setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
+        // we eliminate it with hiding the system ui
         hideSystemUI();
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
@@ -61,53 +59,39 @@ public class TransparentActivity extends Activity {
         Log.v(Countly.TAG, "[TransparentActivity] onCreate, configPortrait  x: [" + configPortrait.x + "] y: [" + configPortrait.y + "] width: [" + configPortrait.width + "] height: [" + configPortrait.height + "]");
 
         TransparentActivityConfig config;
-        int navBarHeight = 0;
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             config = configLandscape;
         } else {
-            // This is only needed for the portrait mode and
-            // after android 35 the function that gives height gives the full height of the screen
-            // so we need to subtract the height of the navigation bar
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                navBarHeight = getNavigationBarHeight();
-            }
-
             config = configPortrait;
         }
 
         config = setupConfig(config);
-
-        int width = config.width;
-        int height = config.height - navBarHeight;
-
-        configLandscape.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configLandscape, webView);
+        WebViewUrlListener listener = new WebViewUrlListener() {
+            @Override public boolean onUrl(String url, WebView webView) {
+                if (url.startsWith(URL_START)) {
+                    return contentUrlAction(url, webView);
+                }
+                return false;
             }
-            return false;
-        });
+        };
 
-        configPortrait.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configPortrait, webView);
-            }
-            return false;
-        });
+        configLandscape.listeners.add(listener);
+        configPortrait.listeners.add(listener);
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
         params.gravity = Gravity.TOP | Gravity.LEFT; // try out START
         params.x = config.x;
         params.y = config.y;
-        params.height = height;
-        params.width = width;
+        params.height = config.height;
+        params.width = config.width;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         getWindow().setAttributes(params);
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         // Create and configure the layout
         relativeLayout = new RelativeLayout(this);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(width, height);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
         relativeLayout.setLayoutParams(layoutParams);
         webView = createWebView(config);
 
@@ -127,7 +111,7 @@ public class TransparentActivity extends Activity {
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
         );
     }
-    
+
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
         final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
         final Display display = wm.getDefaultDisplay();
@@ -154,23 +138,23 @@ public class TransparentActivity extends Activity {
         return config;
     }
 
-    private void resizeContent(TransparentActivityConfig config, int navBarHeight) {
-        Log.d(Countly.TAG, "[TransparentActivity] changeOrientation, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
+    private void resizeContent(TransparentActivityConfig config) {
+        Log.d(Countly.TAG, "[TransparentActivity] resizeContent, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
         params.y = config.y;
-        params.height = config.height - navBarHeight;
+        params.height = config.height;
         params.width = config.width;
         getWindow().setAttributes(params);
 
         ViewGroup.LayoutParams layoutParams = relativeLayout.getLayoutParams();
         layoutParams.width = config.width;
-        layoutParams.height = config.height - navBarHeight;
+        layoutParams.height = config.height;
         relativeLayout.setLayoutParams(layoutParams);
 
         ViewGroup.LayoutParams webLayoutParams = webView.getLayoutParams();
         webLayoutParams.width = config.width;
-        webLayoutParams.height = config.height - navBarHeight;
+        webLayoutParams.height = config.height;
         webView.setLayoutParams(webLayoutParams);
     }
 
@@ -201,7 +185,7 @@ public class TransparentActivity extends Activity {
             case Configuration.ORIENTATION_LANDSCAPE:
                 if (configLandscape != null) {
                     configLandscape = setupConfig(configLandscape);
-                    resizeContent(configLandscape, 0);
+                    resizeContent(configLandscape);
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:
@@ -215,7 +199,7 @@ public class TransparentActivity extends Activity {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
                         navBarHeight = getNavigationBarHeight();
                     }
-                    resizeContent(configPortrait, navBarHeight);
+                    resizeContent(configPortrait);
                 }
                 break;
             default:
@@ -223,7 +207,7 @@ public class TransparentActivity extends Activity {
         }
     }
 
-    private boolean contentUrlAction(String url, TransparentActivityConfig config, WebView view) {
+    private boolean contentUrlAction(String url, WebView view) {
         Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: [" + url + "]");
         Map<String, Object> query = splitQuery(url);
         Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: [" + query + "]");
