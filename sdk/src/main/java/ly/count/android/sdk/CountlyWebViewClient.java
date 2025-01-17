@@ -38,7 +38,7 @@ class CountlyWebViewClient extends WebViewClient {
         return false;
     }
 
-    public void registerWebViewUrlListeners(List<WebViewUrlListener> listener) {
-        this.listeners.addAll(listener);
+    public void registerWebViewUrlListener(WebViewUrlListener listener) {
+        this.listeners.add(listener);
     }
 }

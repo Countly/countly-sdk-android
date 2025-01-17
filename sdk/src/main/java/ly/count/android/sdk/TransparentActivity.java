@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -75,9 +74,6 @@ public class TransparentActivity extends Activity {
                 return false;
             }
         };
-
-        configLandscape.listeners.add(listener);
-        configPortrait.listeners.add(listener);
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
@@ -192,14 +188,6 @@ public class TransparentActivity extends Activity {
             case Configuration.ORIENTATION_PORTRAIT:
                 if (configPortrait != null) {
                     configPortrait = setupConfig(configPortrait);
-                    // This is only needed for the portrait mode and
-                    // after android 35 the function that gives height gives the full height of the screen
-                    // so we need to subtract the height of the navigation bar
-                    // this is implemented twice because in the future resize_me action will be able to change the height of the content
-                    int navBarHeight = 0;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                        navBarHeight = getNavigationBarHeight();
-                    }
                     resizeContent(configPortrait);
                 }
                 break;
@@ -393,18 +381,17 @@ public class TransparentActivity extends Activity {
         webView.clearHistory();
 
         CountlyWebViewClient client = new CountlyWebViewClient();
-        client.registerWebViewUrlListeners(config.listeners);
+        client.registerWebViewUrlListener(new WebViewUrlListener() {
+            @Override public boolean onUrl(String url, WebView webView) {
+                if (url.startsWith(URL_START)) {
+                    return contentUrlAction(url, webView);
+                }
+                return false;
+            }
+        });
 
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);
         return webView;
-    }
-
-    private int getNavigationBarHeight() {
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            return getResources().getDimensionPixelSize(resourceId);
-        }
-        return 0;
     }
 }
