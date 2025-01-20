@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -44,9 +43,7 @@ public class TransparentActivity extends Activity {
         Log.d(Countly.TAG, "[TransparentActivity] onCreate, content received, showing it");
 
         // there is a stripe at the top of the screen for contents
-        // we eliminate it with no action bar full screen and this adds more smoothness
-        // the stripe is because of our transparency
-        //setTheme(android.R.style.Theme_DeviceDefault_NoActionBar_Fullscreen);
+        // we eliminate it with hiding the system ui
         hideSystemUI();
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
@@ -77,9 +74,6 @@ public class TransparentActivity extends Activity {
                 return false;
             }
         };
-
-        configLandscape.listeners.add(listener);
-        configPortrait.listeners.add(listener);
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
@@ -141,8 +135,8 @@ public class TransparentActivity extends Activity {
         return config;
     }
 
-    private void changeOrientation(TransparentActivityConfig config) {
-        Log.d(Countly.TAG, "[TransparentActivity] changeOrientation, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
+    private void resizeContent(TransparentActivityConfig config) {
+        Log.d(Countly.TAG, "[TransparentActivity] resizeContent, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
         params.y = config.y;
@@ -165,34 +159,36 @@ public class TransparentActivity extends Activity {
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Log.d(Countly.TAG, "[TransparentActivity] onConfigurationChanged orientation: [" + newConfig.orientation + "], currentOrientation: [" + currentOrientation + "]");
-        Log.v(Countly.TAG, "[TransparentActivity] onConfigurationChanged, Landscape: [" + Configuration.ORIENTATION_LANDSCAPE + "] Portrait: [" + Configuration.ORIENTATION_PORTRAIT + "]");
+
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;
-            Log.i(Countly.TAG, "[TransparentActivity] onConfigurationChanged, orientation changed to currentOrientation: [" + currentOrientation + "]");
-            changeOrientationInternal();
         }
+
+        // CHANGE SCREEN SIZE
+        final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        final Display display = wm.getDefaultDisplay();
+        final DisplayMetrics metrics = new DisplayMetrics();
+        display.getMetrics(metrics);
+
+        int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
+        int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
+
+        // refactor in the future to use the resize_me action
+        webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
     }
 
-    private void changeOrientationInternal() {
+    private void resizeContentInternal() {
         switch (currentOrientation) {
             case Configuration.ORIENTATION_LANDSCAPE:
                 if (configLandscape != null) {
                     configLandscape = setupConfig(configLandscape);
-                    changeOrientation(configLandscape);
+                    resizeContent(configLandscape);
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:
                 if (configPortrait != null) {
                     configPortrait = setupConfig(configPortrait);
-                    // This is only needed for the portrait mode and
-                    // after android 35 the function that gives height gives the full height of the screen
-                    // so we need to subtract the height of the navigation bar
-                    // this is implemented twice because in the future resize_me action will be able to change the height of the content
-                    int navBarHeight = 0;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                        navBarHeight = getNavigationBarHeight();
-                    }
-                    changeOrientation(configPortrait);
+                    resizeContent(configPortrait);
                 }
                 break;
             default:
@@ -294,7 +290,7 @@ public class TransparentActivity extends Activity {
             configLandscape.width = (int) Math.ceil(landscape.getInt("w") * density);
             configLandscape.height = (int) Math.ceil(landscape.getInt("h") * density);
 
-            changeOrientationInternal();
+            resizeContentInternal();
         } catch (JSONException e) {
             Log.e(Countly.TAG, "[TransparentActivity] resizeMeAction, Failed to parse resize JSON", e);
         }
@@ -385,18 +381,17 @@ public class TransparentActivity extends Activity {
         webView.clearHistory();
 
         CountlyWebViewClient client = new CountlyWebViewClient();
-        client.registerWebViewUrlListeners(config.listeners);
+        client.registerWebViewUrlListener(new WebViewUrlListener() {
+            @Override public boolean onUrl(String url, WebView webView) {
+                if (url.startsWith(URL_START)) {
+                    return contentUrlAction(url, webView);
+                }
+                return false;
+            }
+        });
 
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);
         return webView;
-    }
-
-    private int getNavigationBarHeight() {
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            return getResources().getDimensionPixelSize(resourceId);
-        }
-        return 0;
     }
 }
