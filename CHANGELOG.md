@@ -1,6 +1,8 @@
 ## XX.XX.XX
 * Improved content size management of content blocks.
+
 * Mitigated an issue where, the action bar was overlapping with the content display.
+* Improved the custom CertificateTrustManager to handle domain-specific configurations by supporting hostname-aware checkServerTrusted calls.
 
 ## 24.7.8
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
