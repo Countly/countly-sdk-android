@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Install Docker to the Runner
-        run: sudo apt-get install docker
+        run: sudo apt-get install docker.io
 
       - name: Pull Emulator from the Repo
         run: docker pull ${{ env.EMULATOR_REPO }}
