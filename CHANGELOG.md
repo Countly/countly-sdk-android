@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 25.1.0
 * Improved content size management of content blocks.
 
 * Mitigated an issue where, the action bar was overlapping with the content display.
