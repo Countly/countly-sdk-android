@@ -21,11 +21,11 @@ public class ModuleContent extends ModuleBase {
     private boolean shouldFetchContents = false;
     private final int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
-    static int waitForDelay = 0;
+    private int waitForDelay = 0;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
-        L.v("[ModuleContent] Initialising");
+        L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + config.content.zoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
         iRGenerator = config.immediateRequestGenerator;
 
         contentInterface = new Content();
@@ -105,6 +105,12 @@ public class ModuleContent extends ModuleBase {
 
             fetchContentsInternal(validCategories);
         }, L);
+    }
+
+    void notifyAfterContentIsClosed() {
+        L.v("[ModuleContent] notifyAfterContentIsClosed, setting waitForDelay to 2 and shouldFetchContents to true");
+        waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
+        shouldFetchContents = true;
     }
 
     @NonNull
