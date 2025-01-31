@@ -1,5 +1,5 @@
 ## 25.1.1
-* Mitigated an issue where after closing the content, they were not able to fetched again.
+* Mitigated an issue where after closing a content, they were not being fetched again.
 
 ## 25.1.0
 * Improved content size management of content blocks.
