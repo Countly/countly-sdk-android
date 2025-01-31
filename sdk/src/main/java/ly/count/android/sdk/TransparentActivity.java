@@ -233,7 +233,10 @@ public class TransparentActivity extends Activity {
             if (globalContentCallback != null) { // TODO: verify this later
                 globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
             }
-            ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
+
+            if (Countly.sharedInstance().isInitialized()) {
+                Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+            }
             finish();
         }
 
