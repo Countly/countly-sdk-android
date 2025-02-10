@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* Added a new server configuration to manage uncaught crash reporting.
+* Added a new server configuration to manage crash reporting.
 
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
