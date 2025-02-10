@@ -36,7 +36,6 @@ public class ModuleConfigurationTests {
         CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
         Countly countly = (new Countly()).init(config);
 
-        Assert.assertFalse(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNull(countlyStore.getServerConfig());
         assertConfigDefault(countly);
     }
@@ -50,7 +49,6 @@ public class ModuleConfigurationTests {
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
         Countly countly = (new Countly()).init(config);
 
-        Assert.assertTrue(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNull(countlyStore.getServerConfig());
         assertConfigDefault(countly);
     }
@@ -68,7 +66,6 @@ public class ModuleConfigurationTests {
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
         Countly countly = (new Countly()).init(config);
 
-        Assert.assertTrue(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNotNull(countlyStore.getServerConfig());
         assertConfigDefault(countly);
     }
@@ -86,7 +83,6 @@ public class ModuleConfigurationTests {
         CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
         Countly countly = (new Countly()).init(config);
 
-        Assert.assertTrue(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNotNull(countlyStore.getServerConfig());
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
@@ -105,7 +101,6 @@ public class ModuleConfigurationTests {
         CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
         Countly countly = Countly.sharedInstance().init(config);
 
-        Assert.assertFalse(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNotNull(countlyStore.getServerConfig());
         assertConfigDefault(countly);
     }
@@ -123,7 +118,6 @@ public class ModuleConfigurationTests {
         CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
         Countly countly = (new Countly()).init(config);
 
-        Assert.assertFalse(countly.moduleConfiguration.serverConfigEnabled);
         Assert.assertNotNull(countlyStore.getServerConfig());
         assertConfigDefault(countly);
     }

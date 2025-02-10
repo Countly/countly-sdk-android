@@ -197,8 +197,6 @@ public class CountlyConfig {
 
     boolean explicitStorageModeEnabled = false;
 
-    boolean serverConfigurationEnabled = false;
-
     boolean healthCheckEnabled = true;
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
@@ -991,19 +989,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableExplicitStorageMode() {
         explicitStorageModeEnabled = true;
-        return this;
-    }
-
-    /**
-     * This is an experimental feature and it can have breaking changes
-     *
-     * With this mode enable, the SDK will acquire additional configuration from it's Countly server
-     *
-     * @return Returns the same config object for convenient linking
-     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
-     */
-    public synchronized CountlyConfig enableServerConfiguration() {
-        serverConfigurationEnabled = true;
         return this;
     }
 
