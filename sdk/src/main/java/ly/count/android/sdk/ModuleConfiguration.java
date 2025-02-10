@@ -15,7 +15,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     //config keys
     final static String keyTracking = "tracking";
     final static String keyNetworking = "networking";
-    final static String keyCrashReporting = "crashes";
+    final static String keyCrashReporting = "crt";
 
     //request keys
     final static String keyRTimestamp = "t";
