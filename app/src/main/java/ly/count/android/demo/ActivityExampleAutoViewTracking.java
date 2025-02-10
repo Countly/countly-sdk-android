@@ -4,6 +4,7 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import ly.count.android.sdk.Countly;
 
@@ -39,7 +40,6 @@ public class ActivityExampleAutoViewTracking extends AppCompatActivity {
         viewID2 = Countly.sharedInstance().views().startView(viewName_2);
         Toast.makeText(getApplicationContext(), "Clicked startView 2", Toast.LENGTH_SHORT).show();
     }
-
 
     public void onClickPauseViewWithID(View v) {
         Countly.sharedInstance().views().pauseViewWithID(viewID);
@@ -99,9 +99,8 @@ public class ActivityExampleAutoViewTracking extends AppCompatActivity {
     }
 
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
+    public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Countly.sharedInstance().onConfigurationChanged(newConfig);
     }
-
 }

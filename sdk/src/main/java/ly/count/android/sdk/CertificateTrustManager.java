@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.net.http.X509TrustManagerExtensions;
 import android.util.Base64;
 import java.io.ByteArrayInputStream;
 import java.security.KeyStore;
@@ -54,23 +55,30 @@ public final class CertificateTrustManager implements X509TrustManager {
         }
     }
 
+    public void checkServerTrusted(X509Certificate[] chain, String authType, String host) throws CertificateException {
+        performCommonChecks(chain, authType, host);
+    }
+
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
-        if (chain == null) {
-            throw new IllegalArgumentException("PublicKeyManager: X509Certificate array is null");
+        performCommonChecks(chain, authType, null);
+    }
+
+    private void performCommonChecks(X509Certificate[] chain, String authType, String host) throws CertificateException {
+        if (chain == null || chain.length == 0) {
+            throw new IllegalArgumentException("PublicKeyManager: X509Certificate array is null or empty");
         }
 
-        if (!(chain.length > 0)) {
-            throw new IllegalArgumentException("PublicKeyManager: X509Certificate is empty");
-        }
-
-        // Perform customary SSL/TLS checks
-        TrustManagerFactory tmf;
         try {
-            tmf = TrustManagerFactory.getInstance("X509");
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("X509");
             tmf.init((KeyStore) null);
 
             for (TrustManager trustManager : tmf.getTrustManagers()) {
-                ((X509TrustManager) trustManager).checkServerTrusted(chain, authType);
+                if (host != null && trustManager instanceof X509TrustManager) {
+                    X509TrustManagerExtensions x509TrustManagerExtensions = new X509TrustManagerExtensions((X509TrustManager) trustManager);
+                    x509TrustManagerExtensions.checkServerTrusted(chain, authType, host);
+                } else {
+                    ((X509TrustManager) trustManager).checkServerTrusted(chain, authType);
+                }
             }
         } catch (Exception e) {
             throw new CertificateException(e);
