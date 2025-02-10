@@ -305,6 +305,11 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
+        if (!configProvider.getCrashReportingEnabled()) {
+            L.w("[ModuleCrash] recordExceptionInternal, Crash reporting is disabled in the server configuration");
+            return _cly;
+        }
+
         if (exception == null) {
             L.d("[ModuleCrash] recordException, provided exception was null, returning");
             return _cly;
@@ -338,10 +343,13 @@ public class ModuleCrash extends ModuleBase {
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         //enable unhandled crash reporting
-        if (config.crashes.enableUnhandledCrashReporting && (config.configProvider == null || config.configProvider.getCrashReportingEnabled())) {
+        if (!configProvider.getCrashReportingEnabled()) {
+            L.w("[ModuleCrash] initFinished, Crash reporting is disabled in the server configuration");
+            return;
+        }
+
+        if (config.crashes.enableUnhandledCrashReporting) {
             enableCrashReporting();
-        } else if (config.crashes.enableUnhandledCrashReporting) {
-            L.w("[ModuleCrash] initFinished, Crash reporting is enabled in the configuration, but it is not enabled in the config provider");
         }
 
         //check for previous native crash dumps
