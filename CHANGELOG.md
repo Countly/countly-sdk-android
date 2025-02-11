@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue that prevented resolution extraction.
+
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
 
