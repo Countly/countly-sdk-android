@@ -30,6 +30,7 @@ import android.content.IntentFilter;
 import android.content.pm.FeatureInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.os.BatteryManager;
@@ -116,17 +117,8 @@ class DeviceInfo {
                 @NonNull
                 @Override
                 public String getResolution(@NonNull final Context context) {
-                    // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
-                    // were returning null, even though the documentation doesn't say they should do so; so now
-                    // we catch Throwable and return empty string if that happens
-                    String resolution = "";
-                    try {
-                        final DisplayMetrics metrics = getDisplayMetrics(context);
-                        resolution = metrics.widthPixels + "x" + metrics.heightPixels;
-                    } catch (Throwable t) {
-                        Countly.sharedInstance().L.i("[DeviceInfo] Device resolution cannot be determined");
-                    }
-                    return resolution;
+                    final DisplayMetrics metrics = getDisplayMetrics(context);
+                    return metrics.widthPixels + "x" + metrics.heightPixels;
                 }
 
                 /**
@@ -137,10 +129,20 @@ class DeviceInfo {
                 @NonNull
                 @Override
                 public DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
-                    final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-                    final Display display = wm.getDefaultDisplay();
-                    final DisplayMetrics metrics = new DisplayMetrics();
-                    display.getMetrics(metrics);
+                    // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
+                    // were returning null, even though the documentation doesn't say they should do so; so now
+                    // we catch Exception and return system default display metrics if that happens
+                    DisplayMetrics metrics = new DisplayMetrics();
+
+                    try {
+                        final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+                        final Display display = wm.getDefaultDisplay();
+                        display.getMetrics(metrics);
+                    } catch (Exception e) {
+                        Countly.sharedInstance().L.i("[DeviceInfo] getDisplayMetrics, Device display metrics cannot be determined, defaulting to resources. exception:[" + e.getMessage() + "]");
+                        metrics = Resources.getSystem().getDisplayMetrics();
+                    }
+
                     return metrics;
                 }
 

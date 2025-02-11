@@ -83,7 +83,9 @@ public class DeviceInfoTests {
     public void testGetResolution_getWindowManagerReturnsNull() {
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.WINDOW_SERVICE)).thenReturn(null);
-        assertEquals("", regularDeviceInfo.mp.getResolution(mockContext));
+
+        DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
+        assertEquals(dm.widthPixels + "x" + dm.heightPixels, regularDeviceInfo.mp.getResolution(mockContext));
     }
 
     @Test
@@ -92,7 +94,9 @@ public class DeviceInfoTests {
         when(mockWindowMgr.getDefaultDisplay()).thenReturn(null);
         final Context mockContext = mock(Context.class);
         when(mockContext.getSystemService(Context.WINDOW_SERVICE)).thenReturn(mockWindowMgr);
-        assertEquals("", regularDeviceInfo.mp.getResolution(mockContext));
+
+        DisplayMetrics dm = Resources.getSystem().getDisplayMetrics();
+        assertEquals(dm.widthPixels + "x" + dm.heightPixels, regularDeviceInfo.mp.getResolution(mockContext));
     }
 
     private Context mockContextForTestingDensity(final int density) {
