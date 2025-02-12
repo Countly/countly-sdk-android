@@ -39,9 +39,17 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     final static boolean defaultVTracking = true;
     final static boolean defaultVNetworking = true;
+    final static boolean defaultVSessionTracking = true;
+    final static boolean defaultVViewTracking = true;
+    final static boolean defaultVCustomEventTracking = true;
+    final static boolean defaultVContentZone = true;
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
+    boolean currentVSessionTracking = true;
+    boolean currentVViewTracking = true;
+    boolean currentVCustomEventTracking = true;
+    boolean currentVContentZone = true;
     boolean configurationFetched = false;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -102,6 +110,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         //set all to defaults
         currentVNetworking = defaultVNetworking;
         currentVTracking = defaultVTracking;
+        currentVSessionTracking = defaultVSessionTracking;
+        currentVViewTracking = defaultVViewTracking;
+        currentVCustomEventTracking = defaultVCustomEventTracking;
+        currentVContentZone = defaultVContentZone;
         boolean sdkConfigChanged = false;
 
         if (latestRetrievedConfiguration == null) {
@@ -124,6 +136,38 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 currentVTracking = latestRetrievedConfiguration.getBoolean(keyTracking);
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'tracking', " + e);
+            }
+        }
+
+        if (latestRetrievedConfiguration.has(keyRSessionTracking)) {
+            try {
+                currentVSessionTracking = latestRetrievedConfiguration.getInt(keyRSessionTracking) == 1;
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] updateConfigs, failed to load 'session tracking', " + e);
+            }
+        }
+
+        if (latestRetrievedConfiguration.has(keyRViewTracking)) {
+            try {
+                currentVViewTracking = latestRetrievedConfiguration.getInt(keyRViewTracking) == 1;
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] updateConfigs, failed to load 'view tracking', " + e);
+            }
+        }
+
+        if (latestRetrievedConfiguration.has(keyRCustomEventTracking)) {
+            try {
+                currentVCustomEventTracking = latestRetrievedConfiguration.getInt(keyRCustomEventTracking) == 1;
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] updateConfigs, failed to load 'custom event tracking', " + e);
+            }
+        }
+
+        if (latestRetrievedConfiguration.has(keyREnterContentZone)) {
+            try {
+                currentVContentZone = latestRetrievedConfiguration.getInt(keyREnterContentZone) == 1;
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] updateConfigs, failed to load 'content zone', " + e);
             }
         }
 
@@ -161,14 +205,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'sessionUpdateInterval', " + e);
             }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRSessionTracking)) {
-
-        }
-
-        if (latestRetrievedConfiguration.has(keyRViewTracking)) {
-
         }
 
         if (latestRetrievedConfiguration.has(keyRLimitKeyLength)) {
@@ -223,14 +259,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxStackTraceLineLength', " + e);
             }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRCustomEventTracking)) {
-
-        }
-
-        if (latestRetrievedConfiguration.has(keyREnterContentZone)) {
-
         }
 
         if (latestRetrievedConfiguration.has(keyRContentZoneInterval)) {
@@ -369,71 +397,19 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return currentVTracking;
     }
 
-    @Override public int getRequestQueueSize() {
-        return 0;
-    }
-
-    @Override public int getEventQueueSize() {
-        return 0;
-    }
-
-    @Override public boolean getLoggingEnabled() {
-        return false;
-    }
-
-    @Override public int getSessionUpdateInterval() {
-        return 0;
-    }
-
     @Override public boolean getSessionTrackingEnabled() {
-        return false;
+        return currentVSessionTracking;
     }
 
     @Override public boolean getViewTrackingEnabled() {
-        return false;
+        return currentVViewTracking;
     }
 
     @Override public boolean getCustomEventTrackingEnabled() {
-        return false;
+        return currentVCustomEventTracking;
     }
 
     @Override public boolean getContentZoneEnabled() {
-        return false;
-    }
-
-    @Override public int getContentZoneTimerInterval() {
-        return 0;
-    }
-
-    @Override public int getConsentRequired() {
-        return 0;
-    }
-
-    @Override public int getDropOldRequestTime() {
-        return 0;
-    }
-
-    @Override public int getMaxKeyLength() {
-        return 0;
-    }
-
-    @Override public int getMaxValueSize() {
-        return 0;
-    }
-
-    @Override public int getMaxSegmentationValues() {
-        return 0;
-    }
-
-    @Override public int getMaxBreadcrumbCount() {
-        return 0;
-    }
-
-    @Override public int getMaxStackTraceLinesPerThread() {
-        return 0;
-    }
-
-    @Override public int getMaxStackTraceLineLength() {
-        return 0;
+        return currentVContentZone;
     }
 }

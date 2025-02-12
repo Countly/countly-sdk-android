@@ -188,6 +188,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return null;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.e("[ModuleViews] startViewInternal, View tracking is disabled, ignoring call");
+            return null;
+        }
+
         if (viewName == null || viewName.isEmpty()) {
             L.e("[ModuleViews] startViewInternal, Trying to record view with null or empty view name, ignoring request");
             return null;
@@ -279,6 +284,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
             L.w("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
+            return;
+        }
+
+        if (!configProvider.getViewTrackingEnabled()) {
+            // stopallviews
+            L.e("[ModuleViews] stopViewWithIDInternal, View tracking is disabled, ignoring call");
             return;
         }
 

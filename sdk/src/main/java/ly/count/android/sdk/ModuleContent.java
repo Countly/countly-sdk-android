@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -19,7 +20,7 @@ public class ModuleContent extends ModuleBase {
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
-    private final int zoneTimerInterval;
+    private int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
 
@@ -36,7 +37,14 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        zoneTimerInterval = config.content.zoneTimerInterval;
+    }
 
+    @Override
+    void initFinished(@NotNull CountlyConfig config) {
+        if (configProvider.getContentZoneEnabled()) {
+            contentInterface.enterContentZone();
+        }
     }
 
     void fetchContentsInternal(@NonNull String[] categories) {

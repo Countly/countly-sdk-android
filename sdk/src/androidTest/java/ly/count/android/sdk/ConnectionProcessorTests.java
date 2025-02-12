@@ -77,6 +77,22 @@ public class ConnectionProcessorTests {
             @Override public boolean getTrackingEnabled() {
                 return true;
             }
+
+            @Override public boolean getSessionTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getViewTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getCustomEventTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getContentZoneEnabled() {
+                return false;
+            }
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);

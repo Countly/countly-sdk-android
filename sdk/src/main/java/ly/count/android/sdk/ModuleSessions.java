@@ -46,6 +46,11 @@ public class ModuleSessions extends ModuleBase {
             return;
         }
 
+        if (!configProvider.getSessionTrackingEnabled()) {
+            L.e("[ModuleSessions] beginSessionInternal, Session tracking is disabled, ignoring call");
+            return;
+        }
+
         if (sessionIsRunning()) {
             L.w("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
             healthTracker.logSessionStartedWhileRunning();
@@ -70,6 +75,11 @@ public class ModuleSessions extends ModuleBase {
             return;
         }
 
+        if (!configProvider.getSessionTrackingEnabled()) {
+            L.e("[ModuleSessions] updateSessionInternal, Session tracking is disabled, ignoring call");
+            return;
+        }
+
         if (!sessionIsRunning()) {
             L.w("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
             healthTracker.logSessionUpdatedWhileNotRunning();
@@ -85,6 +95,11 @@ public class ModuleSessions extends ModuleBase {
         L.d("[ModuleSessions] endSessionInternal, checkConsent:[" + checkConsent + "]");
 
         if (checkConsent && !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
+
+        if (!configProvider.getSessionTrackingEnabled()) {
+            L.e("[ModuleSessions] endSessionInternal, Session tracking is disabled, ignoring call");
             return;
         }
 

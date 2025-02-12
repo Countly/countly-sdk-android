@@ -288,7 +288,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-
+        requiresConsent = config.shouldRequireConsent;
     }
 
     @Override
