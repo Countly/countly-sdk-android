@@ -12,4 +12,6 @@ interface ConfigurationProvider {
     boolean getCustomEventTrackingEnabled();
 
     boolean getContentZoneEnabled();
+
+    boolean getCrashReportingEnabled();
 }

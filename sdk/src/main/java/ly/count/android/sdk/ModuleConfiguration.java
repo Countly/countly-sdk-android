@@ -36,6 +36,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRContentZoneInterval = "czi";
     final static String keyRConsentRequired = "cr";
     final static String keyRDropOldRequestTime = "dort";
+    final static String keyRCrashReporting = "crt";
 
     final static boolean defaultVTracking = true;
     final static boolean defaultVNetworking = true;
@@ -43,6 +44,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static boolean defaultVViewTracking = true;
     final static boolean defaultVCustomEventTracking = true;
     final static boolean defaultVContentZone = true;
+    final static boolean defaultVCrashReporting = false;
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
@@ -50,6 +52,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVViewTracking = true;
     boolean currentVCustomEventTracking = true;
     boolean currentVContentZone = true;
+    boolean currentVCrashReporting = false;
+
     boolean configurationFetched = false;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -114,6 +118,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVViewTracking = defaultVViewTracking;
         currentVCustomEventTracking = defaultVCustomEventTracking;
         currentVContentZone = defaultVContentZone;
+        currentVCrashReporting = defaultVCrashReporting;
         boolean sdkConfigChanged = false;
 
         if (latestRetrievedConfiguration == null) {
@@ -141,15 +146,23 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRSessionTracking)) {
             try {
-                currentVSessionTracking = latestRetrievedConfiguration.getInt(keyRSessionTracking) == 1;
+                currentVSessionTracking = latestRetrievedConfiguration.getBoolean(keyRSessionTracking);
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'session tracking', " + e);
             }
         }
 
+        if (latestRetrievedConfiguration.has(keyRCrashReporting)) {
+            try {
+                currentVCrashReporting = latestRetrievedConfiguration.getBoolean(keyRCrashReporting);
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] updateConfigs, failed to load 'crash reporting', " + e);
+            }
+        }
+
         if (latestRetrievedConfiguration.has(keyRViewTracking)) {
             try {
-                currentVViewTracking = latestRetrievedConfiguration.getInt(keyRViewTracking) == 1;
+                currentVViewTracking = latestRetrievedConfiguration.getBoolean(keyRViewTracking);
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'view tracking', " + e);
             }
@@ -157,7 +170,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRCustomEventTracking)) {
             try {
-                currentVCustomEventTracking = latestRetrievedConfiguration.getInt(keyRCustomEventTracking) == 1;
+                currentVCustomEventTracking = latestRetrievedConfiguration.getBoolean(keyRCustomEventTracking);
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'custom event tracking', " + e);
             }
@@ -165,7 +178,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyREnterContentZone)) {
             try {
-                currentVContentZone = latestRetrievedConfiguration.getInt(keyREnterContentZone) == 1;
+                currentVContentZone = latestRetrievedConfiguration.getBoolean(keyREnterContentZone);
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'content zone', " + e);
             }
@@ -191,7 +204,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLogging)) {
             try {
-                clyConfig.setLoggingEnabled(latestRetrievedConfiguration.getInt(keyRLogging) == 1);
+                clyConfig.setLoggingEnabled(latestRetrievedConfiguration.getBoolean(keyRLogging));
                 sdkConfigChanged = true;
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'eventBatchSize', " + e);
@@ -272,7 +285,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRConsentRequired)) {
             try {
-                clyConfig.setRequiresConsent(latestRetrievedConfiguration.getInt(keyRConsentRequired) == 1);
+                clyConfig.setRequiresConsent(latestRetrievedConfiguration.getBoolean(keyRConsentRequired));
                 sdkConfigChanged = true;
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'consentRequired', " + e);
@@ -411,5 +424,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public boolean getContentZoneEnabled() {
         return currentVContentZone;
+    }
+
+    @Override public boolean getCrashReportingEnabled() {
+        return currentVCrashReporting;
     }
 }

@@ -93,6 +93,10 @@ public class ConnectionProcessorTests {
             @Override public boolean getContentZoneEnabled() {
                 return false;
             }
+
+            @Override public boolean getCrashReportingEnabled() {
+                return true;
+            }
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);
