@@ -129,7 +129,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRReqQueueSize)) {
             try {
-                clyConfig.maxRequestQueueSize = latestRetrievedConfiguration.getInt(keyRReqQueueSize);
+                clyConfig.setMaxRequestQueueSize(latestRetrievedConfiguration.getInt(keyRReqQueueSize));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'requestQueueSize', " + e);
             }
@@ -137,7 +137,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyREventQueueSize)) {
             try {
-                clyConfig.eventQueueSizeThreshold = latestRetrievedConfiguration.getInt(keyREventQueueSize);
+                clyConfig.setEventQueueSizeToSend(latestRetrievedConfiguration.getInt(keyREventQueueSize));
                 _cly.EVENT_QUEUE_SIZE_THRESHOLD = clyConfig.eventQueueSizeThreshold;
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'eventQueueSize', " + e);
@@ -146,7 +146,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLogging)) {
             try {
-                clyConfig.loggingEnabled = latestRetrievedConfiguration.getInt(keyRLogging) == 1;
+                clyConfig.setLoggingEnabled(latestRetrievedConfiguration.getInt(keyRLogging) == 1);
+                _cly.setLoggingEnabled(clyConfig.loggingEnabled);
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'eventBatchSize', " + e);
             }
@@ -154,7 +155,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRSessionUpdateInterval)) {
             try {
-                clyConfig.sessionUpdateTimerDelay = latestRetrievedConfiguration.getInt(keyRSessionUpdateInterval);
+                clyConfig.setUpdateSessionTimerDelay(latestRetrievedConfiguration.getInt(keyRSessionUpdateInterval));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'sessionUpdateInterval', " + e);
             }
@@ -170,7 +171,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLimitKeyLength)) {
             try {
-                clyConfig.sdkInternalLimits.maxKeyLength = latestRetrievedConfiguration.getInt(keyRLimitKeyLength);
+                clyConfig.sdkInternalLimits.setMaxKeyLength(latestRetrievedConfiguration.getInt(keyRLimitKeyLength));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxKeyLength', " + e);
             }
@@ -178,7 +179,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLimitValueSize)) {
             try {
-                clyConfig.sdkInternalLimits.maxValueSize = latestRetrievedConfiguration.getInt(keyRLimitValueSize);
+                clyConfig.sdkInternalLimits.setMaxValueSize(latestRetrievedConfiguration.getInt(keyRLimitValueSize));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxValueSize', " + e);
             }
@@ -186,7 +187,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLimitSegValues)) {
             try {
-                clyConfig.sdkInternalLimits.maxSegmentationValues = latestRetrievedConfiguration.getInt(keyRLimitSegValues);
+                clyConfig.sdkInternalLimits.setMaxSegmentationValues(latestRetrievedConfiguration.getInt(keyRLimitSegValues));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxSegmentationValues', " + e);
             }
@@ -194,7 +195,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLimitBreadcrumb)) {
             try {
-                clyConfig.sdkInternalLimits.maxBreadcrumbCount = latestRetrievedConfiguration.getInt(keyRLimitBreadcrumb);
+                clyConfig.sdkInternalLimits.setMaxBreadcrumbCount(latestRetrievedConfiguration.getInt(keyRLimitBreadcrumb));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxBreadcrumbCount', " + e);
             }
@@ -202,7 +203,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLimitTraceLine)) {
             try {
-                clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread = latestRetrievedConfiguration.getInt(keyRLimitTraceLine);
+                clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(latestRetrievedConfiguration.getInt(keyRLimitTraceLine));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxStackTraceLinesPerThread', " + e);
             }
@@ -210,7 +211,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRLimitTraceLength)) {
             try {
-                clyConfig.sdkInternalLimits.maxStackTraceLineLength = latestRetrievedConfiguration.getInt(keyRLimitTraceLength);
+                clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(latestRetrievedConfiguration.getInt(keyRLimitTraceLength));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxStackTraceLineLength', " + e);
             }
@@ -226,7 +227,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRContentZoneInterval)) {
             try {
-                clyConfig.content.zoneTimerInterval = latestRetrievedConfiguration.getInt(keyRContentZoneInterval);
+                clyConfig.content.setZoneTimerInterval(latestRetrievedConfiguration.getInt(keyRContentZoneInterval));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'contentZoneInterval', " + e);
             }
@@ -234,7 +235,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRConsentRequired)) {
             try {
-                clyConfig.shouldRequireConsent = latestRetrievedConfiguration.getInt(keyRConsentRequired) == 1;
+                clyConfig.setRequiresConsent(latestRetrievedConfiguration.getInt(keyRConsentRequired) == 1);
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'consentRequired', " + e);
             }
@@ -242,7 +243,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         if (latestRetrievedConfiguration.has(keyRDropOldRequestTime)) {
             try {
-                clyConfig.dropAgeHours = latestRetrievedConfiguration.getInt(keyRDropOldRequestTime);
+                clyConfig.setRequestDropAgeHours(latestRetrievedConfiguration.getInt(keyRDropOldRequestTime));
             } catch (JSONException e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'dropOldRequestTime', " + e);
             }
