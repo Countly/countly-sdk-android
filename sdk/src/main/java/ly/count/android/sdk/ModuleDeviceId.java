@@ -83,7 +83,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         deviceIdInstance.changeToCustomId(deviceId);
 
         // trigger fetching if the temp id given on init
-        _cly.moduleConfiguration.fetchConfigFromServer(_cly.config_);
+        _cly.moduleConfiguration.fetchConfigFromServer();
 
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);

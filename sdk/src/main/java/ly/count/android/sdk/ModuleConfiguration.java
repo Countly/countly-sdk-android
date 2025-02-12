@@ -18,25 +18,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRTimestamp = "t";
     final static String keyRVersion = "v";
     final static String keyRConfig = "c";
-    final static String keyRReqQueueSize = "rqs";
-    final static String keyREventQueueSize = "eqs";
-    final static String keyRLogging = "log";
-    final static String keyRSessionUpdateInterval = "sui";
-    final static String keyRSessionTracking = "st";
-    final static String keyRCrashReporting = "crt";
-    final static String keyRViewTracking = "vt";
-
-    final static String keyRLimitKeyLength = "lkl";
-    final static String keyRLimitValueSize = "lvs";
-    final static String keyRLimitSegValues = "lsv";
-    final static String keyRLimitBreadcrumb = "lbc";
-    final static String keyRLimitTraceLine = "ltlpt";
-    final static String keyRLimitTraceLength = "ltl";
-    final static String keyRCustomEventTracking = "cet";
-    final static String keyREnterContentZone = "ecz";
-    final static String keyRContentZoneInterval = "czi";
-    final static String keyRConsentRequired = "cr";
-    final static String keyRDropOldRequestTime = "dort";
 
     final static boolean defaultVTracking = true;
     final static boolean defaultVNetworking = true;
@@ -59,13 +40,13 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         loadConfigFromStorage();
 
         //update the config variables according to the new state
-        updateConfigVariables(config);
+        updateConfigVariables();
     }
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
-        fetchConfigFromServer(config);
+        fetchConfigFromServer();
     }
 
     @Override
@@ -98,7 +79,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     //update the config variables according to the current config obj state
-    void updateConfigVariables(@NonNull final CountlyConfig clyConfig) {
+    void updateConfigVariables() {
         L.v("[ModuleConfiguration] updateConfigVariables");
         //set all to defaults
         currentVNetworking = defaultVNetworking;
@@ -126,130 +107,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load 'tracking', " + e);
             }
         }
-
-        if (latestRetrievedConfiguration.has(keyRReqQueueSize)) {
-            try {
-                clyConfig.maxRequestQueueSize = latestRetrievedConfiguration.getInt(keyRReqQueueSize);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'requestQueueSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyREventQueueSize)) {
-            try {
-                clyConfig.eventQueueSizeThreshold = latestRetrievedConfiguration.getInt(keyREventQueueSize);
-                _cly.EVENT_QUEUE_SIZE_THRESHOLD = clyConfig.eventQueueSizeThreshold;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'eventQueueSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLogging)) {
-            try {
-                clyConfig.loggingEnabled = latestRetrievedConfiguration.getInt(keyRLogging) == 1;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'eventBatchSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRSessionUpdateInterval)) {
-            try {
-                clyConfig.sessionUpdateTimerDelay = latestRetrievedConfiguration.getInt(keyRSessionUpdateInterval);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'sessionUpdateInterval', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRSessionTracking)) {
-
-        }
-
-        if (latestRetrievedConfiguration.has(keyRViewTracking)) {
-
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitKeyLength)) {
-            try {
-                clyConfig.sdkInternalLimits.maxKeyLength = latestRetrievedConfiguration.getInt(keyRLimitKeyLength);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxKeyLength', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitValueSize)) {
-            try {
-                clyConfig.sdkInternalLimits.maxValueSize = latestRetrievedConfiguration.getInt(keyRLimitValueSize);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxValueSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitSegValues)) {
-            try {
-                clyConfig.sdkInternalLimits.maxSegmentationValues = latestRetrievedConfiguration.getInt(keyRLimitSegValues);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxSegmentationValues', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitBreadcrumb)) {
-            try {
-                clyConfig.sdkInternalLimits.maxBreadcrumbCount = latestRetrievedConfiguration.getInt(keyRLimitBreadcrumb);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxBreadcrumbCount', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitTraceLine)) {
-            try {
-                clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread = latestRetrievedConfiguration.getInt(keyRLimitTraceLine);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxStackTraceLinesPerThread', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitTraceLength)) {
-            try {
-                clyConfig.sdkInternalLimits.maxStackTraceLineLength = latestRetrievedConfiguration.getInt(keyRLimitTraceLength);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxStackTraceLineLength', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRCustomEventTracking)) {
-
-        }
-
-        if (latestRetrievedConfiguration.has(keyREnterContentZone)) {
-
-        }
-
-        if (latestRetrievedConfiguration.has(keyRContentZoneInterval)) {
-            try {
-                clyConfig.content.zoneTimerInterval = latestRetrievedConfiguration.getInt(keyRContentZoneInterval);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'contentZoneInterval', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRConsentRequired)) {
-            try {
-                clyConfig.shouldRequireConsent = latestRetrievedConfiguration.getInt(keyRConsentRequired) == 1;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'consentRequired', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRDropOldRequestTime)) {
-            try {
-                clyConfig.dropAgeHours = latestRetrievedConfiguration.getInt(keyRDropOldRequestTime);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'dropOldRequestTime', " + e);
-            }
-        }
     }
 
-    void saveAndStoreDownloadedConfig(@NonNull JSONObject config, @NonNull final CountlyConfig clyConfig) {
+    void saveAndStoreDownloadedConfig(@NonNull JSONObject config) {
         L.v("[ModuleConfiguration] saveAndStoreDownloadedConfig");
         if (!config.has(keyRVersion)) {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
@@ -285,7 +145,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         storageProvider.setServerConfig(configAsString);
 
         //update config variables
-        updateConfigVariables(clyConfig);
+        updateConfigVariables();
     }
 
     /**
@@ -307,7 +167,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      * }
      */
-    void fetchConfigFromServer(@NonNull final CountlyConfig config) {
+    void fetchConfigFromServer() {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
         // why _cly? because module configuration is created before module device id, so we need to access it like this
@@ -336,7 +196,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
             L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse.toString() + "]");
 
-            saveAndStoreDownloadedConfig(checkResponse, config);
+            saveAndStoreDownloadedConfig(checkResponse);
         }, L);
     }
 
@@ -350,73 +210,5 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     @Override
     public boolean getTrackingEnabled() {
         return currentVTracking;
-    }
-
-    @Override public int getRequestQueueSize() {
-        return 0;
-    }
-
-    @Override public int getEventQueueSize() {
-        return 0;
-    }
-
-    @Override public boolean getLoggingEnabled() {
-        return false;
-    }
-
-    @Override public int getSessionUpdateInterval() {
-        return 0;
-    }
-
-    @Override public boolean getSessionTrackingEnabled() {
-        return false;
-    }
-
-    @Override public boolean getViewTrackingEnabled() {
-        return false;
-    }
-
-    @Override public boolean getCustomEventTrackingEnabled() {
-        return false;
-    }
-
-    @Override public boolean getContentZoneEnabled() {
-        return false;
-    }
-
-    @Override public int getContentZoneTimerInterval() {
-        return 0;
-    }
-
-    @Override public int getConsentRequired() {
-        return 0;
-    }
-
-    @Override public int getDropOldRequestTime() {
-        return 0;
-    }
-
-    @Override public int getMaxKeyLength() {
-        return 0;
-    }
-
-    @Override public int getMaxValueSize() {
-        return 0;
-    }
-
-    @Override public int getMaxSegmentationValues() {
-        return 0;
-    }
-
-    @Override public int getMaxBreadcrumbCount() {
-        return 0;
-    }
-
-    @Override public int getMaxStackTraceLinesPerThread() {
-        return 0;
-    }
-
-    @Override public int getMaxStackTraceLineLength() {
-        return 0;
     }
 }
