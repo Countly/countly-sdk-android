@@ -310,6 +310,11 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         requestQueueInterface = null;
     }
 
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+
+    }
+
     public class RequestQueue {
         /**
          * Get the status of the override for HTTP POST

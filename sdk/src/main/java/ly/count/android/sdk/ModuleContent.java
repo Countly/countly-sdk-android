@@ -34,6 +34,11 @@ public class ModuleContent extends ModuleBase {
         globalContentCallback = config.content.globalContentCallback;
     }
 
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+
+    }
+
     void fetchContentsInternal(@NonNull String[] categories) {
         L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(categories) + "]");
 

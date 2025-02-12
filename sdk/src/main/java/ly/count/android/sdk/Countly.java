@@ -126,6 +126,15 @@ public class Countly {
         HMS,    // Huawei
     }
 
+    //SDK limit defaults
+    final int maxKeyLengthDefault = 128;
+    final int maxValueSizeDefault = 256;
+    final int maxSegmentationValuesDefault = 100;
+    final int maxBreadcrumbCountDefault = 100;
+    final int maxStackTraceLinesPerThreadDefault = 30;
+    final int maxStackTraceLineLengthDefault = 200;
+    final int maxStackTraceThreadCountDefault = 50;
+
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
         @SuppressLint("StaticFieldLeak")
@@ -348,6 +357,67 @@ public class Countly {
             L.d("[Init] About to init internal systems");
 
             config_ = config;
+
+            // Have a look at the SDK limit values
+            if (config.sdkInternalLimits.maxKeyLength != null) {
+                if (config.sdkInternalLimits.maxKeyLength < 1) {
+                    config.sdkInternalLimits.maxKeyLength = 1;
+                    L.w("[Init] provided 'maxKeyLength' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxKeyLength' override:[" + config.sdkInternalLimits.maxKeyLength + "]");
+            } else {
+                config.sdkInternalLimits.maxKeyLength = maxKeyLengthDefault;
+            }
+
+            if (config.sdkInternalLimits.maxValueSize != null) {
+                if (config.sdkInternalLimits.maxValueSize < 1) {
+                    config.sdkInternalLimits.maxValueSize = 1;
+                    L.w("[Init] provided 'maxValueSize' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxValueSize' override:[" + config.sdkInternalLimits.maxValueSize + "]");
+            } else {
+                config.sdkInternalLimits.maxValueSize = maxValueSizeDefault;
+            }
+
+            if (config.sdkInternalLimits.maxSegmentationValues != null) {
+                if (config.sdkInternalLimits.maxSegmentationValues < 1) {
+                    config.sdkInternalLimits.maxSegmentationValues = 1;
+                    L.w("[Init] provided 'maxSegmentationValues' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxSegmentationValues' override:[" + config.sdkInternalLimits.maxSegmentationValues + "]");
+            } else {
+                config.sdkInternalLimits.maxSegmentationValues = maxSegmentationValuesDefault;
+            }
+
+            if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
+                if (config.sdkInternalLimits.maxBreadcrumbCount < 1) {
+                    config.sdkInternalLimits.maxBreadcrumbCount = 1;
+                    L.w("[Init] provided 'maxBreadcrumbCount' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxBreadcrumbCount' override:[" + config.sdkInternalLimits.maxBreadcrumbCount + "]");
+            } else {
+                config.sdkInternalLimits.maxBreadcrumbCount = maxBreadcrumbCountDefault;
+            }
+
+            if (config.sdkInternalLimits.maxStackTraceLinesPerThread != null) {
+                if (config.sdkInternalLimits.maxStackTraceLinesPerThread < 1) {
+                    config.sdkInternalLimits.maxStackTraceLinesPerThread = 1;
+                    L.w("[Init] provided 'maxStackTraceLinesPerThread' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxStackTraceLinesPerThread' override:[" + config.sdkInternalLimits.maxStackTraceLinesPerThread + "]");
+            } else {
+                config.sdkInternalLimits.maxStackTraceLinesPerThread = maxStackTraceLinesPerThreadDefault;
+            }
+
+            if (config.sdkInternalLimits.maxStackTraceLineLength != null) {
+                if (config.sdkInternalLimits.maxStackTraceLineLength < 1) {
+                    config.sdkInternalLimits.maxStackTraceLineLength = 1;
+                    L.w("[Init] provided 'maxStackTraceLineLength' is less than '1'. Setting it to '1'.");
+                }
+                L.i("[Init] provided 'maxStackTraceLineLength' override:[" + config.sdkInternalLimits.maxStackTraceLineLength + "]");
+            } else {
+                config.sdkInternalLimits.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
+            }
 
             long timerDelay = TIMER_DELAY_IN_SECONDS;
             if (config.sessionUpdateTimerDelay != null) {
@@ -773,6 +843,45 @@ public class Countly {
             } catch (Throwable t) {
                 L.e("[Countly] stopTimer, Error while stopping global timer " + t);
             }
+        }
+    }
+
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        L.i("[Countly] onSdkConfigurationChanged");
+
+        if (config_ == null) {
+            L.e("[Countly] onSdkConfigurationChanged, config is null");
+            return;
+        }
+
+        if (config.loggingEnabled) {
+            setLoggingEnabled(true);
+        }
+
+        long timerDelay = TIMER_DELAY_IN_SECONDS;
+        if (config.sessionUpdateTimerDelay != null) {
+            L.d("[Countly] onSdkConfigurationChanged, Setting custom session update timer delay, [" + config.sessionUpdateTimerDelay + "]");
+            timerDelay = config.sessionUpdateTimerDelay;
+        }
+
+        startTimerService(timerService_, timerFuture, timerDelay);
+
+        config.maxRequestQueueSize = Math.max(config.maxRequestQueueSize, 1);
+        countlyStore.setLimits(config.maxRequestQueueSize);
+        L.d("[Countly] onSdkConfigurationChanged, Setting request queue size: [" + config.maxRequestQueueSize + "]");
+
+        config.dropAgeHours = Math.max(config.dropAgeHours, 0);
+        if (config.dropAgeHours > 0) {
+            L.d("[Countly] onSdkConfigurationChanged, Enabling drop older request threshold [" + config.dropAgeHours + "] hours");
+            countlyStore.setRequestAgeLimit(config.dropAgeHours);
+        }
+
+        config.eventQueueSizeThreshold = Math.max(config.eventQueueSizeThreshold, 1);
+        L.d("[Countly] onSdkConfigurationChanged, Setting event queue size: [" + config.eventQueueSizeThreshold + "]");
+        EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
+
+        for (ModuleBase module : modules) {
+            module.onSdkConfigurationChanged(config);
         }
     }
 

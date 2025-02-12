@@ -2,13 +2,13 @@ package ly.count.android.sdk;
 
 public class ConfigSdkInternalLimits {
     //SDK internal limits
-    protected Integer maxKeyLength = 128;
-    protected Integer maxValueSize = 256;
+    protected Integer maxKeyLength;
+    protected Integer maxValueSize;
     protected int maxValueSizePicture = 4096;
-    protected Integer maxSegmentationValues = 100;
-    protected Integer maxBreadcrumbCount = 100;
-    protected Integer maxStackTraceLinesPerThread = 30;
-    protected Integer maxStackTraceLineLength = 200;
+    protected Integer maxSegmentationValues;
+    protected Integer maxBreadcrumbCount;
+    protected Integer maxStackTraceLinesPerThread;
+    protected Integer maxStackTraceLineLength;
     protected int maxStackTraceThreadCount = 50;
 
     /**
@@ -19,7 +19,7 @@ public class ConfigSdkInternalLimits {
      * @return Returns the same config object for convenient linking
      */
     public synchronized ConfigSdkInternalLimits setMaxSegmentationValues(int maxSegmentationValues) {
-        this.maxSegmentationValues = Math.max(maxSegmentationValues, 1);
+        this.maxSegmentationValues = maxSegmentationValues;
         return this;
     }
 
@@ -32,7 +32,7 @@ public class ConfigSdkInternalLimits {
      * @return Returns the same config object for convenient linking
      */
     public synchronized ConfigSdkInternalLimits setMaxBreadcrumbCount(int maxBreadcrumbCount) {
-        this.maxBreadcrumbCount = Math.max(maxBreadcrumbCount, 1);
+        this.maxBreadcrumbCount = maxBreadcrumbCount;
         return this;
     }
 
@@ -46,7 +46,7 @@ public class ConfigSdkInternalLimits {
      * @return Returns the same config object for convenient linking
      */
     public synchronized ConfigSdkInternalLimits setMaxKeyLength(int maxKeyLength) {
-        this.maxKeyLength = Math.max(maxKeyLength, 1);
+        this.maxKeyLength = maxKeyLength;
         return this;
     }
 
@@ -66,7 +66,7 @@ public class ConfigSdkInternalLimits {
      * @return Returns the same config object for convenient linking
      */
     public synchronized ConfigSdkInternalLimits setMaxValueSize(int maxValueSize) {
-        this.maxValueSize = Math.max(maxValueSize, 1);
+        this.maxValueSize = maxValueSize;
         return this;
     }
 
@@ -78,7 +78,7 @@ public class ConfigSdkInternalLimits {
      * @return Returns the same config object for convenient linking
      */
     public synchronized ConfigSdkInternalLimits setMaxStackTraceLinesPerThread(int maxStackTraceLinesPerThread) {
-        this.maxStackTraceLinesPerThread = Math.max(maxStackTraceLinesPerThread, 1);
+        this.maxStackTraceLinesPerThread = maxStackTraceLinesPerThread;
         return this;
     }
 
@@ -90,7 +90,7 @@ public class ConfigSdkInternalLimits {
      * @return Returns the same config object for convenient linking
      */
     public synchronized ConfigSdkInternalLimits setMaxStackTraceLineLength(int maxStackTraceLineLength) {
-        this.maxStackTraceLineLength = Math.max(maxStackTraceLineLength, 1);
+        this.maxStackTraceLineLength = maxStackTraceLineLength;
         return this;
     }
 }
