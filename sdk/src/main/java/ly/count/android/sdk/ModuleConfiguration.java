@@ -76,6 +76,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
+        L.d("[ModuleConfiguration] initFinished");
         fetchConfigFromServer(config);
     }
 

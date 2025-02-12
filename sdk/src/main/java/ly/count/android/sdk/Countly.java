@@ -798,6 +798,7 @@ public class Countly {
             }
 
             L.i("[Init] About to call module 'initFinished'");
+            moduleConfiguration.initFinished(config);
 
             for (ModuleBase module : modules) {
                 module.initFinished(config);
@@ -854,9 +855,7 @@ public class Countly {
             return;
         }
 
-        if (config.loggingEnabled) {
-            setLoggingEnabled(true);
-        }
+        setLoggingEnabled(config.loggingEnabled);
 
         long timerDelay = TIMER_DELAY_IN_SECONDS;
         if (config.sessionUpdateTimerDelay != null) {
@@ -883,32 +882,32 @@ public class Countly {
         // Have a look at the SDK limit values
         if (config.sdkInternalLimits.maxKeyLength != null) {
             config.sdkInternalLimits.maxKeyLength = Math.max(config.sdkInternalLimits.maxKeyLength, 1);
-            L.i("[Countly] onSdkConfigurationChanged, 'maxKeyLength' override:[" + config.sdkInternalLimits.maxKeyLength + "]");
+            L.d("[Countly] onSdkConfigurationChanged, 'maxKeyLength' override:[" + config.sdkInternalLimits.maxKeyLength + "]");
         }
 
         if (config.sdkInternalLimits.maxValueSize != null) {
             config.sdkInternalLimits.maxValueSize = Math.max(config.sdkInternalLimits.maxValueSize, 1);
-            L.i("[Countly] onSdkConfigurationChanged, 'maxValueSize' override:[" + config.sdkInternalLimits.maxValueSize + "]");
+            L.d("[Countly] onSdkConfigurationChanged, 'maxValueSize' override:[" + config.sdkInternalLimits.maxValueSize + "]");
         }
 
         if (config.sdkInternalLimits.maxSegmentationValues != null) {
             config.sdkInternalLimits.maxSegmentationValues = Math.max(config.sdkInternalLimits.maxSegmentationValues, 1);
-            L.i("[Countly] onSdkConfigurationChanged, 'maxSegmentationValues' override:[" + config.sdkInternalLimits.maxSegmentationValues + "]");
+            L.d("[Countly] onSdkConfigurationChanged, 'maxSegmentationValues' override:[" + config.sdkInternalLimits.maxSegmentationValues + "]");
         }
 
         if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
             config.sdkInternalLimits.maxBreadcrumbCount = Math.max(config.sdkInternalLimits.maxBreadcrumbCount, 1);
-            L.i("[Countly] onSdkConfigurationChanged, 'maxBreadcrumbCount' override:[" + config.sdkInternalLimits.maxBreadcrumbCount + "]");
+            L.d("[Countly] onSdkConfigurationChanged, 'maxBreadcrumbCount' override:[" + config.sdkInternalLimits.maxBreadcrumbCount + "]");
         }
 
         if (config.sdkInternalLimits.maxStackTraceLinesPerThread != null) {
             config.sdkInternalLimits.maxStackTraceLinesPerThread = Math.max(config.sdkInternalLimits.maxStackTraceLinesPerThread, 1);
 
-            L.i("[Countly] onSdkConfigurationChanged, 'maxStackTraceLinesPerThread' override:[" + config.sdkInternalLimits.maxStackTraceLinesPerThread + "]");
+            L.d("[Countly] onSdkConfigurationChanged, 'maxStackTraceLinesPerThread' override:[" + config.sdkInternalLimits.maxStackTraceLinesPerThread + "]");
         }
         if (config.sdkInternalLimits.maxStackTraceLineLength != null) {
             config.sdkInternalLimits.maxStackTraceLineLength = Math.max(config.sdkInternalLimits.maxStackTraceLineLength, 1);
-            L.i("[Countly] onSdkConfigurationChanged, 'maxStackTraceLineLength' override:[" + config.sdkInternalLimits.maxStackTraceLineLength + "]");
+            L.d("[Countly] onSdkConfigurationChanged, 'maxStackTraceLineLength' override:[" + config.sdkInternalLimits.maxStackTraceLineLength + "]");
         }
 
         for (ModuleBase module : modules) {
