@@ -351,6 +351,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be paused view name:[" + vd.viewName + "]");
+            return;
+        }
+
         L.d("[ModuleViews] pauseViewWithIDInternal, pausing view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
 
         if (vd.viewStartTimeSeconds == 0) {
@@ -381,6 +386,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
+        }
+
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be resumed view name:[" + vd.viewName + "]");
             return;
         }
 
