@@ -695,7 +695,6 @@ public class Countly {
 
             sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
-
             //set global application listeners
             if (config.application != null) {
                 L.d("[Countly] Calling registerActivityLifecycleCallbacks");
@@ -858,7 +857,6 @@ public class Countly {
 
         long timerDelay = TIMER_DELAY_IN_SECONDS;
         if (config.sessionUpdateTimerDelay != null) {
-            L.d("[Countly] onSdkConfigurationChanged, Setting custom session update timer delay, [" + config.sessionUpdateTimerDelay + "]");
             timerDelay = config.sessionUpdateTimerDelay;
         }
 
@@ -866,47 +864,37 @@ public class Countly {
 
         config.maxRequestQueueSize = Math.max(config.maxRequestQueueSize, 1);
         countlyStore.setLimits(config.maxRequestQueueSize);
-        L.d("[Countly] onSdkConfigurationChanged, Setting request queue size: [" + config.maxRequestQueueSize + "]");
 
         config.dropAgeHours = Math.max(config.dropAgeHours, 0);
         if (config.dropAgeHours > 0) {
-            L.d("[Countly] onSdkConfigurationChanged, Enabling drop older request threshold [" + config.dropAgeHours + "] hours");
             countlyStore.setRequestAgeLimit(config.dropAgeHours);
         }
 
         config.eventQueueSizeThreshold = Math.max(config.eventQueueSizeThreshold, 1);
-        L.d("[Countly] onSdkConfigurationChanged, Setting event queue size: [" + config.eventQueueSizeThreshold + "]");
         EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
 
         // Have a look at the SDK limit values
         if (config.sdkInternalLimits.maxKeyLength != null) {
             config.sdkInternalLimits.maxKeyLength = Math.max(config.sdkInternalLimits.maxKeyLength, 1);
-            L.d("[Countly] onSdkConfigurationChanged, 'maxKeyLength' override:[" + config.sdkInternalLimits.maxKeyLength + "]");
         }
 
         if (config.sdkInternalLimits.maxValueSize != null) {
             config.sdkInternalLimits.maxValueSize = Math.max(config.sdkInternalLimits.maxValueSize, 1);
-            L.d("[Countly] onSdkConfigurationChanged, 'maxValueSize' override:[" + config.sdkInternalLimits.maxValueSize + "]");
         }
 
         if (config.sdkInternalLimits.maxSegmentationValues != null) {
             config.sdkInternalLimits.maxSegmentationValues = Math.max(config.sdkInternalLimits.maxSegmentationValues, 1);
-            L.d("[Countly] onSdkConfigurationChanged, 'maxSegmentationValues' override:[" + config.sdkInternalLimits.maxSegmentationValues + "]");
         }
 
         if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
             config.sdkInternalLimits.maxBreadcrumbCount = Math.max(config.sdkInternalLimits.maxBreadcrumbCount, 1);
-            L.d("[Countly] onSdkConfigurationChanged, 'maxBreadcrumbCount' override:[" + config.sdkInternalLimits.maxBreadcrumbCount + "]");
         }
 
         if (config.sdkInternalLimits.maxStackTraceLinesPerThread != null) {
             config.sdkInternalLimits.maxStackTraceLinesPerThread = Math.max(config.sdkInternalLimits.maxStackTraceLinesPerThread, 1);
-
-            L.d("[Countly] onSdkConfigurationChanged, 'maxStackTraceLinesPerThread' override:[" + config.sdkInternalLimits.maxStackTraceLinesPerThread + "]");
         }
         if (config.sdkInternalLimits.maxStackTraceLineLength != null) {
             config.sdkInternalLimits.maxStackTraceLineLength = Math.max(config.sdkInternalLimits.maxStackTraceLineLength, 1);
-            L.d("[Countly] onSdkConfigurationChanged, 'maxStackTraceLineLength' override:[" + config.sdkInternalLimits.maxStackTraceLineLength + "]");
         }
 
         for (ModuleBase module : modules) {

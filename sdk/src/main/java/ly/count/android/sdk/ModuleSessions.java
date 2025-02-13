@@ -47,7 +47,6 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!configProvider.getSessionTrackingEnabled()) {
-            L.e("[ModuleSessions] beginSessionInternal, Session tracking is disabled, ignoring call");
             return;
         }
 
@@ -76,7 +75,6 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!configProvider.getSessionTrackingEnabled()) {
-            L.e("[ModuleSessions] updateSessionInternal, Session tracking is disabled, ignoring call");
             return;
         }
 
@@ -99,7 +97,6 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!configProvider.getSessionTrackingEnabled()) {
-            L.e("[ModuleSessions] endSessionInternal, Session tracking is disabled, ignoring call");
             return;
         }
 

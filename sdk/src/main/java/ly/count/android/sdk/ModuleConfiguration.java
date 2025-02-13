@@ -38,22 +38,13 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRDropOldRequestTime = "dort";
     final static String keyRCrashReporting = "crt";
 
-    final static boolean defaultVTracking = true;
-    final static boolean defaultVNetworking = true;
-    final static boolean defaultVSessionTracking = true;
-    final static boolean defaultVViewTracking = true;
-    final static boolean defaultVCustomEventTracking = true;
-    final static boolean defaultVContentZone = true;
-    final static boolean defaultVCrashReporting = false;
-
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
     boolean currentVSessionTracking = true;
     boolean currentVViewTracking = true;
     boolean currentVCustomEventTracking = true;
-    boolean currentVContentZone = true;
-    boolean currentVCrashReporting = false;
-
+    boolean currentVContentZone = false;
+    boolean currentVCrashReporting = true;
     boolean configurationFetched = false;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -109,201 +100,56 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
-    //update the config variables according to the current config obj state
-    void updateConfigVariables(@NonNull final CountlyConfig clyConfig) {
-        L.v("[ModuleConfiguration] updateConfigVariables");
-        //set all to defaults
-        currentVNetworking = defaultVNetworking;
-        currentVTracking = defaultVTracking;
-        currentVSessionTracking = defaultVSessionTracking;
-        currentVViewTracking = defaultVViewTracking;
-        currentVCustomEventTracking = defaultVCustomEventTracking;
-        currentVContentZone = defaultVContentZone;
-        currentVCrashReporting = defaultVCrashReporting;
-        boolean sdkConfigChanged = false;
+    private <T> T extractValue(String key, StringBuilder sb, T currentValue, Class<T> clazz) {
+        if (latestRetrievedConfiguration.has(key)) {
+            try {
+                Object value = latestRetrievedConfiguration.get(key);
+                if (!value.equals(currentValue)) {
+                    sb.append(key).append(":[").append(value).append("], ");
+                    return clazz.cast(value);
+                }
+            } catch (Exception e) {
+                L.w("[ModuleConfiguration] updateConfigs, failed to load '" + key + "', " + e.getMessage());
+            }
+        }
+        return currentValue;
+    }
 
+    //update the config variables according to the current config obj state
+    private void updateConfigVariables(@NonNull final CountlyConfig clyConfig) {
+        L.v("[ModuleConfiguration] updateConfigVariables");
         if (latestRetrievedConfiguration == null) {
             //no config, don't continue
             return;
         }
 
-        //networking
-        if (latestRetrievedConfiguration.has(keyNetworking)) {
-            try {
-                currentVNetworking = latestRetrievedConfiguration.getBoolean(keyNetworking);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'networking', " + e);
-            }
-        }
+        StringBuilder sb = new StringBuilder();
 
-        //tracking
-        if (latestRetrievedConfiguration.has(keyTracking)) {
-            try {
-                currentVTracking = latestRetrievedConfiguration.getBoolean(keyTracking);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'tracking', " + e);
-            }
-        }
+        currentVNetworking = extractValue(keyNetworking, sb, currentVNetworking, Boolean.class);
+        currentVTracking = extractValue(keyTracking, sb, currentVTracking, Boolean.class);
+        currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, Boolean.class);
+        currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, Boolean.class);
+        currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, Boolean.class);
+        currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, Boolean.class);
+        currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, Boolean.class);
 
-        if (latestRetrievedConfiguration.has(keyRSessionTracking)) {
-            try {
-                currentVSessionTracking = latestRetrievedConfiguration.getBoolean(keyRSessionTracking);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'session tracking', " + e);
-            }
-        }
+        clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, Integer.class));
+        clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Integer.class));
+        clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, Boolean.class));
+        clyConfig.setUpdateSessionTimerDelay(extractValue(keyRSessionUpdateInterval, sb, clyConfig.sessionUpdateTimerDelay, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxKeyLength(extractValue(keyRLimitKeyLength, sb, clyConfig.sdkInternalLimits.maxKeyLength, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxValueSize(extractValue(keyRLimitValueSize, sb, clyConfig.sdkInternalLimits.maxValueSize, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxSegmentationValues(extractValue(keyRLimitSegValues, sb, clyConfig.sdkInternalLimits.maxSegmentationValues, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxBreadcrumbCount(extractValue(keyRLimitBreadcrumb, sb, clyConfig.sdkInternalLimits.maxBreadcrumbCount, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, clyConfig.sdkInternalLimits.maxStackTraceLineLength, Integer.class));
+        clyConfig.content.setZoneTimerInterval(extractValue(keyRContentZoneInterval, sb, clyConfig.content.zoneTimerInterval, Integer.class));
+        clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, Boolean.class));
+        clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, Integer.class));
 
-        if (latestRetrievedConfiguration.has(keyRCrashReporting)) {
-            try {
-                currentVCrashReporting = latestRetrievedConfiguration.getBoolean(keyRCrashReporting);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'crash reporting', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRViewTracking)) {
-            try {
-                currentVViewTracking = latestRetrievedConfiguration.getBoolean(keyRViewTracking);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'view tracking', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRCustomEventTracking)) {
-            try {
-                currentVCustomEventTracking = latestRetrievedConfiguration.getBoolean(keyRCustomEventTracking);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'custom event tracking', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyREnterContentZone)) {
-            try {
-                currentVContentZone = latestRetrievedConfiguration.getBoolean(keyREnterContentZone);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'content zone', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRReqQueueSize)) {
-            try {
-                clyConfig.setMaxRequestQueueSize(latestRetrievedConfiguration.getInt(keyRReqQueueSize));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'requestQueueSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyREventQueueSize)) {
-            try {
-                clyConfig.setEventQueueSizeToSend(latestRetrievedConfiguration.getInt(keyREventQueueSize));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'eventQueueSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLogging)) {
-            try {
-                clyConfig.setLoggingEnabled(latestRetrievedConfiguration.getBoolean(keyRLogging));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'eventBatchSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRSessionUpdateInterval)) {
-            try {
-                clyConfig.setUpdateSessionTimerDelay(latestRetrievedConfiguration.getInt(keyRSessionUpdateInterval));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'sessionUpdateInterval', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitKeyLength)) {
-            try {
-                clyConfig.sdkInternalLimits.setMaxKeyLength(latestRetrievedConfiguration.getInt(keyRLimitKeyLength));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxKeyLength', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitValueSize)) {
-            try {
-                clyConfig.sdkInternalLimits.setMaxValueSize(latestRetrievedConfiguration.getInt(keyRLimitValueSize));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxValueSize', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitSegValues)) {
-            try {
-                clyConfig.sdkInternalLimits.setMaxSegmentationValues(latestRetrievedConfiguration.getInt(keyRLimitSegValues));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxSegmentationValues', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitBreadcrumb)) {
-            try {
-                clyConfig.sdkInternalLimits.setMaxBreadcrumbCount(latestRetrievedConfiguration.getInt(keyRLimitBreadcrumb));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxBreadcrumbCount', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitTraceLine)) {
-            try {
-                clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(latestRetrievedConfiguration.getInt(keyRLimitTraceLine));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxStackTraceLinesPerThread', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRLimitTraceLength)) {
-            try {
-                clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(latestRetrievedConfiguration.getInt(keyRLimitTraceLength));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'maxStackTraceLineLength', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRContentZoneInterval)) {
-            try {
-                clyConfig.content.setZoneTimerInterval(latestRetrievedConfiguration.getInt(keyRContentZoneInterval));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'contentZoneInterval', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRConsentRequired)) {
-            try {
-                clyConfig.setRequiresConsent(latestRetrievedConfiguration.getBoolean(keyRConsentRequired));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'consentRequired', " + e);
-            }
-        }
-
-        if (latestRetrievedConfiguration.has(keyRDropOldRequestTime)) {
-            try {
-                clyConfig.setRequestDropAgeHours(latestRetrievedConfiguration.getInt(keyRDropOldRequestTime));
-                sdkConfigChanged = true;
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'dropOldRequestTime', " + e);
-            }
-        }
-
-        if (sdkConfigChanged) {
-            L.i("[ModuleConfiguration] updateConfigVariables, SDK configuration has changed, notifying the SDK");
+        String updatedValues = sb.toString();
+        if (!updatedValues.isEmpty()) {
+            L.i("[ModuleConfiguration] updateConfigVariables, SDK configuration has changed, notifying the SDK, new values: [" + updatedValues + "]");
             _cly.onSdkConfigurationChanged(clyConfig);
         }
     }
