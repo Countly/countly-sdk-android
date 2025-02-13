@@ -189,7 +189,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (!configProvider.getViewTrackingEnabled()) {
-            L.e("[ModuleViews] startViewInternal, View tracking is disabled, ignoring call");
+            L.d("[ModuleViews] startViewInternal, View tracking is disabled, ignoring call, view will not be started view name:[" + viewName + "]");
             return null;
         }
 
@@ -289,7 +289,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (!configProvider.getViewTrackingEnabled()) {
             // stopallviews
-            L.e("[ModuleViews] stopViewWithIDInternal, View tracking is disabled, ignoring call");
+            L.d("[ModuleViews] stopViewWithIDInternal, View tracking is disabled, ignoring call, it will not be stopped view name:[" + vd.viewName + "]");
             return;
         }
 

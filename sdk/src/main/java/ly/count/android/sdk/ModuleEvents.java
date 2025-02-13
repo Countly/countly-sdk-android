@@ -226,7 +226,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 break;
             default:
                 if (!configProvider.getCustomEventTrackingEnabled()) {
-                    L.w("[ModuleEvents] recordEventInternal, Custom event tracking is disabled. Event [" + key + "] will not be recorded.");
+                    L.d("[ModuleEvents] recordEventInternal, Custom event tracking is disabled. Event [" + key + "] will not be recorded.");
                     return;
                 }
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
