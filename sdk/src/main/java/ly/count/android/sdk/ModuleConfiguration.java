@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -58,7 +59,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         config.countlyStore.setConfigurationProvider(this);
 
         //load the previously saved configuration
-        loadConfigFromStorage();
+        loadConfigFromStorage(config.serverConfiguration);
 
         //update the config variables according to the new state
         updateConfigVariables(config);
@@ -79,8 +80,14 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     /**
      * Reads from storage to local json objects
      */
-    void loadConfigFromStorage() {
-        String sConfig = storageProvider.getServerConfig();
+    void loadConfigFromStorage(@Nullable String providedServerConfiguration) {
+
+        String sConfig = providedServerConfiguration;
+
+        if (Utils.isNullOrEmpty(sConfig)) {
+            sConfig = storageProvider.getServerConfig();
+        }
+        
         L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");
 
         if (sConfig == null || sConfig.isEmpty()) {
