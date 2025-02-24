@@ -99,21 +99,26 @@ public class ModuleContent extends ModuleBase {
 
     void enterContentZoneInternal(@Nullable String[] categories) {
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-            L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+            L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
+            return;
+        }
+
+        if (deviceInfo.isInBackground().equals("true")) {
+            L.w("[ModuleContent] enterContentZoneInternal, app is in the background, skipping");
             return;
         }
 
         shouldFetchContents = true;
 
         if (deviceIdProvider.isTemporaryIdEnabled()) {
-            L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
+            L.w("[ModuleContent] enterContentZoneInternal, temporary device ID is enabled, skipping");
             return;
         }
 
         String[] validCategories;
 
         if (categories == null) {
-            L.w("[ModuleContent] registerForContentUpdates, categories is null, providing empty array");
+            L.w("[ModuleContent] enterContentZoneInternal, categories is null, providing empty array");
             validCategories = new String[] {};
         } else {
             validCategories = categories;
@@ -121,7 +126,7 @@ public class ModuleContent extends ModuleBase {
 
         countlyTimer.startTimer(zoneTimerInterval, new Runnable() {
             @Override public void run() {
-                L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+                L.d("[ModuleContent] enterContentZoneInternal, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
 
                 if (waitForDelay > 0) {
                     waitForDelay--;
@@ -129,7 +134,7 @@ public class ModuleContent extends ModuleBase {
                 }
 
                 if (!shouldFetchContents) {
-                    L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
+                    L.w("[ModuleContent] enterContentZoneInternal, shouldFetchContents is false, skipping");
                     return;
                 }
 
