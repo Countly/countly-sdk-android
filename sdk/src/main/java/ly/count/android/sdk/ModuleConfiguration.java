@@ -7,6 +7,7 @@ import org.json.JSONObject;
 
 class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     ImmediateRequestGenerator immediateRequestGenerator;
+    CountlyTimer serverConfigUpdateTimer;
 
     JSONObject latestRetrievedConfigurationFull = null;
     JSONObject latestRetrievedConfiguration = null;
@@ -38,6 +39,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRConsentRequired = "cr";
     final static String keyRDropOldRequestTime = "dort";
     final static String keyRCrashReporting = "crt";
+    final static String keyRServerConfigUpdateInterval = "scui";
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
@@ -47,6 +49,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVContentZone = false;
     boolean currentVCrashReporting = true;
     boolean configurationFetched = false;
+    // in hours
+    Integer serverConfigUpdateInterval;
+    int currentServerConfigUpdateInterval = 4;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -70,11 +75,29 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         //once the SDK has loaded, init fetching the server config
         L.d("[ModuleConfiguration] initFinished");
         fetchConfigFromServer(config);
+        startServerConfigUpdateTimer();
     }
 
     @Override
     void halt() {
+        serverConfigUpdateTimer.stopTimer(L);
+    }
 
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        if (currentServerConfigUpdateInterval != serverConfigUpdateInterval) {
+            currentServerConfigUpdateInterval = serverConfigUpdateInterval;
+            startServerConfigUpdateTimer();
+        }
+    }
+
+    private void startServerConfigUpdateTimer() {
+        serverConfigUpdateTimer.startTimer((long) currentServerConfigUpdateInterval * 60 * 60 * 1000, new Runnable() {
+            @Override
+            public void run() {
+                fetchConfigFromServer(_cly.config_);
+            }
+        }, L);
     }
 
     /**
@@ -144,6 +167,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking, Boolean.class);
         currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, currentVCustomEventTracking, Boolean.class);
         currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
+        serverConfigUpdateInterval = extractValue(keyRServerConfigUpdateInterval, sb, serverConfigUpdateInterval, currentServerConfigUpdateInterval, Integer.class);
 
         clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class));
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class));

@@ -38,12 +38,21 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
         zoneTimerInterval = config.content.zoneTimerInterval;
+        if (!configProvider.getContentZoneEnabled()) {
+            exitContentZoneInternal();
+        } else {
+            if (!shouldFetchContents) {
+                exitContentZoneInternal();
+            }
+            waitForDelay = 0;
+            enterContentZoneInternal(new String[] {});
+        }
     }
 
     @Override
     void initFinished(@NotNull CountlyConfig config) {
         if (configProvider.getContentZoneEnabled()) {
-            contentInterface.enterContentZone();
+            enterContentZoneInternal(new String[] {});
         }
     }
 
@@ -88,7 +97,14 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void registerForContentUpdates(@Nullable String[] categories) {
+    void enterContentZoneInternal(@Nullable String[] categories) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+            return;
+        }
+
+        shouldFetchContents = true;
+
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
             return;
@@ -103,20 +119,22 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(zoneTimerInterval, () -> {
-            L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+        countlyTimer.startTimer(zoneTimerInterval, new Runnable() {
+            @Override public void run() {
+                L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
 
-            if (waitForDelay > 0) {
-                waitForDelay--;
-                return;
+                if (waitForDelay > 0) {
+                    waitForDelay--;
+                    return;
+                }
+
+                if (!shouldFetchContents) {
+                    L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
+                    return;
+                }
+
+                fetchContentsInternal(validCategories);
             }
-
-            if (!shouldFetchContents) {
-                L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
-                return;
-            }
-
-            fetchContentsInternal(validCategories);
         }, L);
     }
 
@@ -237,13 +255,7 @@ public class ModuleContent extends ModuleBase {
         private void enterContentZone(@Nullable String... categories) {
             L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
 
-            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
-                return;
-            }
-
-            shouldFetchContents = true;
-            registerForContentUpdates(categories);
+            enterContentZoneInternal(categories);
         }
 
         /**
@@ -267,23 +279,6 @@ public class ModuleContent extends ModuleBase {
             }
 
             exitContentZoneInternal();
-        }
-
-        /**
-         * Change the content that is being shown
-         *
-         * @param categories categories for the content
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
-         */
-        private void changeContent(@Nullable String... categories) {
-            L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
-
-            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] changeContent, Consent is not granted, skipping");
-                return;
-            }
-
-            registerForContentUpdates(categories);
         }
     }
 }
