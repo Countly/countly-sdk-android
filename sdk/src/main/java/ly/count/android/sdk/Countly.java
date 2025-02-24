@@ -97,7 +97,7 @@ public class Countly {
     /**
      * How often onTimer() is called. This is the default value.
      */
-    private static final long TIMER_DELAY_IN_SECONDS = 60;
+    protected static final long TIMER_DELAY_IN_SECONDS = 60;
 
     protected static String[] publicKeyPinCertificates;
     protected static String[] certificatePinCertificates;
@@ -127,13 +127,13 @@ public class Countly {
     }
 
     //SDK limit defaults
-    final int maxKeyLengthDefault = 128;
-    final int maxValueSizeDefault = 256;
-    final int maxSegmentationValuesDefault = 100;
-    final int maxBreadcrumbCountDefault = 100;
-    final int maxStackTraceLinesPerThreadDefault = 30;
-    final int maxStackTraceLineLengthDefault = 200;
-    final int maxStackTraceThreadCountDefault = 50;
+    static final int maxKeyLengthDefault = 128;
+    static final int maxValueSizeDefault = 256;
+    static final int maxSegmentationValuesDefault = 100;
+    static final int maxBreadcrumbCountDefault = 100;
+    static final int maxStackTraceLinesPerThreadDefault = 30;
+    static final int maxStackTraceLineLengthDefault = 200;
+    static final int maxStackTraceThreadCountDefault = 50;
 
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {

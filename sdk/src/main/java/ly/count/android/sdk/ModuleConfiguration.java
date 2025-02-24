@@ -87,7 +87,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         if (Utils.isNullOrEmpty(sConfig)) {
             sConfig = storageProvider.getServerConfig();
         }
-        
+
         L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");
 
         if (sConfig == null || sConfig.isEmpty()) {
@@ -107,7 +107,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
-    private <T> T extractValue(String key, StringBuilder sb, T currentValue, Class<T> clazz) {
+    private <T> T extractValue(String key, StringBuilder sb, T currentValue, T defaultValue, Class<T> clazz) {
         if (latestRetrievedConfiguration.has(key)) {
             try {
                 Object value = latestRetrievedConfiguration.get(key);
@@ -119,6 +119,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load '" + key + "', " + e.getMessage());
             }
         }
+
+        if (currentValue == null) {
+            return defaultValue;
+        }
+
         return currentValue;
     }
 
@@ -132,27 +137,27 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         StringBuilder sb = new StringBuilder();
 
-        currentVNetworking = extractValue(keyNetworking, sb, currentVNetworking, Boolean.class);
-        currentVTracking = extractValue(keyTracking, sb, currentVTracking, Boolean.class);
-        currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, Boolean.class);
-        currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, Boolean.class);
-        currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, Boolean.class);
-        currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, Boolean.class);
-        currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, Boolean.class);
+        currentVNetworking = extractValue(keyNetworking, sb, currentVNetworking, currentVNetworking, Boolean.class);
+        currentVTracking = extractValue(keyTracking, sb, currentVTracking, currentVTracking, Boolean.class);
+        currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, currentVSessionTracking, Boolean.class);
+        currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, currentVCrashReporting, Boolean.class);
+        currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking, Boolean.class);
+        currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, currentVCustomEventTracking, Boolean.class);
+        currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
 
-        clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, Integer.class));
-        clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Integer.class));
-        clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, Boolean.class));
-        clyConfig.setUpdateSessionTimerDelay(extractValue(keyRSessionUpdateInterval, sb, clyConfig.sessionUpdateTimerDelay, Integer.class));
-        clyConfig.sdkInternalLimits.setMaxKeyLength(extractValue(keyRLimitKeyLength, sb, clyConfig.sdkInternalLimits.maxKeyLength, Integer.class));
-        clyConfig.sdkInternalLimits.setMaxValueSize(extractValue(keyRLimitValueSize, sb, clyConfig.sdkInternalLimits.maxValueSize, Integer.class));
-        clyConfig.sdkInternalLimits.setMaxSegmentationValues(extractValue(keyRLimitSegValues, sb, clyConfig.sdkInternalLimits.maxSegmentationValues, Integer.class));
-        clyConfig.sdkInternalLimits.setMaxBreadcrumbCount(extractValue(keyRLimitBreadcrumb, sb, clyConfig.sdkInternalLimits.maxBreadcrumbCount, Integer.class));
-        clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread, Integer.class));
-        clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, clyConfig.sdkInternalLimits.maxStackTraceLineLength, Integer.class));
-        clyConfig.content.setZoneTimerInterval(extractValue(keyRContentZoneInterval, sb, clyConfig.content.zoneTimerInterval, Integer.class));
-        clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, Boolean.class));
-        clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, Integer.class));
+        clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class));
+        clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class));
+        clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, clyConfig.loggingEnabled, Boolean.class));
+        clyConfig.setUpdateSessionTimerDelay(extractValue(keyRSessionUpdateInterval, sb, clyConfig.sessionUpdateTimerDelay, Long.valueOf(Countly.TIMER_DELAY_IN_SECONDS).intValue(), Integer.class));
+        clyConfig.sdkInternalLimits.setMaxKeyLength(extractValue(keyRLimitKeyLength, sb, clyConfig.sdkInternalLimits.maxKeyLength, Countly.maxKeyLengthDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxValueSize(extractValue(keyRLimitValueSize, sb, clyConfig.sdkInternalLimits.maxValueSize, Countly.maxValueSizeDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxSegmentationValues(extractValue(keyRLimitSegValues, sb, clyConfig.sdkInternalLimits.maxSegmentationValues, Countly.maxSegmentationValuesDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxBreadcrumbCount(extractValue(keyRLimitBreadcrumb, sb, clyConfig.sdkInternalLimits.maxBreadcrumbCount, Countly.maxBreadcrumbCountDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread, Countly.maxStackTraceLinesPerThreadDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, clyConfig.sdkInternalLimits.maxStackTraceLineLength, Countly.maxStackTraceLineLengthDefault, Integer.class));
+        clyConfig.content.setZoneTimerInterval(extractValue(keyRContentZoneInterval, sb, clyConfig.content.zoneTimerInterval, clyConfig.content.zoneTimerInterval, Integer.class));
+        clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, clyConfig.shouldRequireConsent, Boolean.class));
+        clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, clyConfig.dropAgeHours, Integer.class));
 
         String updatedValues = sb.toString();
         if (!updatedValues.isEmpty()) {
