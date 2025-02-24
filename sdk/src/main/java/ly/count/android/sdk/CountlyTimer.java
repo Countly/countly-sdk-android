@@ -30,6 +30,13 @@ class CountlyTimer {
         }
     }
 
+    /**
+     * Start a timer with the given delay
+     *
+     * @param timerDelay in seconds
+     * @param runnable to run
+     * @param L logger
+     */
     protected void startTimer(long timerDelay, @NonNull Runnable runnable, @NonNull ModuleLog L) {
         long timerDelayInternal = timerDelay * 1000;
 

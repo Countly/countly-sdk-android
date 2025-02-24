@@ -48,7 +48,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVCustomEventTracking = true;
     boolean currentVContentZone = false;
     boolean currentVCrashReporting = true;
-    boolean configurationFetched = false;
     // in hours
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
@@ -259,13 +258,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, temporary device ID mode is set");
             return;
         }
-
-        if (configurationFetched) {
-            L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, config already fetched");
-            return;
-        }
-
-        configurationFetched = true;
 
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
