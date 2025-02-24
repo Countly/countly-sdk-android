@@ -976,6 +976,7 @@ public class Countly {
             //begin a session
 
             moduleSessions.beginSessionInternal();
+            moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
         }
 
         config_.deviceInfo.inForeground();

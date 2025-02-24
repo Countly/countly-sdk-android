@@ -51,6 +51,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     // in hours
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
+    long lastServerConfigFetchTimestamp = -1;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -259,6 +260,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             return;
         }
 
+        lastServerConfigFetchTimestamp = UtilsTime.currentTimestampMs();
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 
@@ -272,6 +274,17 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
             saveAndStoreDownloadedConfig(checkResponse, config);
         }, L);
+    }
+
+    void fetchIfTimeIsUpForFetchingServerConfig() {
+        if (lastServerConfigFetchTimestamp > 0) {
+            long currentTime = UtilsTime.currentTimestampMs();
+            long timePassed = currentTime - lastServerConfigFetchTimestamp;
+
+            if (timePassed > (long) currentServerConfigUpdateInterval * 60 * 60 * 1000) {
+                fetchConfigFromServer(_cly.config_);
+            }
+        }
     }
 
     // configuration getters
