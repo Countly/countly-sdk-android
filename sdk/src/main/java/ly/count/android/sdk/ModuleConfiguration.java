@@ -60,6 +60,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         configProvider = this;
 
         immediateRequestGenerator = config.immediateRequestGenerator;
+        serverConfigUpdateTimer = new CountlyTimer();
 
         config.countlyStore.setConfigurationProvider(this);
 
