@@ -77,6 +77,10 @@ public class ConnectionProcessorTests {
             @Override public boolean getTrackingEnabled() {
                 return true;
             }
+
+            @Override public boolean getCrashReportingEnabled() {
+                return true;
+            }
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);
