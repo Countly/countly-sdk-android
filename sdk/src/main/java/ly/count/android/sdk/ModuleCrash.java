@@ -348,6 +348,11 @@ public class ModuleCrash extends ModuleBase {
         }
 
         //enable unhandled crash reporting
+        if (!configProvider.getCrashReportingEnabled()) {
+            L.w("[ModuleCrash] initFinished, Crash reporting is disabled in the server configuration");
+            return;
+        }
+
         if (config.crashes.enableUnhandledCrashReporting) {
             enableCrashReporting();
         }

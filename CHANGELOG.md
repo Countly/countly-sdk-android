@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* ! Minor breaking change ! The experimental configuration function enableServerConfiguration has been removed. It is now enabled by default and can be controlled directly from the server.
+* Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
 
 * Extended server configuration capabilities of the SDK.
 
@@ -21,7 +21,6 @@
 
 ## 24.7.6
 * Added support for localization of content blocks.
-
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 * Fixed a bug where passing the global content callback was not possible.
 * Mitigated an issue related to content actions navigation.

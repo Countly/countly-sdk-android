@@ -993,6 +993,20 @@ public class CountlyConfig {
         return this;
     }
 
+    
+    /**
+     * This is an experimental feature and it can have breaking changes
+     *
+     * With this mode enable, the SDK will acquire additional configuration from it's Countly server
+     *
+     * @return Returns the same config object for convenient linking
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     * @deprecated and will do nothing
+     */
+    public synchronized CountlyConfig enableServerConfiguration() {
+        return this;
+    }
+    
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
         return this;

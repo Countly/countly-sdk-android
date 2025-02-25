@@ -15,6 +15,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     //config keys
     final static String keyTracking = "tracking";
     final static String keyNetworking = "networking";
+    final static String keyCrashReporting = "crt";
 
     //request keys
     final static String keyRTimestamp = "t";
@@ -68,7 +69,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         loadConfigFromStorage(config.serverConfiguration);
 
         //update the config variables according to the new state
-        updateConfigVariables(config);
+        updateConfigVariables();
     }
 
     @Override
@@ -191,7 +192,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
-    void saveAndStoreDownloadedConfig(@NonNull JSONObject config, @NonNull final CountlyConfig clyConfig) {
+    void saveAndStoreDownloadedConfig(@NonNull JSONObject config) {
         L.v("[ModuleConfiguration] saveAndStoreDownloadedConfig");
         if (!config.has(keyRVersion)) {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
@@ -227,7 +228,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         storageProvider.setServerConfig(configAsString);
 
         //update config variables
-        updateConfigVariables(clyConfig);
+        updateConfigVariables();
     }
 
     /**
@@ -249,7 +250,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      * }
      */
-    void fetchConfigFromServer(@NonNull final CountlyConfig config) {
+    void fetchConfigFromServer() {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
         // why _cly? because module configuration is created before module device id, so we need to access it like this
@@ -272,7 +273,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
             L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse.toString() + "]");
 
-            saveAndStoreDownloadedConfig(checkResponse, config);
+            saveAndStoreDownloadedConfig(checkResponse);
         }, L);
     }
 
