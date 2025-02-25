@@ -69,7 +69,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         loadConfigFromStorage(config.serverConfiguration);
 
         //update the config variables according to the new state
-        updateConfigVariables();
+        updateConfigVariables(config);
     }
 
     @Override
@@ -228,7 +228,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         storageProvider.setServerConfig(configAsString);
 
         //update config variables
-        updateConfigVariables();
+        updateConfigVariables(_cly.config_);
     }
 
     /**
@@ -250,7 +250,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      * }
      */
-    void fetchConfigFromServer() {
+    void fetchConfigFromServer(CountlyConfig config) {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
         // why _cly? because module configuration is created before module device id, so we need to access it like this
