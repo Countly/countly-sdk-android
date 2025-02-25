@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* ! Minor breaking change ! The experimental configuration function enableServerConfiguration has been removed. It is now enabled by default and can be controlled directly from the server.
+* Deprecated the experimental configuration function enableServerConfiguration and it will do nothing. It is now enabled by default and can be controlled directly from the server.
 
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
