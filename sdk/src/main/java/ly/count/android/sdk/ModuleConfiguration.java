@@ -227,9 +227,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override
     public boolean getCrashReportingEnabled() {
-        if (!serverConfigEnabled) {
-            return defaultVCrashReporting;
-        }
         return currentVCrashReporting;
     }
 }
