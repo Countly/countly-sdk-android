@@ -129,8 +129,9 @@ public class ModuleContent extends ModuleBase {
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
         String language = Locale.getDefault().getLanguage().toLowerCase();
+        String deviceType = deviceInfo.mp.getDeviceType(_cly.context_);
 
-        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language);
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language, deviceType);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
