@@ -22,6 +22,7 @@ public class ModuleContent extends ModuleBase {
     private final int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
+    private final int CONTENT_START_DELAY_MS = 4000; // 4 seconds
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -90,7 +91,13 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(zoneTimerInterval, () -> {
+        int contentInitialDelay = 0;
+        long sdkStartTime = UtilsTime.currentTimestampMs() - Countly.applicationStart;
+        if (sdkStartTime < CONTENT_START_DELAY_MS) {
+            contentInitialDelay = CONTENT_START_DELAY_MS;
+        }
+
+        countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, () -> {
             L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
 
             if (waitForDelay > 0) {
