@@ -131,8 +131,9 @@ public class ModuleContent extends ModuleBase {
             contentInitialDelay = CONTENT_START_DELAY_MS;
         }
 
-        countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, () -> {
-            L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+        countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
+            @Override public void run() {
+                L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
                 if (waitForDelay > 0) {
                     waitForDelay--;
                     return;
