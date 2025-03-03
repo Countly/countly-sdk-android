@@ -15,7 +15,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     //config keys
     final static String keyTracking = "tracking";
     final static String keyNetworking = "networking";
-    final static String keyCrashReporting = "crt";
 
     //request keys
     final static String keyRTimestamp = "t";
@@ -27,6 +26,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRSessionUpdateInterval = "sui";
     final static String keyRSessionTracking = "st";
     final static String keyRViewTracking = "vt";
+    final static String keyRLocationTracking = "lt";
 
     final static String keyRLimitKeyLength = "lkl";
     final static String keyRLimitValueSize = "lvs";
@@ -49,6 +49,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVCustomEventTracking = true;
     boolean currentVContentZone = false;
     boolean currentVCrashReporting = true;
+    boolean currentVLocationTracking = true;
     // in hours
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
@@ -168,6 +169,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, currentVCrashReporting, Boolean.class);
         currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking, Boolean.class);
         currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, currentVCustomEventTracking, Boolean.class);
+        currentVLocationTracking = extractValue(keyRLocationTracking, sb, currentVLocationTracking, currentVLocationTracking, Boolean.class);
         currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
         serverConfigUpdateInterval = extractValue(keyRServerConfigUpdateInterval, sb, serverConfigUpdateInterval, currentServerConfigUpdateInterval, Integer.class);
 
@@ -192,7 +194,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
-    void saveAndStoreDownloadedConfig(@NonNull JSONObject config) {
+    void saveAndStoreDownloadedConfig(@NonNull JSONObject config, @NonNull CountlyConfig clyConfig) {
         L.v("[ModuleConfiguration] saveAndStoreDownloadedConfig");
         if (!config.has(keyRVersion)) {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
@@ -228,7 +230,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         storageProvider.setServerConfig(configAsString);
 
         //update config variables
-        updateConfigVariables(_cly.config_);
+        updateConfigVariables(clyConfig);
     }
 
     /**
@@ -250,7 +252,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      * }
      */
-    void fetchConfigFromServer(CountlyConfig config) {
+    void fetchConfigFromServer(@NonNull CountlyConfig config) {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
         // why _cly? because module configuration is created before module device id, so we need to access it like this
@@ -273,7 +275,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
             L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse.toString() + "]");
 
-            saveAndStoreDownloadedConfig(checkResponse);
+            saveAndStoreDownloadedConfig(checkResponse, config);
         }, L);
     }
 
