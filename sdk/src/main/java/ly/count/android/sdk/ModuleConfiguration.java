@@ -321,4 +321,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     @Override public boolean getCrashReportingEnabled() {
         return currentVCrashReporting;
     }
+
+    @Override public boolean getLocationTrackingEnabled() {
+        return currentVLocationTracking;
+    }
 }
