@@ -104,11 +104,6 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
-        if (deviceInfo.isInBackground().equals("true")) {
-            L.w("[ModuleContent] enterContentZoneInternal, app is in the background, skipping");
-            return;
-        }
-
         shouldFetchContents = true;
 
         if (deviceIdProvider.isTemporaryIdEnabled()) {
