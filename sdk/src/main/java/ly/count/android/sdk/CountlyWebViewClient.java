@@ -1,9 +1,10 @@
 package ly.count.android.sdk;
 
+import android.util.Log;
 import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,15 @@ class CountlyWebViewClient extends WebViewClient {
     @Override
     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
         String url = request.getUrl().toString();
+        Log.v(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, url: [" + url + "]");
+        try {
+            url = URLDecoder.decode(url, "UTF-8");
+        } catch (Exception e) {
+            Log.e(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, Failed to decode url", e);
+            return false;
+        }
+
+        Log.d(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, urlDecoded: [" + url + "]");
 
         for (WebViewUrlListener listener : listeners) {
             if (listener.onUrl(url, view)) {
@@ -28,17 +38,7 @@ class CountlyWebViewClient extends WebViewClient {
         return false;
     }
 
-    @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-        return null;
-    }
-
-    @Override
-    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-        return null;
-    }
-
-    public void registerWebViewUrlListeners(List<WebViewUrlListener> listener) {
-        this.listeners.addAll(listener);
+    public void registerWebViewUrlListener(WebViewUrlListener listener) {
+        this.listeners.add(listener);
     }
 }

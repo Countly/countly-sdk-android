@@ -208,9 +208,11 @@ public class scSE_SessionsTests {
     @Test
     public void SE_204_CNR_A_id_change() throws InterruptedException {
         CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        TestLifecycleObserver testLifecycleObserver = new TestLifecycleObserver();
+        config.lifecycleObserver = testLifecycleObserver;
         Countly countly = new Countly().init(config);
 
-        flowAutomaticSessions(countly);
+        flowAutomaticSessions(countly, testLifecycleObserver);
 
         Assert.assertEquals(16, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
@@ -266,7 +268,7 @@ public class scSE_SessionsTests {
         CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" });
         Countly countly = new Countly().init(config);
 
-        flowAutomaticSessions(countly);
+        flowAutomaticSessions(countly, new TestLifecycleObserver());
 
         Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
         validateSessionConsentRequest(0, true, TestUtils.commonDeviceId);
@@ -308,7 +310,7 @@ public class scSE_SessionsTests {
         CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setRequiresConsent(true);
         Countly countly = new Countly().init(config);
 
-        flowAutomaticSessions(countly);
+        flowAutomaticSessions(countly, new TestLifecycleObserver());
 
         Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
         validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
@@ -339,8 +341,8 @@ public class scSE_SessionsTests {
         countly.sessions().updateSession();
     }
 
-    private void flowAutomaticSessions(Countly countly) throws InterruptedException {
-
+    private void flowAutomaticSessions(Countly countly, TestLifecycleObserver testLifecycleObserver) throws InterruptedException {
+        testLifecycleObserver.bringToForeground();
         countly.onStart(null);
 
         Thread.sleep(1000);
@@ -353,15 +355,19 @@ public class scSE_SessionsTests {
         countly.deviceId().changeWithoutMerge("newID_2");
         Thread.sleep(1000);
 
+        testLifecycleObserver.goToBackground();
         countly.onStop();
 
         Thread.sleep(1000);
 
+        testLifecycleObserver.bringToForeground();
         countly.onStart(null);
 
         countly.deviceId().changeWithMerge("newID");
+        testLifecycleObserver.goToBackground();
         countly.onStop();
         Thread.sleep(1000);
+        testLifecycleObserver.bringToForeground();
         countly.onStart(null);
     }
 

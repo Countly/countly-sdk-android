@@ -823,7 +823,7 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
-    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories) {
+    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language, String deviceType) {
 
         JSONObject json = new JSONObject();
         try {
@@ -841,7 +841,7 @@ class ConnectionQueue implements RequestQueueProvider {
             L.e("Error while preparing fetch contents request");
         }
 
-        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&res=" + UtilsNetworking.urlEncodeString(json.toString());
+        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString()) + "&la=" + language + "&dt=" + deviceType;
     }
 
     @Override

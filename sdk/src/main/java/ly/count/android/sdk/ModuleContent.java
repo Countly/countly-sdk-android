@@ -8,9 +8,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -19,18 +19,19 @@ public class ModuleContent extends ModuleBase {
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
-    private final int contentUpdateInterval;
+    private final int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
-    static int waitForDelay = 0;
+    private int waitForDelay = 0;
+    private final int CONTENT_START_DELAY_MS = 4000; // 4 seconds
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
-        L.v("[ModuleContent] Initialising");
+        L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + config.content.zoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
         iRGenerator = config.immediateRequestGenerator;
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
-        contentUpdateInterval = config.content.contentUpdateInterval;
+        zoneTimerInterval = config.content.zoneTimerInterval;
         globalContentCallback = config.content.globalContentCallback;
     }
 
@@ -90,7 +91,13 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(contentUpdateInterval, () -> {
+        int contentInitialDelay = 0;
+        long sdkStartTime = UtilsTime.currentTimestampMs() - Countly.applicationStart;
+        if (sdkStartTime < CONTENT_START_DELAY_MS) {
+            contentInitialDelay = CONTENT_START_DELAY_MS;
+        }
+
+        countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, () -> {
             L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
 
             if (waitForDelay > 0) {
@@ -105,6 +112,12 @@ public class ModuleContent extends ModuleBase {
 
             fetchContentsInternal(validCategories);
         }, L);
+    }
+
+    void notifyAfterContentIsClosed() {
+        L.v("[ModuleContent] notifyAfterContentIsClosed, setting waitForDelay to 2 and shouldFetchContents to true");
+        waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
+        shouldFetchContents = true;
     }
 
     @NonNull
@@ -122,30 +135,34 @@ public class ModuleContent extends ModuleBase {
         int landscapeWidth = portrait ? scaledHeight : scaledWidth;
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
-        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories);
+        String language = Locale.getDefault().getLanguage().toLowerCase();
+        String deviceType = deviceInfo.mp.getDeviceType(_cly.context_);
+
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language, deviceType);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
-        boolean success = response.optBoolean("result", false);
-        JSONArray content = response.optJSONArray("content");
-        return success && content != null && content.length() > 0;
+        return response.has("geo");
+        //boolean success = response.optString("result", "error").equals("success");
+        //JSONArray content = response.optJSONArray("content");
+        //return success && content != null && content.length() > 0;
     }
 
     @NonNull
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         JSONArray contents = response.optJSONArray("content");
-        assert contents != null;
+        //assert contents != null; TODO enable later
 
-        JSONObject contentObj = contents.optJSONObject(0);
+        JSONObject contentObj = response; //contents.optJSONObject(0); TODO this will be changed
         assert contentObj != null;
 
-        String content = contentObj.optString("pathToHtml");
-        JSONObject coordinates = contentObj.optJSONObject("placementCoordinates");
+        String content = contentObj.optString("html");
+        JSONObject coordinates = contentObj.optJSONObject("geo");
 
         assert coordinates != null;
-        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "portrait", content));
-        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, extractOrientationPlacements(coordinates, displayMetrics.density, "landscape", content));
+        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "p", content));
+        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, extractOrientationPlacements(coordinates, displayMetrics.density, "l", content));
 
         return placementCoordinates;
     }
@@ -156,13 +173,15 @@ public class ModuleContent extends ModuleBase {
             assert orientationPlacements != null;
             int x = orientationPlacements.optInt("x");
             int y = orientationPlacements.optInt("y");
-            int w = orientationPlacements.optInt("width");
-            int h = orientationPlacements.optInt("height");
+            int w = orientationPlacements.optInt("w");
+            int h = orientationPlacements.optInt("h");
             L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
-            config.globalContentCallback = globalContentCallback;
+            // TODO, passing callback with an intent is impossible, need to find a way to pass it
+            // Currently, the callback is set as a static variable in TransparentActivity
+            TransparentActivity.globalContentCallback = globalContentCallback;
             return config;
         }
 
@@ -195,11 +214,6 @@ public class ModuleContent extends ModuleBase {
         if (withoutMerge) {
             optOutFromContent();
         }
-    }
-
-    @Override
-    void initFinished(@NotNull CountlyConfig config) {
-        registerForContentUpdates(new String[] {});
     }
 
     protected void exitContentZoneInternal() {

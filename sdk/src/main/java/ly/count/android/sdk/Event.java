@@ -50,8 +50,6 @@ class Event {
     protected static final String PV_ID_KEY = "pvid";
     protected static final String CV_ID_KEY = "cvid";
     protected static final String PE_ID_KEY = "peid";
-    protected static final String PE_NAME_KEY = "cly_pen";
-    protected static final String PV_NAME_KEY = "cly_pvn";
 
     public String key;
     public Map<String, Object> segmentation;
@@ -65,8 +63,6 @@ class Event {
     public String pvid;
     public String cvid;
     public String peid;
-    public String cly_pen;
-    public String cly_pvn;
 
     Event() {
     }
@@ -108,14 +104,6 @@ class Event {
 
             if (peid != null) {
                 json.put(PE_ID_KEY, peid);
-            }
-
-            if (cly_pen != null) {
-                json.put(PE_NAME_KEY, cly_pen);
-            }
-
-            if (cly_pvn != null) {
-                json.put(PV_NAME_KEY, cly_pvn);
             }
 
             JSONObject jobj = new JSONObject();
@@ -188,14 +176,6 @@ class Event {
                 event.peid = json.getString(PE_ID_KEY);
             }
 
-            if (!json.isNull(PE_NAME_KEY)) {
-                event.cly_pen = json.getString(PE_NAME_KEY);
-            }
-
-            if (!json.isNull(PV_NAME_KEY)) {
-                event.cly_pvn = json.getString(PV_NAME_KEY);
-            }
-
             if (!json.isNull(SEGMENTATION_KEY)) {
                 //we would also enter here if segmentation was set to an empty object
                 JSONObject segm = json.getJSONObject(SEGMENTATION_KEY);
@@ -250,8 +230,6 @@ class Event {
             Objects.equals(pvid, e.pvid) &&
             Objects.equals(cvid, e.cvid) &&
             Objects.equals(peid, e.peid) &&
-            Objects.equals(cly_pen, e.cly_pen) &&
-            Objects.equals(cly_pvn, e.cly_pvn) &&
             Objects.equals(segmentation, e.segmentation);
     }
 
@@ -263,8 +241,6 @@ class Event {
             (pvid != null ? pvid.hashCode() : 1) ^
             (cvid != null ? cvid.hashCode() : 1) ^
             (peid != null ? peid.hashCode() : 1) ^
-            (cly_pen != null ? cly_pen.hashCode() : 1) ^
-            (cly_pvn != null ? cly_pvn.hashCode() : 1) ^
             (timestamp != 0 ? (int) timestamp : 1);
     }
 }

@@ -96,6 +96,7 @@ public class scUP_UserProfileTests {
      * Related user properties should be saved before event recordings
      * call order, user property with "dark_mode", event, user property with "light_mode"
      * generated request order first user property request + 3 events + user property request with light_mode + begin session
+     * UPDATE: no begin session anymore because isForeground is false, and it is added to begin session to validate that device in foreground
      */
     @Test
     public void eventSaveScenario_changeDeviceIDWithoutMerge() throws JSONException {
@@ -115,8 +116,8 @@ public class scUP_UserProfileTests {
         countly.deviceId().changeWithoutMerge("new_device_id"); // this will begin a new session
 
         // first user property request + 3 events + user property request with light_mode
-        ModuleUserProfileTests.validateUserProfileRequest(0, 4, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
-        ModuleUserProfileTests.validateUserProfileRequest(2, 4, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(0, 3, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
+        ModuleUserProfileTests.validateUserProfileRequest(2, 3, TestUtils.map(), TestUtils.map("theme", "light_mode"));
     }
 
     /**

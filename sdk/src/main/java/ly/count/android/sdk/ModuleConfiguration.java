@@ -7,14 +7,13 @@ import org.json.JSONObject;
 class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     ImmediateRequestGenerator immediateRequestGenerator;
 
-    boolean serverConfigEnabled = false;
-
     JSONObject latestRetrievedConfigurationFull = null;
     JSONObject latestRetrievedConfiguration = null;
 
     //config keys
     final static String keyTracking = "tracking";
     final static String keyNetworking = "networking";
+    final static String keyCrashReporting = "crt";
 
     //request keys
     final static String keyRTimestamp = "t";
@@ -23,9 +22,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     final static boolean defaultVTracking = true;
     final static boolean defaultVNetworking = true;
+    final static boolean defaultVCrashReporting = true;
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
+    boolean currentVCrashReporting = true;
     boolean configurationFetched = false;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
@@ -34,27 +35,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         config.configProvider = this;
         configProvider = this;
 
-        serverConfigEnabled = config.serverConfigurationEnabled;
-
         immediateRequestGenerator = config.immediateRequestGenerator;
 
         config.countlyStore.setConfigurationProvider(this);
 
-        if (serverConfigEnabled) {
-            //load the previously saved configuration
-            loadConfigFromStorage();
+        //load the previously saved configuration
+        loadConfigFromStorage();
 
-            //update the config variables according to the new state
-            updateConfigVariables();
-        }
+        //update the config variables according to the new state
+        updateConfigVariables();
     }
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
-        if (serverConfigEnabled) {
-            //once the SDK has loaded, init fetching the server config
-            fetchConfigFromServer();
-        }
+        //once the SDK has loaded, init fetching the server config
+        fetchConfigFromServer();
     }
 
     @Override
@@ -92,6 +87,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         //set all to defaults
         currentVNetworking = defaultVNetworking;
         currentVTracking = defaultVTracking;
+        currentVCrashReporting = defaultVCrashReporting;
 
         if (latestRetrievedConfiguration == null) {
             //no config, don't continue
@@ -103,7 +99,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             try {
                 currentVNetworking = latestRetrievedConfiguration.getBoolean(keyNetworking);
             } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'networking', " + e);
+                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'networking', " + e);
             }
         }
 
@@ -112,7 +108,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             try {
                 currentVTracking = latestRetrievedConfiguration.getBoolean(keyTracking);
             } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigs, failed to load 'tracking', " + e);
+                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'tracking', " + e);
+            }
+        }
+
+        //tracking
+        if (latestRetrievedConfiguration.has(keyCrashReporting)) {
+            try {
+                currentVCrashReporting = latestRetrievedConfiguration.getBoolean(keyCrashReporting);
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'crash_reporting', " + e);
             }
         }
     }
@@ -178,11 +183,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     void fetchConfigFromServer() {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
-        if (!serverConfigEnabled) {
-            L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, server config is disabled");
-            return;
-        }
-
         // why _cly? because module configuration is created before module device id, so we need to access it like this
         // call order to module device id is after module configuration and device id provider is module device id
         if (_cly.config_.deviceIdProvider.isTemporaryIdEnabled()) {
@@ -217,18 +217,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override
     public boolean getNetworkingEnabled() {
-        if (!serverConfigEnabled) {
-            return defaultVNetworking;
-        }
-
         return currentVNetworking;
     }
 
     @Override
     public boolean getTrackingEnabled() {
-        if (!serverConfigEnabled) {
-            return defaultVTracking;
-        }
         return currentVTracking;
+    }
+
+    @Override
+    public boolean getCrashReportingEnabled() {
+        return currentVCrashReporting;
     }
 }

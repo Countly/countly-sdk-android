@@ -11,6 +11,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
     final static String ACTION_EVENT_KEY = "[CLY]_action";
     final static String VISIBILITY_KEY = "cly_v";
+    final static String PREVIOUS_EVENT_NAME_KEY = "cly_pen";
+    final static String PREVIOUS_VIEW_NAME_KEY = "cly_pvn";
+    final static String CURRENT_VIEW_NAME_KEY = "cly_cvn";
 
     //interface for SDK users
     final Events eventsInterface;
@@ -121,16 +124,27 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
         String pvn = null;
         String pen = null;
+        String cvn = null;
 
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
             if (viewNameRecordingEnabled) {
                 pvn = _cly.moduleViews.previousViewName;
+                if (pvn == null) {
+                    pvn = "";
+                }
             }
         } else {
             cvid = viewIdProvider.getCurrentViewId();
             if (viewNameRecordingEnabled) {
                 pen = previousEventName;
+                cvn = _cly.moduleViews.currentViewName;
+                if (pen == null) {
+                    pen = "";
+                }
+                if (cvn == null) {
+                    cvn = "";
+                }
             }
         }
 
@@ -141,39 +155,63 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         //before each event is recorded, check if user profile data needs to be saved
         _cly.moduleUserProfile.saveInternal();
 
+        if (visibilityTracking) {
+            if (segmentation == null) {
+                segmentation = new HashMap<>();
+            }
+
+            if (ModuleViews.VIEW_EVENT_KEY.equals(key) && !segmentation.containsKey("visit")) {
+                L.d("[ModuleEvents] recordEventInternal, visibility key will not be added to the end view event");
+            } else {
+                String appInBackground = deviceInfo.isInBackground();
+                int state = 1; // in foreground
+                if ("true".equals(appInBackground)) {
+                    state = 0; // in background
+                }
+                L.d("[ModuleEvents] recordEventInternal, Adding visibility tracking to segmentation app in background:[" + appInBackground + "] cly_v:[" + state + "]");
+
+                segmentation.put(VISIBILITY_KEY, state);
+            }
+        }
+
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
             case ModuleFeedback.RATING_EVENT_KEY: //these events can be reported from a lot of sources, therefore multiple consents could apply
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating) || consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+
                     if (segmentation == null) {
                         segmentation = new HashMap<>();
                     }
-                    addVisibilityToSegmentation(segmentation);
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
+
+                    if (viewNameRecordingEnabled) {
+                        segmentation.put(PREVIOUS_VIEW_NAME_KEY, pvn);
+                    }
+
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(true);
                 }
                 break;
@@ -182,7 +220,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     if (segmentation != null) {
                         UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
                     }
-                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null, pvn, pen);
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
                 }
                 break;
@@ -193,8 +231,13 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         segmentation = new HashMap<>();
                     }
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
-                    addVisibilityToSegmentation(segmentation);
-                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId, pvn, pen);
+
+                    if (viewNameRecordingEnabled) {
+                        segmentation.put(CURRENT_VIEW_NAME_KEY, cvn);
+                        segmentation.put(PREVIOUS_EVENT_NAME_KEY, pen);
+                    }
+
+                    eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     previousEventName = keyTruncated;
                     _cly.moduleRequestQueue.sendEventsIfNeeded(false);
@@ -205,28 +248,6 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         if (pcc != null) {
             pcc.TrackCounterTimeNs("ModuleEvents_recordEventInternal", UtilsTime.getNanoTime() - pccTsStartRecordEventInternal);
         }
-    }
-
-    /**
-     * Add visibility tracking to the segmentation if it is enabled
-     * if app is in the background, it will add cly_v:0
-     * if app is in the foreground, it will add cly_v:1
-     *
-     * @param segmentation segmentation to add visibility to
-     */
-    private void addVisibilityToSegmentation(Map<String, Object> segmentation) {
-        if (!visibilityTracking) {
-            L.v("[ModuleEvents] addVisibilityToSegmentation, Visibility tracking is disabled, skipping");
-            return;
-        }
-
-        String appInBackground = deviceInfo.isInBackground();
-        int state = 1; // in foreground
-        if ("true".equals(appInBackground)) {
-            state = 0; // in background
-        }
-        L.d("[ModuleEvents] addVisibilityToSegmentation, Adding visibility tracking to segmentation app in background:[" + appInBackground + "] cly_v:[" + state + "]");
-        segmentation.put(VISIBILITY_KEY, state);
     }
 
     boolean startEventInternal(final String key) {

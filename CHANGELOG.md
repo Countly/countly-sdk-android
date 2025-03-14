@@ -1,5 +1,59 @@
 ## XX.XX.XX
+* Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
+
+## 25.1.1
+* Mitigated an issue where after closing a content, they were not being fetched again.
+
+## 25.1.0
+* Improved content size management of content blocks.
+
+* Mitigated an issue where, the action bar was overlapping with the content display.
+* Improved the custom CertificateTrustManager to handle domain-specific configurations by supporting hostname-aware checkServerTrusted calls.
+
+## 24.7.8
+* Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
+
+## 24.7.7
+* Mitigated an issue where an automatically closed autostopped view's duration could have increased when opening new views
+* Mitigated an issue where, on Android 35 and above, the navigation bar was overlapping with the content display.
+
+## 24.7.6
+* Added support for localization of content blocks.
+* Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
+* Fixed a bug where passing the global content callback was not possible.
+* Mitigated an issue related to content actions navigation.
+* Mitigated an issue that parsing internal content event segmentation.
+
+## 24.7.5
+* ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.
+
+* The Android SDK now supports Android 15 (API level 35)
+* The views will be stopped and restarted now while going to the background or foreground instead of resuming and pausing.
+* Added further intent redirection vulnarability checks.
+* Added new functions to ease the presenting the feedback widgets. Functions present the first matching feedback widget from the list.
+  * presentNPS(Context)
+  * presentNPS(Context, String)
+  * presentNPS(Context, String, FeedbackCallback)
+  * presentSurvey(Context)
+  * presentSurvey(Context, String)
+  * presentSurvey(Context, String, FeedbackCallback)
+  * presentRating(Context)
+  * presentRating(Context, String)
+  * presentRating(Context, String, FeedbackCallback)
+
+* Mitigated an issue where content communication was done twice.
+* Mititgated an issue where a segmentation key was removed if it included a list with an unsupported value instead of sanitizing.
+* Mitigated a concurrency issue while restarting stopped views.
+* Fixed an issue where SDK was not able to set experimental visibility flag correctly by adding additional foreground state capture.
+
+## 24.7.4
 * Disabled caching for webviews.
+* Expanded the flag (enablePreviousNameRecording) to add current view name as segmentation to custom events. (Experimental!)
+
+* Fixed an issue where the validation of the parameters during content retrieval was improper.
+* Mitigated an issue where a session could have started while the app was in the background when the device ID was changed (non-merge).
+* Mitigated an issue that density calculation was missing while resizing content.
+* Mitigated an issue where content fetching was enabled after initialization of the SDK.
 
 ## 24.7.3
 * Automatic view pause/resumes are changed with stop/start for better data consistency.

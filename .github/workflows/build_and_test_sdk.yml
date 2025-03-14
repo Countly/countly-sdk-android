@@ -1,7 +1,6 @@
 name: The Countly Android SDK Unit Test
 
 env:
-  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
   JAVA_V: 11
   JAVA_DIST: corretto
 
@@ -18,7 +17,6 @@ on:
     branches:
       - master
       - staging
-
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -67,7 +65,7 @@ jobs:
       - name: Wait for Emulator to start
         run: |
           adb wait-for-device
-
+          
       - name: Build the SDK
         if: always()
         run: ./gradlew sdk:build

@@ -12,6 +12,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
@@ -35,10 +36,15 @@ public class TransparentActivity extends Activity {
     TransparentActivityConfig configPortrait = null;
     WebView webView;
     RelativeLayout relativeLayout;
+    static ContentCallback globalContentCallback;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(Countly.TAG, "[TransparentActivity] onCreate, content received, showing it");
+
+        // there is a stripe at the top of the screen for contents
+        // we eliminate it with hiding the system ui
+        hideSystemUI();
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -60,43 +66,47 @@ public class TransparentActivity extends Activity {
 
         config = setupConfig(config);
 
-        int width = config.width;
-        int height = config.height;
-
-        configLandscape.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configLandscape, webView);
+        WebViewUrlListener listener = new WebViewUrlListener() {
+            @Override public boolean onUrl(String url, WebView webView) {
+                if (url.startsWith(URL_START)) {
+                    return contentUrlAction(url, webView);
+                }
+                return false;
             }
-            return false;
-        });
-
-        configPortrait.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configPortrait, webView);
-            }
-            return false;
-        });
+        };
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
         params.gravity = Gravity.TOP | Gravity.LEFT; // try out START
         params.x = config.x;
         params.y = config.y;
-        params.height = height;
-        params.width = width;
+        params.height = config.height;
+        params.width = config.width;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         getWindow().setAttributes(params);
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         // Create and configure the layout
         relativeLayout = new RelativeLayout(this);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(width, height);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
         relativeLayout.setLayoutParams(layoutParams);
         webView = createWebView(config);
 
         // Add views
         relativeLayout.addView(webView);
         setContentView(relativeLayout);
+    }
+
+    private void hideSystemUI() {
+        // Enables regular immersive mode
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+        );
     }
 
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
@@ -125,8 +135,8 @@ public class TransparentActivity extends Activity {
         return config;
     }
 
-    private void changeOrientation(TransparentActivityConfig config) {
-        Log.d(Countly.TAG, "[TransparentActivity] changeOrientation, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
+    private void resizeContent(TransparentActivityConfig config) {
+        Log.d(Countly.TAG, "[TransparentActivity] resizeContent, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
         WindowManager.LayoutParams params = getWindow().getAttributes();
         params.x = config.x;
         params.y = config.y;
@@ -149,26 +159,36 @@ public class TransparentActivity extends Activity {
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Log.d(Countly.TAG, "[TransparentActivity] onConfigurationChanged orientation: [" + newConfig.orientation + "], currentOrientation: [" + currentOrientation + "]");
-        Log.v(Countly.TAG, "[TransparentActivity] onConfigurationChanged, Landscape: [" + Configuration.ORIENTATION_LANDSCAPE + "] Portrait: [" + Configuration.ORIENTATION_PORTRAIT + "]");
+
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;
-            Log.i(Countly.TAG, "[TransparentActivity] onConfigurationChanged, orientation changed to currentOrientation: [" + currentOrientation + "]");
-            changeOrientationInternal();
         }
+
+        // CHANGE SCREEN SIZE
+        final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+        final Display display = wm.getDefaultDisplay();
+        final DisplayMetrics metrics = new DisplayMetrics();
+        display.getMetrics(metrics);
+
+        int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
+        int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
+
+        // refactor in the future to use the resize_me action
+        webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
     }
 
-    private void changeOrientationInternal() {
+    private void resizeContentInternal() {
         switch (currentOrientation) {
             case Configuration.ORIENTATION_LANDSCAPE:
                 if (configLandscape != null) {
                     configLandscape = setupConfig(configLandscape);
-                    changeOrientation(configLandscape);
+                    resizeContent(configLandscape);
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:
                 if (configPortrait != null) {
                     configPortrait = setupConfig(configPortrait);
-                    changeOrientation(configPortrait);
+                    resizeContent(configPortrait);
                 }
                 break;
             default:
@@ -176,48 +196,51 @@ public class TransparentActivity extends Activity {
         }
     }
 
-    private boolean contentUrlAction(String url, TransparentActivityConfig config, WebView view) {
+    private boolean contentUrlAction(String url, WebView view) {
         Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: [" + url + "]");
         Map<String, Object> query = splitQuery(url);
         Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: [" + query + "]");
 
-        Object clyEvent = query.get("cly_x_action_event");
+        Object clyEvent = query.get("?cly_x_action_event");
 
         if (clyEvent == null || !clyEvent.equals("1")) {
-            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, this is not a countly action event url");
+            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, event:[" + clyEvent + "] this is not a countly action event url");
             return false;
         }
+
         Object clyAction = query.get("action");
-        if (!(clyAction instanceof String)) {
-            Log.w(Countly.TAG, "[TransparentActivity] contentUrlAction, action is not a string");
-            return false;
-        }
+        if (clyAction instanceof String) {
+            Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, action string:[" + clyAction + "]");
+            String action = (String) clyAction;
 
-        String action = (String) clyAction;
-        boolean result = false;
-
-        switch (action) {
-            case "event":
-                eventAction(query);
-                break;
-            case "link":
-                result = linkAction(query, view);
-                break;
-            case "resize_me":
-                resizeMeAction(query);
-                break;
-            default:
-                break;
+            switch (action) {
+                case "event":
+                    eventAction(query);
+                    break;
+                case "link":
+                    linkAction(query, view);
+                    break;
+                case "resize_me":
+                    resizeMeAction(query);
+                    break;
+                default:
+                    Log.e(Countly.TAG, "[TransparentActivity] contentUrlAction, unknown action:[" + action + "]");
+                    break;
+            }
         }
 
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
+            if (globalContentCallback != null) { // TODO: verify this later
+                globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            }
+
+            if (Countly.sharedInstance().isInitialized()) {
+                Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+            }
             finish();
-            config.globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
-            ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
-            return true;
         }
 
-        return result;
+        return true;
     }
 
     private boolean linkAction(Map<String, Object> query, WebView view) {
@@ -249,21 +272,28 @@ public class TransparentActivity extends Activity {
             return;
         }
         try {
+            final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
+            final Display display = wm.getDefaultDisplay();
+            final DisplayMetrics metrics = new DisplayMetrics();
+            display.getMetrics(metrics);
+
+            float density = metrics.density;
+
             JSONObject resizeMeJson = (JSONObject) resizeMe;
             Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: [" + resizeMeJson + "]");
             JSONObject portrait = resizeMeJson.getJSONObject("p");
             JSONObject landscape = resizeMeJson.getJSONObject("l");
-            configPortrait.x = portrait.getInt("x");
-            configPortrait.y = portrait.getInt("y");
-            configPortrait.width = portrait.getInt("w");
-            configPortrait.height = portrait.getInt("h");
+            configPortrait.x = (int) Math.ceil(portrait.getInt("x") * density);
+            configPortrait.y = (int) Math.ceil(portrait.getInt("y") * density);
+            configPortrait.width = (int) Math.ceil(portrait.getInt("w") * density);
+            configPortrait.height = (int) Math.ceil(portrait.getInt("h") * density);
 
-            configLandscape.x = landscape.getInt("x");
-            configLandscape.y = landscape.getInt("y");
-            configLandscape.width = landscape.getInt("w");
-            configLandscape.height = landscape.getInt("h");
+            configLandscape.x = (int) Math.ceil(landscape.getInt("x") * density);
+            configLandscape.y = (int) Math.ceil(landscape.getInt("y") * density);
+            configLandscape.width = (int) Math.ceil(landscape.getInt("w") * density);
+            configLandscape.height = (int) Math.ceil(landscape.getInt("h") * density);
 
-            changeOrientationInternal();
+            resizeContentInternal();
         } catch (JSONException e) {
             Log.e(Countly.TAG, "[TransparentActivity] resizeMeAction, Failed to parse resize JSON", e);
         }
@@ -279,14 +309,18 @@ public class TransparentActivity extends Activity {
                     JSONObject eventJson = event.getJSONObject(i);
                     Log.v(Countly.TAG, "[TransparentActivity] eventAction, event JSON: [" + eventJson.toString() + "]");
 
-                    if (!eventJson.has("sg")) {
+                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
+                    JSONObject sgJson = eventJson.optJSONObject("sg");
+                    JSONObject segmentationJson = eventJson.optJSONObject("segmentation");
+
+                    if (sgJson != null) {
+                        segmentationJson = sgJson;
+                    }
+
+                    if (segmentationJson == null) {
                         Log.w(Countly.TAG, "[TransparentActivity] eventAction, event JSON is missing segmentation data event: [" + eventJson + "]");
                         continue;
                     }
-
-                    Map<String, Object> segmentation = new ConcurrentHashMap<>();
-                    JSONObject segmentationJson = eventJson.getJSONObject("sg");
-                    assert segmentationJson != null; // this is already checked above
 
                     for (int j = 0; j < segmentationJson.names().length(); j++) {
                         String key = segmentationJson.names().getString(j);
@@ -308,7 +342,7 @@ public class TransparentActivity extends Activity {
 
     private Map<String, Object> splitQuery(String url) {
         Map<String, Object> query_pairs = new ConcurrentHashMap<>();
-        String[] pairs = url.split("https://countly_action_event?");
+        String[] pairs = url.split("https://countly_action_event/?");
         if (pairs.length != 2) {
             return query_pairs;
         }
@@ -324,11 +358,12 @@ public class TransparentActivity extends Activity {
                     query_pairs.put(key, new JSONArray(value));
                 } else if ("resize_me".equals(key)) {
                     query_pairs.put(key, new JSONObject(value));
+                } else {
+                    query_pairs.put(key, value);
                 }
             } catch (JSONException e) {
                 Log.e(Countly.TAG, "[TransparentActivity] splitQuery, Failed to parse event JSON", e);
             }
-            query_pairs.put(pair.substring(0, idx), pair.substring(idx + 1));
         }
 
         return query_pairs;
@@ -349,7 +384,14 @@ public class TransparentActivity extends Activity {
         webView.clearHistory();
 
         CountlyWebViewClient client = new CountlyWebViewClient();
-        client.registerWebViewUrlListeners(config.listeners);
+        client.registerWebViewUrlListener(new WebViewUrlListener() {
+            @Override public boolean onUrl(String url, WebView webView) {
+                if (url.startsWith(URL_START)) {
+                    return contentUrlAction(url, webView);
+                }
+                return false;
+            }
+        });
 
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);

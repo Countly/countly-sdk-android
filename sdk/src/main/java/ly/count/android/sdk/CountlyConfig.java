@@ -197,8 +197,6 @@ public class CountlyConfig {
 
     boolean explicitStorageModeEnabled = false;
 
-    boolean serverConfigurationEnabled = false;
-
     boolean healthCheckEnabled = true;
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
@@ -994,6 +992,7 @@ public class CountlyConfig {
         return this;
     }
 
+    
     /**
      * This is an experimental feature and it can have breaking changes
      *
@@ -1001,12 +1000,12 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     * @deprecated and will do nothing
      */
     public synchronized CountlyConfig enableServerConfiguration() {
-        serverConfigurationEnabled = true;
         return this;
     }
-
+    
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
         return this;
