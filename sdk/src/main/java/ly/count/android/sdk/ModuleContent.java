@@ -219,6 +219,7 @@ public class ModuleContent extends ModuleBase {
     protected void exitContentZoneInternal() {
         shouldFetchContents = false;
         countlyTimer.stopTimer(L);
+        waitForDelay = 0;
     }
 
     public class Content {
