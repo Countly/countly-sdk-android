@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -249,13 +249,13 @@ public class ConnectionQueueTests {
     @Test
     public void testUpdateSession_zeroDuration() {
         connQ.updateSession(0);
-        verifyZeroInteractions(connQ.getExecutor(), connQ.storageProvider);
+        verifyNoInteractions(connQ.getExecutor(), connQ.storageProvider);
     }
 
     @Test
     public void testUpdateSession_negativeDuration() {
         connQ.updateSession(-1);
-        verifyZeroInteractions(connQ.getExecutor(), connQ.storageProvider);
+        verifyNoInteractions(connQ.getExecutor(), connQ.storageProvider);
     }
 
     //@Test

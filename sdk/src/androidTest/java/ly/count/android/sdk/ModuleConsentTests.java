@@ -11,7 +11,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleConsentTests {
@@ -180,7 +180,7 @@ public class ModuleConsentTests {
     public void initTimeNoConsentRequiredRQ() {
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
         Countly mCountly = new Countly().init(TestUtils.createConsentCountlyConfig(false, null, null, rqp));
-        verifyZeroInteractions(rqp);
+        verifyNoInteractions(rqp);
     }
 
     /**
