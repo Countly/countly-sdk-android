@@ -102,6 +102,11 @@
         android:configChanges="orientation|screenSize"/>
 
     <activity
+        android:name=".ActivityExampleContentZone"
+        android:label="@string/activity_name_content_zone"
+        android:configChanges="orientation|screenSize"/>
+
+    <activity
         android:name=".ActivityExampleTests"
         android:exported="false"/>
 

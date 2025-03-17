@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+>
+  <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:paddingLeft="@dimen/activity_horizontal_margin"
+                android:paddingRight="@dimen/activity_horizontal_margin"
+                android:paddingTop="32dp"
+                android:paddingBottom="32dp"
+  >
+
+    <EditText android:id="@+id/editTextDeviceIdContentZone"
+              android:hint="@string/content_zone_device_id"
+              android:autofillHints="username" android:layout_width="match_parent" android:layout_height="wrap_content"
+              android:inputType="text">
+    </EditText>
+
+    <Button
+        android:id="@+id/button80"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickChangeDeviceIdContentZone"
+        android:text="Change Device ID"
+    />
+
+    <Button
+        android:id="@+id/button74"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickEnterContentZone"
+        android:text="Enter Content Zone"
+    />
+    <Button
+        android:id="@+id/button75"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickExitContentZone"
+        android:text="Exit Content Zone"
+    />
+    <Button
+        android:id="@+id/button79"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:onClick="onClickRefreshContentZone"
+        android:text="Refresh Content Zone"
+    />
+
+
+  </LinearLayout>
+</ScrollView>
