@@ -12,7 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -103,6 +102,11 @@ public class ModuleContent extends ModuleBase {
     void enterContentZoneInternal(@Nullable String[] categories) {
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
+            return;
+        }
+
+        if (isCurrentlyInContentZone) {
+            L.w("[ModuleContent] enterContentZone, already in content zone, skipping");
             return;
         }
 
@@ -240,15 +244,6 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
-    private void enterContentZoneInternal(@Nullable String... categories) {
-        if (isCurrentlyInContentZone) {
-            L.w("[ModuleContent] enterContentZone, already in content zone, skipping");
-            return;
-        }
-        shouldFetchContents = true;
-        registerForContentUpdates(categories);
-    }
-
     private void exitContentZoneInternal() {
         shouldFetchContents = false;
         countlyTimer.stopTimer(L);
@@ -272,7 +267,7 @@ public class ModuleContent extends ModuleBase {
 
         _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
 
-        enterContentZoneInternal();
+        enterContentZoneInternal(new String[] {});
     }
 
     public class Content {
@@ -288,7 +283,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            enterContentZoneInternal();
+            enterContentZoneInternal(new String[] {});
         }
 
         /**
