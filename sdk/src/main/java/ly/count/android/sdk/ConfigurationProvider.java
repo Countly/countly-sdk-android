@@ -16,4 +16,6 @@ interface ConfigurationProvider {
     boolean getCrashReportingEnabled();
 
     boolean getLocationTrackingEnabled();
+
+    boolean getRefreshContentZoneEnabled();
 }

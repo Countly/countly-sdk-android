@@ -251,10 +251,9 @@ public class ModuleContent extends ModuleBase {
     }
 
     private void refreshContentZoneInternal() {
-        // Will be added with server config PR to not overcrowded this PR
-        // if (!configProvider.getRefreshContentZoneEnabled()) {
-        //    return;
-        //}
+        if (!configProvider.getRefreshContentZoneEnabled()) {
+            return;
+        }
 
         if (isCurrentlyInContentZone) {
             L.w("[ModuleContent] refreshContentZone, already in content zone, skipping");

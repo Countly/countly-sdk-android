@@ -97,6 +97,14 @@ public class ConnectionProcessorTests {
             @Override public boolean getCrashReportingEnabled() {
                 return true;
             }
+
+            @Override public boolean getLocationTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getRefreshContentZoneEnabled() {
+                return true;
+            }
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);

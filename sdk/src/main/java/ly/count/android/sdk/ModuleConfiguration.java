@@ -27,6 +27,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRSessionTracking = "st";
     final static String keyRViewTracking = "vt";
     final static String keyRLocationTracking = "lt";
+    final static String keyRRefreshContentZone = "rcz";
 
     final static String keyRLimitKeyLength = "lkl";
     final static String keyRLimitValueSize = "lvs";
@@ -50,6 +51,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVContentZone = false;
     boolean currentVCrashReporting = true;
     boolean currentVLocationTracking = true;
+    boolean currentVRefreshContentZone = true;
     // in hours
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
@@ -172,6 +174,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVLocationTracking = extractValue(keyRLocationTracking, sb, currentVLocationTracking, currentVLocationTracking, Boolean.class);
         currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
         serverConfigUpdateInterval = extractValue(keyRServerConfigUpdateInterval, sb, serverConfigUpdateInterval, currentServerConfigUpdateInterval, Integer.class);
+        currentVRefreshContentZone = extractValue(keyRRefreshContentZone, sb, currentVRefreshContentZone, currentVRefreshContentZone, Boolean.class);
 
         clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class));
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class));
@@ -324,5 +327,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public boolean getLocationTrackingEnabled() {
         return currentVLocationTracking;
+    }
+
+    @Override public boolean getRefreshContentZoneEnabled() {
+        return currentVRefreshContentZone;
     }
 }
