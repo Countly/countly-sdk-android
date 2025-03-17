@@ -141,4 +141,8 @@ public class MainActivity extends AppCompatActivity {
     public void onClickButtonRatings(View v) {
         startActivity(new Intent(this, ActivityExampleFeedback.class));
     }
+
+    public void onClickContentZone(View v) {
+        startActivity(new Intent(this, ActivityExampleContentZone.class));
+    }
 }

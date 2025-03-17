@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -19,6 +18,7 @@ public class ModuleContent extends ModuleBase {
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
+    private boolean isCurrentlyInContentZone = false;
     private final int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
@@ -67,6 +67,7 @@ public class ModuleContent extends ModuleBase {
                     _cly.context_.startActivity(intent);
 
                     shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
+                    isCurrentlyInContentZone = true;
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
                 }
@@ -90,6 +91,8 @@ public class ModuleContent extends ModuleBase {
         } else {
             validCategories = categories;
         }
+
+        L.d("[ModuleContent] registerForContentUpdates, categories: [" + Arrays.toString(validCategories) + "]");
 
         int contentInitialDelay = 0;
         long sdkStartTime = UtilsTime.currentTimestampMs() - Countly.applicationStart;
@@ -118,6 +121,7 @@ public class ModuleContent extends ModuleBase {
         L.v("[ModuleContent] notifyAfterContentIsClosed, setting waitForDelay to 2 and shouldFetchContents to true");
         waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
         shouldFetchContents = true;
+        isCurrentlyInContentZone = false;
     }
 
     @NonNull
@@ -142,23 +146,17 @@ public class ModuleContent extends ModuleBase {
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
-        return response.has("geo");
-        //boolean success = response.optString("result", "error").equals("success");
-        //JSONArray content = response.optJSONArray("content");
-        //return success && content != null && content.length() > 0;
+        return response.has("geo") && response.has("html");
     }
 
     @NonNull
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
-        JSONArray contents = response.optJSONArray("content");
-        //assert contents != null; TODO enable later
 
-        JSONObject contentObj = response; //contents.optJSONObject(0); TODO this will be changed
-        assert contentObj != null;
+        assert response != null;
 
-        String content = contentObj.optString("html");
-        JSONObject coordinates = contentObj.optJSONObject("geo");
+        String content = response.optString("html");
+        JSONObject coordinates = response.optJSONObject("geo");
 
         assert coordinates != null;
         placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "p", content));
@@ -195,16 +193,11 @@ public class ModuleContent extends ModuleBase {
         countlyTimer = null;
     }
 
-    private void optOutFromContent() {
-        exitContentZoneInternal();
-        shouldFetchContents = false;
-    }
-
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleContent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
-            optOutFromContent();
+            exitContentZoneInternal();
         }
     }
 
@@ -212,48 +205,65 @@ public class ModuleContent extends ModuleBase {
     void deviceIdChanged(boolean withoutMerge) {
         L.d("[ModuleContent] deviceIdChanged, withoutMerge: [" + withoutMerge + "]");
         if (withoutMerge) {
-            optOutFromContent();
+            exitContentZoneInternal();
         }
     }
 
-    protected void exitContentZoneInternal() {
+    private void enterContentZoneInternal(@Nullable String... categories) {
+        if (isCurrentlyInContentZone) {
+            L.w("[ModuleContent] enterContentZone, already in content zone, skipping");
+            return;
+        }
+        shouldFetchContents = true;
+        registerForContentUpdates(categories);
+    }
+
+    private void exitContentZoneInternal() {
         shouldFetchContents = false;
         countlyTimer.stopTimer(L);
+        waitForDelay = 0;
+    }
+
+    private void refreshContentZoneInternal() {
+        // Will be added with server config PR to not overcrowded this PR
+        // if (!configProvider.getRefreshContentZoneEnabled()) {
+        //    return;
+        //}
+
+        if (isCurrentlyInContentZone) {
+            L.w("[ModuleContent] refreshContentZone, already in content zone, skipping");
+            return;
+        }
+
+        if (!shouldFetchContents) {
+            exitContentZoneInternal();
+        }
+
+        _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+
+        enterContentZoneInternal();
     }
 
     public class Content {
 
         /**
-         * Opt in user for the content fetching and updates
-         *
-         * @param categories categories for the content
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         * Enables content fetching and updates for the user.
+         * This method opts the user into receiving content updates
+         * and ensures that relevant data is fetched accordingly.
          */
-        private void enterContentZone(@Nullable String... categories) {
-            L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
-
+        public void enterContentZone() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+                L.w("[ModuleContent] enterContentZone, Consent is not granted, skipping");
                 return;
             }
 
-            shouldFetchContents = true;
-            registerForContentUpdates(categories);
+            enterContentZoneInternal();
         }
 
         /**
-         * Opt in user for the content fetching and updates
-         *
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
-         */
-        public void enterContentZone() {
-            enterContentZone(new String[] {});
-        }
-
-        /**
-         * Opt out user from the content fetching and updates
-         *
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         * Disables content fetching and updates for the user.
+         * This method opts the user out of receiving content updates
+         * and stops any ongoing content retrieval processes.
          */
         public void exitContentZone() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -265,20 +275,17 @@ public class ModuleContent extends ModuleBase {
         }
 
         /**
-         * Change the content that is being shown
-         *
-         * @param categories categories for the content
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         * Triggers a manual refresh of the content zone.
+         * This method forces an update by fetching the latest content,
+         * ensuring the user receives the most up-to-date information.
          */
-        private void changeContent(@Nullable String... categories) {
-            L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
-
+        public void refreshContentZone() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] changeContent, Consent is not granted, skipping");
+                L.w("[ModuleContent] refreshContentZone, Consent is not granted, skipping");
                 return;
             }
 
-            registerForContentUpdates(categories);
+            refreshContentZoneInternal();
         }
     }
 }
