@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* Added a Content feature method "refreshContentZone" that does a manual refresh.
+
 * Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
 
 * Extended server configuration capabilities of the SDK.

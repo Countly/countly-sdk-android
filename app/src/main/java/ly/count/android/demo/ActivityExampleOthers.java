@@ -137,12 +137,4 @@ public class ActivityExampleOthers extends AppCompatActivity {
     public void onClickEndSession(View v) {
         Countly.sharedInstance().sessions().endSession();
     }
-
-    public void onClickFetchContents(View v) {
-        Countly.sharedInstance().contents().enterContentZone();
-    }
-
-    public void onClickExitContents(View v) {
-        Countly.sharedInstance().contents().exitContentZone();
-    }
 }
