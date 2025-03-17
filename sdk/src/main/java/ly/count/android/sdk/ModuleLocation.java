@@ -11,7 +11,6 @@ public class ModuleLocation extends ModuleBase {
     String locationCity = null;
     String locationGpsCoordinates = null;
     String locationIpAddress = null;
-
     Location locationInterface = null;
 
     ModuleLocation(Countly cly, CountlyConfig config) {
@@ -32,6 +31,10 @@ public class ModuleLocation extends ModuleBase {
         L.d("[ModuleLocation] Calling 'sendCurrentLocationIfValid'");
 
         if (locationDisabled) {
+            return;
+        }
+
+        if (!configProvider.getLocationTrackingEnabled()) {
             return;
         }
 
@@ -63,6 +66,10 @@ public class ModuleLocation extends ModuleBase {
         L.d("[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
+            return;
+        }
+
+        if (!configProvider.getLocationTrackingEnabled()) {
             return;
         }
 
@@ -105,6 +112,14 @@ public class ModuleLocation extends ModuleBase {
                     setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
                 }
             }
+        }
+    }
+
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        if (!locationDisabled && !configProvider.getLocationTrackingEnabled()) {
+            locationDisabled = true;
+            disableLocationInternal();
         }
     }
 

@@ -1,11 +1,13 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     ImmediateRequestGenerator immediateRequestGenerator;
+    CountlyTimer serverConfigUpdateTimer;
 
     JSONObject latestRetrievedConfigurationFull = null;
     JSONObject latestRetrievedConfiguration = null;
@@ -13,21 +15,45 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     //config keys
     final static String keyTracking = "tracking";
     final static String keyNetworking = "networking";
-    final static String keyCrashReporting = "crt";
 
     //request keys
     final static String keyRTimestamp = "t";
     final static String keyRVersion = "v";
     final static String keyRConfig = "c";
+    final static String keyRReqQueueSize = "rqs";
+    final static String keyREventQueueSize = "eqs";
+    final static String keyRLogging = "log";
+    final static String keyRSessionUpdateInterval = "sui";
+    final static String keyRSessionTracking = "st";
+    final static String keyRViewTracking = "vt";
+    final static String keyRLocationTracking = "lt";
 
-    final static boolean defaultVTracking = true;
-    final static boolean defaultVNetworking = true;
-    final static boolean defaultVCrashReporting = true;
+    final static String keyRLimitKeyLength = "lkl";
+    final static String keyRLimitValueSize = "lvs";
+    final static String keyRLimitSegValues = "lsv";
+    final static String keyRLimitBreadcrumb = "lbc";
+    final static String keyRLimitTraceLine = "ltlpt";
+    final static String keyRLimitTraceLength = "ltl";
+    final static String keyRCustomEventTracking = "cet";
+    final static String keyREnterContentZone = "ecz";
+    final static String keyRContentZoneInterval = "czi";
+    final static String keyRConsentRequired = "cr";
+    final static String keyRDropOldRequestTime = "dort";
+    final static String keyRCrashReporting = "crt";
+    final static String keyRServerConfigUpdateInterval = "scui";
 
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
+    boolean currentVSessionTracking = true;
+    boolean currentVViewTracking = true;
+    boolean currentVCustomEventTracking = true;
+    boolean currentVContentZone = false;
     boolean currentVCrashReporting = true;
-    boolean configurationFetched = false;
+    boolean currentVLocationTracking = true;
+    // in hours
+    Integer serverConfigUpdateInterval;
+    int currentServerConfigUpdateInterval = 4;
+    long lastServerConfigFetchTimestamp = -1;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -36,32 +62,58 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         configProvider = this;
 
         immediateRequestGenerator = config.immediateRequestGenerator;
+        serverConfigUpdateTimer = new CountlyTimer();
 
         config.countlyStore.setConfigurationProvider(this);
 
         //load the previously saved configuration
-        loadConfigFromStorage();
+        loadConfigFromStorage(config.serverConfiguration);
 
         //update the config variables according to the new state
-        updateConfigVariables();
+        updateConfigVariables(config);
     }
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
-        fetchConfigFromServer();
+        L.d("[ModuleConfiguration] initFinished");
+        fetchConfigFromServer(config);
+        startServerConfigUpdateTimer();
     }
 
     @Override
     void halt() {
+        serverConfigUpdateTimer.stopTimer(L);
+    }
 
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        if (currentServerConfigUpdateInterval != serverConfigUpdateInterval) {
+            currentServerConfigUpdateInterval = serverConfigUpdateInterval;
+            startServerConfigUpdateTimer();
+        }
+    }
+
+    private void startServerConfigUpdateTimer() {
+        serverConfigUpdateTimer.startTimer((long) currentServerConfigUpdateInterval * 60 * 60 * 1000, new Runnable() {
+            @Override
+            public void run() {
+                fetchConfigFromServer(_cly.config_);
+            }
+        }, L);
     }
 
     /**
      * Reads from storage to local json objects
      */
-    void loadConfigFromStorage() {
-        String sConfig = storageProvider.getServerConfig();
+    void loadConfigFromStorage(@Nullable String providedServerConfiguration) {
+
+        String sConfig = providedServerConfiguration;
+
+        if (Utils.isNullOrEmpty(sConfig)) {
+            sConfig = storageProvider.getServerConfig();
+        }
+
         L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");
 
         if (sConfig == null || sConfig.isEmpty()) {
@@ -81,48 +133,68 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
-    //update the config variables according to the current config obj state
-    void updateConfigVariables() {
-        L.v("[ModuleConfiguration] updateConfigVariables");
-        //set all to defaults
-        currentVNetworking = defaultVNetworking;
-        currentVTracking = defaultVTracking;
-        currentVCrashReporting = defaultVCrashReporting;
+    private <T> T extractValue(String key, StringBuilder sb, T currentValue, T defaultValue, Class<T> clazz) {
+        if (latestRetrievedConfiguration.has(key)) {
+            try {
+                Object value = latestRetrievedConfiguration.get(key);
+                if (!value.equals(currentValue)) {
+                    sb.append(key).append(":[").append(value).append("], ");
+                    return clazz.cast(value);
+                }
+            } catch (Exception e) {
+                L.w("[ModuleConfiguration] updateConfigs, failed to load '" + key + "', " + e.getMessage());
+            }
+        }
 
+        if (currentValue == null) {
+            return defaultValue;
+        }
+
+        return currentValue;
+    }
+
+    //update the config variables according to the current config obj state
+    private void updateConfigVariables(@NonNull final CountlyConfig clyConfig) {
+        L.v("[ModuleConfiguration] updateConfigVariables");
         if (latestRetrievedConfiguration == null) {
             //no config, don't continue
             return;
         }
 
-        //networking
-        if (latestRetrievedConfiguration.has(keyNetworking)) {
-            try {
-                currentVNetworking = latestRetrievedConfiguration.getBoolean(keyNetworking);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'networking', " + e);
-            }
-        }
+        StringBuilder sb = new StringBuilder();
 
-        //tracking
-        if (latestRetrievedConfiguration.has(keyTracking)) {
-            try {
-                currentVTracking = latestRetrievedConfiguration.getBoolean(keyTracking);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'tracking', " + e);
-            }
-        }
+        currentVNetworking = extractValue(keyNetworking, sb, currentVNetworking, currentVNetworking, Boolean.class);
+        currentVTracking = extractValue(keyTracking, sb, currentVTracking, currentVTracking, Boolean.class);
+        currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, currentVSessionTracking, Boolean.class);
+        currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, currentVCrashReporting, Boolean.class);
+        currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking, Boolean.class);
+        currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, currentVCustomEventTracking, Boolean.class);
+        currentVLocationTracking = extractValue(keyRLocationTracking, sb, currentVLocationTracking, currentVLocationTracking, Boolean.class);
+        currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
+        serverConfigUpdateInterval = extractValue(keyRServerConfigUpdateInterval, sb, serverConfigUpdateInterval, currentServerConfigUpdateInterval, Integer.class);
 
-        //tracking
-        if (latestRetrievedConfiguration.has(keyCrashReporting)) {
-            try {
-                currentVCrashReporting = latestRetrievedConfiguration.getBoolean(keyCrashReporting);
-            } catch (JSONException e) {
-                L.w("[ModuleConfiguration] updateConfigVariables, failed to load 'crash_reporting', " + e);
-            }
+        clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class));
+        clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class));
+        clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, clyConfig.loggingEnabled, Boolean.class));
+        clyConfig.setUpdateSessionTimerDelay(extractValue(keyRSessionUpdateInterval, sb, clyConfig.sessionUpdateTimerDelay, Long.valueOf(Countly.TIMER_DELAY_IN_SECONDS).intValue(), Integer.class));
+        clyConfig.sdkInternalLimits.setMaxKeyLength(extractValue(keyRLimitKeyLength, sb, clyConfig.sdkInternalLimits.maxKeyLength, Countly.maxKeyLengthDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxValueSize(extractValue(keyRLimitValueSize, sb, clyConfig.sdkInternalLimits.maxValueSize, Countly.maxValueSizeDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxSegmentationValues(extractValue(keyRLimitSegValues, sb, clyConfig.sdkInternalLimits.maxSegmentationValues, Countly.maxSegmentationValuesDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxBreadcrumbCount(extractValue(keyRLimitBreadcrumb, sb, clyConfig.sdkInternalLimits.maxBreadcrumbCount, Countly.maxBreadcrumbCountDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread, Countly.maxStackTraceLinesPerThreadDefault, Integer.class));
+        clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, clyConfig.sdkInternalLimits.maxStackTraceLineLength, Countly.maxStackTraceLineLengthDefault, Integer.class));
+        clyConfig.content.setZoneTimerInterval(extractValue(keyRContentZoneInterval, sb, clyConfig.content.zoneTimerInterval, clyConfig.content.zoneTimerInterval, Integer.class));
+        clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, clyConfig.shouldRequireConsent, Boolean.class));
+        clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, clyConfig.dropAgeHours, Integer.class));
+
+        String updatedValues = sb.toString();
+        if (!updatedValues.isEmpty()) {
+            L.i("[ModuleConfiguration] updateConfigVariables, SDK configuration has changed, notifying the SDK, new values: [" + updatedValues + "]");
+            _cly.onSdkConfigurationChanged(clyConfig);
         }
     }
 
-    void saveAndStoreDownloadedConfig(@NonNull JSONObject config) {
+    void saveAndStoreDownloadedConfig(@NonNull JSONObject config, @NonNull CountlyConfig clyConfig) {
         L.v("[ModuleConfiguration] saveAndStoreDownloadedConfig");
         if (!config.has(keyRVersion)) {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
@@ -158,7 +230,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         storageProvider.setServerConfig(configAsString);
 
         //update config variables
-        updateConfigVariables();
+        updateConfigVariables(clyConfig);
     }
 
     /**
@@ -180,7 +252,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      * }
      */
-    void fetchConfigFromServer() {
+    void fetchConfigFromServer(@NonNull CountlyConfig config) {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
         // why _cly? because module configuration is created before module device id, so we need to access it like this
@@ -191,13 +263,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             return;
         }
 
-        if (configurationFetched) {
-            L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, config already fetched");
-            return;
-        }
-
-        configurationFetched = true;
-
+        lastServerConfigFetchTimestamp = UtilsTime.currentTimestampMs();
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
 
@@ -209,8 +275,19 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
             L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse.toString() + "]");
 
-            saveAndStoreDownloadedConfig(checkResponse);
+            saveAndStoreDownloadedConfig(checkResponse, config);
         }, L);
+    }
+
+    void fetchIfTimeIsUpForFetchingServerConfig() {
+        if (lastServerConfigFetchTimestamp > 0) {
+            long currentTime = UtilsTime.currentTimestampMs();
+            long timePassed = currentTime - lastServerConfigFetchTimestamp;
+
+            if (timePassed > (long) currentServerConfigUpdateInterval * 60 * 60 * 1000) {
+                fetchConfigFromServer(_cly.config_);
+            }
+        }
     }
 
     // configuration getters
@@ -225,8 +302,27 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return currentVTracking;
     }
 
-    @Override
-    public boolean getCrashReportingEnabled() {
+    @Override public boolean getSessionTrackingEnabled() {
+        return currentVSessionTracking;
+    }
+
+    @Override public boolean getViewTrackingEnabled() {
+        return currentVViewTracking;
+    }
+
+    @Override public boolean getCustomEventTrackingEnabled() {
+        return currentVCustomEventTracking;
+    }
+
+    @Override public boolean getContentZoneEnabled() {
+        return currentVContentZone;
+    }
+
+    @Override public boolean getCrashReportingEnabled() {
         return currentVCrashReporting;
+    }
+
+    @Override public boolean getLocationTrackingEnabled() {
+        return currentVLocationTracking;
     }
 }

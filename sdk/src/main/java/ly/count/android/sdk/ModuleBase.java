@@ -99,7 +99,7 @@ abstract class ModuleBase {
     }
 
     //notify the SDK modules that internal configuration was updated
-    void sdkConfigurationChanged() {
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
 
     }
 

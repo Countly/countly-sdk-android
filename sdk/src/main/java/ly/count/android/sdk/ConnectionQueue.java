@@ -195,9 +195,11 @@ class ConnectionQueue implements RequestQueueProvider {
         data += "&begin_session=1"
             + "&metrics=" + preparedMetrics;//can be only sent with begin session
 
-        String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
-        if (!locationData.isEmpty()) {
-            data += locationData;
+        if (configProvider.getLocationTrackingEnabled()) {
+            String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            if (!locationData.isEmpty()) {
+                data += locationData;
+            }
         }
 
         Countly.sharedInstance().isBeginSessionSent = true;
