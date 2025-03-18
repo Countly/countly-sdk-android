@@ -77,7 +77,7 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void registerForContentUpdates(@Nullable String[] categories) {
+    void registerForContentUpdates(@Nullable String[] categories, final int initialDelayMS) {
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
             return;
@@ -94,10 +94,10 @@ public class ModuleContent extends ModuleBase {
 
         L.d("[ModuleContent] registerForContentUpdates, categories: [" + Arrays.toString(validCategories) + "]");
 
-        int contentInitialDelay = 0;
+        int contentInitialDelay = initialDelayMS;
         long sdkStartTime = UtilsTime.currentTimestampMs() - Countly.applicationStart;
         if (sdkStartTime < CONTENT_START_DELAY_MS) {
-            contentInitialDelay = CONTENT_START_DELAY_MS;
+            contentInitialDelay += CONTENT_START_DELAY_MS;
         }
 
         countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, () -> {
@@ -209,13 +209,13 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
-    private void enterContentZoneInternal(@Nullable String... categories) {
+    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS) {
         if (isCurrentlyInContentZone) {
             L.w("[ModuleContent] enterContentZone, already in content zone, skipping");
             return;
         }
         shouldFetchContents = true;
-        registerForContentUpdates(categories);
+        registerForContentUpdates(categories, initialDelayMS);
     }
 
     private void exitContentZoneInternal() {
@@ -241,7 +241,7 @@ public class ModuleContent extends ModuleBase {
 
         _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
 
-        enterContentZoneInternal();
+        enterContentZoneInternal(null, 2500);
     }
 
     public class Content {
@@ -257,7 +257,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            enterContentZoneInternal();
+            enterContentZoneInternal(null, 0);
         }
 
         /**
