@@ -64,7 +64,7 @@ public class ModuleRemoteConfigTests {
     public void automaticRCTriggers() {
         for (int a = 0; a < 2; a++) {
             countlyStore.clear();
-            final int[] triggerCounter = { 0 };
+            final int[] triggerCounter = { -1 }; // because we now have server config fetch
             int intendedCount = 0;
 
             CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().disableHealthCheck();

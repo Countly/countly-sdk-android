@@ -43,7 +43,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -460,7 +460,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
-        verifyZeroInteractions(requestQueueProvider);
+        verifyNoInteractions(requestQueueProvider);
     }
 
     /**
@@ -477,7 +477,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
-        verifyZeroInteractions(requestQueueProvider);
+        verifyNoInteractions(requestQueueProvider);
     }
 
     @Test

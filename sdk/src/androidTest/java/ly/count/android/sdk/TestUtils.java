@@ -80,7 +80,8 @@ public class TestUtils {
             .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
-
+        cc.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+        };
         return cc;
     }
 
@@ -97,6 +98,9 @@ public class TestUtils {
             .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
+        cc.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+
+        };
         return cc;
     }
 
