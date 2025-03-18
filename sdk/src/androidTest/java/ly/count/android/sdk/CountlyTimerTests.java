@@ -39,7 +39,7 @@ public class CountlyTimerTests {
         Runnable mockRunnable = Mockito.mock(Runnable.class);
 
         countlyTimer.startTimer(1, mockRunnable, mockLog);
-        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [1000 ms]");
+        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [1000 ms], initialDelay: [0 ms]");
     }
 
     @Test
@@ -47,7 +47,7 @@ public class CountlyTimerTests {
         Runnable mockRunnable = Mockito.mock(Runnable.class);
 
         countlyTimer.startTimer(-1, mockRunnable, mockLog);
-        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [1000 ms]");
+        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [1000 ms], initialDelay: [0 ms]");
     }
 
     @Test
@@ -55,7 +55,7 @@ public class CountlyTimerTests {
         Runnable mockRunnable = Mockito.mock(Runnable.class);
 
         countlyTimer.startTimer(99, mockRunnable, mockLog);
-        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [99000 ms]");
+        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [99000 ms], initialDelay: [0 ms]");
     }
 
     @Test
@@ -64,7 +64,7 @@ public class CountlyTimerTests {
         Runnable mockRunnable = Mockito.mock(Runnable.class);
 
         countlyTimer.startTimer(1, mockRunnable, mockLog);
-        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [500 ms]");
+        Mockito.verify(mockLog).i("[CountlyTimer] startTimer, Starting timer timerDelay: [500 ms], initialDelay: [0 ms]");
     }
 
     /**
