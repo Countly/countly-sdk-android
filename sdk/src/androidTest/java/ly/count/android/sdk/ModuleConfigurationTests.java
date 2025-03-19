@@ -1,8 +1,11 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -10,6 +13,33 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static ly.count.android.sdk.ModuleConfiguration.keyRConfig;
+import static ly.count.android.sdk.ModuleConfiguration.keyRConsentRequired;
+import static ly.count.android.sdk.ModuleConfiguration.keyRContentZoneInterval;
+import static ly.count.android.sdk.ModuleConfiguration.keyRCrashReporting;
+import static ly.count.android.sdk.ModuleConfiguration.keyRCustomEventTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRDropOldRequestTime;
+import static ly.count.android.sdk.ModuleConfiguration.keyREnterContentZone;
+import static ly.count.android.sdk.ModuleConfiguration.keyREventQueueSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLimitBreadcrumb;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLimitKeyLength;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLimitSegValues;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLimitTraceLength;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLimitTraceLine;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLimitValueSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLocationTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLogging;
+import static ly.count.android.sdk.ModuleConfiguration.keyRNetworking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRRefreshContentZone;
+import static ly.count.android.sdk.ModuleConfiguration.keyRReqQueueSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyRServerConfigUpdateInterval;
+import static ly.count.android.sdk.ModuleConfiguration.keyRSessionTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRSessionUpdateInterval;
+import static ly.count.android.sdk.ModuleConfiguration.keyRTimestamp;
+import static ly.count.android.sdk.ModuleConfiguration.keyRTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRVersion;
+import static ly.count.android.sdk.ModuleConfiguration.keyRViewTracking;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleConfigurationTests {
@@ -280,6 +310,147 @@ public class ModuleConfigurationTests {
 
         //returns all except 'c' wrong type (string)
         initAndValidateConfigParsingResult("{'v':1,'t':2,'c':'fdf'}", false);
+    }
+
+    @Test
+    public void parameterCount() {
+        int configParameterCount = 26; // plus config, timestamp and version parameters
+        int count = 0;
+        for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
+            if (field.getName().startsWith("keyR")) {
+                count++;
+            }
+        }
+        Assert.assertEquals(configParameterCount, count);
+    }
+
+    @Test
+    public void init_defaults() throws InterruptedException {
+        // set logging enabled set to false intentionally because createBaseConfig sets it to true
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().setLoggingEnabled(false));
+
+        Thread.sleep(2000); // simulate sdk initialization delay
+
+        validateServerConfigValues(countly, prepareServerConfig()); // default values
+    }
+
+    @Test
+    public void init_providedConfig() throws InterruptedException, JSONException {
+        init_ConfigBase(CountlyConfig::setServerConfiguration);
+    }
+
+    @Test
+    public void init_serverConfig() throws InterruptedException, JSONException {
+        init_ConfigBase((countlyConfig, serverConfig) -> {
+            countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(serverConfig);
+        });
+    }
+
+    private void init_ConfigBase(BiConsumer<CountlyConfig, String> configSetter) throws JSONException, InterruptedException {
+        Map<String, Object> responseServerConfig = TestUtils.map(
+            keyRTracking, false,
+            keyRNetworking, false,
+            keyRCrashReporting, false,
+            keyRViewTracking, false,
+            keyRSessionTracking, false,
+            keyRCustomEventTracking, false,
+            keyREnterContentZone, true,
+            keyRLocationTracking, false,
+            keyRRefreshContentZone, false,
+            keyRServerConfigUpdateInterval, 8,
+            keyRReqQueueSize, 2000,
+            keyREventQueueSize, 200,
+            keyRLogging, true,
+            keyRSessionUpdateInterval, 120,
+            keyRContentZoneInterval, 60,
+            keyRConsentRequired, true,
+            keyRDropOldRequestTime, 1,
+            keyRLimitKeyLength, 100,
+            keyRLimitValueSize, 1000,
+            keyRLimitSegValues, 100,
+            keyRLimitBreadcrumb, 100,
+            keyRLimitTraceLength, 100,
+            keyRLimitTraceLine, 100
+        );
+        JSONObject serverConfig = new JSONObject();
+        serverConfig.put(keyRTimestamp, System.currentTimeMillis());
+        serverConfig.put(keyRVersion, "1");
+        serverConfig.put(keyRConfig, responseServerConfig);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false);
+        configSetter.accept(countlyConfig, serverConfig.toString());
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        Thread.sleep(2000);
+
+        validateServerConfigValues(countly, prepareServerConfig(responseServerConfig));
+    }
+
+    private Map<String, Object> prepareServerConfig(Object... args) {
+        Map<String, Object> serverConfig = TestUtils.map();
+        serverConfig.put(keyRTracking, true);
+        serverConfig.put(keyRNetworking, true);
+        serverConfig.put(keyRCrashReporting, true);
+        serverConfig.put(keyRViewTracking, true);
+        serverConfig.put(keyRSessionTracking, true);
+        serverConfig.put(keyRCustomEventTracking, true);
+        serverConfig.put(keyREnterContentZone, false);
+        serverConfig.put(keyRLocationTracking, true);
+        serverConfig.put(keyRRefreshContentZone, true);
+
+        serverConfig.put(keyRServerConfigUpdateInterval, 4);
+        serverConfig.put(keyRReqQueueSize, 1000);
+        serverConfig.put(keyREventQueueSize, 100);
+        serverConfig.put(keyRLogging, false);
+        serverConfig.put(keyRSessionUpdateInterval, 60); // its default is null normally if not set!!
+        serverConfig.put(keyRContentZoneInterval, 30);
+        serverConfig.put(keyRConsentRequired, false);
+        serverConfig.put(keyRDropOldRequestTime, 0);
+
+        serverConfig.put(keyRLimitKeyLength, Countly.maxKeyLengthDefault);
+        serverConfig.put(keyRLimitValueSize, Countly.maxValueSizeDefault);
+        serverConfig.put(keyRLimitSegValues, Countly.maxSegmentationValuesDefault);
+        serverConfig.put(keyRLimitBreadcrumb, Countly.maxBreadcrumbCountDefault);
+        serverConfig.put(keyRLimitTraceLength, Countly.maxStackTraceLineLengthDefault);
+        serverConfig.put(keyRLimitTraceLine, Countly.maxStackTraceLinesPerThreadDefault);
+
+        serverConfig.putAll(TestUtils.map(args));
+        return serverConfig;
+    }
+
+    private void validateServerConfigValues(Countly countly, Map<String, Object> values) { // list might be used
+        Assert.assertEquals(values.get(keyRTracking), countly.config_.configProvider.getTrackingEnabled());
+        Assert.assertEquals(values.get(keyRNetworking), countly.config_.configProvider.getNetworkingEnabled());
+        Assert.assertEquals(values.get(keyRCrashReporting), countly.config_.configProvider.getCrashReportingEnabled());
+        Assert.assertEquals(values.get(keyRViewTracking), countly.config_.configProvider.getViewTrackingEnabled());
+        Assert.assertEquals(values.get(keyRSessionTracking), countly.config_.configProvider.getSessionTrackingEnabled());
+        Assert.assertEquals(values.get(keyRCustomEventTracking), countly.config_.configProvider.getCustomEventTrackingEnabled());
+        Assert.assertEquals(values.get(keyREnterContentZone), countly.config_.configProvider.getContentZoneEnabled());
+        Assert.assertEquals(values.get(keyRLocationTracking), countly.config_.configProvider.getLocationTrackingEnabled());
+        Assert.assertEquals(values.get(keyRRefreshContentZone), countly.config_.configProvider.getRefreshContentZoneEnabled());
+
+        Assert.assertEquals(values.get(keyRServerConfigUpdateInterval), countly.moduleConfiguration.serverConfigUpdateInterval);
+        Assert.assertEquals(values.get(keyRReqQueueSize), countly.config_.maxRequestQueueSize);
+        Assert.assertEquals(values.get(keyREventQueueSize), countly.EVENT_QUEUE_SIZE_THRESHOLD);
+        Assert.assertEquals(values.get(keyRLogging), countly.config_.loggingEnabled);
+
+        try {
+            Assert.assertEquals(values.get(keyRSessionUpdateInterval), countly.config_.sessionUpdateTimerDelay);
+        } catch (AssertionError _ignored) {
+            // This is a workaround for the issue where sessionUpdateTimerDelay is null by default
+            Assert.assertNull(countly.config_.sessionUpdateTimerDelay);
+        }
+
+        Assert.assertEquals(values.get(keyRContentZoneInterval), countly.config_.content.zoneTimerInterval);
+        Assert.assertEquals(values.get(keyRConsentRequired), countly.config_.shouldRequireConsent);
+        Assert.assertEquals(values.get(keyRDropOldRequestTime), countly.config_.dropAgeHours);
+        Assert.assertEquals(values.get(keyRLimitKeyLength), countly.config_.sdkInternalLimits.maxKeyLength);
+        Assert.assertEquals(values.get(keyRLimitValueSize), countly.config_.sdkInternalLimits.maxValueSize);
+        Assert.assertEquals(values.get(keyRLimitSegValues), countly.config_.sdkInternalLimits.maxSegmentationValues);
+        Assert.assertEquals(values.get(keyRLimitBreadcrumb), countly.config_.sdkInternalLimits.maxBreadcrumbCount);
+        Assert.assertEquals(values.get(keyRLimitTraceLength), countly.config_.sdkInternalLimits.maxStackTraceLineLength);
+        Assert.assertEquals(values.get(keyRLimitTraceLine), countly.config_.sdkInternalLimits.maxStackTraceLinesPerThread);
     }
 
     Countly initAndValidateConfigParsingResult(String targetResponse, boolean responseAccepted) {
