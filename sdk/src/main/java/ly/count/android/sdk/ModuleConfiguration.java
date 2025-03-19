@@ -11,7 +11,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     JSONObject latestRetrievedConfigurationFull = null;
     JSONObject latestRetrievedConfiguration = null;
-    
+
     //config keys
     final static String keyRTracking = "tracking";
     final static String keyRNetworking = "networking";
@@ -217,7 +217,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         //at this point it is a valid response
         latestRetrievedConfigurationFull = config;
-        String configAsString = null;
+        String configAsString;
 
         try {
             latestRetrievedConfiguration = config.getJSONObject(keyRConfig);
@@ -240,7 +240,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     /**
      * Perform network request for retrieving latest config
      * If valid config is downloaded, save it, and update the values
-     *
      * Example response:
      * {
      * "v":1,
@@ -277,7 +276,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 return;
             }
 
-            L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse.toString() + "]");
+            L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse + "]");
 
             saveAndStoreDownloadedConfig(checkResponse, config);
         }, L);
