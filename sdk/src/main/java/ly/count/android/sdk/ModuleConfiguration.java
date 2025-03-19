@@ -11,10 +11,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     JSONObject latestRetrievedConfigurationFull = null;
     JSONObject latestRetrievedConfiguration = null;
-
+    
     //config keys
-    final static String keyTracking = "tracking";
-    final static String keyNetworking = "networking";
+    final static String keyRTracking = "tracking";
+    final static String keyRNetworking = "networking";
 
     //request keys
     final static String keyRTimestamp = "t";
@@ -79,6 +79,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
         L.d("[ModuleConfiguration] initFinished");
+        serverConfigUpdateInterval = currentServerConfigUpdateInterval;
         fetchConfigFromServer(config);
         startServerConfigUpdateTimer();
     }
@@ -165,8 +166,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         StringBuilder sb = new StringBuilder();
 
-        currentVNetworking = extractValue(keyNetworking, sb, currentVNetworking, currentVNetworking, Boolean.class);
-        currentVTracking = extractValue(keyTracking, sb, currentVTracking, currentVTracking, Boolean.class);
+        currentVNetworking = extractValue(keyRNetworking, sb, currentVNetworking, currentVNetworking, Boolean.class);
+        currentVTracking = extractValue(keyRTracking, sb, currentVTracking, currentVTracking, Boolean.class);
         currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, currentVSessionTracking, Boolean.class);
         currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, currentVCrashReporting, Boolean.class);
         currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking, Boolean.class);
