@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.lang.reflect.Field;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -597,7 +596,6 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
         Assert.assertTrue(Countly.sharedInstance().config_.shouldRequireConsent);
         serverConfigBuilder.validateAgainst(Countly.sharedInstance());
-        System.err.println(Arrays.toString(TestUtils.getCurrentRQ()));
 
         Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // first attribution request, empty consent, empty location
 
