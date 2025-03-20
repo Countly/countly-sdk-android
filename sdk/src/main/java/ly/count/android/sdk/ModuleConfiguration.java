@@ -65,6 +65,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         immediateRequestGenerator = config.immediateRequestGenerator;
         serverConfigUpdateTimer = new CountlyTimer();
+        serverConfigUpdateInterval = currentServerConfigUpdateInterval;
 
         config.countlyStore.setConfigurationProvider(this);
 
@@ -79,7 +80,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
         L.d("[ModuleConfiguration] initFinished");
-        serverConfigUpdateInterval = currentServerConfigUpdateInterval;
         fetchConfigFromServer(config);
         startServerConfigUpdateTimer();
     }
