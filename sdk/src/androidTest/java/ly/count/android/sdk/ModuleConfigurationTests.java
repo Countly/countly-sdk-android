@@ -302,7 +302,7 @@ public class ModuleConfigurationTests {
      * Test a complete scenario where custom events are enabled first but disabled later
      */
     @Test
-    public void scenario_eventsDisabled() throws JSONException {
+    public void scenario_customEventTrackingDisabled() throws JSONException {
         // Initial setup with all features enabled
         ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
             .defaults();
@@ -337,7 +337,7 @@ public class ModuleConfigurationTests {
      *
      */
     @Test
-    public void scenario_viewsDisabled() throws JSONException {
+    public void scenario_viewTrackingDisabled() throws JSONException {
         // Initial setup with all features enabled
         ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
             .defaults();
@@ -429,6 +429,95 @@ public class ModuleConfigurationTests {
         Thread.sleep(1000);
 
         Mockito.verify(mockLog, Mockito.atLeastOnce()).w("[ConnectionProcessor] run, Networking config is disabled, request queue skipped");
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void scenario_sessionTrackingDisabled() throws JSONException, InterruptedException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        Countly.sharedInstance().onStartInternal(null);
+
+        // Verify initial state
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getSessionTrackingEnabled());
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // begin session request
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+
+        serverConfigBuilder.sessionTracking(false);
+        Countly.sharedInstance().onStopInternal();
+        Countly.sharedInstance().sdkIsInitialised = false;
+
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); //first begin + orientation + first end session
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        Countly.sharedInstance().onStartInternal(null);
+        Thread.sleep(1000);
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getSessionTrackingEnabled());
+
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // same error count because no session request generated
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void scenario_sessionTrackingDisabled_manualSessions() throws JSONException, InterruptedException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build()))
+            .enableManualSessionControl());
+        Countly.sharedInstance().onStartInternal(null);
+
+        // Verify initial state
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getSessionTrackingEnabled());
+        serverConfigBuilder.validateAgainst(Countly.sharedInstance());
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length); // no session request
+
+        Countly.sharedInstance().sessions().beginSession();
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // begin session request
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+
+        Thread.sleep(1000);
+        Countly.sharedInstance().sessions().endSession();
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // begin session request + orientation + end session request
+
+        ModuleSessionsTests.validateSessionEndRequest(2, 1, TestUtils.commonDeviceId);
+
+        serverConfigBuilder.sessionTracking(false);
+        Countly.sharedInstance().onStopInternal();
+        Countly.sharedInstance().sdkIsInitialised = false;
+
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // same request count
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build()))
+            .enableManualSessionControl());
+        Countly.sharedInstance().onStartInternal(null);
+        Thread.sleep(1000);
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getSessionTrackingEnabled());
+        serverConfigBuilder.validateAgainst(Countly.sharedInstance());
+
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+        Countly.sharedInstance().sessions().beginSession();
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+
+        Thread.sleep(1000);
+        Countly.sharedInstance().sessions().updateSession();
+
+        Thread.sleep(1000);
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+        Countly.sharedInstance().sessions().endSession();
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // same request count
     }
 
     // ================ Helper Methods ================
