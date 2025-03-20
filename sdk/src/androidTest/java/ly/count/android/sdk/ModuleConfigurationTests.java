@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleConfigurationTests {
@@ -38,9 +39,9 @@ public class ModuleConfigurationTests {
      * Test default configuration when server config is disabled and storage is empty
      */
     @Test
-    public void testDefaultConfig_WhenServerConfigDisabledAndStorageEmpty() {
+    public void defaultConfig_WhenServerConfigDisabledAndStorageEmpty() {
         countlyStore.clear();
-        CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
         countly = new Countly().init(config);
 
         Assert.assertNull(countlyStore.getServerConfig());
@@ -51,8 +52,9 @@ public class ModuleConfigurationTests {
      * Test default configuration when server config is enabled and storage is empty
      */
     @Test
-    public void testDefaultConfig_WhenServerConfigEnabledAndStorageEmpty() {
-        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
+    public void defaultConfig_WhenServerConfigEnabledAndStorageEmpty() {
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
+        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertNull(countlyStore.getServerConfig());
@@ -65,9 +67,10 @@ public class ModuleConfigurationTests {
      * Test configuration when server config is enabled and all properties are allowing
      */
     @Test
-    public void testServerConfig_WhenEnabledAndAllPropertiesAllowing() throws JSONException {
+    public void serverConfig_WhenEnabledAndAllPropertiesAllowing() throws JSONException {
         countlyStore.setServerConfig(createStorageConfig(true, true, true));
-        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
+        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertNotNull(countlyStore.getServerConfig());
@@ -78,9 +81,10 @@ public class ModuleConfigurationTests {
      * Test configuration when server config is enabled and all properties are forbidding
      */
     @Test
-    public void testServerConfig_WhenEnabledAndAllPropertiesForbidding() throws JSONException {
+    public void serverConfig_WhenEnabledAndAllPropertiesForbidding() throws JSONException {
         countlyStore.setServerConfig(createStorageConfig(false, false, false));
-        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
+        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertNotNull(countlyStore.getServerConfig());
@@ -93,9 +97,9 @@ public class ModuleConfigurationTests {
      * Test configuration when server config is disabled and all properties are allowing
      */
     @Test
-    public void testServerConfig_WhenDisabledAndAllPropertiesAllowing() throws JSONException {
+    public void serverConfig_WhenDisabledAndAllPropertiesAllowing() throws JSONException {
         countlyStore.setServerConfig(createStorageConfig(true, true, true));
-        CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
         countly = Countly.sharedInstance().init(config);
 
         Assert.assertNotNull(countlyStore.getServerConfig());
@@ -107,9 +111,9 @@ public class ModuleConfigurationTests {
      * This test is expected to fail as server config is deprecated
      */
     @Test(expected = AssertionError.class)
-    public void testServerConfig_WhenDisabledAndAllPropertiesForbidding() throws JSONException {
+    public void serverConfig_WhenDisabledAndAllPropertiesForbidding() throws JSONException {
         countlyStore.setServerConfig(createStorageConfig(false, false, false));
-        CountlyConfig config = TestUtils.createConfigurationConfig(false, null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
         countly = new Countly().init(config);
 
         Assert.assertNotNull(countlyStore.getServerConfig());
@@ -122,7 +126,7 @@ public class ModuleConfigurationTests {
      * Test default server configuration values
      */
     @Test
-    public void testServerConfig_DefaultValues() throws InterruptedException {
+    public void serverConfig_DefaultValues() throws InterruptedException {
         countly = new Countly().init(TestUtils.createBaseConfig().setLoggingEnabled(false));
         Thread.sleep(2000); // simulate sdk initialization delay
         new ServerConfigBuilder().defaults().validateAgainst(countly);
@@ -132,7 +136,7 @@ public class ModuleConfigurationTests {
      * Test provided server configuration values
      */
     @Test
-    public void testServerConfig_ProvidedValues() throws InterruptedException, JSONException {
+    public void serverConfig_ProvidedValues() throws InterruptedException, JSONException {
         initServerConfigWithValues(CountlyConfig::setServerConfiguration);
     }
 
@@ -140,7 +144,7 @@ public class ModuleConfigurationTests {
      * Test server configuration values with immediate request generator
      */
     @Test
-    public void testServerConfig_WithImmediateRequestGenerator() throws InterruptedException, JSONException {
+    public void serverConfig_WithImmediateRequestGenerator() throws InterruptedException, JSONException {
         initServerConfigWithValues((countlyConfig, serverConfig) -> {
             countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(serverConfig);
         });
@@ -152,7 +156,7 @@ public class ModuleConfigurationTests {
      * Test that downloaded configuration persists across multiple initializations
      */
     @Test
-    public void testConfigurationPersistence_AcrossMultipleInits() {
+    public void configurationPersistence_AcrossMultipleInits() {
         // Initial state should be fresh
         Assert.assertNull(countlyStore.getServerConfig());
 
@@ -165,7 +169,8 @@ public class ModuleConfigurationTests {
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
 
         // Third init lacks connection but should have previously saved values
-        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
+        config.enableServerConfiguration();
         countly = new Countly().init(config);
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
@@ -182,12 +187,13 @@ public class ModuleConfigurationTests {
      * Test that nothing is written to queues when tracking is disabled
      */
     @Test
-    public void testTrackingDisabled_NoQueueWrites() throws JSONException {
+    public void trackingDisabled_NoQueueWrites() throws JSONException {
         Assert.assertEquals("", countlyStore.getRequestQueueRaw());
         Assert.assertEquals(0, countlyStore.getEvents().length);
 
         countlyStore.setServerConfig(createStorageConfig(false, false, false));
-        CountlyConfig config = TestUtils.createConfigurationConfig(true, null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
+        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
@@ -211,7 +217,7 @@ public class ModuleConfigurationTests {
      * Test unhandled crash reporting when crashes are disabled
      */
     @Test
-    public void testCrashReporting_UnhandledCrashesWhenDisabled() throws JSONException {
+    public void crashReporting_UnhandledCrashesWhenDisabled() throws JSONException {
         AtomicInteger callCount = new AtomicInteger(0);
         RuntimeException unhandledException = new RuntimeException("Simulated unhandled exception");
 
@@ -259,7 +265,7 @@ public class ModuleConfigurationTests {
      * Test rejection of various invalid configuration responses
      */
     @Test
-    public void testInvalidConfigResponses_AreRejected() {
+    public void invalidConfigResponses_AreRejected() {
         Assert.assertNull(countlyStore.getServerConfig());
 
         // Test various invalid configurations
@@ -279,7 +285,7 @@ public class ModuleConfigurationTests {
      * Test that all configuration parameters are properly defined
      */
     @Test
-    public void testConfigurationParameterCount() {
+    public void configurationParameterCount() {
         int configParameterCount = 26; // plus config, timestamp and version parameters
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
@@ -288,6 +294,141 @@ public class ModuleConfigurationTests {
             }
         }
         Assert.assertEquals(configParameterCount, count);
+    }
+
+    // ================ Scenario Tests ================
+
+    /**
+     * Test a complete scenario where custom events are enabled first but disabled later
+     */
+    @Test
+    public void scenario_eventsDisabled() throws JSONException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+
+        // Verify initial state
+        Assert.assertTrue(countly.moduleConfiguration.getCustomEventTrackingEnabled());
+
+        // Record some events to verify tracking
+        countly.events().recordEvent("test_event");
+        Assert.assertEquals(1, countlyStore.getEvents().length);
+
+        // Record some views to verify view tracking is not blocked by custom event tracking
+        countly.views().startAutoStoppedView("test_view");
+
+        Assert.assertEquals(2, countlyStore.getEvents().length); // 1 event + 1 auto stopped view start
+
+        // Update configuration to disable custom event tracking
+        serverConfigBuilder.customEventTracking(false);
+        countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+
+        // Verify custom event tracking is disabled
+        Assert.assertFalse(countly.moduleConfiguration.getCustomEventTrackingEnabled());
+
+        // Try to record events - should be blocked
+        countly.events().recordEvent("blocked_event");
+        Assert.assertEquals(2, countlyStore.getEvents().length); // 1 event + 1 auto stopped view start no new events
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void scenario_viewsDisabled() throws JSONException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+
+        // Verify initial state
+        Assert.assertTrue(countly.moduleConfiguration.getCustomEventTrackingEnabled());
+
+        // Record some events to verify tracking
+        countly.events().recordEvent("test_event");
+        Assert.assertEquals(1, countlyStore.getEvents().length);
+
+        // Record some views to verify view tracking is not blocked by custom event tracking
+        countly.views().startAutoStoppedView("test_view");
+
+        Assert.assertEquals(2, countlyStore.getEvents().length); // 1 event + 1 auto stopped view start
+
+        // Update configuration to disable custom event tracking
+        serverConfigBuilder.viewTracking(false);
+        countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+
+        // Verify custom event tracking is disabled
+        Assert.assertFalse(countly.moduleConfiguration.getViewTrackingEnabled());
+
+        // Try to record events - should be blocked
+        countly.views().startAutoStoppedView("test_view_1");
+        Assert.assertEquals(2, countlyStore.getEvents().length); // 1 event + 1 auto stopped view start but no views
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void scenario_trackingDisabled() throws JSONException, InterruptedException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        countly.onStartInternal(null);
+        // Verify initial state
+        Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // begin session request
+
+        serverConfigBuilder.tracking(false);
+        countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        countly.onStartInternal(null);
+        Thread.sleep(1000);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // assert that no new request is added
+    }
+
+    /**
+     *
+     */
+    @Test
+    public void scenario_networkingDisabled() throws JSONException, InterruptedException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        Countly.sharedInstance().onStartInternal(null);
+        ModuleLog mockLog = Mockito.mock(ModuleLog.class);
+
+        Countly.sharedInstance().L = mockLog;
+        // Verify initial state
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getNetworkingEnabled());
+        Thread.sleep(1000);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // begin session request
+
+        serverConfigBuilder.networking(false);
+        Countly.sharedInstance().onStopInternal();
+        Countly.sharedInstance().sdkIsInitialised = false;
+        Mockito.verify(mockLog, Mockito.never()).w("[ConnectionProcessor] run, Networking config is disabled, request queue skipped");
+
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); //first begin + orientation + first end session
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        Countly.sharedInstance().onStartInternal(null);
+        Thread.sleep(1000);
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getNetworkingEnabled());
+
+        Assert.assertEquals(4, TestUtils.getCurrentRQ().length); //first begin + orientation + first end session + second begin
+        Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
+        Thread.sleep(1000);
+
+        Mockito.verify(mockLog, Mockito.atLeastOnce()).w("[ConnectionProcessor] run, Networking config is disabled, request queue skipped");
     }
 
     // ================ Helper Methods ================
@@ -299,7 +440,8 @@ public class ModuleConfigurationTests {
     }
 
     private Countly initAndValidateConfigParsingResult(String targetResponse, boolean responseAccepted) {
-        CountlyConfig config = TestUtils.createConfigurationConfig(true, createIRGForSpecificResponse(targetResponse));
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(targetResponse));
+        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         if (!responseAccepted) {

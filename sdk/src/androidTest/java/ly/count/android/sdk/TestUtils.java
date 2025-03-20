@@ -53,23 +53,9 @@ public class TestUtils {
     public static class Activity3 extends Activity {
     }
 
-    public static CountlyConfig createConfigurationConfig(boolean enableServerConfig, ImmediateRequestGenerator irGen) {
+    static CountlyConfig createIRGeneratorConfig(ImmediateRequestGenerator irGen) {
         CountlyConfig cc = createBaseConfig();
-
         cc.immediateRequestGenerator = irGen;
-
-        if (enableServerConfig) {
-            cc.enableServerConfiguration();
-        }
-
-        return cc;
-    }
-
-    public static CountlyConfig createVariantConfig(ImmediateRequestGenerator irGen) {
-        CountlyConfig cc = createBaseConfig();
-
-        cc.immediateRequestGenerator = irGen;
-
         return cc;
     }
 
