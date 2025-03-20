@@ -46,14 +46,14 @@ public class ModuleContent extends ModuleBase {
                 exitContentZoneInternal();
             }
             waitForDelay = 0;
-            enterContentZoneInternal(new String[] {});
+            enterContentZoneInternal(null, 0);
         }
     }
 
     @Override
     void initFinished(@NotNull CountlyConfig config) {
         if (configProvider.getContentZoneEnabled()) {
-            enterContentZoneInternal(new String[] {});
+            enterContentZoneInternal(null, 0);
         }
     }
 
@@ -99,20 +99,19 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-
-    void registerForContentUpdates(@Nullable String[] categories, final int initialDelayMS) {
-       if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
             return;
         }
-      
+    
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] enterContentZoneInternal, temporary device ID is enabled, skipping");
             return;
         }
 
         if (isCurrentlyInContentZone) {
-            L.w("[ModuleContent] enterContentZone, already in content zone, skipping");
+            L.w("[ModuleContent] enterContentZoneInternal, already in content zone, skipping");
             return;
         }
 
@@ -127,7 +126,7 @@ public class ModuleContent extends ModuleBase {
             validCategories = categories;
         }
 
-        L.d("[ModuleContent] registerForContentUpdates, categories: [" + Arrays.toString(validCategories) + "]");
+        L.d("[ModuleContent] enterContentZoneInternal, categories: [" + Arrays.toString(validCategories) + "]");
 
         int contentInitialDelay = initialDelayMS;
         long sdkStartTime = UtilsTime.currentTimestampMs() - Countly.applicationStart;
@@ -137,7 +136,7 @@ public class ModuleContent extends ModuleBase {
 
         countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
             @Override public void run() {
-                L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+                L.d("[ModuleContent] enterContentZoneInternal, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
                 if (waitForDelay > 0) {
                     waitForDelay--;
                     return;
@@ -243,15 +242,6 @@ public class ModuleContent extends ModuleBase {
         if (withoutMerge) {
             exitContentZoneInternal();
         }
-    }
-
-    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS) {
-        if (isCurrentlyInContentZone) {
-            L.w("[ModuleContent] enterContentZone, already in content zone, skipping");
-            return;
-        }
-        shouldFetchContents = true;
-        registerForContentUpdates(categories, initialDelayMS);
     }
 
     private void exitContentZoneInternal() {
