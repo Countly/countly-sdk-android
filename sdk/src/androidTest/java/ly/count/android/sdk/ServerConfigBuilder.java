@@ -170,16 +170,6 @@ class ServerConfigBuilder {
         return this;
     }
 
-    ServerConfigBuilder defaultLimits() {
-        keyLengthLimit(Countly.maxKeyLengthDefault);
-        valueSizeLimit(Countly.maxValueSizeDefault);
-        segmentationValuesLimit(Countly.maxSegmentationValuesDefault);
-        breadcrumbLimit(Countly.maxBreadcrumbCountDefault);
-        traceLengthLimit(Countly.maxStackTraceLineLengthDefault);
-        traceLinesLimit(Countly.maxStackTraceLinesPerThreadDefault);
-        return this;
-    }
-
     ServerConfigBuilder defaults() {
         // Feature flags
         tracking(true);
@@ -203,7 +193,12 @@ class ServerConfigBuilder {
         dropOldRequestTime(0);
 
         // Set default limits
-        defaultLimits();
+        keyLengthLimit(Countly.maxKeyLengthDefault);
+        valueSizeLimit(Countly.maxValueSizeDefault);
+        segmentationValuesLimit(Countly.maxSegmentationValuesDefault);
+        breadcrumbLimit(Countly.maxBreadcrumbCountDefault);
+        traceLengthLimit(Countly.maxStackTraceLineLengthDefault);
+        traceLinesLimit(Countly.maxStackTraceLinesPerThreadDefault);
 
         return this;
     }

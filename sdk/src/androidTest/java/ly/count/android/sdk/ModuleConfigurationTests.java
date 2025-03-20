@@ -520,6 +520,48 @@ public class ModuleConfigurationTests {
         Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // same request count
     }
 
+    /**
+     *
+     */
+    @Test
+    public void scenario_locationTrackingDisabled() throws JSONException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        Countly.sharedInstance().onStartInternal(null);
+        // Verify initial state
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getLocationTrackingEnabled());
+        serverConfigBuilder.validateAgainst(Countly.sharedInstance());
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // session request
+
+        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length); // location request
+        Assert.assertTrue(TestUtils.getCurrentRQ()[1].containsKey("location"));
+
+        serverConfigBuilder.locationTracking(false);
+        Countly.sharedInstance().onStopInternal();
+        Countly.sharedInstance().sdkIsInitialised = false; // reset sdk
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        Countly.sharedInstance().onStartInternal(null);
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getLocationTrackingEnabled());
+        serverConfigBuilder.validateAgainst(Countly.sharedInstance());
+
+        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
+
+        Countly.sharedInstance().location().setLocation("country1", "city1", "gps1", "ip1");
+        Countly.sharedInstance().location().disableLocation();
+        Countly.sharedInstance().location().setLocation("country2", "city2", "gps2", "ip2");
+
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 4); // this will be from server config
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 6); // this is from disable location
+
+        // first begin session  + location request + orientation + first end session + location reset + second begin session
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length); // same request count
+    }
+
     // ================ Helper Methods ================
 
     private void assertDefaultConfigValues(Countly countly) {
