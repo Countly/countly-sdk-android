@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -567,6 +568,43 @@ public class ModuleConfigurationTests {
 
         // first begin session  + location request + orientation + first end session + location reset + second begin session
         Assert.assertEquals(7, TestUtils.getCurrentRQ().length); // same request count
+    }
+
+    /**
+     * Test that consent requirement is properly handled when enabled/disabled
+     * When consent is required, operations are blocked until consent is given
+     * Attribution is used as a test case since it's not directly affected by server config
+     * Need to verify both the request queue and consent state
+     */
+    @Test
+    public void scenario_consentRequiredDisabled() throws JSONException {
+        // Initial setup with all features enabled
+        ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
+            .defaults();
+
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        // Verify initial state
+        Assert.assertFalse(Countly.sharedInstance().config_.shouldRequireConsent);
+        serverConfigBuilder.validateAgainst(Countly.sharedInstance());
+
+        // use a feature that is not affected directly from the server configuration
+        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "_special_test");
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // attribution request
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "_special_test"), 0);
+
+        serverConfigBuilder.consentRequired(true);
+        Countly.sharedInstance().sdkIsInitialised = false;
+        Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        Assert.assertTrue(Countly.sharedInstance().config_.shouldRequireConsent);
+        serverConfigBuilder.validateAgainst(Countly.sharedInstance());
+        System.err.println(Arrays.toString(TestUtils.getCurrentRQ()));
+
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // first attribution request, empty consent, empty location
+
+        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "_special_test");
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // changes nothing because no consent for attribution
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 1, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 2);
     }
 
     // ================ Helper Methods ================
