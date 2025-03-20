@@ -99,9 +99,15 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void enterContentZoneInternal(@Nullable String[] categories) {
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+
+    void registerForContentUpdates(@Nullable String[] categories, final int initialDelayMS) {
+       if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
+            return;
+        }
+      
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            L.w("[ModuleContent] enterContentZoneInternal, temporary device ID is enabled, skipping");
             return;
         }
 
@@ -111,11 +117,6 @@ public class ModuleContent extends ModuleBase {
         }
 
         shouldFetchContents = true;
-
-        if (deviceIdProvider.isTemporaryIdEnabled()) {
-            L.w("[ModuleContent] enterContentZoneInternal, temporary device ID is enabled, skipping");
-            return;
-        }
 
         String[] validCategories;
 
@@ -128,10 +129,10 @@ public class ModuleContent extends ModuleBase {
 
         L.d("[ModuleContent] registerForContentUpdates, categories: [" + Arrays.toString(validCategories) + "]");
 
-        int contentInitialDelay = 0;
+        int contentInitialDelay = initialDelayMS;
         long sdkStartTime = UtilsTime.currentTimestampMs() - Countly.applicationStart;
         if (sdkStartTime < CONTENT_START_DELAY_MS) {
-            contentInitialDelay = CONTENT_START_DELAY_MS;
+            contentInitialDelay += CONTENT_START_DELAY_MS;
         }
 
         countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
@@ -244,6 +245,15 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
+    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS) {
+        if (isCurrentlyInContentZone) {
+            L.w("[ModuleContent] enterContentZone, already in content zone, skipping");
+            return;
+        }
+        shouldFetchContents = true;
+        registerForContentUpdates(categories, initialDelayMS);
+    }
+
     private void exitContentZoneInternal() {
         shouldFetchContents = false;
         countlyTimer.stopTimer(L);
@@ -266,7 +276,7 @@ public class ModuleContent extends ModuleBase {
 
         _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
 
-        enterContentZoneInternal(new String[] {});
+        enterContentZoneInternal(null, 2500);
     }
 
     public class Content {
@@ -282,7 +292,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            enterContentZoneInternal(new String[] {});
+            enterContentZoneInternal(null, 0);
         }
 
         /**

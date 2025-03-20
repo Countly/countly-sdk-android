@@ -41,7 +41,7 @@ class CountlyTimer {
         startTimer(timerDelay, 0, runnable, L);
     }
 
-    protected void startTimer(long timerDelay, long initialDelay, @NonNull Runnable runnable, @NonNull ModuleLog L) {
+    protected void startTimer(long timerDelay, long initialDelayMS, @NonNull Runnable runnable, @NonNull ModuleLog L) {
         long timerDelayInternal = timerDelay * 1000;
 
         if (timerDelayInternal < UtilsTime.ONE_SECOND_IN_MS) {
@@ -52,7 +52,7 @@ class CountlyTimer {
             timerDelayInternal = TIMER_DELAY_MS;
         }
 
-        L.i("[CountlyTimer] startTimer, Starting timer timerDelay: [" + timerDelayInternal + " ms], initialDelay: [" + initialDelay + " ms]");
+        L.i("[CountlyTimer] startTimer, Starting timer timerDelay: [" + timerDelayInternal + " ms], initialDelay: [" + initialDelayMS + " ms]");
 
         if (timerService != null) {
             L.d("[CountlyTimer] startTimer, timer was running, stopping it");
@@ -60,6 +60,6 @@ class CountlyTimer {
         }
 
         timerService = Executors.newSingleThreadScheduledExecutor();
-        timerService.scheduleWithFixedDelay(runnable, initialDelay, timerDelayInternal, TimeUnit.MILLISECONDS);
+        timerService.scheduleWithFixedDelay(runnable, initialDelayMS, timerDelayInternal, TimeUnit.MILLISECONDS);
     }
 }
