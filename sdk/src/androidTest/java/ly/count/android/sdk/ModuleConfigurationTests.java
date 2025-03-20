@@ -334,7 +334,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     *
+     * Test that view tracking is properly disabled when configured
+     * View tracking is independent of custom event tracking
      */
     @Test
     public void scenario_viewTrackingDisabled() throws JSONException {
@@ -369,7 +370,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     *
+     * Test that tracking is properly disabled when configured
+     * When tracking is disabled, no new requests should be generated
      */
     @Test
     public void scenario_trackingDisabled() throws JSONException, InterruptedException {
@@ -393,7 +395,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     *
+     * Test that networking is properly disabled when configured
+     * When networking is disabled, request queue operations are skipped
      */
     @Test
     public void scenario_networkingDisabled() throws JSONException, InterruptedException {
@@ -432,7 +435,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     *
+     * Test that session tracking is properly disabled when configured
+     * When session tracking is disabled, no new session requests should be generated
      */
     @Test
     public void scenario_sessionTrackingDisabled() throws JSONException, InterruptedException {
@@ -465,7 +469,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     *
+     * Test that session tracking is properly disabled when configured with manual session control
+     * Manual session control allows explicit session management
      */
     @Test
     public void scenario_sessionTrackingDisabled_manualSessions() throws JSONException, InterruptedException {
@@ -521,7 +526,9 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     *
+     * Test that location tracking is properly disabled when configured
+     * Location updates are blocked when tracking is disabled
+     * Location updates include city, country, GPS coordinates and IP
      */
     @Test
     public void scenario_locationTrackingDisabled() throws JSONException {
