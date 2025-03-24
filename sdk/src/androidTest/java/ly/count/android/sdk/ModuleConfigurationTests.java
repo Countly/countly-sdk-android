@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -158,40 +159,8 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void serverConfig_Defaults_AllFeatures() throws JSONException, InterruptedException {
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        int[] counts = setupTest_allFeatures(sc.buildJson());
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
-
-        String stackTrace = flow_allFeatures();
-
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
-        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
-        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
-        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
-        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
-
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
-
-        immediateFlow_allFeatures();
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        feedbackFlow_allFeatures();
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
-
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
-
-        validateCounts(counts, 1, 1, 1, 2, 1);
+        base_allFeatures((sc) -> {
+        }, 1, 1, 1, 2, 1);
     }
 
     /**
@@ -415,41 +384,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void networkingDisabled_allFeatures() throws JSONException, InterruptedException {
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.networking(false);
-        int[] counts = setupTest_allFeatures(sc.buildJson());
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
-
-        String stackTrace = flow_allFeatures();
-
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
-        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
-        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
-        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
-        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
-
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
-
-        immediateFlow_allFeatures();
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        feedbackFlow_allFeatures();
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
-
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
-
-        validateCounts(counts, 0, 0, 0, 0, 1);
+        base_allFeatures((sc) -> sc.networking(false), 0, 0, 0, 0, 1);
     }
 
     /**
@@ -528,41 +463,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void refreshContentZoneDisabled_allFeatures() throws JSONException, InterruptedException {
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.refreshContentZone(false);
-        int[] counts = setupTest_allFeatures(sc.buildJson());
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
-
-        String stackTrace = flow_allFeatures();
-
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
-        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
-        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
-        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
-        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
-
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
-
-        immediateFlow_allFeatures();
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        feedbackFlow_allFeatures();
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
-
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
-
-        validateCounts(counts, 1, 1, 1, 1, 1);
+        base_allFeatures((sc) -> sc.refreshContentZone(false), 1, 1, 1, 1, 1);
     }
 
     /**
@@ -570,41 +471,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void contentZoneEnabled_allFeatures() throws JSONException, InterruptedException {
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.contentZone(true);
-        int[] counts = setupTest_allFeatures(sc.buildJson());
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
-
-        String stackTrace = flow_allFeatures();
-
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
-        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
-        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
-        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
-        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
-
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
-
-        immediateFlow_allFeatures();
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        feedbackFlow_allFeatures();
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
-
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
-
-        validateCounts(counts, 1, 1, 1, 4, 1);
+        base_allFeatures((sc) -> sc.contentZone(true), 1, 1, 1, 4, 1);
     }
 
     // ================ Configuration Persistence Tests ================
@@ -1254,5 +1121,43 @@ public class ModuleConfigurationTests {
 
     private static void validateEventInRQ(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventIdx, eventCount);
+    }
+
+    private void base_allFeatures(Consumer<ServerConfigBuilder> consumer, int hc, int fc, int rc, int cc, int scc) throws JSONException, InterruptedException {
+        ServerConfigBuilder sc = new ServerConfigBuilder();
+        consumer.accept(sc);
+        int[] counts = setupTest_allFeatures(sc.buildJson());
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
+
+        String stackTrace = flow_allFeatures();
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
+        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
+        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
+
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+
+        immediateFlow_allFeatures();
+
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+
+        validateCounts(counts, hc, fc, rc, cc, scc);
     }
 }
