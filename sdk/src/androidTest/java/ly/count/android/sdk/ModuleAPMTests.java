@@ -353,8 +353,12 @@ public class ModuleAPMTests {
     }
 
     protected static void validateNetworkRequest(int rqIdx, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {
+        validateNetworkRequest(rqIdx, rqIdx + 1, key, duration, responseCode, requestPayloadSize, responsePayloadSize);
+    }
+
+    protected static void validateNetworkRequest(int rqIdx, int rqCount, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
-        Assert.assertEquals(rqIdx + 1, RQ.length);
+        Assert.assertEquals(rqCount, RQ.length);
 
         JSONObject apm = new JSONObject(RQ[rqIdx].get("apm"));
         Assert.assertEquals(key, apm.getString("name"));

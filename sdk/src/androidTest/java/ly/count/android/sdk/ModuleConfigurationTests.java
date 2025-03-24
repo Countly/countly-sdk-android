@@ -158,1761 +158,453 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void serverConfig_Defaults_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
         ServerConfigBuilder sc = new ServerConfigBuilder();
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
+        int[] counts = setupTest_allFeatures(sc.buildJson());
 
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
 
-        Countly.sharedInstance().sessions().beginSession();
+        String stackTrace = flow_allFeatures();
+
         ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
-
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 2, 3);
-
-        Exception e = new Exception("test_exception");
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, 2, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        Assert.assertTrue(TestUtils.getCurrentRQ()[2].containsKey("events"));
-        ModuleUserProfileTests.validateUserProfileRequest(3, 4, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4); // check this
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        ModuleAPMTests.validateNetworkRequest(5, "test_trace", 1111, 400, 2000, 1111);
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
+        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
+        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
 
         Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
 
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+        immediateFlow_allFeatures();
 
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
+
+        feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", 8, 9, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
 
-        Thread.sleep(1000); // wait for immediate requests to be processed
         Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
 
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
+        validateCounts(counts, 1, 1, 1, 2, 1);
     }
 
     /**
      * Test server configuration values with immediate request generator
      */
     @Test
-    public void serverConfig_Disable_AllFeatures() throws JSONException, InterruptedException {
-        boolean networking = false;
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
+    public void disable_allFeatures() throws JSONException, InterruptedException {
         ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.networking(networking).sessionTracking(false).customEventTracking(false).viewTracking(false)
+        sc.networking(false).sessionTracking(false).customEventTracking(false).viewTracking(false)
             .crashReporting(false).locationTracking(false).contentZone(false).refreshContentZone(false).tracking(false).consentRequired(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
 
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
+        int[] counts = setupTest_allFeatures(sc.buildJson());
 
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
 
-        Countly.sharedInstance().sessions().beginSession();
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-
-        Countly.sharedInstance().views().startView("test_view");
-
-        Exception e = new Exception("test_exception");
-        Countly.sharedInstance().crashes().recordHandledException(e);
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-
+        flow_allFeatures();
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
+        immediateFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
 
-        Thread.sleep(1000); // wait for immediate requests to be processed
+        feedbackFlow_allFeatures();
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        Assert.assertEquals(0, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(0, fcCount[0]);
-        Assert.assertEquals(0, rcCount[0]);
-        Assert.assertEquals(0, contentCount[0]);
+        validateCounts(counts, 0, 0, 0, 0, 1);
     }
 
     /**
      * Test server configuration values with immediate request generator
      */
     @Test
-    public void serverConfig_ConsentEnabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
+    public void consentEnabled_allFeatures() throws JSONException, InterruptedException {
         ServerConfigBuilder sc = new ServerConfigBuilder();
         sc.consentRequired(true);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
 
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
+        int[] counts = setupTest_allFeatures(sc.buildJson());
 
-        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        Countly.sharedInstance().sessions().beginSession();
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-
-        Countly.sharedInstance().views().startView("test_view");
-
-        Exception e = new Exception("test_exception");
-        Countly.sharedInstance().crashes().recordHandledException(e);
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
         ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
 
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(0, fcCount[0]);
-        Assert.assertEquals(0, rcCount[0]);
-        Assert.assertEquals(0, contentCount[0]);
+        flow_allFeatures();
+        immediateFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+        feedbackFlow_allFeatures();
+
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        validateCounts(counts, 1, 0, 0, 0, 1);
     }
 
     /**
      * Test server configuration values with immediate request generator
      */
     @Test
-    public void serverConfig_SessionsDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
+    public void sessionsDisabled_allFeatures() throws JSONException, InterruptedException {
         ServerConfigBuilder sc = new ServerConfigBuilder();
         sc.sessionTracking(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
+        int[] counts = setupTest_allFeatures(sc.buildJson());
 
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-        int idx = 0;
-        int rqCount = 0;
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
 
-        Countly.sharedInstance().sessions().beginSession();
+        String stackTrace = flow_allFeatures();
 
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 0, 1);
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 7, 0, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("test_event", TestUtils.map(), 1, 7, 0, 2);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1"), 1, 7, 1, 2);
+        ModuleUserProfileTests.validateUserProfileRequest(2, 7, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 3);
+        ModuleAPMTests.validateNetworkRequest(4, 7, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 5);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 6);
 
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1"), 1, 0.0, 0.0, 1, 2);
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
 
-        Exception e = new Exception("test_exception");
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        rqCount += 1;
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, rqCount, idx, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        idx++;
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        rqCount += 1;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), idx); // check this
-        idx++;
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+        immediateFlow_allFeatures();
 
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
+
+        feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 7, 8, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 7, 8, 1, 2);
 
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
 
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
+        validateCounts(counts, 1, 1, 1, 2, 1);
     }
 
     /**
      * Test server configuration values with immediate request generator
      */
     @Test
-    public void serverConfig_CrashReportingDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
+    public void crashReportingDisabled_allFeatures() throws JSONException, InterruptedException {
         ServerConfigBuilder sc = new ServerConfigBuilder();
         sc.crashReporting(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
+        int[] counts = setupTest_allFeatures(sc.buildJson());
 
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
 
-        int idx = 0;
-        int rqCount = 0;
+        flow_allFeatures();
 
-        Countly.sharedInstance().sessions().beginSession();
-        rqCount++;
         ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        idx++;
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 7, 0, 3);
+        validateEventInRQ("test_event", TestUtils.map(), 1, 7, 1, 3);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 7, 2, 3);
+        ModuleUserProfileTests.validateUserProfileRequest(2, 7, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 3);
+        ModuleAPMTests.validateNetworkRequest(4, 7, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 5);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 6);
 
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
+        Assert.assertEquals(7, TestUtils.getCurrentRQ().length);
 
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 2, 3);
-
-        Exception e = new Exception("test_exception");
-        Countly.sharedInstance().crashes().recordHandledException(e);
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        rqCount += 1;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), idx); // check this
-        idx++;
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+        immediateFlow_allFeatures();
 
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
+
+        feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 7, 8, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 7, 8, 1, 2);
 
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
 
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
+        validateCounts(counts, 1, 1, 1, 2, 1);
     }
 
     /**
      * Test server configuration values with immediate request generator
      */
     @Test
-    public void serverConfig_ViewTrackingDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
+    public void viewTrackingDisabled_allFeatures() throws JSONException, InterruptedException {
         ServerConfigBuilder sc = new ServerConfigBuilder();
         sc.viewTracking(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
+        int[] counts = setupTest_allFeatures(sc.buildJson());
 
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
 
-        int idx = 0;
-        int rqCount = 0;
+        String stackTrace = flow_allFeatures();
 
-        Countly.sharedInstance().sessions().beginSession();
-        rqCount++;
         ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        idx++;
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
-
-        Countly.sharedInstance().views().startView("test_view");
-
-        Exception e = new Exception("test_exception");
-        rqCount++;
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, rqCount, idx, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        idx++;
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        rqCount += 1;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), idx); // check this
-        idx++;
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
-    }
-
-    /**
-     * Test server configuration values with immediate request generator
-     */
-    @Test
-    public void serverConfig_CustomEventTrackingDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.customEventTracking(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        int idx = 0;
-        int rqCount = 0;
-
-        Countly.sharedInstance().sessions().beginSession();
-        rqCount++;
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        idx++;
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 1);
-
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 1, 2);
-
-        Exception e = new Exception("test_exception");
-        rqCount++;
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, rqCount, idx, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        idx++;
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        rqCount += 1;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), idx); // check this
-        idx++;
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
-    }
-
-    /**
-     * Test server configuration values with immediate request generator
-     */
-    @Test
-    public void serverConfig_NetworkingDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.networking(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        int idx = 0;
-        int rqCount = 0;
-
-        Countly.sharedInstance().sessions().beginSession();
-        rqCount++;
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        idx++;
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
-
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 2, 3);
-
-        Exception e = new Exception("test_exception");
-        rqCount++;
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, rqCount, idx, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        idx++;
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        rqCount += 1;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), idx); // check this
-        idx++;
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Assert.assertEquals(0, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(0, fcCount[0]);
-        Assert.assertEquals(0, rcCount[0]);
-        Assert.assertEquals(0, contentCount[0]);
-    }
-
-    /**
-     * Test server configuration values with immediate request generator
-     */
-    @Test
-    public void serverConfig_LocationTrackingDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.locationTracking(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
-        int idx = 0;
-        int rqCount = 0;
-        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 0);
-        idx++;
-
-        Countly.sharedInstance().sessions().beginSession();
-        rqCount++;
-        ModuleSessionsTests.validateSessionBeginRequest(idx, TestUtils.commonDeviceId);
-        idx++;
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
-
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 2, 3);
-
-        Exception e = new Exception("test_exception");
-        rqCount++;
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, rqCount, idx, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        idx++;
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
-    }
-
-    /**
-     * Test server configuration values with immediate request generator
-     */
-    @Test
-    public void serverConfig_TrackingDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.tracking(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        Countly.sharedInstance().sessions().beginSession();
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        Countly.sharedInstance().views().startView("test_view");
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        Exception e = new Exception("test_exception");
-        Countly.sharedInstance().crashes().recordHandledException(e);
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
-    }
-
-    /**
-     * Test server configuration values with immediate request generator
-     */
-    @Test
-    public void serverConfig_RefreshContentZoneDisabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.refreshContentZone(false);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        int idx = 0;
-        int rqCount = 0;
-
-        Countly.sharedInstance().sessions().beginSession();
-        rqCount++;
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        idx++;
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
-
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 2, 3);
-
-        Exception e = new Exception("test_exception");
-        rqCount++;
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, rqCount, idx, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        idx++;
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        rqCount += 1;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), idx); // check this
-        idx++;
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
-
-        Thread.sleep(1000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will not add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(1, contentCount[0]);
-    }
-
-    /**
-     * Test server configuration values with immediate request generator
-     */
-    @Test
-    public void serverConfig_ContentZoneEnabled_AllFeatures() throws JSONException, InterruptedException {
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
-        ServerConfigBuilder sc = new ServerConfigBuilder();
-        sc.contentZone(true);
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        Thread.sleep(1000);
-
-        int idx = 0;
-        int rqCount = 0;
-
-        Countly.sharedInstance().sessions().beginSession();
-        rqCount++;
-        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
-        idx++;
-
-        Countly.sharedInstance().events().recordEvent("test_event");
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-        ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
-
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 2, 3);
-
-        Exception e = new Exception("test_exception");
-        rqCount++;
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, rqCount, idx, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-        idx++;
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        rqCount += 2;
-        Assert.assertTrue(TestUtils.getCurrentRQ()[idx].containsKey("events"));
-        idx++;
-        ModuleUserProfileTests.validateUserProfileRequest(idx, rqCount, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-        idx++;
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        rqCount += 1;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), idx); // check this
-        idx++;
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        rqCount++;
-        ModuleAPMTests.validateNetworkRequest(idx, "test_trace", 1111, 400, 2000, 1111);
-        idx++;
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), idx);
-        idx++;
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
-        rqCount++;
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), idx);
-        idx++;
-
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
-
-            }
-        }); // will add one feedback immediate request
-
-        Thread.sleep(4000);
-
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
-
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        rqCount++;
-        Assert.assertEquals(0, countlyStore.getEventQueueSize());
-
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", idx, rqCount, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", idx, rqCount, 1, 2);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
-        Assert.assertEquals(rqCount, TestUtils.getCurrentRQ().length);
-
-        Assert.assertEquals(1, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(1, fcCount[0]);
-        Assert.assertEquals(1, rcCount[0]);
-        Assert.assertEquals(2, contentCount[0]);
-    }
-
-    private void serverConfig_base(boolean networking, boolean tracking, boolean sessionTracking, boolean crashReporting, boolean locationTracking, boolean consentRequired, boolean contentZone, boolean refreshContentZone, boolean viewTracking, boolean customEventTracking)
-        throws JSONException, InterruptedException {
-        ServerConfigBuilder sc = new ServerConfigBuilder()
-            .networking(networking)
-            .tracking(tracking)
-            .sessionTracking(sessionTracking)
-            .crashReporting(crashReporting)
-            .locationTracking(locationTracking)
-            .contentZone(contentZone)
-            .refreshContentZone(refreshContentZone)
-            .viewTracking(viewTracking)
-            .customEventTracking(customEventTracking)
-            .consentRequired(consentRequired);
-
-        final int[] rcCount = { 0 };
-        final int[] contentCount = { 0 };
-        final int[] fcCount = { 0 };
-        final int[] hcCount = { 0 };
-        final int[] scCount = { 0 };
-
-        CountlyStore store = TestUtils.getCountlyStore();
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
-            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                return new ImmediateRequestI() {
-                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
-                        if (networkingIsEnabled) {
-                            if (requestData.contains("&hc=")) {
-                                hcCount[0] += 1;
-                            } else if (requestData.contains("&method=feedback")) {
-                                fcCount[0] += 1;
-                            } else if (requestData.contains("&method=rc")) {
-                                rcCount[0] += 1;
-                            } else if (requestData.contains("&method=queue")) {
-                                contentCount[0] += 1;
-                            } else if (requestData.contains("&method=sc")) {
-                                // do nothing
-                            } else {
-                                Assert.fail("Unexpected request data: " + requestData);
-                            }
-                        }
-
-                        if (requestData.contains("&method=sc")) {
-                            scCount[0] += 1;
-                            Assert.assertTrue(networkingIsEnabled);
-                            try {
-                                callback.callback(sc.buildJson());
-                            } catch (JSONException e) {
-                                Assert.fail(e.getMessage());
-                            }
-                        }
-                    }
-                };
-            }
-        };
-        countlyConfig.metricProviderOverride = new MockedMetricProvider();
-        Countly.sharedInstance().init(countlyConfig);
-        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-        Assert.assertEquals(0, store.getEventQueueSize());
-
-        Countly.sharedInstance().sessions().beginSession();
-        int idx = 0;
-        int eIdx = 0;
-        if (sessionTracking || tracking) {
-            ModuleSessionsTests.validateSessionBeginRequest(idx, TestUtils.commonDeviceId);
-            idx++;
-        }
-
-        ModuleEventsTests.validateEventInEQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0.0, 0.0, 0, 2);
-
-        if (customEventTracking) {
-            Countly.sharedInstance().events().recordEvent("test_event");
-            ModuleEventsTests.validateEventInEQ("test_event", TestUtils.map(), 1, 0.0, 0.0, 1, 2);
-            eIdx++;
-        }
-
-        Countly.sharedInstance().views().startView("test_view");
-        ModuleEventsTests.validateEventInEQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 1, 0.0, 0.0, 2, 3);
-
-        Exception e = new Exception("test_exception");
-        Countly.sharedInstance().crashes().recordHandledException(e);
-        ModuleCrashTests.validateCrash(ModuleCrashTests.extractStackTrace(e), "", false, false, 2, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
-
-        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
-        Countly.sharedInstance().userProfile().save(); // events will be packed on this
-        Assert.assertTrue(TestUtils.getCurrentRQ()[2].containsKey("events"));
-        ModuleUserProfileTests.validateUserProfileRequest(3, 4, TestUtils.map(), TestUtils.map("test_property", "test_value"));
-
-        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
-        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4); // check this
-
-        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
-        ModuleAPMTests.validateNetworkRequest(5, "test_trace", 1111, 400, 2000, 1111);
-
-        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 2);
+        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 2);
+        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
-
-        Map<String, String> params = new ConcurrentHashMap<>();
-        params.put("key", "value");
-        Countly.sharedInstance().requestQueue().addDirectRequest(params);
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
 
         Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
 
-        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
-        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
-            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
+        immediateFlow_allFeatures();
 
-            }
-        }); // will add one feedback immediate request
-        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        Assert.assertEquals(0, store.getEventQueueSize());
-        // could not mock ratings immediate, it requires a context
-        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
-        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
-        widget.name = "test";
-        widget.widgetId = "test";
-        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
-        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
-        Assert.assertEquals(0, store.getEventQueueSize());
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 1, 0.0, 0.0, "_CLY_", "_CLY_",
-            "_CLY_", "_CLY_", 8, 9, 0, 2);
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, "[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_",
-            "_CLY_", 8, 9, 1, 2);
-
-        Thread.sleep(1000); // wait for immediate requests to be processed
         Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
 
-        Assert.assertEquals(networking ? 1 : 0, hcCount[0]); // health check request
-        Assert.assertEquals(1, scCount[0]); // server config request
-        Assert.assertEquals(networking ? 1 : 0, fcCount[0]);
-        Assert.assertEquals(networking ? 1 : 0, rcCount[0]);
-        Assert.assertEquals(networking ? 2 : 0, contentCount[0]);
+        validateCounts(counts, 1, 1, 1, 2, 1);
+    }
 
-        sc.validateAgainst(Countly.sharedInstance());
+    /**
+     * Test server configuration values with immediate request generator
+     */
+    @Test
+    public void customEventTrackingDisabled_allFeatures() throws JSONException, InterruptedException {
+        ServerConfigBuilder sc = new ServerConfigBuilder();
+        sc.customEventTracking(false);
+        int[] counts = setupTest_allFeatures(sc.buildJson());
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
+
+        String stackTrace = flow_allFeatures();
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 2);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 1, 2);
+        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
+
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+
+        immediateFlow_allFeatures();
+
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+
+        validateCounts(counts, 1, 1, 1, 2, 1);
+    }
+
+    /**
+     * Test server configuration values with immediate request generator
+     */
+    @Test
+    public void networkingDisabled_allFeatures() throws JSONException, InterruptedException {
+        ServerConfigBuilder sc = new ServerConfigBuilder();
+        sc.networking(false);
+        int[] counts = setupTest_allFeatures(sc.buildJson());
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
+
+        String stackTrace = flow_allFeatures();
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
+        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
+        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
+
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+
+        immediateFlow_allFeatures();
+
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+
+        validateCounts(counts, 0, 0, 0, 0, 1);
+    }
+
+    /**
+     * Test server configuration values with immediate request generator
+     */
+    @Test
+    public void locationTrackingDisabled_allFeatures() throws JSONException, InterruptedException {
+        ServerConfigBuilder sc = new ServerConfigBuilder();
+        sc.locationTracking(false);
+        int[] counts = setupTest_allFeatures(sc.buildJson());
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 0);
+
+        String stackTrace = flow_allFeatures();
+
+        ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 2, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 3, 8, 0, 3);
+        validateEventInRQ("test_event", TestUtils.map(), 3, 8, 1, 3);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 3, 8, 2, 3);
+        ModuleUserProfileTests.validateUserProfileRequest(4, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
+
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+
+        immediateFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+
+        validateCounts(counts, 1, 1, 1, 2, 1);
+    }
+
+    /**
+     * Test server configuration values with immediate request generator
+     */
+    @Test
+    public void trackingDisabled_allFeatures() throws JSONException, InterruptedException {
+        ServerConfigBuilder sc = new ServerConfigBuilder();
+        sc.tracking(false);
+        int[] counts = setupTest_allFeatures(sc.buildJson());
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        flow_allFeatures();
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        immediateFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        Thread.sleep(1000); // wait for immediate requests to be processed
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        Assert.assertEquals(1, counts[0]); // health check request
+        Assert.assertEquals(1, counts[1]);
+        Assert.assertEquals(1, counts[2]);
+        Assert.assertEquals(2, counts[3]);
+        Assert.assertEquals(1, counts[4]); // server config request
+    }
+
+    /**
+     * Test server configuration values with immediate request generator
+     */
+    @Test
+    public void refreshContentZoneDisabled_allFeatures() throws JSONException, InterruptedException {
+        ServerConfigBuilder sc = new ServerConfigBuilder();
+        sc.refreshContentZone(false);
+        int[] counts = setupTest_allFeatures(sc.buildJson());
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
+
+        String stackTrace = flow_allFeatures();
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
+        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
+        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
+
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+
+        immediateFlow_allFeatures();
+
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+
+        validateCounts(counts, 1, 1, 1, 1, 1);
+    }
+
+    /**
+     * Test server configuration values with immediate request generator
+     */
+    @Test
+    public void contentZoneEnabled_allFeatures() throws JSONException, InterruptedException {
+        ServerConfigBuilder sc = new ServerConfigBuilder();
+        sc.contentZone(true);
+        int[] counts = setupTest_allFeatures(sc.buildJson());
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
+
+        String stackTrace = flow_allFeatures();
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleCrashTests.validateCrash(stackTrace, "", false, false, 8, 1, TestUtils.map(), 0, TestUtils.map(), new ArrayList<>());
+        validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 2, 8, 0, 3);
+        validateEventInRQ("test_event", TestUtils.map(), 2, 8, 1, 3);
+        validateEventInRQ("[CLY]_view", TestUtils.map("name", "test_view", "segment", "Android", "visit", "1", "start", "1"), 2, 8, 2, 3);
+        ModuleUserProfileTests.validateUserProfileRequest(3, 8, TestUtils.map(), TestUtils.map("test_property", "test_value"));
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", "gps"), 4);
+        ModuleAPMTests.validateNetworkRequest(5, 8, "test_trace", 1111, 400, 2000, 1111);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("attribution_data", "test_data"), 6);
+        TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("key", "value"), 7);
+
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+
+        immediateFlow_allFeatures();
+
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        feedbackFlow_allFeatures();
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+
+        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+
+        validateCounts(counts, 1, 1, 1, 4, 1);
     }
 
     // ================ Configuration Persistence Tests ================
@@ -2461,5 +1153,106 @@ public class ModuleConfigurationTests {
         Thread.sleep(2000);
 
         builder.validateAgainst(countly);
+    }
+
+    private int[] setupTest_allFeatures(JSONObject serverConfig) {
+        final int[] counts = { 0, 0, 0, 0, 0 };
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return new ImmediateRequestI() {
+                    @Override public void doWork(String requestData, String customEndpoint, ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, ImmediateRequestMaker.InternalImmediateRequestCallback callback, ModuleLog log) {
+                        if (networkingIsEnabled) {
+                            if (requestData.contains("&hc=")) {
+                                counts[0] += 1;
+                            } else if (requestData.contains("&method=feedback")) {
+                                counts[1] += 1;
+                            } else if (requestData.contains("&method=rc")) {
+                                counts[2] += 1;
+                            } else if (requestData.contains("&method=queue")) {
+                                counts[3] += 1;
+                            } else if (requestData.contains("&method=sc")) {
+                                // do nothing
+                            } else {
+                                Assert.fail("Unexpected request data: " + requestData);
+                            }
+                        }
+
+                        if (requestData.contains("&method=sc")) {
+                            counts[4] += 1;
+                            Assert.assertTrue(networkingIsEnabled);
+                            callback.callback(serverConfig);
+                        }
+                    }
+                };
+            }
+        };
+        countlyConfig.metricProviderOverride = new MockedMetricProvider();
+        Countly.sharedInstance().init(countlyConfig);
+        Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
+        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
+        return counts;
+    }
+
+    private void validateCounts(int[] counts, int hc, int fc, int rc, int cc, int sc) {
+        Assert.assertEquals(hc, counts[0]); // health check request
+        Assert.assertEquals(fc, counts[1]); // feedback request
+        Assert.assertEquals(rc, counts[2]); // remote config request
+        Assert.assertEquals(cc, counts[3]); // content request
+        Assert.assertEquals(sc, counts[4]); // server config request
+    }
+
+    private String flow_allFeatures() throws InterruptedException {
+        Countly.sharedInstance().sessions().beginSession();
+
+        Countly.sharedInstance().events().recordEvent("test_event");
+
+        Countly.sharedInstance().views().startView("test_view");
+
+        Exception e = new Exception("test_exception");
+        Countly.sharedInstance().crashes().recordHandledException(e);
+
+        Countly.sharedInstance().userProfile().setProperty("test_property", "test_value");
+        Countly.sharedInstance().userProfile().save(); // events will be packed on this
+
+        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
+
+        Countly.sharedInstance().apm().recordNetworkTrace("test_trace", 400, 2000, 1111, 1111, 2222);
+
+        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "test_data");
+
+        Map<String, String> params = new ConcurrentHashMap<>();
+        params.put("key", "value");
+        Countly.sharedInstance().requestQueue().addDirectRequest(params);
+
+        return ModuleCrashTests.extractStackTrace(e);
+    }
+
+    private void immediateFlow_allFeatures() throws InterruptedException {
+        Countly.sharedInstance().remoteConfig().downloadAllKeys(null); // will add one rc immediate request
+        Countly.sharedInstance().feedback().getAvailableFeedbackWidgets(new ModuleFeedback.RetrieveFeedbackWidgets() {
+            @Override public void onFinished(List<ModuleFeedback.CountlyFeedbackWidget> retrievedWidgets, String error) {
+
+            }
+        }); // will add one feedback immediate request
+        Countly.sharedInstance().contents().enterContentZone(); // will add one content immediate request
+
+        Thread.sleep(1000);
+
+        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+    }
+
+    private void feedbackFlow_allFeatures() {
+        // could not mock ratings immediate, it requires a context
+        Countly.sharedInstance().ratings().recordRatingWidgetWithID("test", 5, "test", "test", true);
+        ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
+        widget.name = "test";
+        widget.widgetId = "test";
+        widget.type = ModuleFeedback.FeedbackWidgetType.nps;
+        Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
+    }
+
+    private static void validateEventInRQ(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventIdx, eventCount);
     }
 }
