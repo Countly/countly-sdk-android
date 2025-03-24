@@ -34,6 +34,7 @@ public class ModuleFeedback extends ModuleBase {
     final static String RATING_EVENT_KEY = "[CLY]_star_rating";
 
     final String cachedAppVersion;
+    ImmediateRequestGenerator iRGenerator;
 
     Feedback feedbackInterface = null;
 
@@ -42,6 +43,7 @@ public class ModuleFeedback extends ModuleBase {
         L.v("[ModuleFeedback] Initialising");
 
         cachedAppVersion = deviceInfo.mp.getAppVersion(config.context);
+        iRGenerator = config.immediateRequestGenerator;
 
         feedbackInterface = new Feedback();
     }
@@ -84,7 +86,7 @@ public class ModuleFeedback extends ModuleBase {
 
         String requestData = requestQueueProvider.prepareFeedbackListRequest();
 
-        (new ImmediateRequestMaker()).doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
                     L.d("[ModuleFeedback] Not possible to retrieve widget list. Probably due to lack of connection to the server");

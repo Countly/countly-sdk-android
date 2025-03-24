@@ -593,7 +593,7 @@ public class ModuleViewsTests {
         String[] viewNames = { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
         final Map<String, Object> segm = new HashMap<>();
 
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         TestUtils.assertRQSize(0);
         //go from one activity to another in the expected way and then "go to background"
         ///////// 1

@@ -98,7 +98,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     private void startServerConfigUpdateTimer() {
-        serverConfigUpdateTimer.startTimer((long) currentServerConfigUpdateInterval * 60 * 60 * 1000, new Runnable() {
+        serverConfigUpdateTimer.startTimer((long) currentServerConfigUpdateInterval * 60 * 60 * 1000, (long) currentServerConfigUpdateInterval * 60 * 60, new Runnable() {
             @Override
             public void run() {
                 fetchConfigFromServer(_cly.config_);

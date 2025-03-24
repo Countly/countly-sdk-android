@@ -23,7 +23,8 @@ public class ModuleContent extends ModuleBase {
     private int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
-    private final int CONTENT_START_DELAY_MS = 4000; // 4 seconds
+    int CONTENT_START_DELAY_MS = 4000; // 4 seconds
+    int REFRESH_CONTENT_ZONE_DELAY_MS = 2500; // 2.5 seconds
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -104,7 +105,7 @@ public class ModuleContent extends ModuleBase {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
             return;
         }
-    
+
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             L.w("[ModuleContent] enterContentZoneInternal, temporary device ID is enabled, skipping");
             return;
@@ -266,7 +267,7 @@ public class ModuleContent extends ModuleBase {
 
         _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
 
-        enterContentZoneInternal(null, 2500);
+        enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
     }
 
     public class Content {

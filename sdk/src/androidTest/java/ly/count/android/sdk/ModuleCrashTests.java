@@ -41,7 +41,7 @@ public class ModuleCrashTests {
 
     @Before
     public void setUp() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
 
         mCountly = new Countly();
         config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
@@ -709,7 +709,7 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, TestUtils.map("secret", "secret"));
         validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
 
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         countly.crashes().recordUnhandledException(exception, TestUtils.map("secret", "secret"));
         validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
@@ -836,7 +836,7 @@ public class ModuleCrashTests {
     }
 
     private void createNativeDumFiles() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
 
         String finalPath = TestUtils.getContext().getCacheDir().getAbsolutePath() + File.separator + "Countly" + File.separator + "CrashDumps";
 
@@ -860,12 +860,12 @@ public class ModuleCrashTests {
         }
     }
 
-    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
+    static void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         validateCrash(error, breadcrumbs, fatal, nativeCrash, 1, 0, customSegmentation, changedBits, customMetrics, baseMetricsExclude);
     }
 
-    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, final int rqSize, final int idx,
+    static void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, final int rqSize, final int idx,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(rqSize, RQ.length);
@@ -905,7 +905,7 @@ public class ModuleCrashTests {
         Assert.assertEquals(paramCount, crash.length());
     }
 
-    private int validateCrashMetrics(@NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
+    private static int validateCrashMetrics(@NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
         int metricCount = 12 - metricsToExclude.size();
 
         assertMetricIfNotExcluded(metricsToExclude, "_device", "C", crash);
@@ -944,7 +944,7 @@ public class ModuleCrashTests {
         return metricCount;
     }
 
-    private void assertMetricIfNotExcluded(List<String> metricsToExclude, String metric, Object value, JSONObject crash) throws JSONException {
+    private static void assertMetricIfNotExcluded(List<String> metricsToExclude, String metric, Object value, JSONObject crash) throws JSONException {
         if (metricsToExclude.contains(metric)) {
             Assert.assertFalse(crash.has(metric));
         } else {
@@ -952,11 +952,11 @@ public class ModuleCrashTests {
         }
     }
 
-    private String extractStackTrace(Throwable throwable) {
+    static String extractStackTrace(Throwable throwable) {
         return extractStackTrace(throwable, 1000, -1);
     }
 
-    private String extractStackTrace(Throwable throwable, int lineLength, int maxLines) {
+    private static String extractStackTrace(Throwable throwable, int lineLength, int maxLines) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         throwable.printStackTrace(pw);

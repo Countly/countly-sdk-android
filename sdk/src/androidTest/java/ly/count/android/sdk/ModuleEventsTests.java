@@ -974,6 +974,27 @@ public class ModuleEventsTests {
         JSONArray events = new JSONArray(RQ[idx].get("events"));
         Assert.assertEquals(eventCount, events.length());
         JSONObject event = events.getJSONObject(eventIdx);
+        validateEvent(event, eventName, expectedSegmentation, count, sum, duration, id, pvid, cvid, peid);
+    }
+
+    protected static void validateEventInEQ(String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int eventCount) throws JSONException {
+        CountlyStore store = TestUtils.getCountlyStore();
+        Assert.assertEquals(eventCount, store.getEventQueueSize());
+        String eventStr = store.getEvents()[idx];
+
+        validateEvent(new JSONObject(eventStr), eventName, expectedSegmentation, count, sum, duration, id, pvid, cvid, peid);
+    }
+
+    protected static void validateEventInEQ(String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, int idx, int eventCount) throws JSONException {
+        CountlyStore store = TestUtils.getCountlyStore();
+        Assert.assertEquals(eventCount, store.getEventQueueSize());
+        String eventStr = store.getEvents()[idx];
+        System.err.println(eventStr);
+
+        validateEvent(new JSONObject(eventStr), eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_");
+    }
+
+    private static void validateEvent(JSONObject event, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid) throws JSONException {
         Assert.assertEquals(eventName, event.get("key"));
         Assert.assertEquals(count, event.getInt("count"));
         Assert.assertEquals(sum, event.optDouble("sum", 0.0d), 0.0001);

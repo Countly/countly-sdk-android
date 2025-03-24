@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -35,7 +34,7 @@ import static ly.count.android.sdk.ModuleConfiguration.keyRVersion;
 import static ly.count.android.sdk.ModuleConfiguration.keyRViewTracking;
 
 class ServerConfigBuilder {
-    private final Map<String, Object> config;
+    final Map<String, Object> config;
     private long timestamp;
     private String version;
 
@@ -204,16 +203,15 @@ class ServerConfigBuilder {
     }
 
     String build() throws JSONException {
+        return buildJson().toString();
+    }
+
+    JSONObject buildJson() throws JSONException {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put(keyRTimestamp, timestamp);
         jsonObject.put(keyRVersion, version);
         jsonObject.put(keyRConfig, new JSONObject(config));
-        return jsonObject.toString();
-    }
-
-    Map<String, Object> buildConfigMap() {
-        return new ConcurrentHashMap<String, Object>(config) {
-        };
+        return jsonObject;
     }
 
     /**

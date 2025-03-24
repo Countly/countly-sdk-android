@@ -352,7 +352,7 @@ public class ModuleAPMTests {
         validateNetworkRequest(0, "a_tra", -1, 200, 123, 456);
     }
 
-    private void validateNetworkRequest(int rqIdx, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {
+    protected static void validateNetworkRequest(int rqIdx, String key, long duration, int responseCode, int requestPayloadSize, int responsePayloadSize) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(rqIdx + 1, RQ.length);
 
