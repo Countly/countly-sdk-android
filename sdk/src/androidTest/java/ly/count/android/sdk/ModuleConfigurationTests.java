@@ -929,6 +929,66 @@ public class ModuleConfigurationTests {
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 2);
     }
 
+    @Test
+    public void eventQueueSize() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().eventQueueSize(3).build());
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("test_event");
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCountlyStore().getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("test_event_1");
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(2, TestUtils.getCountlyStore().getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("test_event_2");
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("test_event_3");
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCountlyStore().getEventQueueSize());
+
+        validateEventInRQ("test_event", TestUtils.map(), 0, 1, 0, 3);
+        validateEventInRQ("test_event_1", TestUtils.map(), 0, 1, 1, 3);
+        validateEventInRQ("test_event_2", TestUtils.map(), 0, 1, 2, 3);
+    }
+
+    @Test
+    public void requestQueueSize() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().requestQueueSize(3).build());
+        Countly.sharedInstance().init(countlyConfig);
+
+        Countly.sharedInstance().sessions().beginSession();
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+
+        Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "_special_test");
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+
+        Countly.sharedInstance().location().setLocation("country", "city", "gps", "ip");
+        Assert.assertEquals(3, TestUtils.getCurrentRQ().length);
+
+        Map<String, String> params = new ConcurrentHashMap<>();
+        params.put("key", "value");
+        Countly.sharedInstance().requestQueue().addDirectRequest(params);
+
+        boolean failed = false;
+        try {
+            ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId); // this will be not true anymore
+            failed = true;
+        } catch (Throwable e) {
+            // do nothing
+        }
+
+        Assert.assertFalse(failed);
+    }
+
     // ================ Helper Methods ================
 
     private void assertDefaultConfigValues(Countly countly) {
