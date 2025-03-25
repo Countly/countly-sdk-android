@@ -1432,6 +1432,35 @@ public class ModuleViewsTests {
         ClearFillSegmentationViewEnd(viewEndSegm, "a", TestUtils.map("d", 4, "e", 5));
         ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewEndSegm, 1, 0.0d, 0.0d, 1);
     }
+
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation with server config
+     * Also validate that the global segmentation is updated correctly
+     * when the view is stopped
+     * "setGlobalViewSegmentation" call from the views interface is used
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void serverConfig_setGlobalSegmentation_maxSegmentationValues_interface() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().segmentationValuesLimit(2).build());
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a");
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        // start false because session did not start
+        ClearFillSegmentationViewStart(viewStartSegm, "a", false);
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+
+        countly.views().setGlobalViewSegmentation(TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5));
+        countly.views().stopViewWithName("a");
+        Map<String, Object> viewEndSegm = TestUtils.map();
+        ClearFillSegmentationViewEnd(viewEndSegm, "a", TestUtils.map("d", 4, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewEndSegm, 1, 0.0d, 0.0d, 1);
+    }
     //test for sessions when consent removed
 
     /**

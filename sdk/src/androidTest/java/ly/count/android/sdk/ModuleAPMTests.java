@@ -251,6 +251,46 @@ public class ModuleAPMTests {
 
     /**
      * Test that custom trace key is truncated to the correct length
+     * Max segmentation values limit is applied, with server config
+     * Validate custom metrics are merged and truncated to the correct length
+     * Validate that the custom trace is sent to the server with correct values
+     */
+    @Test
+    public void serverConfig_customTrace_keyLength_segmentationValues() throws JSONException {
+        CountlyConfig mConfig = TestUtils.createBaseConfig();
+        mConfig.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().keyLengthLimit(5).segmentationValuesLimit(3).build());
+        mCountly = new Countly().init(mConfig);
+        requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
+
+        String key = "a_trace_to_track";
+        mCountly.apm().startTrace(key);
+
+        Assert.assertTrue(mCountly.moduleAPM.codeTraces.containsKey(key));
+
+        Map<String, Integer> customMetrics = new HashMap<>();
+        customMetrics.put("a_trace_to_look", 1);
+        customMetrics.put("a_trace_to_inspect", 2);
+        customMetrics.put("look_here", 3);
+        customMetrics.put("microphone_show", 4);
+        customMetrics.put("berserk", 5);
+
+        mCountly.apm().endTrace(key, customMetrics);
+
+        customMetrics.clear();
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            customMetrics.put("micro", 4);
+            customMetrics.put("berse", 5);
+            customMetrics.put("look_", 3);
+        } else {
+            customMetrics.put("look_", 3);
+            customMetrics.put("a_tra", 2);
+            customMetrics.put("micro", 4);
+        }
+        verify(requestQueueProvider).sendAPMCustomTrace(eq("a_tra"), anyLong(), anyLong(), anyLong(), eq(customMetricsToString(customMetrics)));
+    }
+
+    /**
+     * Test that custom trace key is truncated to the correct length
      * Max segmentation values limit is applied,
      * Validate custom metrics are merged and truncated to the correct length
      * Validate that the custom trace is sent to the server with correct values
