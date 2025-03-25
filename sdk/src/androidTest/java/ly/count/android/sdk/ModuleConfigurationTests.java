@@ -960,7 +960,7 @@ public class ModuleConfigurationTests {
             .build();
     }
 
-    private ImmediateRequestGenerator createIRGForSpecificResponse(final String targetResponse) {
+    static ImmediateRequestGenerator createIRGForSpecificResponse(final String targetResponse) {
         return new ImmediateRequestGenerator() {
             @Override
             public ImmediateRequestI CreateImmediateRequestMaker() {

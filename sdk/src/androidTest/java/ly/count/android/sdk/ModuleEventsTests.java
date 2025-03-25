@@ -525,26 +525,7 @@ public class ModuleEventsTests {
         countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7), 1, 1.1d, 1.1d);
         validateEventInRQ("rnd_key", TestUtils.map("f", 6, "g", 7), 1, 1.1d, 1.1d, 0);
 
-        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, threeSegmentation);
-        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 1);
-
-        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, threeSegmentation);
-        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 2);
-
-        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, threeSegmentation);
-        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 3);
-
-        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, threeSegmentation);
-        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 4);
-
-        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, threeSegmentation);
-        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 5);
-
-        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, threeSegmentation);
-        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 6);
-
-        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, threeSegmentation);
-        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, threeSegmentation, 1, 0.0d, 0.0d, 7);
+        flow_internalEvents(countly, threeSegmentation);
     }
 
     /**
@@ -574,6 +555,62 @@ public class ModuleEventsTests {
     public void internalLimits_recordEventInternal_maxValueSizeKeyLength() throws JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.sdkInternalLimits.setMaxValueSize(2).setMaxKeyLength(2);
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "bbb", "bbb", "bbc", "ccc", "bbd", "ddd", "bbe", "eee"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rn", TestUtils.map("a", 1, "bb", "dd"), 1, 1.1d, 1.1d, 0);
+    }
+
+    /**
+     * Validate that only normal events' segmentation values are clipped to the maximum allowed values by given server config
+     * EQ size is 1 to trigger request generation
+     */
+    @Test
+    public void serverConfig_recordEventInternal_maxSegmentationValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().segmentationValuesLimit(2).build());
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Map<String, Object> threeSegmentation = TestUtils.map("a", 1, "b", 2, "c", 3);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7), 1, 1.1d, 1.1d);
+        validateEventInRQ("rnd_key", TestUtils.map("f", 6, "g", 7), 1, 1.1d, 1.1d, 0);
+
+        flow_internalEvents(countly, threeSegmentation);
+    }
+
+    /**
+     * "recordEvent" max value size limit
+     * Validate that all "String" values are clipped to the maximum allowed length by given server config
+     * EQ size is 1 to trigger request generation
+     */
+    @Test
+    public void serverConfig_recordEventInternal_maxValueSize() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().valueSizeLimit(2).build());
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        countly.events().recordEvent("rnd_key", TestUtils.map("a", 1, "b", "bbb", "c", "ccc"), 1, 1.1d, 1.1d);
+        validateEventInRQ("rnd_key", TestUtils.map("a", 1, "b", "bb", "c", "cc"), 1, 1.1d, 1.1d, 0);
+    }
+
+    /**
+     * "recordEvent" max value size limit and key length
+     * Validate that clipped values clashes with same keys and overridden each other by given server config
+     * "bb" key should have value from the second of the last value which is "dd"
+     */
+    @Test
+    public void serverConfig_recordEventInternal_maxValueSizeKeyLength() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().valueSizeLimit(2).keyLengthLimit(2).build());
         config.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(config);
 
@@ -1067,6 +1104,29 @@ public class ModuleEventsTests {
 
     protected static void validateEventInRQ(String deviceId, String eventName, int rqIdx, int eventIdx, int eventCount) throws JSONException {
         validateEventInRQ(deviceId, eventName, null, 1, 0.0d, 0.0d, "_CLY_", "_CLY_", "_CLY_", "_CLY_", rqIdx, -1, eventIdx, eventCount);
+    }
+
+    private void flow_internalEvents(Countly countly, Map<String, Object> threeSegmentation) throws JSONException {
+        countly.events().recordEvent(ModuleEvents.ACTION_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleEvents.ACTION_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 1);
+
+        countly.events().recordEvent(ModuleFeedback.NPS_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 2);
+
+        countly.events().recordEvent(ModuleFeedback.SURVEY_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleFeedback.SURVEY_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 3);
+
+        countly.events().recordEvent(ModuleFeedback.RATING_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 4);
+
+        countly.events().recordEvent(ModuleViews.VIEW_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 5);
+
+        countly.events().recordEvent(ModuleViews.ORIENTATION_EVENT_KEY, threeSegmentation);
+        validateEventInRQ(ModuleViews.ORIENTATION_EVENT_KEY, threeSegmentation, 1, 0.0d, 0.0d, 6);
+
+        countly.events().recordEvent(ModulePush.PUSH_EVENT_ACTION, threeSegmentation);
+        validateEventInRQ(ModulePush.PUSH_EVENT_ACTION, threeSegmentation, 1, 0.0d, 0.0d, 7);
     }
 
 /*
