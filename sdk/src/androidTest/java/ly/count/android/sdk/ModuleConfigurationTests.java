@@ -127,7 +127,8 @@ public class ModuleConfigurationTests {
     // ================ Server Configuration Validation Tests ================
 
     /**
-     * Test default server configuration values
+     * Tests that default server configuration values are correctly applied when no custom configuration is provided.
+     * Verifies that all default values match the expected configuration.
      */
     @Test
     public void serverConfig_DefaultValues() throws InterruptedException {
@@ -137,7 +138,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test provided server configuration values
+     * Tests that custom server configuration values are correctly applied when provided directly.
+     * Verifies that the configuration is properly parsed and applied to the SDK.
      */
     @Test
     public void serverConfig_ProvidedValues() throws InterruptedException, JSONException {
@@ -145,7 +147,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that server configuration values are correctly applied when using an immediate request generator.
+     * Verifies that the configuration is properly handled when received through the request generator.
      */
     @Test
     public void serverConfig_WithImmediateRequestGenerator() throws InterruptedException, JSONException {
@@ -155,7 +158,9 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that all features work correctly with default server configuration.
+     * Verifies that all SDK features (sessions, events, views, crashes, etc.) function as expected
+     * when using default configuration values.
      */
     @Test
     public void serverConfig_Defaults_AllFeatures() throws JSONException, InterruptedException {
@@ -164,7 +169,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that all features are properly disabled when explicitly configured to be disabled.
+     * Verifies that no requests are generated and no data is collected when all features are disabled.
      */
     @Test
     public void disable_allFeatures() throws JSONException, InterruptedException {
@@ -191,7 +197,11 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that consent requirement is properly handled when enabled.
+     * Verifies that:
+     * 1. Initial consent request is sent
+     * 2. No data is collected until consent is given
+     * 3. Location is properly handled with empty value
      */
     @Test
     public void consentEnabled_allFeatures() throws JSONException, InterruptedException {
@@ -217,7 +227,11 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that session tracking is properly disabled when configured.
+     * Verifies that:
+     * 1. No session requests are generated
+     * 2. Other features (events, views, crashes) continue to work
+     * 3. Request counts and order are maintained correctly
      */
     @Test
     public void sessionsDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -257,7 +271,11 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that crash reporting is properly disabled when configured.
+     * Verifies that:
+     * 1. Crash reports are not sent
+     * 2. Other features continue to work normally
+     * 3. Request counts and order are maintained correctly
      */
     @Test
     public void crashReportingDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -298,7 +316,11 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that view tracking is properly disabled when configured.
+     * Verifies that:
+     * 1. View events are not sent
+     * 2. Other features continue to work normally
+     * 3. Request counts and order are maintained correctly
      */
     @Test
     public void viewTrackingDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -339,7 +361,11 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that custom event tracking is properly disabled when configured.
+     * Verifies that:
+     * 1. Custom events are not sent
+     * 2. Other features continue to work normally
+     * 3. Request counts and order are maintained correctly
      */
     @Test
     public void customEventTrackingDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -380,7 +406,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that networking is properly disabled when configured.
+     * Verifies that no network requests are generated when networking is disabled.
      */
     @Test
     public void networkingDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -388,7 +415,11 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that location tracking is properly disabled when configured.
+     * Verifies that:
+     * 1. Location updates are not sent
+     * 2. Location is properly cleared
+     * 3. Other features continue to work normally
      */
     @Test
     public void locationTrackingDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -429,7 +460,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that tracking is properly disabled when configured.
+     * Verifies that no tracking-related requests are generated when tracking is disabled.
      */
     @Test
     public void trackingDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -459,7 +491,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that content zone refresh is properly disabled when configured.
+     * Verifies that content zone refresh requests are not generated.
      */
     @Test
     public void refreshContentZoneDisabled_allFeatures() throws JSONException, InterruptedException {
@@ -467,7 +500,8 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Test server configuration values with immediate request generator
+     * Tests that content zone is properly enabled when configured.
+     * Verifies that content zone requests are generated with the correct frequency.
      */
     @Test
     public void contentZoneEnabled_allFeatures() throws JSONException, InterruptedException {
@@ -929,6 +963,14 @@ public class ModuleConfigurationTests {
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 2);
     }
 
+    /**
+     * Tests that the event queue size limit is properly enforced.
+     * Verifies that:
+     * 1. Events are queued until the size limit is reached
+     * 2. When limit is reached, events sent in a batch
+     * 3. New events queued after the batch sent
+     * 4. Event order maintained in the queue
+     */
     @Test
     public void eventQueueSize() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
@@ -959,6 +1001,13 @@ public class ModuleConfigurationTests {
         validateEventInRQ("test_event_2", TestUtils.map(), 0, 1, 2, 3);
     }
 
+    /**
+     * Tests that the request queue size limit is properly enforced.
+     * Verifies that:
+     * 1. Requests are queued until the size limit is reached
+     * 2. When limit is reached, first item removed
+     * 3. Different types of requests (sessions, attribution, location) are counted towards the limit
+     */
     @Test
     public void requestQueueSize() throws JSONException {
         CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false).enableManualSessionControl();
