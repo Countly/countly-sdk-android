@@ -266,7 +266,9 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         {
             Countly.sharedInstance().L.d("[OpenUDID] Generating openUDID");
             //Try to get the ANDROID_ID
-            retrievedID = Settings.Secure.getString(_cly.context_.getContentResolver(), Settings.Secure.ANDROID_ID);
+            if (_cly.config_.deviceIdType == null || _cly.config_.deviceIdType != DeviceIdType.SDK_GENERATED) {
+                retrievedID = Settings.Secure.getString(_cly.context_.getContentResolver(), Settings.Secure.ANDROID_ID);
+            }
             if (retrievedID == null || retrievedID.equals("9774d56d682e549c") || retrievedID.length() < 15) {
                 //if ANDROID_ID is null, or it's equals to the GalaxyTab generic ANDROID_ID or is too short bad, generates a new one
                 //the new one would be random
