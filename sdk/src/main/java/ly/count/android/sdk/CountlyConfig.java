@@ -307,7 +307,9 @@ public class CountlyConfig {
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setIdMode(DeviceIdType idMode) {
-        deviceIdType = idMode;
+        if (idMode == DeviceIdType.SDK_GENERATED || idMode == DeviceIdType.OPEN_UDID) {
+            deviceIdType = idMode;
+        }
         return this;
     }
 
@@ -994,7 +996,6 @@ public class CountlyConfig {
         explicitStorageModeEnabled = true;
         return this;
     }
-    
 
     /**
      * This is an experimental feature and it can have breaking changes
