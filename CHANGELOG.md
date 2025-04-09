@@ -1,5 +1,6 @@
 ## XX.XX.XX
 * Added a Content feature method "refreshContentZone" that does a manual refresh.
+* Re-added the configuration function "CountlyConfig.setIdMode(idMode)".
 
 * Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
 
