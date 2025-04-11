@@ -1,8 +1,11 @@
 ## XX.XX.XX
+* ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
+
 * Added a Content feature method "refreshContentZone" that does a manual refresh.
-* Re-added the configuration function "CountlyConfig.setIdMode(idMode)".
 
 * Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
+
+* Removed the deprecated function "CountlyConfig.setIdMode(idMode)"
 
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
