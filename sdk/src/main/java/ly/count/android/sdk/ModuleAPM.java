@@ -627,51 +627,5 @@ public class ModuleAPM extends ModuleBase {
                 recordAppStart(timestamp);
             }
         }
-
-        /**
-         * Manually trigger that the app has gone to the foreground
-         *
-         * @deprecated this call is deprecated and will be removed in the future
-         */
-        public void triggerForeground() {
-            synchronized (_cly) {
-                L.i("[Apm] Calling 'triggerForeground'");
-
-                if (!trackForegroundBackground) {
-                    L.w("[Apm] triggerForeground, tracking foreground is disabled");
-                    return;
-                }
-
-                if (!manualForegroundBackgroundTriggers) {
-                    L.w("[Apm] trying to use manual foreground triggers without enabling them");
-                    return;
-                }
-
-                goToForeground();
-            }
-        }
-
-        /**
-         * Manually trigger that the app has gone to the background
-         *
-         * @deprecated this call is deprecated and will be removed in the future
-         */
-        public void triggerBackground() {
-            synchronized (_cly) {
-                L.i("[Apm] Calling 'triggerBackground'");
-
-                if (!trackForegroundBackground) {
-                    L.w("[Apm] triggerBackground, tracking background is disabled");
-                    return;
-                }
-
-                if (!manualForegroundBackgroundTriggers) {
-                    L.w("[Apm] triggerBackground, trying to use manual background triggers without enabling them");
-                    return;
-                }
-
-                goToBackground();
-            }
-        }
     }
 }
