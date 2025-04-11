@@ -7,5 +7,4 @@ public enum DeviceIdType {
     DEVELOPER_SUPPLIED,//custom value provided by the developer
     OPEN_UDID,//OPEN_UDID generated UDID
     TEMPORARY_ID,//temporary device ID mode
-    SDK_GENERATED,//Countly generated ID
 }
