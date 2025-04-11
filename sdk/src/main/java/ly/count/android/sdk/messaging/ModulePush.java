@@ -241,12 +241,12 @@ public class ModulePush {
 
         @Override
         public int hashCode() {
-            return id.hashCode();
+            return id.hashCode() + title.hashCode() + message.hashCode();
         }
 
         @Override
         public int describeContents() {
-            return id.hashCode();
+            return hashCode();
         }
 
         @Override
