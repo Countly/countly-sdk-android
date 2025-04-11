@@ -147,13 +147,13 @@ public class CountlyConfigTests {
         config.setIfStarRatingShownAutomatically(true);
         config.setStarRatingDisableAskingForEachAppVersion(true);
         config.setApplication(app);
-        config.setRecordAppStartTime(true);
+        config.apm.enableAppStartTimeTracking();
         config.setDisableLocation();
         config.setLocation("CC", "city", "loc", "ip");
         config.setMetricOverride(metricOverride);
-        config.setAppStartTimestampOverride(123L);
-        config.enableManualAppLoadedTrigger();
-        config.enableManualForegroundBackgroundTriggerAPM();
+        config.apm.setAppStartTimestampOverride(123L);
+        config.apm.enableManualAppLoadedTrigger();
+        config.apm.enableForegroundBackgroundTracking();
         config.setLogListener(logCallback);
 
         Assert.assertEquals(s[0], config.serverURL);
