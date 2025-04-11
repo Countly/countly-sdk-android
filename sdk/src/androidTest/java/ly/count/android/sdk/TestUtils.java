@@ -136,8 +136,7 @@ public class TestUtils {
     public static CountlyConfig createBaseConfig(String deviceId) {
         CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
             .setDeviceId(deviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+            .setLoggingEnabled(true);
 
         return cc;
     }
@@ -145,8 +144,9 @@ public class TestUtils {
     public static CountlyConfig createBaseConfig(Context context) {
         CountlyConfig cc = new CountlyConfig(context, commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+            .setLoggingEnabled(true);
+
+        cc.crashes.enableCrashReporting();
 
         return cc;
     }

@@ -17,7 +17,8 @@ public class scAP_AppPerfomanceMonit {
     Activity act2;
 
     CountlyConfig createAPMConfig() {
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), TestUtils.commonAppKey, TestUtils.commonURL).setDeviceId(TestUtils.commonDeviceId).setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), TestUtils.commonAppKey, TestUtils.commonURL).setDeviceId(TestUtils.commonDeviceId).setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
         config.setRequiresConsent(true);
         config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.location });
         return config;

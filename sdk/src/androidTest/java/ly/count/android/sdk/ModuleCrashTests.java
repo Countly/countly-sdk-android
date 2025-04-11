@@ -44,7 +44,8 @@ public class ModuleCrashTests {
         TestUtils.getCountyStore().clear();
 
         mCountly = new Countly();
-        config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
         mCountly.init(config);
 
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
@@ -56,10 +57,10 @@ public class ModuleCrashTests {
 
     @Test
     public void setCrashFilters() {
-        CrashFilterCallback callback = new CrashFilterCallback() {
+        GlobalCrashFilterCallback callback = new GlobalCrashFilterCallback() {
             @Override
-            public boolean filterCrash(String crash) {
-                if (crash.contains("Secret")) {
+            public boolean filterCrash(CrashData crash) {
+                if (crash.getStackTrace().contains("Secret")) {
                     return true;
                 }
                 return false;
@@ -67,27 +68,27 @@ public class ModuleCrashTests {
         };
 
         Countly countly = new Countly();
-        CountlyConfig cConfig = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        cConfig.setCrashFilterCallback(callback);
+        CountlyConfig cConfig = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        cConfig.crashes.setGlobalCrashFilterCallback(callback).enableCrashReporting();
 
         countly.init(cConfig);
 
-        Assert.assertEquals(callback, countly.moduleCrash.crashFilterCallback);
+        Assert.assertEquals(callback, countly.moduleCrash.globalCrashFilterCallback);
     }
 
     @Test
     public void crashFilterTest() {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        cConfig.setCrashFilterCallback(new CrashFilterCallback() {
+        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true);
+        cConfig.crashes.setGlobalCrashFilterCallback(new GlobalCrashFilterCallback() {
             @Override
-            public boolean filterCrash(String crash) {
-                if (crash.contains("Secret")) {
+            public boolean filterCrash(CrashData crash) {
+                if (crash.getStackTrace().contains("Secret")) {
                     return true;
                 }
                 return false;
             }
-        });
+        }).enableCrashReporting();
 
         countly.init(cConfig);
         RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
@@ -119,7 +120,7 @@ public class ModuleCrashTests {
     @Test
     public void provideCustomCrashSegment_DuringInit() {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true);
         int[] arr = { 1, 2, 3, 4, 5 };
 
         Map<String, Object> segm = new HashMap<>();
@@ -132,7 +133,7 @@ public class ModuleCrashTests {
         segm.put("41", new Object());
         segm.put("42", arr);
 
-        cConfig.setCustomCrashSegment(segm);
+        cConfig.crashes.enableCrashReporting().setCustomCrashSegmentation(segm);
 
         countly.init(cConfig);
 
@@ -151,14 +152,14 @@ public class ModuleCrashTests {
     @Test
     public void provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true);
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
         segm.put("aa1", "dda");
         segm.put("1", 1234);
 
-        cConfig.setCustomCrashSegment(segm);
+        cConfig.crashes.enableCrashReporting().setCustomCrashSegmentation(segm);
 
         countly.init(cConfig);
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
@@ -330,7 +331,7 @@ public class ModuleCrashTests {
     public void recordHandledException_crashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> crash.contains("Secret"));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains("Secret"));
         Countly countly = new Countly().init(cConfig);
 
         Exception exception = new Exception("Secret message");
@@ -693,8 +694,7 @@ public class ModuleCrashTests {
     public void recordException_crashFilter_globalCrashFilter() throws JSONException {
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> crash.contains("secret"));
-        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getCrashSegmentation().containsKey("secret"));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains("secret"));
 
         Countly countly = new Countly().init(cConfig);
 
@@ -810,7 +810,7 @@ public class ModuleCrashTests {
         createNativeDumFiles();
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> true);
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> true);
 
         new Countly().init(cConfig);
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
@@ -825,7 +825,7 @@ public class ModuleCrashTests {
         createNativeDumFiles();
         CountlyConfig cConfig = TestUtils.createBaseConfig();
         cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> crash.contains(extractNativeCrash("secret")));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getStackTrace().contains(extractNativeCrash("secret")));
 
         new Countly().init(cConfig);
 
@@ -1043,7 +1043,7 @@ public class ModuleCrashTests {
         segm.put("abr_log_id", "87abdb687astdna8s7dynas897ndaysnd");
         segm.put("arf_log_ver", 1_675_987);
 
-        cConfig.setCustomCrashSegment(segm);
+        cConfig.crashes.setCustomCrashSegmentation(segm);
 
         countly.init(cConfig);
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
@@ -1087,10 +1087,10 @@ public class ModuleCrashTests {
     @Test
     public void internalLimits_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
         cConfig.metricProviderOverride = mmp;
         cConfig.sdkInternalLimits.setMaxKeyLength(5);
-        cConfig.setCustomCrashSegment(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
+        cConfig.crashes.enableCrashReporting().setCustomCrashSegmentation(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
 
         countly.init(cConfig);
 

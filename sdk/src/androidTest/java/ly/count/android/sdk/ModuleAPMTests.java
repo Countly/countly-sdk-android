@@ -30,8 +30,9 @@ public class ModuleAPMTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
-
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
+        mCountly.init(config);
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
     }
 

@@ -64,9 +64,9 @@ public class CountlyConfigTests {
 
         String[] fn = { "ds dsd", "434f", "ngfhg" };
 
-        CrashFilterCallback callback = new CrashFilterCallback() {
+        GlobalCrashFilterCallback callback = new GlobalCrashFilterCallback() {
             @Override
-            public boolean filterCrash(String crash) {
+            public boolean filterCrash(CrashData crash) {
                 return false;
             }
         };
@@ -117,7 +117,6 @@ public class CountlyConfigTests {
         config.setStarRatingTextMessage(s[4]);
         config.setStarRatingTextTitle(s[5]);
         config.setLoggingEnabled(true);
-        config.enableCrashReporting();
         config.setViewTracking(true);
         config.setAutoTrackingUseShortName(true);
         config.addCustomNetworkRequestHeaders(hv);
@@ -127,34 +126,36 @@ public class CountlyConfigTests {
         config.setConsentEnabled(fn);
         config.setHttpPostForced(true);
         config.enableTemporaryDeviceIdMode();
-        config.setCrashFilterCallback(callback);
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
         config.setAutoTrackingExceptions(act);
         config.setTrackOrientationChanges(false);
         config.setEventQueueSizeToSend(1337);
         config.enableManualSessionControl();
-        config.setRecordAllThreadsWithCrash();
         config.setDisableUpdateSessionRequests(true);
         config.setShouldIgnoreAppCrawlers(true);
         config.setAppCrawlerNames(appCrawlerNames);
         config.enableCertificatePinning(certificateCerts);
         config.enablePublicKeyPinning(publicKeyCerts);
         config.setEnableAttribution(true);
-        config.setCustomCrashSegment(crashSegments);
         config.setUpdateSessionTimerDelay(137);
         config.setIfStarRatingDialogIsCancellable(true);
         config.setIfStarRatingShownAutomatically(true);
         config.setStarRatingDisableAskingForEachAppVersion(true);
         config.setApplication(app);
-        config.apm.enableAppStartTimeTracking();
         config.setDisableLocation();
         config.setLocation("CC", "city", "loc", "ip");
         config.setMetricOverride(metricOverride);
+        config.apm.enableAppStartTimeTracking();
         config.apm.setAppStartTimestampOverride(123L);
         config.apm.enableManualAppLoadedTrigger();
         config.apm.enableForegroundBackgroundTracking();
         config.setLogListener(logCallback);
+
+        config.crashes.enableCrashReporting();
+        config.crashes.setCustomCrashSegmentation(crashSegments);
+        config.crashes.enableRecordAllThreadsWithCrash();
+        config.crashes.setGlobalCrashFilterCallback(callback);
 
         Assert.assertEquals(s[0], config.serverURL);
         Assert.assertEquals(c, config.context);
@@ -179,7 +180,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
         Assert.assertTrue(config.temporaryDeviceIdEnabled);
-        Assert.assertEquals(callback, config.crashFilterCallback);
+        Assert.assertEquals(callback, config.crashes.globalCrashFilterCallback);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.globalViewSegmentation);
         Assert.assertArrayEquals(act, config.automaticViewTrackingExceptions);
@@ -207,7 +208,6 @@ public class CountlyConfigTests {
         Assert.assertEquals(metricOverride, config.metricOverride);
         Assert.assertEquals((Long) 123l, config.apm.appStartTimestampOverride);
         Assert.assertTrue(config.apm.appLoadedManualTrigger);
-        Assert.assertTrue(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertEquals(logCallback, config.providedLogCallback);
 
         config.setLocation("CC", "city", "loc", "ip");
@@ -307,7 +307,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.metricOverride);
         Assert.assertNull(config.apm.appStartTimestampOverride);
         Assert.assertFalse(config.apm.appLoadedManualTrigger);
-        Assert.assertFalse(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertNull(config.providedLogCallback);
     }
 }

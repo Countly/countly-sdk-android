@@ -224,19 +224,20 @@ public class App extends Application {
 
             .setUserProperties(customUserProperties);
 
-        config.crashes
-            .enableCrashReporting()
+        config.apm
+            .enableAppStartTimeTracking()
+            .enableForegroundBackgroundTracking()
+            .setAppStartTimestampOverride(applicationStartTimestamp);
+
+        config.crashes.enableCrashReporting()
             .enableRecordAllThreadsWithCrash()
             .setCustomCrashSegmentation(customCrashSegmentation)
             .setGlobalCrashFilterCallback(new GlobalCrashFilterCallback() {
-                @Override public boolean filterCrash(CrashData crash) {
-                    return crash.getStackTrace().contains("secret");
+                @Override
+                public boolean filterCrash(CrashData crash) {
+                    return crash.getStackTrace().contains("crash");
                 }
             });
-
-        config.apm.enableAppStartTimeTracking()
-            .enableForegroundBackgroundTracking()
-            .setAppStartTimestampOverride(applicationStartTimestamp);
 
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());

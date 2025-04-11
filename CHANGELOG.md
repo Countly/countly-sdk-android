@@ -12,6 +12,14 @@
     * "setAppStartTimestampOverride(appStartTimestampOverride)"
     * "enableManualAppLoadedTrigger()"
     * "enableManualForegroundBackgroundTriggerAPM()"
+    * "setMaxSegmentationValues(maxSegmentationValues)"
+    * "setMaxBreadcrumbCount(maxBreadcrumbCount)"
+    * "enableCrashReporting()"
+    * "setRecordAllThreadsWithCrash()"
+    * "setCustomCrashSegment(crashSegment)"
+    * "setCrashFilterCallback(callback)"
+
+* Removed the deprecated interface "CrashFilterCallback".
 
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.

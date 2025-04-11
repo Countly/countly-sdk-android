@@ -162,11 +162,6 @@ public class CountlyConfig {
 
     protected Integer sessionUpdateTimerDelay = null;
 
-    /**
-     * @deprecated This is deprecated, will be removed in the future
-     */
-    protected CrashFilterCallback crashFilterCallback;
-
     protected boolean starRatingDialogIsCancellable = false;
 
     protected boolean starRatingShownAutomatically = false;
@@ -208,32 +203,6 @@ public class CountlyConfig {
      * BREAKING CHANGES WILL BE DONE WITHOUT WARNING
      */
     public PerformanceCounterCollector pcc;
-
-    /**
-     * Sets how many segmentation values can be recorded when recording an event or view.
-     * Values exceeding this count will be ignored.
-     *
-     * @param maxSegmentationValues to set
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxSegmentationValues(int)</pre> instead
-     */
-    public synchronized CountlyConfig setMaxSegmentationValues(int maxSegmentationValues) {
-        sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues);
-        return this;
-    }
-
-    /**
-     * Set the maximum amount of breadcrumbs that can be recorded.
-     * After exceeding the limit, the oldest values will be removed.
-     *
-     * @param maxBreadcrumbCount to set
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxBreadcrumbCount(int)</pre> instead
-     */
-    public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
-        sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount);
-        return this;
-    }
 
     public CountlyConfig() {
     }
@@ -366,17 +335,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setLoggingEnabled(boolean enabled) {
         this.loggingEnabled = enabled;
-        return this;
-    }
-
-    /**
-     * Call to enable uncaught crash reporting
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.enableCrashReporting()</pre> instead
-     */
-    public synchronized CountlyConfig enableCrashReporting() {
-        crashes.enableCrashReporting();
         return this;
     }
 
@@ -615,16 +573,6 @@ public class CountlyConfig {
     }
 
     /**
-     * @param callback
-     * @return Returns the same config object for convenient linking
-     * @deprecated This call is deprecated, please use <pre>crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)</pre> instead
-     */
-    public synchronized CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
-        crashFilterCallback = callback;
-        return this;
-    }
-
-    /**
      * @param salt
      * @return Returns the same config object for convenient linking
      */
@@ -639,15 +587,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation) {
         trackOrientationChange = shouldTrackOrientation;
-        return this;
-    }
-
-    /**
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.enableRecordAllThreadsWithCrash()</pre> instead
-     */
-    public synchronized CountlyConfig setRecordAllThreadsWithCrash() {
-        crashes.enableRecordAllThreadsWithCrash();
         return this;
     }
 
@@ -731,18 +670,6 @@ public class CountlyConfig {
 
     public synchronized CountlyConfig enableManualSessionControlHybridMode() {
         manualSessionControlHybridModeEnabled = true;
-        return this;
-    }
-
-    /**
-     * Set custom crash segmentation which will be added to all recorded crashes
-     *
-     * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.setCustomCrashSegmentation(Map<String, Object>)</pre> instead
-     */
-    public synchronized CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
-        crashes.setCustomCrashSegmentation(crashSegment);
         return this;
     }
 

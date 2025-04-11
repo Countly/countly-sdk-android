@@ -34,7 +34,7 @@ public class ModuleFeedbackTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(TestUtils.createBaseConfig());
     }
 
     @After

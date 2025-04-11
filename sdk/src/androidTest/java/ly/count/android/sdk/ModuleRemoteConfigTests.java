@@ -34,7 +34,8 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void valuesClearedOnConsentRemoval() {
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
         config.setRequiresConsent(true);
         config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.remoteConfig });
         config.enableRemoteConfigValueCaching();
@@ -67,7 +68,8 @@ public class ModuleRemoteConfigTests {
             final int[] triggerCounter = { -1 }; // because we now have server config fetch
             int intendedCount = 0;
 
-            CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().disableHealthCheck();
+            CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).disableHealthCheck();
+            config.crashes.enableCrashReporting();
             config.disableHealthCheck();//mocked tests fail without disabling this
             config.enableRemoteConfigAutomaticTriggers();
             if (a == 0) {
@@ -205,7 +207,8 @@ public class ModuleRemoteConfigTests {
         String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
         countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
 
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
         config.enableRemoteConfigValueCaching();
         Countly countly = new Countly().init(config);
 
@@ -222,7 +225,8 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void validateClear() {
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
         config.enableRemoteConfigValueCaching();
         Countly countly = new Countly().init(config);
 
@@ -327,7 +331,8 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void validateGetters() throws JSONException {
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
         config.enableRemoteConfigValueCaching();
         Countly countly = new Countly().init(config);
 
@@ -404,7 +409,8 @@ public class ModuleRemoteConfigTests {
      */
     @Test
     public void passingBadValues() {
-        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.crashes.enableCrashReporting();
         config.enableRemoteConfigValueCaching();
         config.enableRemoteConfigAutomaticTriggers();
         Countly countly = new Countly().init(config);

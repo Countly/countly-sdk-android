@@ -28,7 +28,6 @@ public class ModuleAPM extends ModuleBase {
 
     boolean useManualAppLoadedTrigger;
     long appStartTimestamp;
-    boolean manualForegroundBackgroundTriggers;
     boolean trackForegroundBackground;
     boolean manualOverrideInForeground = false;//app starts in background
 
@@ -56,11 +55,6 @@ public class ModuleAPM extends ModuleBase {
 
         if (config.apm.appLoadedManualTrigger) {
             L.d("[ModuleAPM] Using manual app finished loading trigger for app start");
-        }
-
-        manualForegroundBackgroundTriggers = config.apm.manualForegroundBackgroundTrigger;
-        if (manualForegroundBackgroundTriggers) {
-            L.d("[ModuleAPM] Using manual foreground/background triggers");
         }
 
         trackForegroundBackground = config.apm.trackForegroundBackground;
@@ -440,7 +434,7 @@ public class ModuleAPM extends ModuleBase {
 
         long currentTimestamp = System.currentTimeMillis();
 
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
         }
         activitiesOpen++;
@@ -462,7 +456,7 @@ public class ModuleAPM extends ModuleBase {
     void callbackOnActivityStopped(Activity activity) {
         L.d("[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
 
-        if (trackForegroundBackground & !manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
         }
         activitiesOpen--;
@@ -488,7 +482,7 @@ public class ModuleAPM extends ModuleBase {
         }
 
         // we only do this adjustment if we track it automatically
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (trackForegroundBackground && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Starting to track foreground time");
 
             calculateAppRunningTimes(activitiesOpen - 1, activitiesOpen);
