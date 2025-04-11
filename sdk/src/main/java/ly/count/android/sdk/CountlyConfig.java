@@ -839,18 +839,6 @@ public class CountlyConfig {
     }
 
     /**
-     * Enable the recording of the app start time
-     *
-     * @param recordAppStartTime set true if you want to enable the recording of the app start time
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>apm.enableAppStartTracking()</pre> instead
-     */
-    public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime) {
-        apm.trackAppStartTime = recordAppStartTime;
-        return this;
-    }
-
-    /**
      * Disable location tracking
      *
      * @return Returns the same config object for convenient linking
@@ -885,40 +873,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setMetricOverride(Map<String, String> providedMetricOverride) {
         metricOverride = providedMetricOverride;
-        return this;
-    }
-
-    /**
-     * Override the app start timestamp in case you have a more precise way to measure it
-     *
-     * @param appStartTimestampOverride The timestamp to use as the app start timestamp
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>apm.setAppStartTimestampOverride()</pre> instead
-     */
-    public synchronized CountlyConfig setAppStartTimestampOverride(long appStartTimestampOverride) {
-        apm.setAppStartTimestampOverride(appStartTimestampOverride);
-        return this;
-    }
-
-    /**
-     * Set to manually trigger the moment when the app has finished loading
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>apm.enableManualAppLoadedTrigger()</pre> instead
-     */
-    public synchronized CountlyConfig enableManualAppLoadedTrigger() {
-        apm.enableManualAppLoadedTrigger();
-        return this;
-    }
-
-    /**
-     * Set this in case you want to control these triggers manually
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated and will be removed in the future
-     */
-    public synchronized CountlyConfig enableManualForegroundBackgroundTriggerAPM() {
-        apm.manualForegroundBackgroundTrigger = true;
         return this;
     }
 
@@ -992,7 +946,6 @@ public class CountlyConfig {
         return this;
     }
 
-    
     /**
      * This is an experimental feature and it can have breaking changes
      *
@@ -1005,7 +958,7 @@ public class CountlyConfig {
     public synchronized CountlyConfig enableServerConfiguration() {
         return this;
     }
-    
+
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
         return this;

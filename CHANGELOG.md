@@ -3,8 +3,15 @@
 
 * Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
 
-* Removed the deprecated function "Countly.apm.triggerForeground()"
-* Removed the deprecated function "Countly.apm.triggerBackground()"
+* Removed the following deprecated functions:
+  * from "Countly.apm":
+    * "triggerForeground()"
+    * "triggerBackground()"
+  * from "CountlyConfig":
+    * "setRecordAppStartTime(recordAppStartTime)"
+    * "setAppStartTimestampOverride(appStartTimestampOverride)"
+    * "enableManualAppLoadedTrigger()"
+    * "enableManualForegroundBackgroundTriggerAPM()"
 
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
