@@ -3,6 +3,8 @@
 
 * Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
 
+* Mitigated an issue related to notification manager's caching, moved it to more proper way.
+
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
 
