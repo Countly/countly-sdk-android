@@ -111,10 +111,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      */
     void loadConfigFromStorage(@Nullable String providedServerConfiguration) {
 
-        String sConfig = providedServerConfiguration;
+        String sConfig = storageProvider.getServerConfig();
 
         if (Utils.isNullOrEmpty(sConfig)) {
-            sConfig = storageProvider.getServerConfig();
+            sConfig = providedServerConfiguration;
         }
 
         L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");
