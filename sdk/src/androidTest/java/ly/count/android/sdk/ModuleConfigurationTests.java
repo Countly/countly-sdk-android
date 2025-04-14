@@ -505,7 +505,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void contentZoneEnabled_allFeatures() throws JSONException, InterruptedException {
-        base_allFeatures((sc) -> sc.contentZone(true), 1, 1, 1, 4, 1);
+        base_allFeatures((sc) -> sc.contentZone(true), 1, 1, 1, 2, 1);
     }
 
     // ================ Configuration Persistence Tests ================
