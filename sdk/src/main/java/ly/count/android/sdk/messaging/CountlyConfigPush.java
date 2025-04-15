@@ -13,6 +13,8 @@ public class CountlyConfigPush {
     Set<String> allowedIntentClassNames = new HashSet<>();
     Set<String> allowedIntentPackageNames = new HashSet<>();
 
+    CountlyNotificationButtonURLHandler notificationButtonURLHandler;
+
     /**
      * @param application
      * @param mode
@@ -57,6 +59,17 @@ public class CountlyConfigPush {
      */
     public synchronized CountlyConfigPush setAllowedIntentPackageNames(@NonNull List<String> allowedIntentPackageNames) {
         this.allowedIntentPackageNames = new HashSet<>(allowedIntentPackageNames);
+        return this;
+    }
+
+    /**
+     * set notification button URL handler
+     *
+     * @param notificationButtonURLHandler for handling notification button click
+     * @return Returns the same push config object for convenient linking
+     */
+    public synchronized CountlyConfigPush setNotificationButtonURLHandler(CountlyNotificationButtonURLHandler notificationButtonURLHandler) {
+        this.notificationButtonURLHandler = notificationButtonURLHandler;
         return this;
     }
 }
