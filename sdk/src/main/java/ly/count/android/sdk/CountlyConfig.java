@@ -79,7 +79,7 @@ public class CountlyConfig {
     protected String appKey = null;
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID.
      */
     protected String deviceID = null;
 
@@ -289,22 +289,12 @@ public class CountlyConfig {
     }
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID.
      *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setDeviceId(String deviceID) {
         this.deviceID = deviceID;
-        return this;
-    }
-
-    /**
-     * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call should not be used anymore as it does not have any purpose anymore
-     */
-    public synchronized CountlyConfig setIdMode(DeviceIdType idMode) {
         return this;
     }
 
@@ -992,7 +982,6 @@ public class CountlyConfig {
         return this;
     }
 
-    
     /**
      * This is an experimental feature and it can have breaking changes
      *
@@ -1005,7 +994,7 @@ public class CountlyConfig {
     public synchronized CountlyConfig enableServerConfiguration() {
         return this;
     }
-    
+
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
         return this;

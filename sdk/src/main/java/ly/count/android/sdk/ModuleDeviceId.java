@@ -1,9 +1,7 @@
 package ly.count.android.sdk;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.provider.Settings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.UUID;
@@ -252,33 +250,26 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
     }
 
-    public final static String PREF_KEY = "openudid";
+    public final static String PREF_KEY = "openudid"; // key of old impl, keeping because needs migration
     public final static String PREFS_NAME = "openudid_prefs";
 
-    @SuppressLint("HardwareIds")
-    @Override @NonNull public String getOpenUDID() {
+    @Override @NonNull public String getUUID() {
         String retrievedID;
 
         SharedPreferences mPreferences = _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        //Try to get the openudid from local preferences
+        //Try to get the stored UUID from local preferences
         retrievedID = mPreferences.getString(PREF_KEY, null);
         if (retrievedID == null) //Not found if temp storage
         {
-            Countly.sharedInstance().L.d("[OpenUDID] Generating openUDID");
-            //Try to get the ANDROID_ID
-            retrievedID = Settings.Secure.getString(_cly.context_.getContentResolver(), Settings.Secure.ANDROID_ID);
-            if (retrievedID == null || retrievedID.equals("9774d56d682e549c") || retrievedID.length() < 15) {
-                //if ANDROID_ID is null, or it's equals to the GalaxyTab generic ANDROID_ID or is too short bad, generates a new one
-                //the new one would be random
-                retrievedID = UUID.randomUUID().toString();
-            }
+            Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, Generating UUID");
+            retrievedID = UUID.randomUUID().toString();
 
             final SharedPreferences.Editor e = mPreferences.edit();
             e.putString(PREF_KEY, retrievedID);
             e.apply();
         }
 
-        Countly.sharedInstance().L.d("[OpenUDID] ID: " + retrievedID);
+        Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, retrievedID:[" + retrievedID + "]");
 
         return retrievedID;
     }
