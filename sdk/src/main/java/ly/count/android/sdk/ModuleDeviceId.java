@@ -257,7 +257,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         String retrievedID;
 
         SharedPreferences mPreferences = _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        //Try to get the openudid from local preferences
+        //Try to get the stored UUID from local preferences
         retrievedID = mPreferences.getString(PREF_KEY, null);
         if (retrievedID == null) //Not found if temp storage
         {

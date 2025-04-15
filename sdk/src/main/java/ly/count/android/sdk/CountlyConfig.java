@@ -79,7 +79,7 @@ public class CountlyConfig {
     protected String appKey = null;
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID, then, if it's not available, to Google Advertising ID.
      */
     protected String deviceID = null;
 
@@ -289,7 +289,7 @@ public class CountlyConfig {
     }
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID, then, if it's not available, to Google Advertising ID.
      *
      * @return Returns the same config object for convenient linking
      */
