@@ -110,7 +110,6 @@ public class CountlyConfigTests {
         config.setCountlyStore(cs);
         config.checkForNativeCrashDumps(false);
         config.setDeviceId(s[2]);
-        config.setIdMode(DeviceIdType.DEVELOPER_SUPPLIED);
         config.setStarRatingSessionLimit(1335);
         config.setStarRatingCallback(rc);
         config.setStarRatingTextDismiss(s[3]);

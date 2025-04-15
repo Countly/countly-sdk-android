@@ -339,8 +339,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             if (deviceIdProvider_.getDeviceId() == null) {
-                // When device ID is supplied by OpenUDID or by Google Advertising ID.
-                // In some cases it might take time for them to initialize. So, just wait for it.
+                // This might not be the case anymore, check it out TODO
                 L.i("[ConnectionProcessor] No Device ID available yet, skipping request " + storedRequests[0]);
                 break;
             }

@@ -62,8 +62,8 @@ public class DeviceId {
 
                 if (providedId == null) {
                     //if the provided ID is 'null' then that means that a new ID must be generated
-                    L.i("[DeviceId-int] Using OpenUDID");
-                    setAndStoreId(DeviceIdType.OPEN_UDID, openUDIDProvider.getOpenUDID());
+                    L.i("[DeviceId-int] Using UUID");
+                    setAndStoreId(DeviceIdType.OPEN_UDID, openUDIDProvider.getUUID());
                 } else if (providedId.equals(temporaryCountlyDeviceId)) {
                     L.i("[DeviceId-int] Entering temp ID mode");
 
@@ -106,8 +106,8 @@ public class DeviceId {
         assert type != null;
 
         if (id == null && type == DeviceIdType.OPEN_UDID) {
-            //using openUDID as a fallback
-            id = openUDIDProvider.getOpenUDID();
+            //using UUID as a fallback
+            id = openUDIDProvider.getUUID();
         }
         return id;
     }

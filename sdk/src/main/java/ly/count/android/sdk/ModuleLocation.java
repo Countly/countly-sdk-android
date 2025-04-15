@@ -11,7 +11,6 @@ public class ModuleLocation extends ModuleBase {
     String locationCity = null;
     String locationGpsCoordinates = null;
     String locationIpAddress = null;
-
     Location locationInterface = null;
 
     ModuleLocation(Countly cly, CountlyConfig config) {
@@ -32,6 +31,10 @@ public class ModuleLocation extends ModuleBase {
         L.d("[ModuleLocation] Calling 'sendCurrentLocationIfValid'");
 
         if (locationDisabled) {
+            return;
+        }
+
+        if (!configProvider.getLocationTrackingEnabled()) {
             return;
         }
 
@@ -66,6 +69,10 @@ public class ModuleLocation extends ModuleBase {
             return;
         }
 
+        if (!configProvider.getLocationTrackingEnabled()) {
+            return;
+        }
+
         locationCountryCode = country_code;
         locationCity = city;
         locationGpsCoordinates = gpsCoordinates;
@@ -79,7 +86,7 @@ public class ModuleLocation extends ModuleBase {
             locationDisabled = false;
         }
 
-        if (_cly.isBeginSessionSent || !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+        if (_cly.isBeginSessionSent || !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions) || !configProvider.getSessionTrackingEnabled()) {
             //send as a separate request if either begin session was already send and we missed our first opportunity
             //or if consent for sessions is not given and our only option to send this is as a separate request
             requestQueueProvider.sendLocation(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
@@ -105,6 +112,14 @@ public class ModuleLocation extends ModuleBase {
                     setLocationInternal(config.locationCountyCode, config.locationCity, config.locationLocation, config.locationIpAddress);
                 }
             }
+        }
+    }
+
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        if (!locationDisabled && !configProvider.getLocationTrackingEnabled()) {
+            locationDisabled = true;
+            disableLocationInternal();
         }
     }
 

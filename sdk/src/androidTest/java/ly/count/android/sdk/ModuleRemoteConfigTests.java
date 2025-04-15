@@ -64,7 +64,7 @@ public class ModuleRemoteConfigTests {
     public void automaticRCTriggers() {
         for (int a = 0; a < 2; a++) {
             countlyStore.clear();
-            final int[] triggerCounter = { -1 }; // because we now have server config fetch
+            final int[] triggerCounter = { 0 }; // because we now have server config fetch
             int intendedCount = 0;
 
             CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting().disableHealthCheck();
@@ -75,7 +75,9 @@ public class ModuleRemoteConfigTests {
                 config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.remoteConfig });
             }
             config.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
-                triggerCounter[0]++;
+                if (!requestData.endsWith("method=sc")) { // this is server config, disabling it for this test
+                    triggerCounter[0]++;
+                }
             };
             Countly countly = (new Countly()).init(config);
             Assert.assertEquals(++intendedCount, triggerCounter[0]);//init should create a request
