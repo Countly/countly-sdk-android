@@ -2,6 +2,7 @@
 * Added a Content feature method "refreshContentZone" that does a manual refresh.
 * Extended server configuration capabilities of the SDK.
 * Added a config method to provide server config in the initialization "setSDKBehaviorSettings(String)".
+* Added a new interface "CountlyNotificationButtonURLHandler" to allow custom handling of URLs when notification buttons are clicked. Could be set by "CountlyConfigPush.setNotificationButtonURLHandler"
 
 * Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
 
