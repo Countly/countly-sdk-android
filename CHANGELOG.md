@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 25.4.0
 * Added a Content feature method "refreshContentZone" that does a manual refresh.
 * Added a new interface "CountlyNotificationButtonURLHandler" to allow custom handling of URLs when notification buttons are clicked. Could be set by "CountlyConfigPush.setNotificationButtonURLHandler"
 
