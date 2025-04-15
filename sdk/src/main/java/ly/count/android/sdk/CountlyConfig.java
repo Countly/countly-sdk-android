@@ -201,7 +201,7 @@ public class CountlyConfig {
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
-    String serverConfiguration;
+    String sdkBehaviorSettings;
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED
@@ -993,7 +993,6 @@ public class CountlyConfig {
         return this;
     }
 
-    
     /**
      * This is an experimental feature and it can have breaking changes
      *
@@ -1006,7 +1005,7 @@ public class CountlyConfig {
     public synchronized CountlyConfig enableServerConfiguration() {
         return this;
     }
-    
+
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
         return this;
@@ -1015,11 +1014,11 @@ public class CountlyConfig {
     /**
      * Set the server configuration to be set while initializing the SDK
      *
-     * @param serverConfiguration The server configuration to be set
+     * @param sdkBehaviorSettings The server configuration to be set
      * @return Returns the same config object for convenient linking
      */
-    public synchronized CountlyConfig setServerConfiguration(String serverConfiguration) {
-        this.serverConfiguration = serverConfiguration;
+    public synchronized CountlyConfig setSDKBehaviorSettings(String sdkBehaviorSettings) {
+        this.sdkBehaviorSettings = sdkBehaviorSettings;
         return this;
     }
 

@@ -70,7 +70,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         config.countlyStore.setConfigurationProvider(this);
 
         //load the previously saved configuration
-        loadConfigFromStorage(config.serverConfiguration);
+        loadConfigFromStorage(config.sdkBehaviorSettings);
 
         //update the config variables according to the new state
         updateConfigVariables(config);
@@ -109,12 +109,12 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     /**
      * Reads from storage to local json objects
      */
-    void loadConfigFromStorage(@Nullable String providedServerConfiguration) {
+    void loadConfigFromStorage(@Nullable String sdkBehaviorSettings) {
 
         String sConfig = storageProvider.getServerConfig();
 
         if (Utils.isNullOrEmpty(sConfig)) {
-            sConfig = providedServerConfiguration;
+            sConfig = sdkBehaviorSettings;
         }
 
         L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");

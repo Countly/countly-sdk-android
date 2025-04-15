@@ -143,7 +143,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void serverConfig_ProvidedValues() throws InterruptedException, JSONException {
-        initServerConfigWithValues(CountlyConfig::setServerConfiguration);
+        initServerConfigWithValues(CountlyConfig::setSDKBehaviorSettings);
     }
 
     /**

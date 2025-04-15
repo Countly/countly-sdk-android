@@ -1,7 +1,7 @@
 ## XX.XX.XX
 * Added a Content feature method "refreshContentZone" that does a manual refresh.
 * Extended server configuration capabilities of the SDK.
-* Added a config method to provide server config in the initialization "setServerConfiguration(String)".
+* Added a config method to provide server config in the initialization "setSDKBehaviorSettings(String)".
 
 * Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
 
