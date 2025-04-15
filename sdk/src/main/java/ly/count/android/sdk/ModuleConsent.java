@@ -287,6 +287,11 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
     }
 
     @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        requiresConsent = config.shouldRequireConsent;
+    }
+
+    @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleConsent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {

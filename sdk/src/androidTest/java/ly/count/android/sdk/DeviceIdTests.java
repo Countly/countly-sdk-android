@@ -23,7 +23,7 @@ public class DeviceIdTests {
 
     @Before
     public void setUp() {
-        store = TestUtils.getCountyStore();
+        store = TestUtils.getCountlyStore();
         store.clear();
 
         Countly.sharedInstance().halt();

@@ -78,7 +78,31 @@ public class ConnectionProcessorTests {
                 return true;
             }
 
+            @Override public boolean getSessionTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getViewTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getCustomEventTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getContentZoneEnabled() {
+                return false;
+            }
+
             @Override public boolean getCrashReportingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getLocationTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getRefreshContentZoneEnabled() {
                 return true;
             }
         };

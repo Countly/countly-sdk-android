@@ -12,7 +12,7 @@ public class TestUtilsTests {
 
     @Before
     public void setUp() {
-        CountlyStore store = TestUtils.getCountyStore();
+        CountlyStore store = TestUtils.getCountlyStore();
         store.clear(); // clear the store to make sure that there are no requests from previous tests
     }
 
@@ -34,7 +34,7 @@ public class TestUtilsTests {
     public void getCurrentRQ_notEmpty() {
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
 
-        TestUtils.getCountyStore().addRequest("a=b&c=d&hi=7628y9u0%C4%B1oh&fiyua=5765", true);
+        TestUtils.getCountlyStore().addRequest("a=b&c=d&hi=7628y9u0%C4%B1oh&fiyua=5765", true);
 
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Map<String, String> request = TestUtils.getCurrentRQ()[0];
@@ -54,7 +54,7 @@ public class TestUtilsTests {
      */
     @Test
     public void getCurrentRQ_trashRequest() {
-        CountlyStore store = TestUtils.getCountyStore();
+        CountlyStore store = TestUtils.getCountlyStore();
         store.addRequest("This is not a request", true);
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertEquals("", TestUtils.getCurrentRQ()[0].get("This is not a request"));
@@ -68,7 +68,7 @@ public class TestUtilsTests {
      */
     @Test
     public void getCurrentRQ_wrongStructure() {
-        CountlyStore store = TestUtils.getCountyStore();
+        CountlyStore store = TestUtils.getCountlyStore();
         store.addRequest("&s==1", true);
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertNull(TestUtils.getCurrentRQ()[0].get("="));

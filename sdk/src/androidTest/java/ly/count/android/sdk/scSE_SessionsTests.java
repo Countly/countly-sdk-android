@@ -23,13 +23,13 @@ public class scSE_SessionsTests {
 
     @Before
     public void setUp() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
 
     @After
     public void tearDown() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
 

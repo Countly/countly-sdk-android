@@ -41,7 +41,7 @@ public class ModuleCrashTests {
 
     @Before
     public void setUp() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
 
         mCountly = new Countly();
         config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
@@ -709,7 +709,7 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, TestUtils.map("secret", "secret"));
         validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
 
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         countly.crashes().recordUnhandledException(exception, TestUtils.map("secret", "secret"));
         validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
@@ -836,7 +836,7 @@ public class ModuleCrashTests {
     }
 
     private void createNativeDumFiles() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
 
         String finalPath = TestUtils.getContext().getCacheDir().getAbsolutePath() + File.separator + "Countly" + File.separator + "CrashDumps";
 
@@ -860,12 +860,12 @@ public class ModuleCrashTests {
         }
     }
 
-    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
+    static void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         validateCrash(error, breadcrumbs, fatal, nativeCrash, 1, 0, customSegmentation, changedBits, customMetrics, baseMetricsExclude);
     }
 
-    private void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, final int rqSize, final int idx,
+    static void validateCrash(@NonNull String error, @NonNull String breadcrumbs, boolean fatal, boolean nativeCrash, final int rqSize, final int idx,
         @NonNull Map<String, Object> customSegmentation, int changedBits, @NonNull Map<String, Object> customMetrics, @NonNull List<String> baseMetricsExclude) throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();
         Assert.assertEquals(rqSize, RQ.length);
@@ -905,7 +905,7 @@ public class ModuleCrashTests {
         Assert.assertEquals(paramCount, crash.length());
     }
 
-    private int validateCrashMetrics(@NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
+    private static int validateCrashMetrics(@NonNull JSONObject crash, boolean nativeCrash, @NonNull Map<String, Object> customMetrics, @NonNull List<String> metricsToExclude) throws JSONException {
         int metricCount = 12 - metricsToExclude.size();
 
         assertMetricIfNotExcluded(metricsToExclude, "_device", "C", crash);
@@ -944,7 +944,7 @@ public class ModuleCrashTests {
         return metricCount;
     }
 
-    private void assertMetricIfNotExcluded(List<String> metricsToExclude, String metric, Object value, JSONObject crash) throws JSONException {
+    private static void assertMetricIfNotExcluded(List<String> metricsToExclude, String metric, Object value, JSONObject crash) throws JSONException {
         if (metricsToExclude.contains(metric)) {
             Assert.assertFalse(crash.has(metric));
         } else {
@@ -952,11 +952,11 @@ public class ModuleCrashTests {
         }
     }
 
-    private String extractStackTrace(Throwable throwable) {
+    static String extractStackTrace(Throwable throwable) {
         return extractStackTrace(throwable, 1000, -1);
     }
 
-    private String extractStackTrace(Throwable throwable, int lineLength, int maxLines) {
+    private static String extractStackTrace(Throwable throwable, int lineLength, int maxLines) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         throwable.printStackTrace(pw);
@@ -1237,6 +1237,61 @@ public class ModuleCrashTests {
     }
 
     /**
+     * Custom crash segmentation and segmentation while recording the crash is provided serverConfig
+     * Also breadcrumbs are added before
+     * Validate all 4 limits are applied after crash filtering:
+     * - Max value size 5
+     * - Max key length 2
+     * - Max segmentation values 5
+     * - Max breadcrumb count 2
+     * Validate that all values are truncated to their limits
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void serverConfig_globalCrashFilter_sdkInternalLimits_withPreValues() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().valueSizeLimit(5).keyLengthLimit(2).segmentationValuesLimit(5).breadcrumbLimit(2).build());
+
+        cConfig.sdkInternalLimits.setMaxValueSize(5).setMaxKeyLength(2).setMaxSegmentationValues(5).setMaxBreadcrumbCount(2);
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("arr", new int[] { 1, 2, 3, 4, 5 }, "double", Double.MAX_VALUE, "bool", true, "float", 1.1, "object", new Object(), "string", "string_to_become"));
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> {
+            if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+                TestUtils.assertEqualsMap(TestUtils.map("ar", new int[] { 1, 2, 3, 4, 5 }, "do", Double.MAX_VALUE, "de", "no", "fl", 1.1, "in", Integer.MIN_VALUE), crash.getCrashSegmentation());
+            } else {
+                TestUtils.assertEqualsMap(TestUtils.map("de", "no", "do", Double.MAX_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1), crash.getCrashSegmentation());
+            }
+            Assert.assertEquals("Volvo\nScani\n", crash.getBreadcrumbsAsString());
+
+            crash.getCrashSegmentation().put("beforemath", "Mudrunner");
+            crash.getCrashSegmentation().put("arr", new int[] { 1, 2 });
+            crash.getCrashSegmentation().put("obj", new Object());
+            crash.getCrashSegmentation().put("double", Double.MIN_VALUE);
+
+            crash.getBreadcrumbs().add("MercedesActros");
+
+            return false;
+        });
+
+        Countly countly = new Countly().init(cConfig);
+        countly.crashes().addCrashBreadcrumb("VolvoFH750");
+        countly.crashes().addCrashBreadcrumb("ScaniaR730");
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception, TestUtils.map("boolean", false, "star", "boom_boom", "integer", Integer.MIN_VALUE, "desire", "no"));
+
+        Map<String, Object> segm;
+        if (Build.VERSION.SDK_INT >= 21 && Build.VERSION.SDK_INT <= 25) {
+            segm = TestUtils.map("do", Double.MIN_VALUE, "de", "no", "fl", 1.1, "ar", new int[] { 1, 2 }, "in", Integer.MIN_VALUE);
+        } else {
+            segm = TestUtils.map("be", "Mudru", "do", Double.MIN_VALUE, "bo", false, "in", Integer.MIN_VALUE, "fl", 1.1);
+        }
+
+        validateCrash(extractStackTrace(exception), "Scani\nMerce\n", true, false, segm, 12, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
      * Validate that the stack trace is truncated to the maximum allowed length of 2
      * Adding all thread information is disabled
      *
@@ -1308,6 +1363,25 @@ public class ModuleCrashTests {
         expectedStackTrace.append("\nHaburayaHa");
 
         validateCrash(expectedStackTrace.toString(), "", true, false, new HashMap<>(), 16, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Validate that the stack trace is truncated to the maximum allowed length of 2 with server config
+     * Adding all thread information is disabled
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void serverConfig_recordException_stackTraceLimits_lineLength() throws JSONException {
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().traceLengthLimit(2).build());
+
+        Countly countly = new Countly().init(cConfig);
+
+        Exception exception = new Exception("Some message");
+        countly.crashes().recordUnhandledException(exception);
+        validateCrash(extractStackTrace(exception, 2, -1), "", true, false, new HashMap<>(), 0, new HashMap<>(), new ArrayList<>());
     }
 
     /**

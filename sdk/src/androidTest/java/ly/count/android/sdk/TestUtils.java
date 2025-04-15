@@ -53,23 +53,9 @@ public class TestUtils {
     public static class Activity3 extends Activity {
     }
 
-    public static CountlyConfig createConfigurationConfig(boolean enableServerConfig, ImmediateRequestGenerator irGen) {
+    static CountlyConfig createIRGeneratorConfig(ImmediateRequestGenerator irGen) {
         CountlyConfig cc = createBaseConfig();
-
         cc.immediateRequestGenerator = irGen;
-
-        if (enableServerConfig) {
-            cc.enableServerConfiguration();
-        }
-
-        return cc;
-    }
-
-    public static CountlyConfig createVariantConfig(ImmediateRequestGenerator irGen) {
-        CountlyConfig cc = createBaseConfig();
-
-        cc.immediateRequestGenerator = irGen;
-
         return cc;
     }
 
@@ -488,7 +474,7 @@ public class TestUtils {
         Assert.assertEquals(previous, mv.getPreviousViewId());
     }
 
-    protected static CountlyStore getCountyStore() {
+    protected static CountlyStore getCountlyStore() {
         return new CountlyStore(getContext(), mock(ModuleLog.class), false);
     }
 
@@ -509,7 +495,7 @@ public class TestUtils {
      */
     protected static @NonNull Map<String, String>[] getCurrentRQ(String filter) {
         //get all request files from target folder
-        String[] requests = getCountyStore().getRequests();
+        String[] requests = getCountlyStore().getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 
@@ -532,9 +518,9 @@ public class TestUtils {
     }
 
     protected static void removeRequestContains(String search) {
-        for (String request : getCountyStore().getRequests()) {
+        for (String request : getCountlyStore().getRequests()) {
             if (request.contains(search)) {
-                getCountyStore().removeRequest(request);
+                getCountlyStore().removeRequest(request);
             }
         }
     }

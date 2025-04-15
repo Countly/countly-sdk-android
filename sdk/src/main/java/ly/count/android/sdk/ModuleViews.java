@@ -188,6 +188,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return null;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] startViewInternal, View tracking is disabled, ignoring call, view will not be started view name:[" + viewName + "]");
+            return null;
+        }
+
         if (viewName == null || viewName.isEmpty()) {
             L.e("[ModuleViews] startViewInternal, Trying to record view with null or empty view name, ignoring request");
             return null;
@@ -282,6 +287,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            // stopallviews
+            L.d("[ModuleViews] stopViewWithIDInternal, View tracking is disabled, ignoring call, it will not be stopped view name:[" + vd.viewName + "]");
+            return;
+        }
+
         recordViewEndEvent(vd, customViewSegmentation, "stopViewWithIDInternal");
 
         if (!vd.willStartAgain) {
@@ -340,6 +351,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be paused view name:[" + vd.viewName + "]");
+            return;
+        }
+
         L.d("[ModuleViews] pauseViewWithIDInternal, pausing view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
 
         if (vd.viewStartTimeSeconds == 0) {
@@ -370,6 +386,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
+        }
+
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be resumed view name:[" + vd.viewName + "]");
             return;
         }
 
