@@ -241,12 +241,16 @@ public class ModulePush {
 
         @Override
         public int hashCode() {
-            return id.hashCode();
+            int result = 17;
+            result = 31 * result + (id != null ? id.hashCode() : 0);
+            result = 31 * result + (title != null ? title.hashCode() : 0);
+            result = 31 * result + (message != null ? message.hashCode() : 0);
+            return result;
         }
 
         @Override
         public int describeContents() {
-            return id.hashCode();
+            return hashCode();
         }
 
         @Override

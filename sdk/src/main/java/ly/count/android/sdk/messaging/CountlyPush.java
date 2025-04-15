@@ -417,7 +417,6 @@ public class CountlyPush {
             Button button = msg.buttons().get(i);
 
             pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, i + 1, allowedIntentClassNames, allowedIntentPackageNames);
-
             builder.addAction(button.icon(), button.title(), PendingIntent.getActivity(context, msg.hashCode() + i + 1, pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
 
@@ -439,11 +438,11 @@ public class CountlyPush {
                             .setBigContentTitle(msg.title())
                             .setSummaryText(msg.message()));
                     }
-                    manager.notify(msg.hashCode(), builder.build());
+                    manager.notify(msg.id().hashCode(), builder.build());
                 }
             }, 1);
         } else {
-            manager.notify(msg.hashCode(), builder.build());
+            manager.notify(msg.id().hashCode(), builder.build());
         }
 
         return Boolean.TRUE;
