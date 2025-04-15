@@ -261,7 +261,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         retrievedID = mPreferences.getString(PREF_KEY, null);
         if (retrievedID == null) //Not found if temp storage
         {
-            Countly.sharedInstance().L.d("[OpenUDIDProvided] getUUID, Generating UUID");
+            Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, Generating UUID");
             retrievedID = UUID.randomUUID().toString();
 
             final SharedPreferences.Editor e = mPreferences.edit();
@@ -269,7 +269,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             e.apply();
         }
 
-        Countly.sharedInstance().L.d("[OpenUDIDProvided] getUUID, retrievedID:[" + retrievedID + "]");
+        Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, retrievedID:[" + retrievedID + "]");
 
         return retrievedID;
     }
