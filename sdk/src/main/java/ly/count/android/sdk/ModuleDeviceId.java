@@ -1,6 +1,5 @@
 package ly.count.android.sdk;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.annotation.NonNull;
@@ -251,11 +250,10 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
     }
 
-    public final static String PREF_KEY = "openudid";
+    public final static String PREF_KEY = "openudid"; // key of old impl, keeping because needs migration
     public final static String PREFS_NAME = "openudid_prefs";
 
-    @SuppressLint("HardwareIds")
-    @Override @NonNull public String getOpenUDID() {
+    @Override @NonNull public String getUUID() {
         String retrievedID;
 
         SharedPreferences mPreferences = _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
@@ -263,8 +261,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         retrievedID = mPreferences.getString(PREF_KEY, null);
         if (retrievedID == null) //Not found if temp storage
         {
-            Countly.sharedInstance().L.d("[OpenUDID] Generating openUDID");
-            //Try to get the ANDROID_ID
+            Countly.sharedInstance().L.d("[OpenUDIDProvided] getUUID, Generating UUID");
             retrievedID = UUID.randomUUID().toString();
 
             final SharedPreferences.Editor e = mPreferences.edit();
@@ -272,7 +269,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             e.apply();
         }
 
-        Countly.sharedInstance().L.d("[OpenUDID] ID: " + retrievedID);
+        Countly.sharedInstance().L.d("[OpenUDIDProvided] getUUID, retrievedID:[" + retrievedID + "]");
 
         return retrievedID;
     }
