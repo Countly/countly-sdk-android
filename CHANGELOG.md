@@ -1,5 +1,6 @@
 ## 25.4.0
 * ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
+* ! Minor breaking change ! Server Configuration is now enabled by default. Changes made on SDK Manager > SDK Configuration on your server will affect SDK behavior directly.
 
 * Added a Content feature method "refreshContentZone" that does a manual refresh.
 * Extended server configuration capabilities of the SDK.
@@ -10,7 +11,7 @@
 
 * Removed the deprecated function "CountlyConfig.setIdMode(idMode)"
 
-* Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
+* Deprecated the experimental configuration function enableServerConfiguration.
 
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
