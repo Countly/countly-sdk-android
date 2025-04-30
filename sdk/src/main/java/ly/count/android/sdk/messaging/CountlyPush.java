@@ -61,7 +61,7 @@ public class CountlyPush {
     private static Application.ActivityLifecycleCallbacks callbacks = null;
     private static Activity activity = null;
 
-    private static CountlyConfigPush countlyConfigPush = null;
+    protected static CountlyConfigPush countlyConfigPush = null;
 
     static Integer notificationAccentColor = null;
 
@@ -601,7 +601,7 @@ public class CountlyPush {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     dialog.dismiss();
-                    
+
                     boolean isPositiveButtonPressed = (which == DialogInterface.BUTTON_POSITIVE);
                     if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link().toString())) {
                         Countly.sharedInstance().L.d("[CountlyPush, dialog button onClick] Link handled by custom URL handler, skipping default link opening.");

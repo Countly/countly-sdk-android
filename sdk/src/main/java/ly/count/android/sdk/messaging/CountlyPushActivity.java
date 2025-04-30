@@ -160,6 +160,12 @@ public class CountlyPushActivity extends Activity {
             try {
                 if (message.link() != null) {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given link. Push body. [" + message.link() + "]");
+
+                    if (CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(message.link().toString())) {
+                        Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Link handled by custom URL handler, skipping default link opening.");
+                        return;
+                    }
+
                     Intent i = new Intent(Intent.ACTION_VIEW, message.link());
                     i.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY |
                         Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET |
@@ -178,6 +184,11 @@ public class CountlyPushActivity extends Activity {
             }
         } else {
             try {
+                if (CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(message.buttons().get(index - 1).link().toString())) {
+                    Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Link handled by custom URL handler, skipping default link opening.");
+                    return;
+                }
+                
                 Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given button link. [" + (index - 1) + "] [" + message.buttons().get(index - 1).link() + "]");
                 Intent i = new Intent(Intent.ACTION_VIEW, message.buttons().get(index - 1).link());
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
