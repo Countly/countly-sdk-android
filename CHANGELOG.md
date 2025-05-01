@@ -1,5 +1,6 @@
 ## XX.XX.XX
 * Extended to allow custom handling of URLs when notification buttons are clicked in the background.
+* Extended "CountlyConfigPush.setNotificationButtonURLHandler" added context parameter.
 
 ## 25.4.0
 * ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
