@@ -554,7 +554,7 @@ public class CountlyPush {
                                 msg.recordAction(activity, 0);
                                 dialog.dismiss();
 
-                                if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.link().toString())) {
+                                if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.link().toString(), activity)) {
                                     Countly.sharedInstance().L.d("[CountlyPush, displayDialog] Link handled by custom URL handler, skipping default link opening.");
                                     return;
                                 }
@@ -603,7 +603,7 @@ public class CountlyPush {
                     dialog.dismiss();
 
                     boolean isPositiveButtonPressed = (which == DialogInterface.BUTTON_POSITIVE);
-                    if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link().toString())) {
+                    if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link().toString(), context)) {
                         Countly.sharedInstance().L.d("[CountlyPush, dialog button onClick] Link handled by custom URL handler, skipping default link opening.");
                         return;
                     }
