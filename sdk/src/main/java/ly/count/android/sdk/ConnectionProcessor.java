@@ -35,10 +35,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
+import java.util.Queue;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import org.json.JSONException;
 import org.json.JSONObject;
+import java.util.LinkedList;
 
 /**
  * ConnectionProcessor is a Runnable that is executed on a background
@@ -301,9 +303,26 @@ public class ConnectionProcessor implements Runnable {
         return 82 + boundary.length() + approximateDataSize + file.getName().length() + contentType.length(); // 78 is the length of the static parts of the entry
     }
 
+    private void enqueue(Long responseTime, Queue<Long> queue) {
+        if (queue.size() == 2) {
+            queue.poll();
+        }
+        queue.add(responseTime);
+    }
+
+    private Long totalResponseTime(Queue<Long> queue) {
+        long total = 0;
+        for (Long responseTime : queue) {
+            total += responseTime;
+        }
+        return total;
+    }
+
     @Override
     public void run() {
         long wholeQueueStart = UtilsTime.getNanoTime();
+        int acceptedTimeoutSeconds = 60 / 2;
+        Queue<Long> lastTwoResponseTime = new LinkedList<>();
         while (true) {
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
@@ -433,6 +452,23 @@ public class ConnectionProcessor implements Runnable {
                     // initialize and open connection
                     conn = urlConnectionForServerRequest(requestData, customEndpoint);
                     long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
+                    long responseTimeSeconds = setupServerRequestTime / 1000000000L;
+                    if (responseTimeSeconds >= acceptedTimeoutSeconds) {
+                        if (responseTimeSeconds <= totalResponseTime(lastTwoResponseTime)) {
+                            // FLAG 1
+                            if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
+                                // FLAG 2
+                                if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor]", L)) {
+                                    // FLAG 3
+                                    L.i("[ConnectionProcessor] run, server seems to be busy, resuming request sending request: [" + originalRequest + "]");
+                                    lastTwoResponseTime.clear();
+                                    break;
+                                }
+                            }
+                        }
+                        enqueue(responseTimeSeconds, lastTwoResponseTime);
+                    }
+
                     L.d("[ConnectionProcessor] run, TIMING Setup server request took:[" + setupServerRequestTime / 1000000.0d + "] ms");
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_07_SetupServerRequest", setupServerRequestTime);
@@ -472,7 +508,7 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     final RequestResult rRes;
-        
+
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {
