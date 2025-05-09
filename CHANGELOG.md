@@ -1,5 +1,5 @@
-## XX.XX.XX
-* Extended to allow custom handling of URLs when notification buttons are clicked in the background.
+## 25.4.1
+* Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
 * Extended "CountlyConfigPush.setNotificationButtonURLHandler" added context parameter.
 
 ## 25.4.0
