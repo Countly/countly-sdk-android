@@ -65,6 +65,7 @@ public class ConnectionProcessor implements Runnable {
     final RequestInfoProvider requestInfoProvider_;
     private final String serverURL_;
     private final SSLContext sslContext_;
+    private final Queue<Long> lastTwoResponseTime;
 
     private final Map<String, String> requestHeaderCustomValues_;
 
@@ -81,7 +82,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker) {
+        HealthTracker healthTracker, Queue<Long> lastTwoResponseTime) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -89,6 +90,7 @@ public class ConnectionProcessor implements Runnable {
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
+        this.lastTwoResponseTime = lastTwoResponseTime;
         L = logModule;
         this.healthTracker = healthTracker;
     }
@@ -304,7 +306,7 @@ public class ConnectionProcessor implements Runnable {
     }
 
     private void enqueue(Long responseTime, Queue<Long> queue) {
-        if (queue.size() == 2) {
+        if (queue.size() >= 2) {
             queue.poll();
         }
         queue.add(responseTime);
@@ -322,7 +324,6 @@ public class ConnectionProcessor implements Runnable {
     public void run() {
         long wholeQueueStart = UtilsTime.getNanoTime();
         int acceptedTimeoutSeconds = 60 / 2;
-        Queue<Long> lastTwoResponseTime = new LinkedList<>();
         while (true) {
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
@@ -454,7 +455,8 @@ public class ConnectionProcessor implements Runnable {
                     long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
                     long responseTimeSeconds = setupServerRequestTime / 1000000000L;
                     if (responseTimeSeconds >= acceptedTimeoutSeconds) {
-                        if (responseTimeSeconds <= totalResponseTime(lastTwoResponseTime)) {
+                        if (responseTimeSeconds < totalResponseTime(lastTwoResponseTime)) {
+                            L.v("FLAG_BACK FLAG 1 passed");
                             // FLAG 1
                             if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
                                 // FLAG 2
