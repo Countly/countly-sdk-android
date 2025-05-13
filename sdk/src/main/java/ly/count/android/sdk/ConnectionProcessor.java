@@ -51,6 +51,8 @@ import java.util.LinkedList;
  */
 public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 10_000;
+    // used in backoff mechanism to accept half of the CONNECT_TIMEOUT_IN_MILLISECONDS
+    private static final int ACCEPTED_TIMEOUT_SECONDS = CONNECT_TIMEOUT_IN_MILLISECONDS / 2000;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 10_000;
 
     private static final String CRLF = "\r\n";
@@ -100,7 +102,6 @@ public class ConnectionProcessor implements Runnable {
         if (customEndpoint != null) {
             urlEndpoint = customEndpoint;
         }
-
         // determine whether or not request has a binary image file, if it has request will be sent as POST request
         boolean hasPicturePath = requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
         boolean usingHttpPost = requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced() || hasPicturePath;
@@ -305,24 +306,6 @@ public class ConnectionProcessor implements Runnable {
         return 82 + boundary.length() + approximateDataSize + file.getName().length() + contentType.length(); // 78 is the length of the static parts of the entry
     }
 
-    private void enqueue(Long responseTime, Queue<Long> queue) {
-        if (queue.size() >= 2) {
-            queue.poll();
-        }
-        queue.add(responseTime);
-    }
-
-    private Long totalResponseTime(Queue<Long> queue) {
-        if (queue.size() < 2) {
-            return 0L;
-        }
-        long total = 0;
-        for (Long responseTime : queue) {
-            total += responseTime;
-        }
-        return total;
-    }
-
     @Override
     public void run() {
         long wholeQueueStart = UtilsTime.getNanoTime();
@@ -456,24 +439,13 @@ public class ConnectionProcessor implements Runnable {
                     // initialize and open connection
                     conn = urlConnectionForServerRequest(requestData, customEndpoint);
                     long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
-                    long responseTimeSeconds = setupServerRequestTime / 1000000000L;
-                    if (responseTimeSeconds >= acceptedTimeoutSeconds) {
-                        if (responseTimeSeconds <= totalResponseTime(lastTwoResponseTime)) {
-                            // FLAG 1
-                            if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
-                                // FLAG 2
-                                if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor]", L)) {
-                                    // FLAG 3
-                                    L.i("[ConnectionProcessor] run, server seems to be busy, resuming request sending request: [" + originalRequest + "]");
-                                    lastTwoResponseTime.clear();
-                                    break;
-                                }
-                            }
-                        }
-                        enqueue(responseTimeSeconds, lastTwoResponseTime);
+                    L.d("[ConnectionProcessor] run, TIMING Setup server request took:[" + setupServerRequestTime / 1000000.0d + "] ms");
+
+                    if (backoff(setupServerRequestTime, storedRequestCount, requestData)) {
+                        L.i("[ConnectionProcessor] run, server seems to be busy, resuming request sending request: [" + requestData + "]");
+                        break;
                     }
 
-                    L.d("[ConnectionProcessor] run, TIMING Setup server request took:[" + setupServerRequestTime / 1000000.0d + "] ms");
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_07_SetupServerRequest", setupServerRequestTime);
                         pccTsStartOnlyInternet = UtilsTime.getNanoTime();
@@ -620,6 +592,54 @@ public class ConnectionProcessor implements Runnable {
         }
         long wholeQueueTime = UtilsTime.getNanoTime() - wholeQueueStart;
         L.v("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
+    }
+
+    /**
+     * Backoff mechanism to prevent flooding the server with requests when server is not able to respond
+     * Needs 3 conditions to met:
+     * - Request has a timestamp younger than 12 hrs
+     * - The number of requests inside the queue is less than 10% of the max queue size
+     * - The response time from the server was half or bigger than the CONNECT_TIMEOUT_IN_MILLISECONDS but less than the last two request response times
+     *
+     * @param responseTimeMillis response time  in milliseconds
+     * @param storedRequestCount number of requests in the queue
+     * @param requestData request data
+     * @return true if the backoff mechanism is triggered
+     */
+    private boolean backoff(long responseTimeMillis, int storedRequestCount, String requestData) {
+        long responseTimeSeconds = responseTimeMillis / 1000000000L;
+        boolean result = false;
+
+        if (responseTimeSeconds >= ACCEPTED_TIMEOUT_SECONDS) {
+            long totalResponseTime = 0L;
+            int responseCount = lastTwoResponseTime.size();
+
+            if (responseCount >= 2) {
+                for (Long responseTime : lastTwoResponseTime) {
+                    totalResponseTime += responseTime;
+                }
+                totalResponseTime /= responseCount;  // Calculate the average
+            }
+
+            if (responseTimeSeconds <= totalResponseTime) {
+                // FLAG 1
+                if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
+                    // FLAG 2
+                    if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor] backoff", L)) {
+                        // FLAG 3
+                        lastTwoResponseTime.clear();
+                        result = true;
+                        responseCount = 0;
+                    }
+                }
+            }
+            if (responseCount >= 2) {
+                lastTwoResponseTime.poll();
+            }
+            lastTwoResponseTime.add(responseTimeSeconds);
+        }
+
+        return result;
     }
 
     String getServerURL() {
