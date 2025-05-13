@@ -313,6 +313,9 @@ public class ConnectionProcessor implements Runnable {
     }
 
     private Long totalResponseTime(Queue<Long> queue) {
+        if (queue.size() <= 2) {
+            return 0L;
+        }
         long total = 0;
         for (Long responseTime : queue) {
             total += responseTime;
@@ -323,7 +326,7 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         long wholeQueueStart = UtilsTime.getNanoTime();
-        int acceptedTimeoutSeconds = 60 / 2;
+        int acceptedTimeoutSeconds = 30 / 2;
         while (true) {
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
@@ -455,8 +458,7 @@ public class ConnectionProcessor implements Runnable {
                     long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
                     long responseTimeSeconds = setupServerRequestTime / 1000000000L;
                     if (responseTimeSeconds >= acceptedTimeoutSeconds) {
-                        if (responseTimeSeconds < totalResponseTime(lastTwoResponseTime)) {
-                            L.v("FLAG_BACK FLAG 1 passed");
+                        if (responseTimeSeconds <= totalResponseTime(lastTwoResponseTime)) {
                             // FLAG 1
                             if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
                                 // FLAG 2
