@@ -313,7 +313,7 @@ public class ConnectionProcessor implements Runnable {
     }
 
     private Long totalResponseTime(Queue<Long> queue) {
-        if (queue.size() <= 2) {
+        if (queue.size() < 2) {
             return 0L;
         }
         long total = 0;
