@@ -28,6 +28,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRViewTracking = "vt";
     final static String keyRLocationTracking = "lt";
     final static String keyRRefreshContentZone = "rcz";
+    final static String keyRBackoffMechanism = "bom";
 
     final static String keyRLimitKeyLength = "lkl";
     final static String keyRLimitValueSize = "lvs";
@@ -52,6 +53,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVCrashReporting = true;
     boolean currentVLocationTracking = true;
     boolean currentVRefreshContentZone = true;
+    boolean currentVBackoffMechanism = true;
     // in hours
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
@@ -176,6 +178,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
         serverConfigUpdateInterval = extractValue(keyRServerConfigUpdateInterval, sb, serverConfigUpdateInterval, currentServerConfigUpdateInterval, Integer.class);
         currentVRefreshContentZone = extractValue(keyRRefreshContentZone, sb, currentVRefreshContentZone, currentVRefreshContentZone, Boolean.class);
+        currentVBackoffMechanism = extractValue(keyRBackoffMechanism, sb, clyConfig.backOffMechanismEnabled, currentVBackoffMechanism, Boolean.class);
 
         clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class));
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class));
@@ -331,5 +334,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public boolean getRefreshContentZoneEnabled() {
         return currentVRefreshContentZone;
+    }
+
+    @Override public boolean getBackoffMechanismEnabled() {
+        return currentVBackoffMechanism;
     }
 }

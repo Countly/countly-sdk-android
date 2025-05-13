@@ -18,4 +18,6 @@ interface ConfigurationProvider {
     boolean getLocationTrackingEnabled();
 
     boolean getRefreshContentZoneEnabled();
+
+    boolean getBackoffMechanismEnabled();
 }

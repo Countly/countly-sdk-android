@@ -40,7 +40,6 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import org.json.JSONException;
 import org.json.JSONObject;
-import java.util.LinkedList;
 
 /**
  * ConnectionProcessor is a Runnable that is executed on a background
@@ -441,7 +440,7 @@ public class ConnectionProcessor implements Runnable {
                     long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
                     L.d("[ConnectionProcessor] run, TIMING Setup server request took:[" + setupServerRequestTime / 1000000.0d + "] ms");
 
-                    if (backoff(setupServerRequestTime, storedRequestCount, requestData)) {
+                    if (configProvider_.getBackoffMechanismEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData)) {
                         L.i("[ConnectionProcessor] run, server seems to be busy, resuming request sending request: [" + requestData + "]");
                         break;
                     }
