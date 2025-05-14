@@ -308,7 +308,6 @@ public class ConnectionProcessor implements Runnable {
     @Override
     public void run() {
         long wholeQueueStart = UtilsTime.getNanoTime();
-        int acceptedTimeoutSeconds = CONNECT_TIMEOUT_IN_MILLISECONDS / 2000;
         while (true) {
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
