@@ -2,7 +2,7 @@
 * Improved request queue handling;
   * Added a backoff mechanism to the SDK to better handle cases where the server responds slowly, enabled by default.
   * Reduced internal HTTP connect and read timeouts to 10 seconds.
-* Added a config method to disable backoff mechanism "disableBackOffMechanism()"
+* Added a config method to disable backoff mechanism "disableBackoffMechanism()"
 
 ## 25.4.0
 * ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.

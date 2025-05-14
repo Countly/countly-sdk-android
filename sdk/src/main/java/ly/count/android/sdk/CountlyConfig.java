@@ -1018,7 +1018,7 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public synchronized CountlyConfig disableBackOffMechanism() {
+    public synchronized CountlyConfig disableBackoffMechanism() {
         this.backOffMechanismEnabled = false;
         return this;
     }
