@@ -8,18 +8,21 @@ import org.json.JSONObject;
 public class HealthCheckCounter implements HealthTracker {
     public long countLogWarning = 0;
     public long countLogError = 0;
+    public long countBackoffRequest = 0;
     public int statusCode = -1;
     public String errorMessage = "";
-    
+
     final String keyLogError = "LErr";
     final String keyLogWarning = "LWar";
     final String keyStatusCode = "RStatC";
     final String keyErrorMessage = "REMsg";
+    final String keyBackoffRequest = "BReq";
 
     final String requestKeyErrorCount = "el";
     final String requestKeyWarningCount = "wl";
     final String requestKeyStatusCode = "sc";
     final String requestKeyRequestError = "em";
+    final String requestKeyBackoffRequest = "br";
 
     StorageProvider storageProvider;
     ModuleLog L;
@@ -47,6 +50,7 @@ public class HealthCheckCounter implements HealthTracker {
             countLogError = jsonObject.optLong(keyLogError, 0);
             statusCode = jsonObject.optInt(keyStatusCode, -1);
             errorMessage = jsonObject.optString(keyErrorMessage, "");
+            countBackoffRequest = jsonObject.optLong(keyBackoffRequest, 0);
 
             L.d("[HealthCheckCounter] Loaded initial health check state: [" + jsonObject.toString() + "]");
         } catch (Exception e) {
@@ -67,7 +71,7 @@ public class HealthCheckCounter implements HealthTracker {
         assert statusCode > 0;
         assert statusCode < 1000;
         assert errorResponse != null;
-        
+
         this.statusCode = statusCode;
 
         if (errorResponse.length() > 1000) {
@@ -90,6 +94,10 @@ public class HealthCheckCounter implements HealthTracker {
 
     }
 
+    @Override public void logBackoffRequest() {
+        countBackoffRequest++;
+    }
+
     @Override public void clearAndSave() {
         clearValues();//clear values
         storageProvider.setHealthCheckCounterState("");//clear stored State
@@ -102,6 +110,7 @@ public class HealthCheckCounter implements HealthTracker {
             jsonObject.put(keyLogError, countLogError);
             jsonObject.put(keyStatusCode, statusCode);
             jsonObject.put(keyErrorMessage, errorMessage);
+            jsonObject.put(keyBackoffRequest, countBackoffRequest);
 
             storageProvider.setHealthCheckCounterState(jsonObject.toString());
         } catch (Exception e) {
@@ -115,6 +124,7 @@ public class HealthCheckCounter implements HealthTracker {
         countLogError = 0;
         statusCode = -1;
         errorMessage = "";
+        countBackoffRequest = 0;
     }
 
     @NonNull String createRequestParam() {
@@ -124,10 +134,10 @@ public class HealthCheckCounter implements HealthTracker {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put(requestKeyErrorCount, countLogError);
-
             jsonObject.put(requestKeyWarningCount, countLogWarning);
             jsonObject.put(requestKeyStatusCode, statusCode);
             jsonObject.put(requestKeyRequestError, errorMessage);
+            jsonObject.put(requestKeyBackoffRequest, countBackoffRequest);
         } catch (JSONException e) {
             L.w("[HealthCheckCounter] Failed to create param for hc request, " + e);
         }

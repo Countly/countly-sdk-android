@@ -626,7 +626,7 @@ public class ConnectionProcessor implements Runnable {
                     if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor] backoff", L)) {
                         // FLAG 3
                         result = true;
-                        responseCount = 0;
+                        healthTracker.logBackoffRequest();
                     }
                 }
             }
