@@ -49,10 +49,10 @@ import org.json.JSONObject;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class ConnectionProcessor implements Runnable {
-    private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 10_000;
+    private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30_000;
     // used in backoff mechanism to accept half of the CONNECT_TIMEOUT_IN_MILLISECONDS
-    private static final int ACCEPTED_TIMEOUT_SECONDS = CONNECT_TIMEOUT_IN_MILLISECONDS / 2000;
-    private static final int READ_TIMEOUT_IN_MILLISECONDS = 10_000;
+    private static final int ACCEPTED_TIMEOUT_SECONDS = 10;
+    private static final int READ_TIMEOUT_IN_MILLISECONDS = 30_000;
 
     private static final String CRLF = "\r\n";
     private static final String charset = "UTF-8";
@@ -607,10 +607,10 @@ public class ConnectionProcessor implements Runnable {
     private boolean backoff(long responseTimeMillis, int storedRequestCount, String requestData) {
         long responseTimeSeconds = responseTimeMillis / 1000000000L;
         boolean result = false;
+        int responseCount = lastTwoResponseTime.size();
 
         if (responseTimeSeconds >= ACCEPTED_TIMEOUT_SECONDS) {
             long totalResponseTime = 0L;
-            int responseCount = lastTwoResponseTime.size();
 
             if (responseCount >= 2) {
                 for (Long responseTime : lastTwoResponseTime) {
@@ -625,17 +625,17 @@ public class ConnectionProcessor implements Runnable {
                     // FLAG 2
                     if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor] backoff", L)) {
                         // FLAG 3
-                        lastTwoResponseTime.clear();
                         result = true;
                         responseCount = 0;
                     }
                 }
             }
-            if (responseCount >= 2) {
-                lastTwoResponseTime.poll();
-            }
-            lastTwoResponseTime.add(responseTimeSeconds);
         }
+
+        if (responseCount >= 2) {
+            lastTwoResponseTime.poll();
+        }
+        lastTwoResponseTime.add(responseTimeSeconds);
 
         return result;
     }

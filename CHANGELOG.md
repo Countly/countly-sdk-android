@@ -1,7 +1,5 @@
 ## XX.XX.XX
-* Improved request queue handling;
-  * Added a backoff mechanism to the SDK to better handle cases where the server responds slowly, enabled by default.
-  * Reduced internal HTTP connect and read timeouts to 10 seconds.
+* Improved request queue handling, added a backoff mechanism to the SDK to better handle cases where the server responds slowly, enabled by default.
 * Added a config method to disable backoff mechanism "disableBackoffMechanism()"
 
 ## 25.4.0
