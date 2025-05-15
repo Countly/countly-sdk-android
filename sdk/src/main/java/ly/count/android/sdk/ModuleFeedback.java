@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Handler;
 import android.os.Looper;
 import android.webkit.WebSettings;
@@ -175,7 +174,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final String closeButtonText, @Nullable final FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
             L.e("[ModuleFeedback] Can't present widget with null widget info");
 
@@ -247,6 +246,8 @@ public class ModuleFeedback extends ModuleBase {
         JSONObject customObjectToSendWithTheWidget = new JSONObject();
         try {
             customObjectToSendWithTheWidget.put("tc", 1);
+            customObjectToSendWithTheWidget.put("rw", 1);
+            customObjectToSendWithTheWidget.put("xb", 1);
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -259,8 +260,6 @@ public class ModuleFeedback extends ModuleBase {
 
         //enable for chrome debugging
         //WebView.setWebContentsDebuggingEnabled(true);
-
-        final boolean useAlertDialog = true;
         Handler handler = new Handler(Looper.getMainLooper());
         handler.post(new Runnable() {
             public void run() {
@@ -269,27 +268,46 @@ public class ModuleFeedback extends ModuleBase {
                 try {
 
                     ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
+
                     webView.getSettings().setJavaScriptEnabled(true);
                     webView.clearCache(true);
                     webView.clearHistory();
                     webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-                    webView.setWebViewClient(new ModuleRatings.FeedbackDialogWebViewClient());
+                    ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient();
+                    webView.setWebViewClient(webViewClient);
                     webView.loadUrl(preparedWidgetUrl);
                     webView.requestFocus();
 
-                    AlertDialog.Builder builder = prepareAlertDialog(context, webView, closeButtonText, widgetInfo, devCallback);
+                    AlertDialog alert = new AlertDialog.Builder(context).setView(webView).setCancelable(false).create();
+                    alert.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+                    alert.getWindow().setDimAmount(0f);
 
-                    if (useAlertDialog) {
-                        // use alert dialog to host the webView
-                        L.d("[ModuleFeedback] Creating standalone Alert dialog");
-                        builder.show();
-                    } else {
-                        // use dialog fragment to host the webView
-                        L.d("[ModuleFeedback] Creating Alert dialog in dialogFragment");
+                    webViewClient.listener = new WebViewUrlListener() {
+                        @Override
+                        public boolean onUrl(String url, WebView webView) {
+                            if (!url.startsWith(Utils.COMM_URL)) {
+                                return false;
+                            }
 
-                        //CountlyDialogFragment newFragment = CountlyDialogFragment.newInstance(builder);
-                        //newFragment.show(fragmentManager, "CountlyFragmentDialog");
-                    }
+                            Map<String, String> params = Utils.splitIntoParams(url, L);
+                            String widgetCommand = params.get("cly_widget_command");
+
+                            if ("1".equals(widgetCommand)) {
+                                String close = params.get("close");
+                                if ("1".equals(close)) {
+                                    if (devCallback != null) {
+                                        devCallback.onFinished(null);
+                                    }
+                                    reportFeedbackWidgetCancelButton(widgetInfo, cachedAppVersion);
+                                    alert.cancel();
+                                    return true;
+                                }
+                            }
+
+                            return false;
+                        }
+                    };
+                    alert.show();
 
                     if (devCallback != null) {
                         devCallback.onFinished(null);
@@ -302,27 +320,6 @@ public class ModuleFeedback extends ModuleBase {
                 }
             }
         });
-    }
-
-    AlertDialog.Builder prepareAlertDialog(@NonNull final Context context, @NonNull WebView webView, @Nullable String closeButtonText, @NonNull final CountlyFeedbackWidget widgetInfo, @Nullable final FeedbackCallback devCallback) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setView(webView);
-        builder.setCancelable(false);
-        String usedCloseButtonText = closeButtonText;
-        if (closeButtonText == null || closeButtonText.isEmpty()) {
-            usedCloseButtonText = "Close";
-        }
-        builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
-            @Override public void onClick(DialogInterface dialogInterface, int i) {
-                L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
-                reportFeedbackWidgetCancelButton(widgetInfo, deviceInfo.mp.getAppVersion(context));
-
-                if (devCallback != null) {
-                    devCallback.onClosed();
-                }
-            }
-        });
-        return builder;
     }
 
     void reportFeedbackWidgetCancelButton(@NonNull CountlyFeedbackWidget widgetInfo, @NonNull String appVersion) {
@@ -645,7 +642,7 @@ public class ModuleFeedback extends ModuleBase {
                     return;
                 }
 
-                presentFeedbackWidgetInternal(selectedWidget, context, null, devCallback);
+                presentFeedbackWidgetInternal(selectedWidget, context, devCallback);
             }
         });
     }
@@ -681,12 +678,28 @@ public class ModuleFeedback extends ModuleBase {
          * @param context
          * @param closeButtonText if this is null, no "close" button will be shown
          * @param devCallback
+         * @deprecated use {@link #presentFeedbackWidget(CountlyFeedbackWidget, Context, FeedbackCallback)} instead
          */
         public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable String closeButtonText, @Nullable FeedbackCallback devCallback) {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to present feedback widget in an alert dialog");
 
-                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
+                presentFeedbackWidget(widgetInfo, context, devCallback);
+            }
+        }
+
+        /**
+         * Present a chosen feedback widget in an alert dialog
+         *
+         * @param widgetInfo the widget to present
+         * @param context the context to use for displaying the feedback widget
+         * @param devCallback callback to be called when the feedback widget is closed
+         */
+        public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable FeedbackCallback devCallback) {
+            synchronized (_cly) {
+                L.i("[Feedback] Trying to present feedback widget in an alert dialog");
+
+                presentFeedbackWidgetInternal(widgetInfo, context, devCallback);
             }
         }
 

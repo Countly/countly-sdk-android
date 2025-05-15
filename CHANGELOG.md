@@ -1,3 +1,6 @@
+## XX.XX.XX
+* The feedback widgets now have transparent backgrounds for a cleaner look.
+
 ## 25.4.0
 * ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
 * ! Minor breaking change ! Server Configuration is now enabled by default. Changes made on SDK Manager > SDK Configuration on your server will affect SDK behavior directly.
@@ -35,6 +38,8 @@
 * Fixed a bug where passing the global content callback was not possible.
 * Mitigated an issue related to content actions navigation.
 * Mitigated an issue that parsing internal content event segmentation.
+
+* Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
 
 ## 24.7.5
 * ! Minor breaking change ! All active views will now automatically stop when consent for "views" is revoked.

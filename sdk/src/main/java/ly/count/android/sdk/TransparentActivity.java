@@ -30,7 +30,6 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
-    private static final String URL_START = "https://countly_action_event";
     int currentOrientation = 0;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
@@ -65,15 +64,6 @@ public class TransparentActivity extends Activity {
         }
 
         config = setupConfig(config);
-
-        WebViewUrlListener listener = new WebViewUrlListener() {
-            @Override public boolean onUrl(String url, WebView webView) {
-                if (url.startsWith(URL_START)) {
-                    return contentUrlAction(url, webView);
-                }
-                return false;
-            }
-        };
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
