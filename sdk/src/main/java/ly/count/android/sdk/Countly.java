@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.5";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "25.4.0";
 
     /**
      * Used as request meta data on every request
@@ -97,7 +97,7 @@ public class Countly {
     /**
      * How often onTimer() is called. This is the default value.
      */
-    private static final long TIMER_DELAY_IN_SECONDS = 60;
+    protected static final long TIMER_DELAY_IN_SECONDS = 60;
 
     protected static String[] publicKeyPinCertificates;
     protected static String[] certificatePinCertificates;
@@ -127,13 +127,13 @@ public class Countly {
     }
 
     //SDK limit defaults
-    final int maxKeyLengthDefault = 128;
-    final int maxValueSizeDefault = 256;
-    final int maxSegmentationValuesDefault = 100;
-    final int maxBreadcrumbCountDefault = 100;
-    final int maxStackTraceLinesPerThreadDefault = 30;
-    final int maxStackTraceLineLengthDefault = 200;
-    final int maxStackTraceThreadCountDefault = 50;
+    static final int maxKeyLengthDefault = 128;
+    static final int maxValueSizeDefault = 256;
+    static final int maxSegmentationValuesDefault = 100;
+    static final int maxBreadcrumbCountDefault = 100;
+    static final int maxStackTraceLinesPerThreadDefault = 30;
+    static final int maxStackTraceLineLengthDefault = 200;
+    static final int maxStackTraceThreadCountDefault = 50;
 
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
@@ -695,7 +695,6 @@ public class Countly {
 
             sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
-
             //set global application listeners
             if (config.application != null) {
                 L.d("[Countly] Calling registerActivityLifecycleCallbacks");
@@ -846,6 +845,63 @@ public class Countly {
         }
     }
 
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        L.i("[Countly] onSdkConfigurationChanged");
+
+        if (config_ == null) {
+            L.e("[Countly] onSdkConfigurationChanged, config is null");
+            return;
+        }
+
+        setLoggingEnabled(config.loggingEnabled);
+
+        long timerDelay = TIMER_DELAY_IN_SECONDS;
+        if (config.sessionUpdateTimerDelay != null) {
+            timerDelay = config.sessionUpdateTimerDelay;
+        }
+
+        startTimerService(timerService_, timerFuture, timerDelay);
+
+        config.maxRequestQueueSize = Math.max(config.maxRequestQueueSize, 1);
+        countlyStore.setLimits(config.maxRequestQueueSize);
+
+        config.dropAgeHours = Math.max(config.dropAgeHours, 0);
+        if (config.dropAgeHours > 0) {
+            countlyStore.setRequestAgeLimit(config.dropAgeHours);
+        }
+
+        config.eventQueueSizeThreshold = Math.max(config.eventQueueSizeThreshold, 1);
+        EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
+
+        // Have a look at the SDK limit values
+        if (config.sdkInternalLimits.maxKeyLength != null) {
+            config.sdkInternalLimits.maxKeyLength = Math.max(config.sdkInternalLimits.maxKeyLength, 1);
+        }
+
+        if (config.sdkInternalLimits.maxValueSize != null) {
+            config.sdkInternalLimits.maxValueSize = Math.max(config.sdkInternalLimits.maxValueSize, 1);
+        }
+
+        if (config.sdkInternalLimits.maxSegmentationValues != null) {
+            config.sdkInternalLimits.maxSegmentationValues = Math.max(config.sdkInternalLimits.maxSegmentationValues, 1);
+        }
+
+        if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
+            config.sdkInternalLimits.maxBreadcrumbCount = Math.max(config.sdkInternalLimits.maxBreadcrumbCount, 1);
+        }
+
+        if (config.sdkInternalLimits.maxStackTraceLinesPerThread != null) {
+            config.sdkInternalLimits.maxStackTraceLinesPerThread = Math.max(config.sdkInternalLimits.maxStackTraceLinesPerThread, 1);
+        }
+        if (config.sdkInternalLimits.maxStackTraceLineLength != null) {
+            config.sdkInternalLimits.maxStackTraceLineLength = Math.max(config.sdkInternalLimits.maxStackTraceLineLength, 1);
+        }
+
+        for (ModuleBase module : modules) {
+            module.onSdkConfigurationChanged(config);
+        }
+    }
+
     /**
      * Immediately disables session and event tracking and clears any stored session and event data.
      * Testing Purposes Only!
@@ -920,6 +976,7 @@ public class Countly {
             //begin a session
 
             moduleSessions.beginSessionInternal();
+            moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
         }
 
         config_.deviceInfo.inForeground();

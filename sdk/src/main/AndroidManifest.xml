@@ -10,9 +10,8 @@
         android:taskAffinity=".CountlyPushActivity"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:exported="false"/>
-    <uses-library android:name="android.test.runner"/>
     <activity android:name=".TransparentActivity"
-              android:configChanges="orientation|screenSize"
+              android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
               android:theme="@android:style/Theme.Translucent.NoTitleBar">
     </activity>
   </application>

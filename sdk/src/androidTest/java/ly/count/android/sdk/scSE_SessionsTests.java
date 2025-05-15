@@ -23,13 +23,13 @@ public class scSE_SessionsTests {
 
     @Before
     public void setUp() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
 
     @After
     public void tearDown() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
 
@@ -312,7 +312,7 @@ public class scSE_SessionsTests {
 
         flowAutomaticSessions(countly, new TestLifecycleObserver());
 
-        Assert.assertEquals(6, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(5, TestUtils.getCurrentRQ().length);
         validateSessionConsentRequest(0, false, TestUtils.commonDeviceId);
         validateRequest(TestUtils.map("location", ""), 1);
         TestUtils.validateRequest("newID", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 2);

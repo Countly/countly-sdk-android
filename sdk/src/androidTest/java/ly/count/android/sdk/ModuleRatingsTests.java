@@ -163,6 +163,29 @@ public class ModuleRatingsTests {
         ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 1);
     }
 
+    /**
+     * Value size limit is applied to the email and the comment of the manual rating with server config provided
+     * "recordManualRating" and "recordRatingWidgetWithID" methods are tested
+     * Validate that events exist and contains the truncated values of the email and the comment
+     */
+    @Test
+    public void serverConfig_recordManualRating_maxValueSize() throws JSONException {
+        CountlyConfig config = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().valueSizeLimit(1).build());
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.ratings().recordManualRating("A", 3, "email", "comment", true);
+
+        Map<String, Object> ratingSegmentation = prepareRatingSegmentation("3", "A", "e", "c", true);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 0);
+
+        countly.ratings().recordRatingWidgetWithID("B", 5, "aaa@bbb.com", "very_good", false);
+
+        ratingSegmentation = prepareRatingSegmentation("5", "B", "a", "v", false);
+        ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 1);
+    }
+
     private Map<String, Object> prepareRatingSegmentation(String rating, String widgetId, String email, String comment, boolean userCanBeContacted) {
         Map<String, Object> segm = new ConcurrentHashMap<>();
         segm.put("platform", "android");

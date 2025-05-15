@@ -79,7 +79,7 @@ public class CountlyConfig {
     protected String appKey = null;
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID.
      */
     protected String deviceID = null;
 
@@ -197,12 +197,11 @@ public class CountlyConfig {
 
     boolean explicitStorageModeEnabled = false;
 
-    boolean serverConfigurationEnabled = false;
-
     boolean healthCheckEnabled = true;
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
+    String sdkBehaviorSettings;
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED
@@ -291,22 +290,12 @@ public class CountlyConfig {
     }
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID.
      *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setDeviceId(String deviceID) {
         this.deviceID = deviceID;
-        return this;
-    }
-
-    /**
-     * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call should not be used anymore as it does not have any purpose anymore
-     */
-    public synchronized CountlyConfig setIdMode(DeviceIdType idMode) {
         return this;
     }
 
@@ -1001,14 +990,25 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     * @deprecated and will do nothing
      */
     public synchronized CountlyConfig enableServerConfiguration() {
-        serverConfigurationEnabled = true;
         return this;
     }
 
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
+        return this;
+    }
+
+    /**
+     * Set the server configuration to be set while initializing the SDK
+     *
+     * @param sdkBehaviorSettings The server configuration to be set
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setSDKBehaviorSettings(String sdkBehaviorSettings) {
+        this.sdkBehaviorSettings = sdkBehaviorSettings;
         return this;
     }
 

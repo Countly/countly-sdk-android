@@ -18,9 +18,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     String previousViewName = "";
     String currentViewName = "";
-
     private boolean firstView = true;
-
     boolean autoViewTracker = false;
     boolean automaticTrackingShouldUseShortName = false;
 
@@ -150,12 +148,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     void autoCloseRequiredViews(boolean closeAllViews, @Nullable Map<String, Object> customViewSegmentation) {
         L.d("[ModuleViews] autoCloseRequiredViews");
-        List<String> viewsToRemove = new ArrayList<>(1);
+        List<ViewData> viewsToRemove = new ArrayList<>(1);
 
         for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
             ViewData vd = entry.getValue();
-            if (closeAllViews || vd.isAutoStoppedView) {
-                viewsToRemove.add(vd.viewID);
+            if (closeAllViews || (!vd.willStartAgain && vd.isAutoStoppedView)) {
+                viewsToRemove.add(vd);
             }
         }
 
@@ -164,7 +162,13 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         for (int a = 0; a < viewsToRemove.size(); a++) {
-            stopViewWithIDInternal(viewsToRemove.get(a), customViewSegmentation);
+            ViewData vd = viewsToRemove.get(a);
+            if (!vd.willStartAgain) {
+                stopViewWithIDInternal(vd.viewID, customViewSegmentation);
+            } else if (closeAllViews) {
+                //if we are closing all views, we should remove the view from the cache
+                viewDataMap.remove(vd.viewID);
+            }
         }
     }
 
@@ -181,6 +185,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     @Nullable String startViewInternal(@Nullable String viewName, @Nullable Map<String, Object> customViewSegmentation, boolean viewShouldBeAutomaticallyStopped) {
         if (!_cly.isInitialized()) {
             L.e("Countly.sharedInstance().init must be called before startViewInternal");
+            return null;
+        }
+
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] startViewInternal, View tracking is disabled, ignoring call, view will not be started view name:[" + viewName + "]");
             return null;
         }
 
@@ -217,9 +226,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         applyLimitsToViewSegmentation(customViewSegmentation, "startViewInternal", accumulatedEventSegm);
 
-        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstView, true, accumulatedEventSegm);
+        boolean firstViewInSession = firstView && _cly.moduleSessions.sessionIsRunning();
 
-        if (firstView) {
+        Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstViewInSession, true, accumulatedEventSegm);
+
+        if (firstViewInSession) {
             L.d("[ModuleViews] Recording view as the first one in the session. [" + viewName + "]");
             firstView = false;
         }
@@ -273,6 +284,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
             L.w("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
+            return;
+        }
+
+        if (!configProvider.getViewTrackingEnabled()) {
+            // stopallviews
+            L.d("[ModuleViews] stopViewWithIDInternal, View tracking is disabled, ignoring call, it will not be stopped view name:[" + vd.viewName + "]");
             return;
         }
 
@@ -334,6 +351,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be paused view name:[" + vd.viewName + "]");
+            return;
+        }
+
         L.d("[ModuleViews] pauseViewWithIDInternal, pausing view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
 
         if (vd.viewStartTimeSeconds == 0) {
@@ -364,6 +386,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
+        }
+
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be resumed view name:[" + vd.viewName + "]");
             return;
         }
 

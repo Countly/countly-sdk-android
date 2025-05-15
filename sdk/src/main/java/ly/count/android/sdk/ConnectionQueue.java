@@ -195,9 +195,11 @@ class ConnectionQueue implements RequestQueueProvider {
         data += "&begin_session=1"
             + "&metrics=" + preparedMetrics;//can be only sent with begin session
 
-        String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
-        if (!locationData.isEmpty()) {
-            data += locationData;
+        if (configProvider.getLocationTrackingEnabled()) {
+            String locationData = prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
+            if (!locationData.isEmpty()) {
+                data += locationData;
+            }
         }
 
         Countly.sharedInstance().isBeginSessionSent = true;
@@ -823,7 +825,7 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
-    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories) {
+    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language, String deviceType) {
 
         JSONObject json = new JSONObject();
         try {
@@ -841,7 +843,7 @@ class ConnectionQueue implements RequestQueueProvider {
             L.e("Error while preparing fetch contents request");
         }
 
-        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString());
+        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString()) + "&la=" + language + "&dt=" + deviceType;
     }
 
     @Override
