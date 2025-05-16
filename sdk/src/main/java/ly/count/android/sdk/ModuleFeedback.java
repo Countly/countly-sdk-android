@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import androidx.annotation.NonNull;
@@ -254,9 +255,10 @@ public class ModuleFeedback extends ModuleBase {
         widgetListUrl.append("&custom=");
         widgetListUrl.append(customObjectToSendWithTheWidget.toString());
 
-        final String preparedWidgetUrl = widgetListUrl.toString();
+        String preparedWidgetUrl = widgetListUrl.toString();
+        final String preparedWidgetUrlA = preparedWidgetUrl.replace("3001", "6001");
 
-        L.d("[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
+        L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrlA + "]");
 
         //enable for chrome debugging
         //WebView.setWebContentsDebuggingEnabled(true);
@@ -275,7 +277,7 @@ public class ModuleFeedback extends ModuleBase {
                     webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                     ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient();
                     webView.setWebViewClient(webViewClient);
-                    webView.loadUrl(preparedWidgetUrl);
+                    webView.loadUrl(preparedWidgetUrlA);
                     webView.requestFocus();
 
                     AlertDialog alert = new AlertDialog.Builder(context).setView(webView).setCancelable(false).create();
@@ -285,6 +287,7 @@ public class ModuleFeedback extends ModuleBase {
                     webViewClient.listener = new WebViewUrlListener() {
                         @Override
                         public boolean onUrl(String url, WebView webView) {
+                            Log.e("URL", url);
                             if (!url.startsWith(Utils.COMM_URL)) {
                                 return false;
                             }

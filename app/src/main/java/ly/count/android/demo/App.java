@@ -12,8 +12,8 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.util.Log;
+import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -51,6 +51,7 @@ public class App extends Application {
             return;
         }
 
+        WebView.setWebContentsDebuggingEnabled(true);
         if (false) {
             //setting up strict mode for additional validation
             StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
@@ -204,7 +205,6 @@ public class App extends Application {
             //})
 
             .setHttpPostForced(false)
-            .setParameterTamperingProtectionSalt("test-salt-checksum")
             .addCustomNetworkRequestHeaders(customHeaderValues)
             //.enableCertificatePinning(certificates)
             //.enablePublicKeyPinning(certificates)

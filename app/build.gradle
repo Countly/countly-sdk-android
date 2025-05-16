@@ -29,7 +29,7 @@ repositories {
 }
 
 android {
-  compileSdk 35
+  compileSdkVersion 35
   namespace 'ly.count.android.demo'
 
   signingConfigs {

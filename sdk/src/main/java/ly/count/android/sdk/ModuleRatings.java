@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.webkit.WebResourceRequest;
@@ -18,6 +19,8 @@ import android.webkit.WebViewClient;
 import android.widget.RatingBar;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import org.json.JSONException;
@@ -572,6 +575,7 @@ public class ModuleRatings extends ModuleBase {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
+            Log.e("CountlyURL", url + " 2");
 
             if (listener != null) {
                 if (listener.onUrl(url, view)) {
@@ -590,13 +594,45 @@ public class ModuleRatings extends ModuleBase {
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+            Log.e("CountlyURL", url + " 1");
+
             // Countly.sharedInstance().L.i("attempting to load resource: " + url);
             return null;
         }
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            // Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
+            Log.e("CountlyURL", request.getUrl() + " 0");
+            String url = request.getUrl().toString();
+
+            // Replace the port number if it matches your condition
+            if (url.contains("/o/")) {
+                url = url.replace("6001", "3001");
+
+                try {
+                    // Open the connection to the modified URL
+                    URL newUrl = new URL(url);
+                    HttpURLConnection connection = (HttpURLConnection) newUrl.openConnection();
+                    connection.setRequestMethod("GET");
+                    connection.connect();
+
+                    // Get the MIME type and encoding from the server response
+                    String contentType = connection.getContentType(); // e.g., "text/html; charset=UTF-8"
+                    String mimeType = contentType.split(";")[0].trim();
+                    String encoding = contentType.contains("charset=") ? contentType.split("charset=")[1].trim() : "UTF-8";
+
+                    // Return the response as a WebResourceResponse
+                    return new WebResourceResponse(
+                        mimeType,
+                        encoding,
+                        connection.getInputStream()
+                    );
+                } catch (Exception e) {
+                    Log.e("CountlyURL", "Error intercepting request: " + e.getMessage(), e);
+                }
+            }
+
+            // Let the WebView handle the original request
             return null;
         }
     }

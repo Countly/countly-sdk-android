@@ -34,9 +34,14 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -84,11 +89,45 @@ public class ConnectionProcessor implements Runnable {
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
         configProvider_ = configProvider;
-        sslContext_ = sslContext;
+        try {
+            sslContext_ = SSLContext.getDefault();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
         L = logModule;
         this.healthTracker = healthTracker;
+    }
+
+    public class TrustAllCertificates implements X509TrustManager {
+        @Override
+        public void checkClientTrusted(X509Certificate[] certs, String authType) {
+            // Trust all client certificates
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] certs, String authType) {
+            // Trust all server certificates
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[0];
+        }
+    }
+
+    public class TrustAllSslSocketFactory {
+        public void trustAllSsl() {
+            try {
+                SSLContext sc = SSLContext.getInstance("TLS");
+                sc.init(null, new TrustManager[] { new TrustAllCertificates() }, new SecureRandom());
+                HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+                HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     synchronized public @NonNull URLConnection urlConnectionForServerRequest(@NonNull String requestData, @Nullable final String customEndpoint) throws IOException {
@@ -131,13 +170,8 @@ public class ConnectionProcessor implements Runnable {
             pccTsOpenURLConnection = UtilsTime.getNanoTime();
         }
 
-        if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
-            conn = (HttpURLConnection) url.openConnection();
-        } else {
-            HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
-            c.setSSLSocketFactory(sslContext_.getSocketFactory());
-            conn = c;
-        }
+        new TrustAllSslSocketFactory().trustAllSsl();
+        conn = (HttpURLConnection) url.openConnection();
 
         if (pcc != null) {
             long openUrlConnectionTime = UtilsTime.getNanoTime() - pccTsOpenURLConnection;

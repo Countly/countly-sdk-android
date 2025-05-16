@@ -24,6 +24,8 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -92,7 +95,21 @@ class ConnectionQueue implements RequestQueueProvider {
             sslContext_ = null;
         } else {
             try {
-                TrustManager[] tm = { new CertificateTrustManager(Countly.publicKeyPinCertificates, Countly.certificatePinCertificates) };
+                TrustManager[] tm = new TrustManager[] {
+                    new X509TrustManager() {
+                        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                            return new java.security.cert.X509Certificate[] {};
+                        }
+
+                        public void checkClientTrusted(X509Certificate[] chain,
+                            String authType) throws CertificateException {
+                        }
+
+                        public void checkServerTrusted(X509Certificate[] chain,
+                            String authType) throws CertificateException {
+                        }
+                    }
+                };
                 sslContext_ = SSLContext.getInstance("TLS");
                 sslContext_.init(null, tm, null);
             } catch (Throwable e) {

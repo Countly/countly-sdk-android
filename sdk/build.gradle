@@ -12,14 +12,14 @@ buildscript {
 }
 
 android {
-  compileSdk 35
   buildToolsVersion "35.0.0"
 
   defaultConfig {
     minSdk 21
     targetSdk 35
+    compileSdkVersion 35
 
-    testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
+    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     testHandleProfiling true
     testFunctionalTest true
   }
@@ -62,7 +62,6 @@ dependencies {
   androidTestImplementation 'androidx.test.ext:junit:1.1.5'
   androidTestImplementation 'junit:junit:4.13.2'
 
-  androidTestImplementation "org.mockito:mockito-core:${mockitoVersion}"
   androidTestImplementation "org.mockito:mockito-android:${mockitoVersion}"
   //androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.9.0"
 }
