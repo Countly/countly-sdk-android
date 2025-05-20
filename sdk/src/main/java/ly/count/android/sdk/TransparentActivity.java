@@ -30,7 +30,6 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
-    private static final String URL_START = "https://countly_action_event";
     int currentOrientation = 0;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
@@ -333,7 +332,7 @@ public class TransparentActivity extends Activity {
 
     private Map<String, Object> splitQuery(String url) {
         Map<String, Object> query_pairs = new ConcurrentHashMap<>();
-        String[] pairs = url.split("https://countly_action_event/?");
+        String[] pairs = url.split(Utils.COMM_URL + "/?");
         if (pairs.length != 2) {
             return query_pairs;
         }
@@ -377,7 +376,7 @@ public class TransparentActivity extends Activity {
         CountlyWebViewClient client = new CountlyWebViewClient();
         client.registerWebViewUrlListener(new WebViewUrlListener() {
             @Override public boolean onUrl(String url, WebView webView) {
-                if (url.startsWith(URL_START)) {
+                if (url.startsWith(Utils.COMM_URL)) {
                     return contentUrlAction(url, webView);
                 }
                 return false;
