@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* The feedback widgets now have transparent backgrounds for a cleaner look.
+* The feedback widgets now have fullscreen and transparent backgrounds for a cleaner look.
 
 * Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
 
