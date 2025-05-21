@@ -192,14 +192,14 @@ public class TransparentActivity extends Activity {
 
     private boolean widgetUrlAction(String url, WebView view) {
         Map<String, Object> query = splitQuery(url);
-        Object widgetCommand = query.get("cly_widget_command");
+        Object widgetCommand = query.get("?cly_widget_command");
 
         if (widgetCommand == null || !widgetCommand.equals("1")) {
             Log.w(Countly.TAG, "[TransparentActivity] widgetUrlAction, event:[" + widgetCommand + "] this is not a countly widget command url");
             return false;
         }
 
-        if (query.containsKey("?close") && Objects.equals(query.get("?close"), "1")) {
+        if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
             if (Countly.sharedInstance().isInitialized()) {
                 close(query);
 
