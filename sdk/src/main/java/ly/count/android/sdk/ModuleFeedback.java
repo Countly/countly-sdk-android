@@ -267,7 +267,7 @@ public class ModuleFeedback extends ModuleBase {
         final String preparedWidgetUrlA = preparedWidgetUrl.replace("3001", "6001");
 
         L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrlA + "]");
-        if (true || !Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
+        if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
             showFeedbackWidget_newActivity(context, preparedWidgetUrlA, widgetInfo, devCallback);
         } else {
             //enable for chrome debugging
