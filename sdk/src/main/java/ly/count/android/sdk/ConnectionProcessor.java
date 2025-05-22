@@ -34,8 +34,8 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import java.util.Queue;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import org.json.JSONException;
@@ -66,7 +66,7 @@ public class ConnectionProcessor implements Runnable {
     final RequestInfoProvider requestInfoProvider_;
     private final String serverURL_;
     private final SSLContext sslContext_;
-    private final Queue<Long> lastTwoResponseTime;
+    private Long[] previousResponseTime = { -1L };
 
     private final Map<String, String> requestHeaderCustomValues_;
 
@@ -83,7 +83,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker, Queue<Long> lastTwoResponseTime) {
+        HealthTracker healthTracker, Long[] previousResponseTime) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -91,7 +91,7 @@ public class ConnectionProcessor implements Runnable {
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
-        this.lastTwoResponseTime = lastTwoResponseTime;
+        this.previousResponseTime = previousResponseTime;
         L = logModule;
         this.healthTracker = healthTracker;
     }
@@ -233,7 +233,7 @@ public class ConnectionProcessor implements Runnable {
                     break;
                 }
                 String value = conn.getHeaderField(headerIndex++);
-                approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
+                approximateDateSize += key.getBytes(StandardCharsets.US_ASCII).length + value.getBytes(StandardCharsets.US_ASCII).length + 2L;
             }
         } catch (Exception e) {
             L.e("[Connection Processor] urlConnectionForServerRequest, exception while calculating header field size: " + e);
@@ -605,38 +605,22 @@ public class ConnectionProcessor implements Runnable {
      * @return true if the backoff mechanism is triggered
      */
     private boolean backoff(long responseTimeMillis, int storedRequestCount, String requestData) {
-        long responseTimeSeconds = responseTimeMillis / 1000000000L;
+        long responseTimeSeconds = responseTimeMillis / 1_000_000_000L;
         boolean result = false;
-        int responseCount = lastTwoResponseTime.size();
 
-        if (responseTimeSeconds >= ACCEPTED_TIMEOUT_SECONDS) {
-            long totalResponseTime = 0L;
-
-            if (responseCount >= 2) {
-                for (Long responseTime : lastTwoResponseTime) {
-                    totalResponseTime += responseTime;
-                }
-                totalResponseTime /= responseCount;  // Calculate the average
-            }
-
-            if (responseTimeSeconds <= totalResponseTime) {
-                // FLAG 1
-                if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
-                    // FLAG 2
-                    if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor] backoff", L)) {
-                        // FLAG 3
-                        result = true;
-                        healthTracker.logBackoffRequest();
-                    }
+        if (responseTimeSeconds >= ACCEPTED_TIMEOUT_SECONDS && responseTimeSeconds <= previousResponseTime[0]) {
+            // FLAG 1
+            if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
+                // FLAG 2
+                if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor] backoff", L)) {
+                    // FLAG 3
+                    result = true;
+                    healthTracker.logBackoffRequest();
                 }
             }
         }
 
-        if (responseCount >= 2) {
-            lastTwoResponseTime.poll();
-        }
-        lastTwoResponseTime.add(responseTimeSeconds);
-
+        previousResponseTime[0] = responseTimeSeconds;
         return result;
     }
 
