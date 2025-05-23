@@ -30,13 +30,15 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
-    private static final String URL_START = "https://countly_action_event";
+    static final String WIDGET_INFO = "widget_info";
+    static final String ID_CALLBACK = "id_callback";
     int currentOrientation = 0;
+    long ID = -1;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
     WebView webView;
     RelativeLayout relativeLayout;
-    static ContentCallback globalContentCallback;
+    static Map<Long, ContentCallback> contentCallbacks = new ConcurrentHashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +52,8 @@ public class TransparentActivity extends Activity {
 
         // Get extras
         Intent intent = getIntent();
-        currentOrientation = (int) intent.getSerializableExtra(ORIENTATION);
+        ID = intent.getLongExtra(ID_CALLBACK, -1);
+        currentOrientation = intent.getIntExtra(ORIENTATION, 0);
         configLandscape = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_LANDSCAPE);
         configPortrait = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_PORTRAIT);
         Log.v(Countly.TAG, "[TransparentActivity] onCreate, orientation: " + currentOrientation);
@@ -187,6 +190,27 @@ public class TransparentActivity extends Activity {
         }
     }
 
+    private boolean widgetUrlAction(String url, WebView view) {
+        Map<String, Object> query = splitQuery(url);
+        Object widgetCommand = query.get("?cly_widget_command");
+
+        if (widgetCommand == null || !widgetCommand.equals("1")) {
+            Log.w(Countly.TAG, "[TransparentActivity] widgetUrlAction, event:[" + widgetCommand + "] this is not a countly widget command url");
+            return false;
+        }
+
+        if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
+            if (Countly.sharedInstance().isInitialized()) {
+                close(query);
+
+                ModuleFeedback.CountlyFeedbackWidget widgetInfo = (ModuleFeedback.CountlyFeedbackWidget) getIntent().getSerializableExtra(WIDGET_INFO);
+                Countly.sharedInstance().moduleFeedback.reportFeedbackWidgetCancelButton(widgetInfo);
+            }
+        }
+
+        return true;
+    }
+
     private boolean contentUrlAction(String url, WebView view) {
         Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: [" + url + "]");
         Map<String, Object> query = splitQuery(url);
@@ -221,14 +245,11 @@ public class TransparentActivity extends Activity {
         }
 
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
-            if (globalContentCallback != null) { // TODO: verify this later
-                globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
-            }
+            close(query);
 
             if (Countly.sharedInstance().isInitialized()) {
                 Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
             }
-            finish();
         }
 
         return true;
@@ -333,7 +354,7 @@ public class TransparentActivity extends Activity {
 
     private Map<String, Object> splitQuery(String url) {
         Map<String, Object> query_pairs = new ConcurrentHashMap<>();
-        String[] pairs = url.split("https://countly_action_event/?");
+        String[] pairs = url.split(Utils.COMM_URL + "/?");
         if (pairs.length != 2) {
             return query_pairs;
         }
@@ -360,6 +381,14 @@ public class TransparentActivity extends Activity {
         return query_pairs;
     }
 
+    private void close(Map<String, Object> contentData) {
+        if (contentCallbacks.get(ID) != null) {
+            contentCallbacks.get(ID).onContentCallback(ContentStatus.CLOSED, contentData);
+            contentCallbacks.remove(ID);
+        }
+        super.finish();
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private WebView createWebView(TransparentActivityConfig config) {
         WebView webView = new CountlyWebView(this);
@@ -377,9 +406,20 @@ public class TransparentActivity extends Activity {
         CountlyWebViewClient client = new CountlyWebViewClient();
         client.registerWebViewUrlListener(new WebViewUrlListener() {
             @Override public boolean onUrl(String url, WebView webView) {
-                if (url.startsWith(URL_START)) {
-                    return contentUrlAction(url, webView);
+                if (url.startsWith(Utils.COMM_URL)) {
+                    if (url.contains("cly_x_action_event")) {
+                        return contentUrlAction(url, webView);
+                    } else if (url.contains("cly_widget_command")) {
+                        return widgetUrlAction(url, webView);
+                    }
                 }
+
+                if (url.endsWith("cly_x_int=1")) {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    startActivity(intent);
+                    return true;
+                }
+
                 return false;
             }
         });

@@ -2,17 +2,23 @@ package ly.count.android.sdk;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.DisplayMetrics;
 import android.webkit.WebSettings;
-import android.webkit.WebView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -21,11 +27,12 @@ public class ModuleFeedback extends ModuleBase {
 
     public enum FeedbackWidgetType {survey, nps, rating}
 
-    public static class CountlyFeedbackWidget {
+    public static class CountlyFeedbackWidget implements Serializable {
         public String widgetId;
         public FeedbackWidgetType type;
         public String name;
         public String[] tags;
+        public String widgetVersion;
     }
 
     final static String NPS_EVENT_KEY = "[CLY]_nps";
@@ -122,6 +129,7 @@ public class ModuleFeedback extends ModuleBase {
                         String valId = jObj.optString("_id", "");
                         String valType = jObj.optString("type", "");
                         String valName = jObj.optString("name", "");
+                        String widgetVersion = jObj.optString("wv", "");
                         List<String> valTagsArr = new ArrayList<String>();
 
                         JSONArray jTagArr = jObj.optJSONArray("tg");
@@ -160,6 +168,7 @@ public class ModuleFeedback extends ModuleBase {
                         se.widgetId = valId;
                         se.name = valName;
                         se.tags = valTagsArr.toArray(new String[0]);
+                        se.widgetVersion = widgetVersion;
 
                         parsedRes.add(se);
                     } catch (Exception ex) {
@@ -174,7 +183,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final String closeButtonText, @Nullable final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
             L.e("[ModuleFeedback] Can't present widget with null widget info");
 
@@ -252,82 +261,121 @@ public class ModuleFeedback extends ModuleBase {
             throw new RuntimeException(e);
         }
         widgetListUrl.append("&custom=");
-        widgetListUrl.append(customObjectToSendWithTheWidget.toString());
+        widgetListUrl.append(customObjectToSendWithTheWidget);
 
-        final String preparedWidgetUrl = widgetListUrl.toString();
+        String preparedWidgetUrl = widgetListUrl.toString();
 
-        L.d("[ModuleFeedback] Using following url for widget:[" + widgetListUrl + "]");
+        L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrl + "]");
+        if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
+            showFeedbackWidget_newActivity(context, preparedWidgetUrl, widgetInfo, devCallback);
+        } else {
+            //enable for chrome debugging
+            //WebView.setWebContentsDebuggingEnabled(true);
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.post(new Runnable() {
+                public void run() {
+                    L.d("[ModuleFeedback] Calling on main thread");
 
-        //enable for chrome debugging
-        //WebView.setWebContentsDebuggingEnabled(true);
-        Handler handler = new Handler(Looper.getMainLooper());
-        handler.post(new Runnable() {
-            public void run() {
-                L.d("[ModuleFeedback] Calling on main thread");
+                    try {
+                        showFeedbackWidget(context, widgetInfo, closeButtonText, devCallback, preparedWidgetUrl);
 
-                try {
-
-                    ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
-
-                    webView.getSettings().setJavaScriptEnabled(true);
-                    webView.clearCache(true);
-                    webView.clearHistory();
-                    webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-                    ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient();
-                    webView.setWebViewClient(webViewClient);
-                    webView.loadUrl(preparedWidgetUrl);
-                    webView.requestFocus();
-
-                    AlertDialog alert = new AlertDialog.Builder(context).setView(webView).setCancelable(false).create();
-                    alert.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-                    alert.getWindow().setDimAmount(0f);
-
-                    webViewClient.listener = new WebViewUrlListener() {
-                        @Override
-                        public boolean onUrl(String url, WebView webView) {
-                            if (!url.startsWith(Utils.COMM_URL)) {
-                                return false;
-                            }
-
-                            Map<String, String> params = Utils.splitIntoParams(url, L);
-                            String widgetCommand = params.get("cly_widget_command");
-
-                            if ("1".equals(widgetCommand)) {
-                                String close = params.get("close");
-                                if ("1".equals(close)) {
-                                    if (devCallback != null) {
-                                        devCallback.onFinished(null);
-                                    }
-                                    reportFeedbackWidgetCancelButton(widgetInfo, cachedAppVersion);
-                                    alert.cancel();
-                                    return true;
-                                }
-                            }
-
-                            return false;
+                        if (devCallback != null) {
+                            devCallback.onFinished(null);
                         }
-                    };
-                    alert.show();
+                    } catch (Exception ex) {
+                        L.e("[ModuleFeedback] Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
+                        if (devCallback != null) {
+                            devCallback.onFinished("Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
+                        }
+                    }
+                }
+            });
+        }
+    }
 
-                    if (devCallback != null) {
-                        devCallback.onFinished(null);
-                    }
-                } catch (Exception ex) {
-                    L.e("[ModuleFeedback] Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
-                    if (devCallback != null) {
-                        devCallback.onFinished("Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
-                    }
+    private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, String closeButtonText, FeedbackCallback devCallback, String url) {
+        ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.clearCache(true);
+        webView.clearHistory();
+        webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient();
+        webView.setWebViewClient(webViewClient);
+        webView.loadUrl(url);
+        webView.requestFocus();
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context).setView(webView).setCancelable(false);
+        String usedCloseButtonText = closeButtonText;
+        if (closeButtonText == null || closeButtonText.isEmpty()) {
+            usedCloseButtonText = "Close";
+        }
+        builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
+            @Override public void onClick(DialogInterface dialogInterface, int i) {
+                L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
+                reportFeedbackWidgetCancelButton(widgetInfo);
+
+                if (devCallback != null) {
+                    devCallback.onClosed();
                 }
             }
         });
+        builder.show();
     }
 
-    void reportFeedbackWidgetCancelButton(@NonNull CountlyFeedbackWidget widgetInfo, @NonNull String appVersion) {
+    private void showFeedbackWidget_newActivity(@NonNull Context context, String url, CountlyFeedbackWidget widgetInfo, FeedbackCallback devCallback) {
+        DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(context);
+        Resources resources = context.getResources();
+        int currentOrientation = resources.getConfiguration().orientation;
+        boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
+
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+
+        // this calculation needs improvement for status bar and navigation bar
+        int portraitWidth = portrait ? width : height;
+        int portraitHeight = portrait ? height : width;
+        int landscapeWidth = portrait ? height : width;
+        int landscapeHeight = portrait ? width : height;
+
+        Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
+        TransparentActivityConfig pConfig = new TransparentActivityConfig(0, 0, portraitWidth, portraitHeight);
+        TransparentActivityConfig lConfig = new TransparentActivityConfig(0, 0, landscapeWidth, landscapeHeight);
+        pConfig.url = url;
+        lConfig.url = url;
+        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, pConfig);
+        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, lConfig);
+
+        Intent intent = new Intent(context, TransparentActivity.class);
+        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
+        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
+        intent.putExtra(TransparentActivity.ORIENTATION, context.getResources().getConfiguration().orientation);
+        intent.putExtra(TransparentActivity.WIDGET_INFO, widgetInfo);
+
+        Long id = System.currentTimeMillis();
+        intent.putExtra(TransparentActivity.ID_CALLBACK, id);
+        if (devCallback != null) {
+            ContentCallback feedbackCallback = new ContentCallback() {
+                @Override public void onContentCallback(ContentStatus contentStatus, Map<String, Object> contentData) {
+                    if (contentStatus.equals(ContentStatus.CLOSED)) {
+                        devCallback.onClosed();
+                    } else {
+                        devCallback.onFinished(null);
+                    }
+                }
+            };
+            TransparentActivity.contentCallbacks.put(id, feedbackCallback);
+        }
+
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        _cly.context_.startActivity(intent);
+    }
+
+    void reportFeedbackWidgetCancelButton(@NonNull CountlyFeedbackWidget widgetInfo) {
         L.d("[reportFeedbackWidgetCancelButton] Cancel button event");
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             final Map<String, Object> segm = new HashMap<>();
             segm.put("platform", "android");
-            segm.put("app_version", appVersion);
+            segm.put("app_version", cachedAppVersion);
             segm.put("widget_id", "" + widgetInfo.widgetId);
             segm.put("closed", "1");
             final String key;
@@ -642,7 +690,7 @@ public class ModuleFeedback extends ModuleBase {
                     return;
                 }
 
-                presentFeedbackWidgetInternal(selectedWidget, context, devCallback);
+                presentFeedbackWidgetInternal(selectedWidget, context, null, devCallback);
             }
         });
     }
@@ -684,7 +732,7 @@ public class ModuleFeedback extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to present feedback widget in an alert dialog");
 
-                presentFeedbackWidget(widgetInfo, context, devCallback);
+                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
             }
         }
 
@@ -699,7 +747,7 @@ public class ModuleFeedback extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to present feedback widget in an alert dialog");
 
-                presentFeedbackWidgetInternal(widgetInfo, context, devCallback);
+                presentFeedbackWidgetInternal(widgetInfo, context, null, devCallback);
             }
         }
 
