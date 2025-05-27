@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+// import android.webkit.WebView;
 
 public class ModuleFeedback extends ModuleBase {
 
@@ -129,7 +130,7 @@ public class ModuleFeedback extends ModuleBase {
                         String valId = jObj.optString("_id", "");
                         String valType = jObj.optString("type", "");
                         String valName = jObj.optString("name", "");
-                        String widgetVersion = jObj.optString("wv", "");
+                        String widgetVersion = jObj.isNull("wv") ? null : jObj.optString("wv", null);
                         List<String> valTagsArr = new ArrayList<String>();
 
                         JSONArray jTagArr = jObj.optJSONArray("tg");
@@ -255,8 +256,11 @@ public class ModuleFeedback extends ModuleBase {
         JSONObject customObjectToSendWithTheWidget = new JSONObject();
         try {
             customObjectToSendWithTheWidget.put("tc", 1);
-            customObjectToSendWithTheWidget.put("rw", 1);
-            customObjectToSendWithTheWidget.put("xb", 1);
+            // these are used only in case of a widget with a version
+            if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
+                customObjectToSendWithTheWidget.put("rw", 1);
+                customObjectToSendWithTheWidget.put("xb", 1);
+            }
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
@@ -267,10 +271,12 @@ public class ModuleFeedback extends ModuleBase {
 
         L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrl + "]");
         if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
+            L.d("[ModuleFeedback] Will use transparent activity for displaying the widget");
             showFeedbackWidget_newActivity(context, preparedWidgetUrl, widgetInfo, devCallback);
         } else {
+            L.d("[ModuleFeedback] Will use dialog for displaying the widget");
             //enable for chrome debugging
-            //WebView.setWebContentsDebuggingEnabled(true);
+            // WebView.setWebContentsDebuggingEnabled(true);
             Handler handler = new Handler(Looper.getMainLooper());
             handler.post(new Runnable() {
                 public void run() {
@@ -720,7 +726,7 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         /**
-         * Present a chosen feedback widget in an alert dialog
+         * Present a chosen feedback widget
          *
          * @param widgetInfo
          * @param context
@@ -730,14 +736,14 @@ public class ModuleFeedback extends ModuleBase {
          */
         public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable String closeButtonText, @Nullable FeedbackCallback devCallback) {
             synchronized (_cly) {
-                L.i("[Feedback] Trying to present feedback widget in an alert dialog");
+                L.i("[Feedback] Trying to present feedback widget");
 
                 presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
             }
         }
 
         /**
-         * Present a chosen feedback widget in an alert dialog
+         * Present a chosen feedback widget
          *
          * @param widgetInfo the widget to present
          * @param context the context to use for displaying the feedback widget
@@ -745,7 +751,7 @@ public class ModuleFeedback extends ModuleBase {
          */
         public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable FeedbackCallback devCallback) {
             synchronized (_cly) {
-                L.i("[Feedback] Trying to present feedback widget in an alert dialog");
+                L.i("[Feedback] Trying to present feedback widget");
 
                 presentFeedbackWidgetInternal(widgetInfo, context, null, devCallback);
             }
