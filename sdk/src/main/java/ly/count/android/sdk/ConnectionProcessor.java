@@ -439,11 +439,6 @@ public class ConnectionProcessor implements Runnable {
                     long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
                     L.d("[ConnectionProcessor] run, TIMING Setup server request took:[" + setupServerRequestTime / 1000000.0d + "] ms");
 
-                    if (configProvider_.getBackoffMechanismEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData)) {
-                        L.i("[ConnectionProcessor] run, server seems to be busy, resuming request sending request: [" + requestData + "]");
-                        break;
-                    }
-
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_07_SetupServerRequest", setupServerRequestTime);
                         pccTsStartOnlyInternet = UtilsTime.getNanoTime();
@@ -531,6 +526,8 @@ public class ConnectionProcessor implements Runnable {
 
                     // an 'if' needs to be used here so that a 'switch' statement does not 'eat' the 'break' call
                     // that is used to get out of the request loop
+                    boolean backoff = configProvider_.getBackoffMechanismEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData);
+
                     if (rRes == RequestResult.OK) {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
@@ -545,6 +542,11 @@ public class ConnectionProcessor implements Runnable {
                             pcc.TrackCounterTimeNs("ConnectionProcessorRun_12_FailedRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
                         }
 
+                        break;
+                    }
+
+                    if (backoff) {
+                        L.i("[ConnectionProcessor] run, server seems to be busy, resuming request sending request: [" + requestData + "]");
                         break;
                     }
                 } catch (Exception e) {
