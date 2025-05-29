@@ -7,11 +7,12 @@ buildscript {
   }
   dependencies {
     //classpath "com.vanniktech:gradle-android-junit-jacoco-plugin:0.16.0" //test coverage reports
-    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.21.0' //for publishing
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.28.0' //for publishing
   }
 }
 
 android {
+  namespace 'ly.count.android.sdk'
   compileSdk 35
   buildToolsVersion "35.0.0"
 
@@ -45,6 +46,7 @@ android {
     timeOutInMs 20 * 60 * 1000 // 20 minutes
     installOptions "-d", "-t"
   }
+  testNamespace 'ly.count.android.sdk.test'
 }
 
 def mockitoVersion = "4.11.0"
