@@ -66,7 +66,6 @@ public class ConnectionProcessor implements Runnable {
     final RequestInfoProvider requestInfoProvider_;
     private final String serverURL_;
     private final SSLContext sslContext_;
-    private Long[] previousResponseTime = { -1L };
 
     private final Map<String, String> requestHeaderCustomValues_;
 
@@ -83,7 +82,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker, Long[] previousResponseTime) {
+        HealthTracker healthTracker) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -91,7 +90,6 @@ public class ConnectionProcessor implements Runnable {
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
-        this.previousResponseTime = previousResponseTime;
         L = logModule;
         this.healthTracker = healthTracker;
     }
@@ -599,7 +597,7 @@ public class ConnectionProcessor implements Runnable {
      * Needs 3 conditions to met:
      * - Request has a timestamp younger than 12 hrs
      * - The number of requests inside the queue is less than 10% of the max queue size
-     * - The response time from the server was half or bigger than the CONNECT_TIMEOUT_IN_MILLISECONDS but less than the last two request response times
+     * - The response time from the server is greater than or equal to ACCEPTED_TIMEOUT_SECONDS
      *
      * @param responseTimeMillis response time  in milliseconds
      * @param storedRequestCount number of requests in the queue
@@ -610,7 +608,7 @@ public class ConnectionProcessor implements Runnable {
         long responseTimeSeconds = responseTimeMillis / 1_000_000_000L;
         boolean result = false;
 
-        if (responseTimeSeconds >= ACCEPTED_TIMEOUT_SECONDS && responseTimeSeconds <= previousResponseTime[0]) {
+        if (responseTimeSeconds >= ACCEPTED_TIMEOUT_SECONDS) {
             // FLAG 1
             if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
                 // FLAG 2
@@ -622,7 +620,6 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
-        previousResponseTime[0] = responseTimeSeconds;
         return result;
     }
 

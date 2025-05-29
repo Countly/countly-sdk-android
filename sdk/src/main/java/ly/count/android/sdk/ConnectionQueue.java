@@ -66,7 +66,6 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
-    private final Long[] previousResponseTime = { -1L };
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -894,7 +893,7 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, previousResponseTime);
+        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
         cp.pcc = pcc;
         return cp;
     }

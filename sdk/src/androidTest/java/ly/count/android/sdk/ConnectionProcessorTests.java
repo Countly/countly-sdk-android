@@ -30,7 +30,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -141,7 +140,7 @@ public class ConnectionProcessorTests {
             }
         };
 
-        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, new LinkedList<>());
+        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
         testDeviceId = "123";
     }
 
@@ -150,7 +149,7 @@ public class ConnectionProcessorTests {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
         final DeviceIdProvider mockDeviceId = mock(DeviceIdProvider.class);
-        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, new LinkedList<>());
+        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
     }
@@ -217,7 +216,7 @@ public class ConnectionProcessorTests {
         customValues.put("5", "");
         customValues.put("6", null);
 
-        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock, new LinkedList<>());
+        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock);
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest("eventData", null);
 
         assertEquals("bb", urlConnection.getRequestProperty("aa"));
