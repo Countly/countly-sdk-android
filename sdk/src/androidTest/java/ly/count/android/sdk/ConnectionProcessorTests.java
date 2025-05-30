@@ -34,6 +34,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 import static org.junit.Assert.assertEquals;
@@ -140,7 +141,7 @@ public class ConnectionProcessorTests {
             }
         };
 
-        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
+        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class));
         testDeviceId = "123";
     }
 
@@ -149,7 +150,7 @@ public class ConnectionProcessorTests {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
         final DeviceIdProvider mockDeviceId = mock(DeviceIdProvider.class);
-        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
+        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class));
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
     }
@@ -216,7 +217,7 @@ public class ConnectionProcessorTests {
         customValues.put("5", "");
         customValues.put("6", null);
 
-        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock);
+        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class));
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest("eventData", null);
 
         assertEquals("bb", urlConnection.getRequestProperty("aa"));
