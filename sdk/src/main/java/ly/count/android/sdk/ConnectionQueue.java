@@ -880,7 +880,7 @@ class ConnectionQueue implements RequestQueueProvider {
         //todo enable later
         //assert storageProvider != null;
         if (backoff_.get()) {
-            L.w("[ConnectionQueue] tick, currently backed off, skipping tick");
+            L.i("[ConnectionQueue] tick, currently backed off, skipping tick");
             return;
         }
 
