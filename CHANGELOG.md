@@ -1,4 +1,7 @@
 ## XX.XX.XX
+* The feedback widgets now have transparent backgrounds for a cleaner look.
+
+* Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
 * Added a config method to disable server config in the initialization "disableSDKBehaviorSettings()".
 
 ## 25.4.0
