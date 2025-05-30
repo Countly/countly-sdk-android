@@ -532,7 +532,6 @@ public class ConnectionProcessor implements Runnable {
                         storageProvider_.removeRequest(originalRequest);
 
                         if (configProvider_.getBackoffMechanismEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData)) {
-                            L.i("[ConnectionProcessor] run, backed off, resuming request sending for " + BACKOFF_DURATION + " seconds request: [" + requestData + "]");
                             backoffCallback_.run();
                             break;
                         }

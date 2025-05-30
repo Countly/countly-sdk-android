@@ -906,7 +906,7 @@ class ConnectionQueue implements RequestQueueProvider {
         ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, new Runnable() {
             @Override
             public void run() {
-                L.d("[ConnectionQueue] createConnectionProcessor:run, countdown started for backoff");
+                L.d("[ConnectionQueue] createConnectionProcessor:run, backed off, countdown started for " + BACKOFF_DURATION + " seconds");
                 backoff_.set(true);
                 backoffScheduler_.schedule(new Runnable() {
                     @Override public void run() {
