@@ -86,6 +86,13 @@ public class ModuleContent extends ModuleBase {
                     intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
                     intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
                     intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+
+                    Long id = System.currentTimeMillis();
+                    intent.putExtra(TransparentActivity.ID_CALLBACK, id);
+                    if (globalContentCallback != null) {
+                        TransparentActivity.contentCallbacks.put(id, globalContentCallback);
+                    }
+
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     _cly.context_.startActivity(intent);
 
@@ -213,9 +220,6 @@ public class ModuleContent extends ModuleBase {
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
-            // TODO, passing callback with an intent is impossible, need to find a way to pass it
-            // Currently, the callback is set as a static variable in TransparentActivity
-            TransparentActivity.globalContentCallback = globalContentCallback;
             return config;
         }
 

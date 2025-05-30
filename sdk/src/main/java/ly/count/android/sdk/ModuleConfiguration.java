@@ -58,6 +58,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
     long lastServerConfigFetchTimestamp = -1;
+    private boolean serverConfigDisabled = false;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -68,22 +69,27 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         immediateRequestGenerator = config.immediateRequestGenerator;
         serverConfigUpdateTimer = new CountlyTimer();
         serverConfigUpdateInterval = currentServerConfigUpdateInterval;
+        serverConfigDisabled = config.sdkBehaviorSettingsDisabled;
 
         config.countlyStore.setConfigurationProvider(this);
 
-        //load the previously saved configuration
-        loadConfigFromStorage(config.sdkBehaviorSettings);
-
-        //update the config variables according to the new state
-        updateConfigVariables(config);
+        if (!serverConfigDisabled) {
+            //load the previously saved configuration
+            loadConfigFromStorage(config.sdkBehaviorSettings);
+            
+            //update the config variables according to the new state
+            updateConfigVariables(config);
+        }
     }
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
         L.d("[ModuleConfiguration] initFinished");
-        fetchConfigFromServer(config);
-        startServerConfigUpdateTimer();
+        if (!serverConfigDisabled) {
+            fetchConfigFromServer(config);
+            startServerConfigUpdateTimer();
+        }
     }
 
     @Override
@@ -112,7 +118,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * Reads from storage to local json objects
      */
     void loadConfigFromStorage(@Nullable String sdkBehaviorSettings) {
-
         String sConfig = storageProvider.getServerConfig();
 
         if (Utils.isNullOrEmpty(sConfig)) {
@@ -259,6 +264,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      */
     void fetchConfigFromServer(@NonNull CountlyConfig config) {
+        if (serverConfigDisabled) {
+            return;
+        }
         L.v("[ModuleConfiguration] fetchConfigFromServer");
 
         // why _cly? because module configuration is created before module device id, so we need to access it like this
@@ -286,6 +294,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     void fetchIfTimeIsUpForFetchingServerConfig() {
+        if (serverConfigDisabled) {
+            return;
+        }
+
         if (lastServerConfigFetchTimestamp > 0) {
             long currentTime = UtilsTime.currentTimestampMs();
             long timePassed = currentTime - lastServerConfigFetchTimestamp;

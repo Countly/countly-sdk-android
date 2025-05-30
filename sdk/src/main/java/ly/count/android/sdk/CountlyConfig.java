@@ -203,6 +203,7 @@ public class CountlyConfig {
     int dropAgeHours = 0;
     String sdkBehaviorSettings;
     boolean backOffMechanismEnabled = true;
+    boolean sdkBehaviorSettingsDisabled = false;
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED
@@ -1020,6 +1021,14 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig disableBackoffMechanism() {
         this.backOffMechanismEnabled = false;
+     
+     /**
+     * Disable the SDK behavior settings
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableSDKBehaviorSettings() {
+        this.sdkBehaviorSettingsDisabled = true;
         return this;
     }
 

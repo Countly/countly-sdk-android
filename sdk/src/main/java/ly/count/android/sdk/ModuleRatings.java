@@ -566,9 +566,18 @@ public class ModuleRatings extends ModuleBase {
     }
 
     static class FeedbackDialogWebViewClient extends WebViewClient {
+
+        WebViewUrlListener listener;
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
+
+            if (listener != null) {
+                if (listener.onUrl(url, view)) {
+                    return true;
+                }
+            }
 
             // Filter out outgoing calls
             if (url.endsWith("cly_x_int=1")) {
