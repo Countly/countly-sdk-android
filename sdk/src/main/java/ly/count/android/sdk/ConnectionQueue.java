@@ -53,6 +53,9 @@ class ConnectionQueue implements RequestQueueProvider {
     private Future<?> connectionProcessorFuture_;
     private DeviceIdProvider deviceIdProvider_;
     private SSLContext sslContext_;
+    private final ScheduledExecutorService backoffScheduler_ = Executors.newSingleThreadScheduledExecutor();
+    private final AtomicBoolean backoff_ = new AtomicBoolean(false);
+
     BaseInfoProvider baseInfoProvider;
     HealthTracker healthTracker;
     public PerformanceCounterCollector pcc;
@@ -67,7 +70,7 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
-    private AtomicBoolean backoff_ = new AtomicBoolean(false);
+    private static final int BACKOFF_DURATION = 60; // seconds, used in backoff mechanism
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -899,12 +902,19 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, backoff_, new Runnable() {
+
+        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, new Runnable() {
             @Override
             public void run() {
-                L.d("[ConnectionQueue] createConnectionProcessor, countdown finished, running tick in background thread");
-                backoff_.set(false);
-                tick();
+                L.d("[ConnectionQueue] createConnectionProcessor:run, countdown started for backoff");
+                backoff_.set(true);
+                backoffScheduler_.schedule(new Runnable() {
+                    @Override public void run() {
+                        L.d("[ConnectionQueue] createConnectionProcessor:run, countdown finished, running tick in background thread");
+                        backoff_.set(false);
+                        tick();
+                    }
+                }, BACKOFF_DURATION, TimeUnit.SECONDS);
             }
         });
         cp.pcc = pcc;
