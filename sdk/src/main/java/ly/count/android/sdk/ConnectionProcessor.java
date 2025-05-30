@@ -36,6 +36,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import org.json.JSONException;
@@ -53,6 +57,7 @@ public class ConnectionProcessor implements Runnable {
     // used in backoff mechanism to accept half of the CONNECT_TIMEOUT_IN_MILLISECONDS
     private static final int ACCEPTED_TIMEOUT_SECONDS = 10;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30_000;
+    private static final int BACKOFF_DURATION = 60; // seconds, used in backoff mechanism
 
     private static final String CRLF = "\r\n";
     private static final String charset = "UTF-8";
@@ -68,6 +73,8 @@ public class ConnectionProcessor implements Runnable {
     private final SSLContext sslContext_;
 
     private final Map<String, String> requestHeaderCustomValues_;
+    private AtomicBoolean backoff_;
+    private final Runnable backoffRunnable_;
 
     static String endPointOverrideTag = "&new_end_point=";
 
@@ -82,7 +89,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker) {
+        HealthTracker healthTracker, AtomicBoolean backoff, Runnable backoffRunnable) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -90,6 +97,8 @@ public class ConnectionProcessor implements Runnable {
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
+        backoff_ = backoff;
+        backoffRunnable_ = backoffRunnable;
         L = logModule;
         this.healthTracker = healthTracker;
     }
@@ -544,7 +553,10 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     if (backoff) {
-                        L.i("[ConnectionProcessor] run, server seems to be busy, resuming request sending request: [" + requestData + "]");
+                        L.i("[ConnectionProcessor] run, backed off, resuming request sending for " + BACKOFF_DURATION + " seconds request: [" + requestData + "]");
+                        backoff_.set(true);
+                        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+                        scheduler.schedule(backoffRunnable_, BACKOFF_DURATION, TimeUnit.SECONDS);
                         break;
                     }
                 } catch (Exception e) {

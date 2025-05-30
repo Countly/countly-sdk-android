@@ -31,6 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import org.json.JSONException;
@@ -66,6 +67,7 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
+    private AtomicBoolean backoff_ = new AtomicBoolean(false);
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -874,6 +876,10 @@ class ConnectionQueue implements RequestQueueProvider {
     public void tick() {
         //todo enable later
         //assert storageProvider != null;
+        if (backoff_.get()) {
+            L.w("[ConnectionQueue] tick, currently backed off, skipping tick");
+            return;
+        }
 
         boolean rqEmpty = isRequestQueueEmpty(); // this is a heavy operation, do it only once. Why heavy? reading storage
         boolean cpDoneIfOngoing = connectionProcessorFuture_ != null && connectionProcessorFuture_.isDone();
@@ -893,7 +899,14 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionProcessor createConnectionProcessor() {
-        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker);
+        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, backoff_, new Runnable() {
+            @Override
+            public void run() {
+                L.d("[ConnectionQueue] createConnectionProcessor, countdown finished, running tick in background thread");
+                backoff_.set(false);
+                tick();
+            }
+        });
         cp.pcc = pcc;
         return cp;
     }
