@@ -1021,8 +1021,10 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig disableBackoffMechanism() {
         this.backOffMechanismEnabled = false;
-     
-     /**
+        return this;
+    }
+
+    /**
      * Disable the SDK behavior settings
      *
      * @return Returns the same config object for convenient linking
