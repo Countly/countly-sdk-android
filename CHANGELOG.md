@@ -1,6 +1,9 @@
-## 25.4.1
+## XX.XX.XX
+* The feedback widgets now have transparent backgrounds for a cleaner look.
 * Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
-* Extended "CountlyConfigPush.setNotificationButtonURLHandler" added context parameter.
+* Added a config method to disable server config in the initialization "disableSDKBehaviorSettings()".
+
+* Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
 
 ## 25.4.0
 * ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
