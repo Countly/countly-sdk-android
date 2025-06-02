@@ -56,7 +56,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
     long lastServerConfigFetchTimestamp = -1;
-    private boolean serverConfigDisabled = false;
+    private final boolean serverConfigRequestsDisabled;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -67,24 +67,22 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         immediateRequestGenerator = config.immediateRequestGenerator;
         serverConfigUpdateTimer = new CountlyTimer();
         serverConfigUpdateInterval = currentServerConfigUpdateInterval;
-        serverConfigDisabled = config.sdkBehaviorSettingsDisabled;
+        serverConfigRequestsDisabled = config.sdkBehaviorSettingsRequestsDisabled;
 
         config.countlyStore.setConfigurationProvider(this);
 
-        if (!serverConfigDisabled) {
-            //load the previously saved configuration
-            loadConfigFromStorage(config.sdkBehaviorSettings);
-            
-            //update the config variables according to the new state
-            updateConfigVariables(config);
-        }
+        //load the previously saved configuration
+        loadConfigFromStorage(config.sdkBehaviorSettings);
+
+        //update the config variables according to the new state
+        updateConfigVariables(config);
     }
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
         L.d("[ModuleConfiguration] initFinished");
-        if (!serverConfigDisabled) {
+        if (!serverConfigRequestsDisabled) {
             fetchConfigFromServer(config);
             startServerConfigUpdateTimer();
         }
@@ -262,7 +260,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      */
     void fetchConfigFromServer(@NonNull CountlyConfig config) {
         L.v("[ModuleConfiguration] fetchConfigFromServer");
-        if (serverConfigDisabled) {
+        if (serverConfigRequestsDisabled) {
             return;
         }
 
@@ -291,7 +289,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     void fetchIfTimeIsUpForFetchingServerConfig() {
-        if (serverConfigDisabled) {
+        if (serverConfigRequestsDisabled) {
             return;
         }
 

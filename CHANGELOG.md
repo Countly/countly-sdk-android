@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* Added a config method to disable server config in the initialization "disableSDKBehaviorSettings()".
+* Added a config method to disable server config updates in the initialization "disableSDKBehaviorSettingsUpdates()".
 
 ## 25.4.0
 * ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
