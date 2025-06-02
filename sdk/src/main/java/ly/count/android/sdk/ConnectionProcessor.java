@@ -619,6 +619,10 @@ public class ConnectionProcessor implements Runnable {
             }
         }
 
+        if (!result) {
+            healthTracker.logConsecutiveBackoffRequest();
+        }
+
         return result;
     }
 

@@ -12,6 +12,7 @@ public class HealthCheckCounter implements HealthTracker {
     public int statusCode = -1;
     public String errorMessage = "";
     public int consecutiveBackoffRequest = 0;
+    private int consecutiveBackoffRequestCounter = 0;
 
     private final static String keyLogError = "LErr";
     private final static String keyLogWarning = "LWar";
@@ -100,10 +101,12 @@ public class HealthCheckCounter implements HealthTracker {
 
     @Override public void logBackoffRequest() {
         countBackoffRequest++;
+        consecutiveBackoffRequestCounter++;
     }
 
-    @Override public void logConsecutiveBackoffRequest(int consecutiveBackoffRequest) {
-        this.consecutiveBackoffRequest = consecutiveBackoffRequest;
+    @Override public void logConsecutiveBackoffRequest() {
+        consecutiveBackoffRequest = Math.max(consecutiveBackoffRequest, consecutiveBackoffRequestCounter);
+        consecutiveBackoffRequestCounter = 0; //reset the counter
     }
 
     @Override public void clearAndSave() {
@@ -119,6 +122,7 @@ public class HealthCheckCounter implements HealthTracker {
             jsonObject.put(keyStatusCode, statusCode);
             jsonObject.put(keyErrorMessage, errorMessage);
             jsonObject.put(keyBackoffRequest, countBackoffRequest);
+            logConsecutiveBackoffRequest();
             jsonObject.put(keyConsecutiveBackoffRequest, consecutiveBackoffRequest);
 
             storageProvider.setHealthCheckCounterState(jsonObject.toString());
@@ -135,6 +139,7 @@ public class HealthCheckCounter implements HealthTracker {
         errorMessage = "";
         countBackoffRequest = 0;
         consecutiveBackoffRequest = 0;
+        consecutiveBackoffRequestCounter = 0;
     }
 
     @NonNull String createRequestParam() {

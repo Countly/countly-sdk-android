@@ -15,7 +15,7 @@ interface HealthTracker {
 
     void logBackoffRequest();
 
-    void logConsecutiveBackoffRequest(int consecutiveBackoffRequest);
+    void logConsecutiveBackoffRequest();
 
     void clearAndSave();
 
