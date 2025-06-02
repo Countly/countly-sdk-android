@@ -107,8 +107,24 @@ public class ConnectionProcessorTests {
                 return true;
             }
 
-            @Override public boolean getBackoffMechanismEnabled() {
+            @Override public boolean getBOMEnabled() {
                 return true;
+            }
+
+            @Override public int getBOMAcceptedTimeoutSeconds() {
+                return 10;
+            }
+
+            @Override public double getBOMRQPercentage() {
+                return 0.5;
+            }
+
+            @Override public int getBOMRequestAge() {
+                return 24;
+            }
+
+            @Override public int getBOMDuration() {
+                return 60;
             }
         };
 

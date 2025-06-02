@@ -51,7 +51,6 @@ import org.json.JSONObject;
 public class ConnectionProcessor implements Runnable {
     private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30_000;
     // used in backoff mechanism to accept half of the CONNECT_TIMEOUT_IN_MILLISECONDS
-    private static final int ACCEPTED_TIMEOUT_SECONDS = 10;
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30_000;
 
     private static final String CRLF = "\r\n";
@@ -531,7 +530,7 @@ public class ConnectionProcessor implements Runnable {
                         // this one from the stored events collection
                         storageProvider_.removeRequest(originalRequest);
 
-                        if (configProvider_.getBackoffMechanismEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData)) {
+                        if (configProvider_.getBOMEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData)) {
                             backoffCallback_.run();
                             break;
                         }
@@ -608,11 +607,11 @@ public class ConnectionProcessor implements Runnable {
         long responseTimeSeconds = responseTimeMillis / 1_000_000_000L;
         boolean result = false;
 
-        if (responseTimeSeconds >= ACCEPTED_TIMEOUT_SECONDS) {
+        if (responseTimeSeconds >= configProvider_.getBOMAcceptedTimeoutSeconds()) {
             // FLAG 1
-            if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * 0.1) {
+            if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * configProvider_.getBOMRQPercentage()) {
                 // FLAG 2
-                if (!Utils.isRequestTooOld(requestData, 12, "[ConnectionProcessor] backoff", L)) {
+                if (!Utils.isRequestTooOld(requestData, configProvider_.getBOMRequestAge(), "[ConnectionProcessor] backoff", L)) {
                     // FLAG 3
                     result = true;
                     healthTracker.logBackoffRequest();

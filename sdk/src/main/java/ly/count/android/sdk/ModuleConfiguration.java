@@ -76,7 +76,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         if (!serverConfigDisabled) {
             //load the previously saved configuration
             loadConfigFromStorage(config.sdkBehaviorSettings);
-            
             //update the config variables according to the new state
             updateConfigVariables(config);
         }
@@ -348,7 +347,23 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return currentVRefreshContentZone;
     }
 
-    @Override public boolean getBackoffMechanismEnabled() {
+    @Override public boolean getBOMEnabled() {
         return currentVBackoffMechanism;
+    }
+
+    @Override public int getBOMAcceptedTimeoutSeconds() {
+        return 0;
+    }
+
+    @Override public double getBOMRQPercentage() {
+        return 0;
+    }
+
+    @Override public int getBOMRequestAge() {
+        return 0;
+    }
+
+    @Override public int getBOMDuration() {
+        return 0;
     }
 }

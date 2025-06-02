@@ -70,7 +70,6 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
-    private static final int BACKOFF_DURATION = 60; // seconds, used in backoff mechanism
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -906,7 +905,7 @@ class ConnectionQueue implements RequestQueueProvider {
         ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, new Runnable() {
             @Override
             public void run() {
-                L.d("[ConnectionQueue] createConnectionProcessor:run, backed off, countdown started for " + BACKOFF_DURATION + " seconds");
+                L.d("[ConnectionQueue] createConnectionProcessor:run, backed off, countdown started for " + configProvider.getBOMDuration() + " seconds");
                 backoff_.set(true);
                 backoffScheduler_.schedule(new Runnable() {
                     @Override public void run() {
@@ -914,7 +913,7 @@ class ConnectionQueue implements RequestQueueProvider {
                         backoff_.set(false);
                         tick();
                     }
-                }, BACKOFF_DURATION, TimeUnit.SECONDS);
+                }, configProvider.getBOMDuration(), TimeUnit.SECONDS);
             }
         });
         cp.pcc = pcc;

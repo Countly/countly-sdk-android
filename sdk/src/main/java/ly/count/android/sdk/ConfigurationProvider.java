@@ -19,5 +19,14 @@ interface ConfigurationProvider {
 
     boolean getRefreshContentZoneEnabled();
 
-    boolean getBackoffMechanismEnabled();
+    // BACKOFF MECHANISM
+    boolean getBOMEnabled();
+
+    int getBOMAcceptedTimeoutSeconds();
+
+    double getBOMRQPercentage();
+
+    int getBOMRequestAge();
+
+    int getBOMDuration();
 }
