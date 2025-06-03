@@ -202,7 +202,7 @@ public class CountlyConfig {
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
     String sdkBehaviorSettings;
-    boolean sdkBehaviorSettingsDisabled = false;
+    boolean sdkBehaviorSettingsRequestsDisabled = false;
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED
@@ -1014,12 +1014,12 @@ public class CountlyConfig {
     }
 
     /**
-     * Disable the SDK behavior settings
+     * Disable the SDK behavior settings update calls to the server
      *
      * @return Returns the same config object for convenient linking
      */
-    public synchronized CountlyConfig disableSDKBehaviorSettings() {
-        this.sdkBehaviorSettingsDisabled = true;
+    public synchronized CountlyConfig disableSDKBehaviorSettingsUpdates() {
+        this.sdkBehaviorSettingsRequestsDisabled = true;
         return this;
     }
 

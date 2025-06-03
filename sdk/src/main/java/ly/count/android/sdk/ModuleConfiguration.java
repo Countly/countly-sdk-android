@@ -56,7 +56,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     Integer serverConfigUpdateInterval;
     int currentServerConfigUpdateInterval = 4;
     long lastServerConfigFetchTimestamp = -1;
-    private boolean serverConfigDisabled = false;
+    private final boolean serverConfigRequestsDisabled;
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -67,24 +67,22 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         immediateRequestGenerator = config.immediateRequestGenerator;
         serverConfigUpdateTimer = new CountlyTimer();
         serverConfigUpdateInterval = currentServerConfigUpdateInterval;
-        serverConfigDisabled = config.sdkBehaviorSettingsDisabled;
+        serverConfigRequestsDisabled = config.sdkBehaviorSettingsRequestsDisabled;
 
         config.countlyStore.setConfigurationProvider(this);
 
-        if (!serverConfigDisabled) {
-            //load the previously saved configuration
-            loadConfigFromStorage(config.sdkBehaviorSettings);
-            
-            //update the config variables according to the new state
-            updateConfigVariables(config);
-        }
+        //load the previously saved configuration
+        loadConfigFromStorage(config.sdkBehaviorSettings);
+
+        //update the config variables according to the new state
+        updateConfigVariables(config);
     }
 
     @Override
     void initFinished(@NonNull final CountlyConfig config) {
         //once the SDK has loaded, init fetching the server config
         L.d("[ModuleConfiguration] initFinished");
-        if (!serverConfigDisabled) {
+        if (!serverConfigRequestsDisabled) {
             fetchConfigFromServer(config);
             startServerConfigUpdateTimer();
         }
@@ -261,10 +259,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * }
      */
     void fetchConfigFromServer(@NonNull CountlyConfig config) {
-        if (serverConfigDisabled) {
+        L.v("[ModuleConfiguration] fetchConfigFromServer");
+        if (serverConfigRequestsDisabled) {
+            L.v("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, server config requests are disabled");
             return;
         }
-        L.v("[ModuleConfiguration] fetchConfigFromServer");
 
         // why _cly? because module configuration is created before module device id, so we need to access it like this
         // call order to module device id is after module configuration and device id provider is module device id
@@ -291,7 +290,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     void fetchIfTimeIsUpForFetchingServerConfig() {
-        if (serverConfigDisabled) {
+        if (serverConfigRequestsDisabled) {
             return;
         }
 
