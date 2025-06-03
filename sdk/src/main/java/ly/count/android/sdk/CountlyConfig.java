@@ -202,6 +202,7 @@ public class CountlyConfig {
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
     String sdkBehaviorSettings;
+    boolean backOffMechanismEnabled = true;
     boolean sdkBehaviorSettingsRequestsDisabled = false;
 
     /**
@@ -1010,6 +1011,16 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setSDKBehaviorSettings(String sdkBehaviorSettings) {
         this.sdkBehaviorSettings = sdkBehaviorSettings;
+        return this;
+    }
+
+    /**
+     * Disable the back off mechanism
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableBackoffMechanism() {
+        this.backOffMechanismEnabled = false;
         return this;
     }
 

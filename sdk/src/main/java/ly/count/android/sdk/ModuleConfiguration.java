@@ -28,7 +28,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRViewTracking = "vt";
     final static String keyRLocationTracking = "lt";
     final static String keyRRefreshContentZone = "rcz";
-
     final static String keyRLimitKeyLength = "lkl";
     final static String keyRLimitValueSize = "lvs";
     final static String keyRLimitSegValues = "lsv";
@@ -42,7 +41,12 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRDropOldRequestTime = "dort";
     final static String keyRCrashReporting = "crt";
     final static String keyRServerConfigUpdateInterval = "scui";
-
+    final static String keyRBackoffMechanism = "bom";
+    final static String keyRBOMAcceptedTimeout = "bom_at";
+    final static String keyRBOMRQPercentage = "bom_rqp";
+    final static String keyRBOMRequestAge = "bom_ra";
+    final static String keyRBOMDuration = "bom_d";
+    // FLAGS
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
     boolean currentVSessionTracking = true;
@@ -52,8 +56,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVCrashReporting = true;
     boolean currentVLocationTracking = true;
     boolean currentVRefreshContentZone = true;
-    // in hours
-    Integer serverConfigUpdateInterval;
+    boolean currentVBackoffMechanism = true;
+
+    // PROPERTIES
+    int currentVBOMAcceptedTimeoutSeconds = 10;
+    double currentVBOMRQPercentage = 0.5;
+    int currentVBOMRequestAge = 24; // in hours
+    int currentVBOMDuration = 60; // in seconds
+
+    // SERVER CONFIGURATION PARAMS
+    Integer serverConfigUpdateInterval; // in hours
     int currentServerConfigUpdateInterval = 4;
     long lastServerConfigFetchTimestamp = -1;
     private final boolean serverConfigRequestsDisabled;
@@ -179,6 +191,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
         serverConfigUpdateInterval = extractValue(keyRServerConfigUpdateInterval, sb, serverConfigUpdateInterval, currentServerConfigUpdateInterval, Integer.class);
         currentVRefreshContentZone = extractValue(keyRRefreshContentZone, sb, currentVRefreshContentZone, currentVRefreshContentZone, Boolean.class);
+        currentVBackoffMechanism = extractValue(keyRBackoffMechanism, sb, clyConfig.backOffMechanismEnabled, currentVBackoffMechanism, Boolean.class);
+        currentVBOMAcceptedTimeoutSeconds = extractValue(keyRBOMAcceptedTimeout, sb, currentVBOMAcceptedTimeoutSeconds, currentVBOMAcceptedTimeoutSeconds, Integer.class);
+        currentVBOMRQPercentage = extractValue(keyRBOMRQPercentage, sb, currentVBOMRQPercentage, currentVBOMRQPercentage, Double.class);
+        currentVBOMRequestAge = extractValue(keyRBOMRequestAge, sb, currentVBOMRequestAge, currentVBOMRequestAge, Integer.class);
+        currentVBOMDuration = extractValue(keyRBOMDuration, sb, currentVBOMDuration, currentVBOMDuration, Integer.class);
 
         clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class));
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class));
@@ -342,5 +359,25 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public boolean getRefreshContentZoneEnabled() {
         return currentVRefreshContentZone;
+    }
+
+    @Override public boolean getBOMEnabled() {
+        return currentVBackoffMechanism;
+    }
+
+    @Override public int getBOMAcceptedTimeoutSeconds() {
+        return currentVBOMAcceptedTimeoutSeconds;
+    }
+
+    @Override public double getBOMRQPercentage() {
+        return currentVBOMRQPercentage;
+    }
+
+    @Override public int getBOMRequestAge() {
+        return currentVBOMRequestAge;
+    }
+
+    @Override public int getBOMDuration() {
+        return currentVBOMDuration;
     }
 }

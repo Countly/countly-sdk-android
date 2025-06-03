@@ -1,7 +1,9 @@
 ## XX.XX.XX
-* The feedback widgets now have transparent backgrounds for a cleaner look.
-* Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
+* Improved request queue handling, added a backoff mechanism to the SDK to better handle cases where the server responds slowly, enabled by default.
+* Added a config method to disable backoff mechanism "disableBackoffMechanism()"
 * Added a config method to disable server config updates in the initialization "disableSDKBehaviorSettingsUpdates()".
+* The feedback widgets now have transparent backgrounds and fullscreen for a cleaner look.
+* Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
 
 * Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
 

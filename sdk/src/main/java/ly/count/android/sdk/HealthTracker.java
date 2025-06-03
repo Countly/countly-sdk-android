@@ -13,6 +13,10 @@ interface HealthTracker {
 
     void logSessionUpdatedWhileNotRunning();
 
+    void logBackoffRequest();
+
+    void logConsecutiveBackoffRequest();
+
     void clearAndSave();
 
     void saveState();

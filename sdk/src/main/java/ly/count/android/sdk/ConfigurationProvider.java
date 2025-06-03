@@ -18,4 +18,15 @@ interface ConfigurationProvider {
     boolean getLocationTrackingEnabled();
 
     boolean getRefreshContentZoneEnabled();
+
+    // BACKOFF MECHANISM
+    boolean getBOMEnabled();
+
+    int getBOMAcceptedTimeoutSeconds();
+
+    double getBOMRQPercentage();
+
+    int getBOMRequestAge();
+
+    int getBOMDuration();
 }
