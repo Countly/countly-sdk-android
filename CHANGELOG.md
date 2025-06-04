@@ -1,8 +1,8 @@
-## XX.XX.XX
-* Improved request queue handling, added a backoff mechanism to the SDK to better handle cases where the server responds slowly, enabled by default.
-* Added a config method to disable backoff mechanism "disableBackoffMechanism()"
-* Added a config method to disable server config updates in the initialization "disableSDKBehaviorSettingsUpdates()".
-* The feedback widgets now have transparent backgrounds and fullscreen for a cleaner look.
+## 25.4.1
+* Improved request queue handling with a built-in backoff mechanism which is enabled by default.
+* Added "disableBackoffMechanism()" init config method to disable backoff behavior.
+* Added "disableSDKBehaviorSettingsUpdates()" init config method to disable server config updates.
+* Added fullscreen support for feedback widgets.
 * Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
 
 * Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
