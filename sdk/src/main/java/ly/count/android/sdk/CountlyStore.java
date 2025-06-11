@@ -992,4 +992,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             editor.apply();
         }
     }
+
+    public int getMaxRequestQueueSize() {
+        return maxRequestQueueSize;
+    }
 }

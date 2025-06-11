@@ -1,3 +1,36 @@
+## 25.4.1
+* Improved request queue handling with a built-in backoff mechanism which is enabled by default.
+* Added "disableBackoffMechanism()" init config method to disable backoff behavior.
+* Added "disableSDKBehaviorSettingsUpdates()" init config method to disable server config updates.
+* Added fullscreen support for feedback widgets.
+* Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
+
+* Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
+
+## 25.4.0
+* ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
+* ! Minor breaking change ! Server Configuration is now enabled by default. Changes made on SDK Manager > SDK Configuration on your server will affect SDK behavior directly.
+
+* Added a Content feature method "refreshContentZone" that does a manual refresh.
+* Extended server configuration capabilities of the SDK.
+* Added a config method to provide server config in the initialization "setSDKBehaviorSettings(String)".
+* Added a new interface "CountlyNotificationButtonURLHandler" to allow custom handling of URLs when notification buttons are clicked. Could be set by "CountlyConfigPush.setNotificationButtonURLHandler"
+
+* Mitigated an issue that caused PN message data collision if two message with same ID was received.
+
+* Removed the deprecated function "CountlyConfig.setIdMode(idMode)"
+
+* Deprecated the experimental configuration function enableServerConfiguration.
+
+## 25.1.1
+* Mitigated an issue where after closing a content, they were not being fetched again.
+
+## 25.1.0
+* Improved content size management of content blocks.
+
+* Mitigated an issue where, the action bar was overlapping with the content display.
+* Improved the custom CertificateTrustManager to handle domain-specific configurations by supporting hostname-aware checkServerTrusted calls.
+
 ## 24.7.8
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
 
@@ -7,7 +40,6 @@
 
 ## 24.7.6
 * Added support for localization of content blocks.
-
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 * Fixed a bug where passing the global content callback was not possible.
 * Mitigated an issue related to content actions navigation.

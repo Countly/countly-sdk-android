@@ -225,6 +225,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 }
                 break;
             default:
+                if (!configProvider.getCustomEventTrackingEnabled()) {
+                    L.d("[ModuleEvents] recordEventInternal, Custom event tracking is disabled. Event [" + key + "] will not be recorded.");
+                    return;
+                }
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
                     String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
                     if (segmentation == null) {

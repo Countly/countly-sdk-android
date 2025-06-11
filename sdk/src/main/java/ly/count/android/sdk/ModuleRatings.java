@@ -27,6 +27,7 @@ public class ModuleRatings extends ModuleBase {
     //star rating
     StarRatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
     boolean showStarRatingDialogOnFirstActivity = false;
+    ImmediateRequestGenerator iRGenerator;
 
     final Ratings ratingsInterface;
 
@@ -34,6 +35,7 @@ public class ModuleRatings extends ModuleBase {
         super(cly, config);
         L.v("[ModuleRatings] Initialising");
 
+        iRGenerator = config.immediateRequestGenerator;
         starRatingCallback_ = config.starRatingCallback;
         setStarRatingInitConfig(config.starRatingSessionLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
         setIfRatingDialogIsCancellableInternal(config.starRatingDialogIsCancellable);
@@ -480,7 +482,7 @@ public class ModuleRatings extends ModuleBase {
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-        (new ImmediateRequestMaker()).doWork(requestData, "/o/feedback/widget", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/feedback/widget", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override
             public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
@@ -564,9 +566,18 @@ public class ModuleRatings extends ModuleBase {
     }
 
     static class FeedbackDialogWebViewClient extends WebViewClient {
+
+        WebViewUrlListener listener;
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
+
+            if (listener != null) {
+                if (listener.onUrl(url, view)) {
+                    return true;
+                }
+            }
 
             // Filter out outgoing calls
             if (url.endsWith("cly_x_int=1")) {

@@ -6,6 +6,7 @@ plugins {
 }
 
 android {
+  namespace "ly.count.android.demo.kotlin"
   compileSdkVersion 35
 
   defaultConfig {

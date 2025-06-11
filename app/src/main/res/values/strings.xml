@@ -65,4 +65,6 @@
   <string name="manual_report">manual report</string>
   <string name="add_a_breadcrumb">Add a breadcrumb</string>
   <string name="activity_name_feedback">Feedback examples</string>
+  <string name="activity_name_content_zone">Content Zone</string>
+  <string name="content_zone_device_id">Device ID</string>
 </resources>

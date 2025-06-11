@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.json.JSONArray;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -19,19 +19,43 @@ public class ModuleContent extends ModuleBase {
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
-    private final int zoneTimerInterval;
+    private boolean isCurrentlyInContentZone = false;
+    private int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
-    static int waitForDelay = 0;
+    private int waitForDelay = 0;
+    int CONTENT_START_DELAY_MS = 4000; // 4 seconds
+    int REFRESH_CONTENT_ZONE_DELAY_MS = 2500; // 2.5 seconds
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
-        L.v("[ModuleContent] Initialising");
+        L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + config.content.zoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
         iRGenerator = config.immediateRequestGenerator;
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
         zoneTimerInterval = config.content.zoneTimerInterval;
         globalContentCallback = config.content.globalContentCallback;
+    }
+
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        zoneTimerInterval = config.content.zoneTimerInterval;
+        if (!configProvider.getContentZoneEnabled()) {
+            exitContentZoneInternal();
+        } else {
+            if (!shouldFetchContents) {
+                exitContentZoneInternal();
+            }
+            waitForDelay = 0;
+            enterContentZoneInternal(null, 0);
+        }
+    }
+
+    @Override
+    void initFinished(@NotNull CountlyConfig config) {
+        if (configProvider.getContentZoneEnabled()) {
+            enterContentZoneInternal(null, 0);
+        }
     }
 
     void fetchContentsInternal(@NonNull String[] categories) {
@@ -62,10 +86,18 @@ public class ModuleContent extends ModuleBase {
                     intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
                     intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
                     intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+
+                    Long id = System.currentTimeMillis();
+                    intent.putExtra(TransparentActivity.ID_CALLBACK, id);
+                    if (globalContentCallback != null) {
+                        TransparentActivity.contentCallbacks.put(id, globalContentCallback);
+                    }
+
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     _cly.context_.startActivity(intent);
 
                     shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
+                    isCurrentlyInContentZone = true;
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
                 }
@@ -75,36 +107,64 @@ public class ModuleContent extends ModuleBase {
         }, L);
     }
 
-    void registerForContentUpdates(@Nullable String[] categories) {
-        if (deviceIdProvider.isTemporaryIdEnabled()) {
-            L.w("[ModuleContent] registerForContentUpdates, temporary device ID is enabled, skipping");
+    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
             return;
         }
+
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            L.w("[ModuleContent] enterContentZoneInternal, temporary device ID is enabled, skipping");
+            return;
+        }
+
+        if (isCurrentlyInContentZone) {
+            L.w("[ModuleContent] enterContentZoneInternal, already in content zone, skipping");
+            return;
+        }
+
+        shouldFetchContents = true;
 
         String[] validCategories;
 
         if (categories == null) {
-            L.w("[ModuleContent] registerForContentUpdates, categories is null, providing empty array");
+            L.w("[ModuleContent] enterContentZoneInternal, categories is null, providing empty array");
             validCategories = new String[] {};
         } else {
             validCategories = categories;
         }
 
-        countlyTimer.startTimer(zoneTimerInterval, () -> {
-            L.d("[ModuleContent] registerForContentUpdates, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+        L.d("[ModuleContent] enterContentZoneInternal, categories: [" + Arrays.toString(validCategories) + "]");
 
-            if (waitForDelay > 0) {
-                waitForDelay--;
-                return;
+        int contentInitialDelay = initialDelayMS;
+        long sdkStartTime = UtilsTime.currentTimestampMs() - Countly.applicationStart;
+        if (sdkStartTime < CONTENT_START_DELAY_MS) {
+            contentInitialDelay += CONTENT_START_DELAY_MS;
+        }
+
+        countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
+            @Override public void run() {
+                L.d("[ModuleContent] enterContentZoneInternal, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+                if (waitForDelay > 0) {
+                    waitForDelay--;
+                    return;
+                }
+
+                if (!shouldFetchContents) {
+                    L.w("[ModuleContent] enterContentZoneInternal, shouldFetchContents is false, skipping");
+                    return;
+                }
+
+                fetchContentsInternal(validCategories);
             }
-
-            if (!shouldFetchContents) {
-                L.w("[ModuleContent] registerForContentUpdates, shouldFetchContents is false, skipping");
-                return;
-            }
-
-            fetchContentsInternal(validCategories);
         }, L);
+    }
+
+    void notifyAfterContentIsClosed() {
+        L.v("[ModuleContent] notifyAfterContentIsClosed, setting waitForDelay to 2 and shouldFetchContents to true");
+        waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
+        shouldFetchContents = true;
+        isCurrentlyInContentZone = false;
     }
 
     @NonNull
@@ -123,28 +183,23 @@ public class ModuleContent extends ModuleBase {
         int landscapeHeight = portrait ? scaledWidth : scaledHeight;
 
         String language = Locale.getDefault().getLanguage().toLowerCase();
+        String deviceType = deviceInfo.mp.getDeviceType(_cly.context_);
 
-        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language);
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language, deviceType);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
-        return response.has("geo");
-        //boolean success = response.optString("result", "error").equals("success");
-        //JSONArray content = response.optJSONArray("content");
-        //return success && content != null && content.length() > 0;
+        return response.has("geo") && response.has("html");
     }
 
     @NonNull
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
-        JSONArray contents = response.optJSONArray("content");
-        //assert contents != null; TODO enable later
 
-        JSONObject contentObj = response; //contents.optJSONObject(0); TODO this will be changed
-        assert contentObj != null;
+        assert response != null;
 
-        String content = contentObj.optString("html");
-        JSONObject coordinates = contentObj.optJSONObject("geo");
+        String content = response.optString("html");
+        JSONObject coordinates = response.optJSONObject("geo");
 
         assert coordinates != null;
         placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "p", content));
@@ -165,9 +220,6 @@ public class ModuleContent extends ModuleBase {
 
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
-            // TODO, passing callback with an intent is impossible, need to find a way to pass it
-            // Currently, the callback is set as a static variable in TransparentActivity
-            TransparentActivity.globalContentCallback = globalContentCallback;
             return config;
         }
 
@@ -181,16 +233,11 @@ public class ModuleContent extends ModuleBase {
         countlyTimer = null;
     }
 
-    private void optOutFromContent() {
-        exitContentZoneInternal();
-        shouldFetchContents = false;
-    }
-
     @Override
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleContent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
-            optOutFromContent();
+            exitContentZoneInternal();
         }
     }
 
@@ -198,48 +245,55 @@ public class ModuleContent extends ModuleBase {
     void deviceIdChanged(boolean withoutMerge) {
         L.d("[ModuleContent] deviceIdChanged, withoutMerge: [" + withoutMerge + "]");
         if (withoutMerge) {
-            optOutFromContent();
+            exitContentZoneInternal();
         }
     }
 
-    protected void exitContentZoneInternal() {
+    private void exitContentZoneInternal() {
         shouldFetchContents = false;
         countlyTimer.stopTimer(L);
+        waitForDelay = 0;
+    }
+
+    private void refreshContentZoneInternal() {
+        if (!configProvider.getRefreshContentZoneEnabled()) {
+            return;
+        }
+
+        if (isCurrentlyInContentZone) {
+            L.w("[ModuleContent] refreshContentZone, already in content zone, skipping");
+            return;
+        }
+
+        if (!shouldFetchContents) {
+            exitContentZoneInternal();
+        }
+
+        _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+
+        enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
     }
 
     public class Content {
 
         /**
-         * Opt in user for the content fetching and updates
-         *
-         * @param categories categories for the content
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         * Enables content fetching and updates for the user.
+         * This method opts the user into receiving content updates
+         * and ensures that relevant data is fetched accordingly.
          */
-        private void enterContentZone(@Nullable String... categories) {
-            L.d("[ModuleContent] openForContent, categories: [" + Arrays.toString(categories) + "]");
-
+        public void enterContentZone() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] openForContent, Consent is not granted, skipping");
+                L.w("[ModuleContent] enterContentZone, Consent is not granted, skipping");
                 return;
             }
 
-            shouldFetchContents = true;
-            registerForContentUpdates(categories);
+            enterContentZoneInternal(null, 0);
         }
 
         /**
-         * Opt in user for the content fetching and updates
-         *
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
-         */
-        public void enterContentZone() {
-            enterContentZone(new String[] {});
-        }
-
-        /**
-         * Opt out user from the content fetching and updates
-         *
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         * Disables content fetching and updates for the user.
+         * This method opts the user out of receiving content updates
+         * and stops any ongoing content retrieval processes.
          */
         public void exitContentZone() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
@@ -251,20 +305,17 @@ public class ModuleContent extends ModuleBase {
         }
 
         /**
-         * Change the content that is being shown
-         *
-         * @param categories categories for the content
-         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         * Triggers a manual refresh of the content zone.
+         * This method forces an update by fetching the latest content,
+         * ensuring the user receives the most up-to-date information.
          */
-        private void changeContent(@Nullable String... categories) {
-            L.d("[ModuleContent] changeContent, categories: [" + Arrays.toString(categories) + "]");
-
+        public void refreshContentZone() {
             if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
-                L.w("[ModuleContent] changeContent, Consent is not granted, skipping");
+                L.w("[ModuleContent] refreshContentZone, Consent is not granted, skipping");
                 return;
             }
 
-            registerForContentUpdates(categories);
+            refreshContentZoneInternal();
         }
     }
 }
