@@ -1,0 +1,68 @@
+name: Form a Draft Release on Staging Merge
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract changelog content
+        id: changelog
+        run: |
+          # Extract the top version heading
+          version=$(grep -m1 '^## ' CHANGELOG.md | sed 's/^## //')
+          echo "Version found: $version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+          # Extract lines under the top version block
+          awk '
+            /^## / {
+              if (seen++) exit;
+              next;
+            }
+            seen == 1 { print }
+          ' CHANGELOG.md > body.txt
+
+          # Remove trailing empty lines from the end of the file
+          perl -0777 -pe 's/\n+\z//' body.txt > trimmed.txt && mv trimmed.txt body.txt
+
+          echo "Extracted changelog body:"
+          cat body.txt
+
+      - name: Create draft release
+        id: draft_release
+        run: |
+          version=${{ steps.changelog.outputs.version }}
+
+          # Find all draft releases except the current version's draft
+          old_drafts=$(gh release list --limit 100 --json tagName,isDraft | \
+            jq -r --arg version "$version" '.[] | select(.isDraft and (.tagName != $version)) | .tagName')
+
+          # Delete old draft releases (ignore errors if none)
+          for tag in $old_drafts; do
+            echo "Deleting old draft release with tag: $tag"
+            gh release delete "$tag" --yes || true
+          done
+
+          release_tag=$(gh release list --limit 100 --json isDraft,tagName | \
+            jq -r --arg version "$version" '.[] | select(.isDraft and (.tagName == $version)) | .tagName' | head -n1)
+
+          if [ -z "$release_tag" ]; then
+            echo "No draft release found, creating new one..."
+            gh release create "${version}" --target staging --draft --title "$version" --notes-file body.txt
+          else
+            echo "Updating existing draft release $release_tag..."
+            gh release edit "${version}" --target staging --title "$version" --notes-file body.txt
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
