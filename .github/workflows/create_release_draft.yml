@@ -6,7 +6,7 @@ permissions:
 on:
   push:
     branches:
-      - staging
+      - master
 
 jobs:
   create-release:
