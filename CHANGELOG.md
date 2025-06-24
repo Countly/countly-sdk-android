@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
+
 ## 25.4.1
 * Improved request queue handling with a built-in backoff mechanism which is enabled by default.
 * Added "disableBackoffMechanism()" init config method to disable backoff behavior.
