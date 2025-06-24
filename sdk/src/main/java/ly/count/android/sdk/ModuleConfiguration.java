@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Iterator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -235,23 +236,35 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             return;
         }
 
-        //at this point it is a valid response
-        latestRetrievedConfigurationFull = config;
-        String configAsString;
-
-        try {
-            latestRetrievedConfiguration = config.getJSONObject(keyRConfig);
-            configAsString = config.toString();
-        } catch (JSONException e) {
-            latestRetrievedConfigurationFull = null;
-            latestRetrievedConfiguration = null;
-
-            L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Failed retrieving internal config, " + e);
+        JSONObject newInner = config.optJSONObject(keyRConfig);
+        if (newInner == null || newInner.length() == 0) {
+            L.d("[ModuleConfiguration] Config rejected: inner 'c' object is invalid or empty.");
             return;
         }
 
-        //save to storage
-        storageProvider.setServerConfig(configAsString);
+        // Merge timestamp and version
+        try {
+            latestRetrievedConfigurationFull.put(keyRTimestamp, config.get(keyRTimestamp));
+            latestRetrievedConfigurationFull.put(keyRVersion, config.get(keyRVersion));
+        } catch (JSONException e) {
+            L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Failed to merge version/timestamp.", e);
+        }
+
+        Iterator<String> keys = newInner.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            Object value = newInner.opt(key);
+            if (value != null && !JSONObject.NULL.equals(value)) {
+                try {
+                    latestRetrievedConfiguration.put(key, value);
+                } catch (JSONException e) {
+                    L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Failed to merge inner config key: " + key, e);
+                }
+            }
+        }
+
+        // Save updated config
+        storageProvider.setServerConfig(latestRetrievedConfigurationFull.toString());
 
         //update config variables
         updateConfigVariables(clyConfig);
