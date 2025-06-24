@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 25.4.2
 * Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
 
 ## 25.4.1
