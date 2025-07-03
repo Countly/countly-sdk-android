@@ -115,7 +115,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     private void startServerConfigUpdateTimer() {
-        serverConfigUpdateTimer.startTimer((long) currentServerConfigUpdateInterval * 60 * 60 * 1000, (long) currentServerConfigUpdateInterval * 60 * 60, new Runnable() {
+        serverConfigUpdateTimer.startTimer((long) currentServerConfigUpdateInterval * 60 * 60 * 1000, (long) currentServerConfigUpdateInterval * 60 * 60 * 1000, new Runnable() {
             @Override
             public void run() {
                 fetchConfigFromServer(_cly.config_);
@@ -128,9 +128,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      */
     void loadConfigFromStorage(@Nullable String sdkBehaviorSettings) {
         String sConfig = storageProvider.getServerConfig();
+        boolean providedSettingsUsed = false;
 
-        if (Utils.isNullOrEmpty(sConfig)) {
+        if (Utils.isNullOrEmpty(sConfig) && !Utils.isNullOrEmpty(sdkBehaviorSettings)) {
             sConfig = sdkBehaviorSettings;
+            providedSettingsUsed = true;
         }
 
         L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");
@@ -144,6 +146,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             latestRetrievedConfigurationFull = new JSONObject(sConfig);
             latestRetrievedConfiguration = latestRetrievedConfigurationFull.getJSONObject(keyRConfig);
             L.d("[ModuleConfiguration] loadStoredConfig, stored config loaded [" + sConfig + "]");
+            if (providedSettingsUsed) {
+                saveAndStoreDownloadedConfig(latestRetrievedConfigurationFull);
+            }
         } catch (JSONException e) {
             L.w("[ModuleConfiguration] loadStoredConfig, failed to parse, " + e);
 
@@ -219,7 +224,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
-    void saveAndStoreDownloadedConfig(@NonNull JSONObject config, @NonNull CountlyConfig clyConfig) {
+    void saveAndStoreDownloadedConfig(@NonNull JSONObject config) {
         L.v("[ModuleConfiguration] saveAndStoreDownloadedConfig");
         if (!config.has(keyRVersion)) {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
@@ -240,6 +245,15 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         if (newInner == null || newInner.length() == 0) {
             L.d("[ModuleConfiguration] Config rejected: inner 'c' object is invalid or empty.");
             return;
+        }
+
+        if (latestRetrievedConfigurationFull == null) {
+            latestRetrievedConfigurationFull = new JSONObject();
+            latestRetrievedConfiguration = new JSONObject();
+            try {
+                latestRetrievedConfigurationFull.put(keyRConfig, latestRetrievedConfiguration);
+            } catch (JSONException ignored) {
+            }
         }
 
         // Merge timestamp and version
@@ -265,9 +279,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         // Save updated config
         storageProvider.setServerConfig(latestRetrievedConfigurationFull.toString());
-
-        //update config variables
-        updateConfigVariables(clyConfig);
     }
 
     /**
@@ -315,7 +326,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
             L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse + "]");
 
-            saveAndStoreDownloadedConfig(checkResponse, config);
+            saveAndStoreDownloadedConfig(checkResponse);
+            updateConfigVariables(config);
         }, L);
     }
 
