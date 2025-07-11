@@ -530,7 +530,7 @@ public class ConnectionProcessor implements Runnable {
                         // this one from the stored events collection
                         storageProvider_.removeRequest(originalRequest);
 
-                        if (configProvider_.getBOMEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData)) {
+                        if (configProvider_.getBOMEnabled() && backoff(setupServerRequestTime, storedRequestCount - 1, requestData)) {
                             backoffCallback_.run();
                             break;
                         }
