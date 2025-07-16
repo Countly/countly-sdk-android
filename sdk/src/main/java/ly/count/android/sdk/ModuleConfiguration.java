@@ -128,11 +128,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      */
     void loadConfigFromStorage(@Nullable String sdkBehaviorSettings) {
         String sConfig = storageProvider.getServerConfig();
-        boolean providedSettingsUsed = false;
 
         if (Utils.isNullOrEmpty(sConfig) && !Utils.isNullOrEmpty(sdkBehaviorSettings)) {
             sConfig = sdkBehaviorSettings;
-            providedSettingsUsed = true;
         }
 
         L.v("[ModuleConfiguration] loadConfigFromStorage, [" + sConfig + "]");
@@ -146,9 +144,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             latestRetrievedConfigurationFull = new JSONObject(sConfig);
             latestRetrievedConfiguration = latestRetrievedConfigurationFull.getJSONObject(keyRConfig);
             L.d("[ModuleConfiguration] loadStoredConfig, stored config loaded [" + sConfig + "]");
-            if (providedSettingsUsed) {
-                saveAndStoreDownloadedConfig(latestRetrievedConfigurationFull);
-            }
+            saveAndStoreDownloadedConfig(latestRetrievedConfigurationFull);
         } catch (JSONException e) {
             L.w("[ModuleConfiguration] loadStoredConfig, failed to parse, " + e);
 
@@ -182,8 +178,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return currentValue;
     }
 
-    private <T> T extractValue(String key, StringBuilder sb, T currentValue, T defaultValue, Class<T> clazz) {
-        return extractValue(key, sb, currentValue, defaultValue, clazz, null);
+    private Boolean extractValue(String key, StringBuilder sb, Boolean currentValue, Boolean defaultValue) {
+        return extractValue(key, sb, currentValue, defaultValue, Boolean.class, null);
     }
 
     //update the config variables according to the current config obj state
@@ -196,25 +192,25 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         StringBuilder sb = new StringBuilder();
 
-        currentVNetworking = extractValue(keyRNetworking, sb, currentVNetworking, currentVNetworking, Boolean.class);
-        currentVTracking = extractValue(keyRTracking, sb, currentVTracking, currentVTracking, Boolean.class);
-        currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, currentVSessionTracking, Boolean.class);
-        currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, currentVCrashReporting, Boolean.class);
-        currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking, Boolean.class);
-        currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, currentVCustomEventTracking, Boolean.class);
-        currentVLocationTracking = extractValue(keyRLocationTracking, sb, currentVLocationTracking, currentVLocationTracking, Boolean.class);
-        currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone, Boolean.class);
+        currentVNetworking = extractValue(keyRNetworking, sb, currentVNetworking, currentVNetworking);
+        currentVTracking = extractValue(keyRTracking, sb, currentVTracking, currentVTracking);
+        currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, currentVSessionTracking);
+        currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, currentVCrashReporting);
+        currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking);
+        currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, currentVCustomEventTracking);
+        currentVLocationTracking = extractValue(keyRLocationTracking, sb, currentVLocationTracking, currentVLocationTracking);
+        currentVContentZone = extractValue(keyREnterContentZone, sb, currentVContentZone, currentVContentZone);
         serverConfigUpdateInterval = extractValue(keyRServerConfigUpdateInterval, sb, serverConfigUpdateInterval, currentServerConfigUpdateInterval, Integer.class, (Integer value) -> value > 0);
-        currentVRefreshContentZone = extractValue(keyRRefreshContentZone, sb, currentVRefreshContentZone, currentVRefreshContentZone, Boolean.class);
-        currentVBackoffMechanism = extractValue(keyRBackoffMechanism, sb, clyConfig.backOffMechanismEnabled, currentVBackoffMechanism, Boolean.class);
+        currentVRefreshContentZone = extractValue(keyRRefreshContentZone, sb, currentVRefreshContentZone, currentVRefreshContentZone);
+        currentVBackoffMechanism = extractValue(keyRBackoffMechanism, sb, clyConfig.backOffMechanismEnabled, currentVBackoffMechanism);
         currentVBOMAcceptedTimeoutSeconds = extractValue(keyRBOMAcceptedTimeout, sb, currentVBOMAcceptedTimeoutSeconds, currentVBOMAcceptedTimeoutSeconds, Integer.class, (Integer value) -> value > 0);
-        currentVBOMRQPercentage = extractValue(keyRBOMRQPercentage, sb, currentVBOMRQPercentage, currentVBOMRQPercentage, Double.class, (Double value) -> (value > 0.0 && value < 1.0));
+        currentVBOMRQPercentage = extractValue(keyRBOMRQPercentage, sb, currentVBOMRQPercentage, currentVBOMRQPercentage, Double.class, (Double value) -> value > 0.0 && value < 1.0);
         currentVBOMRequestAge = extractValue(keyRBOMRequestAge, sb, currentVBOMRequestAge, currentVBOMRequestAge, Integer.class, (Integer value) -> value > 0);
         currentVBOMDuration = extractValue(keyRBOMDuration, sb, currentVBOMDuration, currentVBOMDuration, Integer.class, (Integer value) -> value > 0);
 
         clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class, (Integer value) -> value > 0));
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class, (Integer value) -> value > 0));
-        clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, clyConfig.loggingEnabled, Boolean.class));
+        clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, clyConfig.loggingEnabled));
         clyConfig.setUpdateSessionTimerDelay(extractValue(keyRSessionUpdateInterval, sb, clyConfig.sessionUpdateTimerDelay, Long.valueOf(Countly.TIMER_DELAY_IN_SECONDS).intValue(), Integer.class, (Integer value) -> value > 0));
         clyConfig.sdkInternalLimits.setMaxKeyLength(extractValue(keyRLimitKeyLength, sb, clyConfig.sdkInternalLimits.maxKeyLength, Countly.maxKeyLengthDefault, Integer.class, (Integer value) -> value > 0));
         clyConfig.sdkInternalLimits.setMaxValueSize(extractValue(keyRLimitValueSize, sb, clyConfig.sdkInternalLimits.maxValueSize, Countly.maxValueSizeDefault, Integer.class, (Integer value) -> value > 0));
@@ -223,7 +219,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread, Countly.maxStackTraceLinesPerThreadDefault, Integer.class, (Integer value) -> value > 0));
         clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, clyConfig.sdkInternalLimits.maxStackTraceLineLength, Countly.maxStackTraceLineLengthDefault, Integer.class, (Integer value) -> value > 0));
         clyConfig.content.setZoneTimerInterval(extractValue(keyRContentZoneInterval, sb, clyConfig.content.zoneTimerInterval, clyConfig.content.zoneTimerInterval, Integer.class, (Integer value) -> value >= 16));
-        clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, clyConfig.shouldRequireConsent, Boolean.class));
+        clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, clyConfig.shouldRequireConsent));
         clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, clyConfig.dropAgeHours, Integer.class, (Integer value) -> value >= 0));
 
         String updatedValues = sb.toString();
@@ -233,29 +229,113 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
+    boolean validateServerConfig(@NonNull JSONObject config) {
+        JSONObject newInner = config.optJSONObject(keyRConfig);
+
+        L.v("[ModuleConfiguration] validateServerConfig");
+        if (!config.has(keyRVersion)) {
+            L.w("[ModuleConfiguration] validateServerConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
+            return false;
+        } else if (!config.has(keyRTimestamp)) {
+            L.w("[ModuleConfiguration] validateServerConfig, Retrieved configuration does not has a 'timestamp' field. Config will be ignored.");
+            return false;
+        } else if (!config.has(keyRConfig)) {
+            L.w("[ModuleConfiguration] validateServerConfig, Retrieved configuration does not has a 'configuration' field. Config will be ignored.");
+            return false;
+        } else if (config.length() != 3) {
+            L.w("[ModuleConfiguration] validateServerConfig, Retrieved configuration does not have the expected number of keys. Config will be ignored.");
+            return false;
+        } else if (newInner == null || newInner.length() == 0) {
+            L.d("[ModuleConfiguration] validateServerConfig, Config rejected: inner 'c' object is invalid or empty.");
+            return false;
+        }
+
+        removeUnsupportedKeys(newInner);
+        return true;
+    }
+
+    private void removeUnsupportedKeys(@NonNull JSONObject newInner) {
+        Iterator<String> keys = newInner.keys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            Object value = newInner.opt(key);
+
+            boolean isValid = false;
+
+            // --- Boolean keys ---
+            switch (key) {
+                case keyRNetworking:
+                case keyRTracking:
+                case keyRSessionTracking:
+                case keyRCrashReporting:
+                case keyRViewTracking:
+                case keyRCustomEventTracking:
+                case keyRLocationTracking:
+                case keyREnterContentZone:
+                case keyRRefreshContentZone:
+                case keyRBackoffMechanism:
+                case keyRLogging:
+                case keyRConsentRequired:
+                    isValid = value instanceof Boolean;
+                    break;
+
+                // --- Positive Integer keys (> 0) ---
+                case keyRServerConfigUpdateInterval:
+                case keyRBOMAcceptedTimeout:
+                case keyRBOMRequestAge:
+                case keyRBOMDuration:
+                case keyRReqQueueSize:
+                case keyREventQueueSize:
+                case keyRSessionUpdateInterval:
+                case keyRLimitKeyLength:
+                case keyRLimitValueSize:
+                case keyRLimitSegValues:
+                case keyRLimitBreadcrumb:
+                case keyRLimitTraceLine:
+                case keyRLimitTraceLength:
+                    isValid = value instanceof Integer && ((Integer) value) > 0;
+                    break;
+
+                // --- Integer >= 0 ---
+                case keyRDropOldRequestTime:
+                    isValid = value instanceof Integer && ((Integer) value) >= 0;
+                    break;
+
+                // --- Integer >= 16 ---
+                case keyRContentZoneInterval:
+                    isValid = value instanceof Integer && ((Integer) value) >= 16;
+                    break;
+
+                // --- Double between 0.0 and 1.0 ---
+                case keyRBOMRQPercentage:
+                    isValid = value instanceof Double && ((Double) value > 0.0 && (Double) value < 1.0);
+                    break;
+                // --- Unknown keys ---
+                default:
+                    L.w("[ModuleConfiguration] removeUnsupportedKeys, Unknown key: [" + key + "], removing it. value: [" + value + "]");
+                    break;
+            }
+
+            // --- If not valid or not known, remove it ---
+            if (!isValid) {
+                L.w("[ModuleConfiguration] removeUnsupportedKeys, Invalid or unknown key: [" + key + "], removing it. value: [" + value + "]");
+                keys.remove();
+            }
+        }
+    }
+
     void saveAndStoreDownloadedConfig(@NonNull JSONObject config) {
         L.v("[ModuleConfiguration] saveAndStoreDownloadedConfig");
-        if (!config.has(keyRVersion)) {
-            L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'version' field. Config will be ignored.");
-            return;
-        }
-
-        if (!config.has(keyRTimestamp)) {
-            L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'timestamp' field. Config will be ignored.");
-            return;
-        }
-
-        if (!config.has(keyRConfig)) {
-            L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration does not has a 'configuration' field. Config will be ignored.");
+        boolean validConfig = validateServerConfig(config);
+        if (!validConfig) {
+            L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration is not valid, ignoring it.");
+            latestRetrievedConfigurationFull = null;
+            latestRetrievedConfiguration = null;
             return;
         }
 
         JSONObject newInner = config.optJSONObject(keyRConfig);
-        if (newInner == null || newInner.length() == 0) {
-            L.d("[ModuleConfiguration] Config rejected: inner 'c' object is invalid or empty.");
-            return;
-        }
-
+        assert newInner != null;
         if (latestRetrievedConfigurationFull == null) {
             latestRetrievedConfigurationFull = new JSONObject();
             latestRetrievedConfiguration = new JSONObject();
