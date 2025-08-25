@@ -24,6 +24,7 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,6 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import org.json.JSONObject;
 
 /**
  * ConnectionQueue queues session and event data and periodically sends that data to
@@ -171,6 +173,27 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         return true;
+    }
+
+    public void recordMetrics(@NonNull Map<String, String> metricOverride) {
+        String data = prepareCommonRequestData();
+        Map<String, Object> metrics = deviceInfo.getMetricsMap(context_, this.metricOverride, L);
+        if (!metricOverride.isEmpty()) {
+            metrics.putAll(metricOverride);
+        }
+        
+        String preparedString = new JSONObject(metrics).toString();
+
+        try {
+            preparedString = java.net.URLEncoder.encode(preparedString, "UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            Countly.sharedInstance().L.e("[recordMetrics] encode failed, [" + ex + "]");
+        }
+
+        data += "&metrics=" + preparedString;
+
+        addRequestToQueue(data, false);
+        tick();
     }
 
     /**

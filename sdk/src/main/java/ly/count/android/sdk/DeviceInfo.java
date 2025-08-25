@@ -613,17 +613,19 @@ class DeviceInfo {
             metrics.put(key, value);
         }
     }
-
+    
     /**
-     * Returns url encoded metrics that would be used for "begin_session" requests and remote config
+     * Returns metrics map with all the common metrics
      *
      * @param context
      * @param metricOverride
      * @return
      */
     @NonNull
-    String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
-        //we set the override to null because all of the entries will be overwritten anyway
+    Map<String, Object> getMetricsMap(@NonNull final Context context, @Nullable final Map<String, String> metricOverride,
+            @NonNull ModuleLog L) {
+        // we set the override to null because all of the entries will be overwritten
+        // anyway
         Map<String, Object> metrics = getCommonMetrics(context, null, L);
 
         putIfNotNullAndNotEmpty(metrics, "_carrier", mp.getCarrier(context));
@@ -649,6 +651,21 @@ class DeviceInfo {
                 metrics.put(k, overrideValue);
             }
         }
+
+        return metrics;
+    }
+
+    /**
+     * Returns url encoded metrics that would be used for "begin_session" requests and remote config
+     *
+     * @param context
+     * @param metricOverride
+     * @return
+     */
+    @NonNull
+    String getMetrics(@NonNull final Context context, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
+
+        Map<String, Object> metrics = getMetricsMap(context, metricOverride, L);
 
         String result = new JSONObject(metrics).toString();
 

@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "24.7.2-RC1";
 
     /**
      * Used as request meta data on every request
@@ -1037,6 +1037,22 @@ public class Countly {
 
             requestQueueProvider.tick();
         }
+    }
+
+    /*
+     * Records custom metrics to be sent to the Countly server.
+     */
+    public void recordMetrics(Map<String, String> metricOverride) {
+        if (!isInitialized()) {
+            L.e("init must be called before recordMetrics");
+            return;
+        }
+        L.i("[recordMetrics] Recording metrics with override: [" + metricOverride + "]");
+        if (metricOverride == null) {
+            metricOverride = new HashMap<>();
+        }
+
+        connectionQueue_.recordMetrics(metricOverride);
     }
 
     /**

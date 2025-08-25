@@ -4,6 +4,7 @@ apply plugin: 'com.android.application'
 // apply plugin: ly.count.android.plugins.UploadSymbolsPlugin
 
 android {
+    namespace "ly.count.android.demo.crash"
     compileSdkVersion 31
 
     defaultConfig {
