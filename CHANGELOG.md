@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Health check requests now include additional metrics.
+
 ## 25.4.2
 * Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
 
