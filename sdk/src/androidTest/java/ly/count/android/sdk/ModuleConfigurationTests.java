@@ -1089,6 +1089,10 @@ public class ModuleConfigurationTests {
                     }
                 };
             }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return null;
+            }
         };
     }
 
@@ -1161,6 +1165,10 @@ public class ModuleConfigurationTests {
                         }
                     }
                 };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return null;
             }
         };
         countlyConfig.metricProviderOverride = new MockedMetricProvider();
