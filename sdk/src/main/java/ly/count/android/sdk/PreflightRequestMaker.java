@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.Locale;
 import org.json.JSONObject;
 
 class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements ImmediateRequestI {
@@ -55,7 +56,7 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
             String contentType = connection.getHeaderField("Content-Type");
 
             return (responseCode == HttpURLConnection.HTTP_OK) &&
-                (contentType != null && contentType.toLowerCase().contains("text/html"));
+                (contentType != null && contentType.toLowerCase(Locale.US).contains("text/html"));
         } catch (Exception e) {
             L.e("[ImmediateRequestMaker] doPreflightRequest, Received exception while making a immediate server request", e);
         } finally {
