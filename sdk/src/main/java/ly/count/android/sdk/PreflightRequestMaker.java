@@ -38,7 +38,7 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
         callback = (ImmediateRequestMaker.InternalImmediateRequestCallback) params[5];
         L = (ModuleLog) params[6];
 
-        L.v("[ImmediateRequestMaker] doPreflightRequest, Starting preflight request");
+        L.v("[PreflightRequestMaker] doPreflightRequest, Starting preflight request");
 
         HttpURLConnection connection = null;
 
@@ -47,29 +47,29 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
             try {
                 connection = (HttpURLConnection) cp.urlConnectionForPreflightRequest(urlRequest);
             } catch (IOException e) {
-                L.e("[ImmediateRequestMaker] doPreflightRequest, IOException while preparing preflight request :[" + e + "]");
+                L.e("[PreflightRequestMaker] doPreflightRequest, IOException while preparing preflight request :[" + e + "]");
                 return null;
             }
 
             int responseCode = connection.getResponseCode();
 
-            L.v("[ImmediateRequestMaker] doPreflightRequest, Preflight request finished, response code: " + responseCode);
+            L.v("[PreflightRequestMaker] doPreflightRequest, Preflight request finished, response code: " + responseCode);
             return responseCode >= 200 && responseCode < 400;
         } catch (Exception e) {
-            L.e("[ImmediateRequestMaker] doPreflightRequest, Received exception while making a immediate server request", e);
+            L.e("[PreflightRequestMaker] doPreflightRequest, Received exception while making a immediate server request", e);
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
-        L.v("[ImmediateRequestMaker] doPreflightRequest, Finished request");
+        L.v("[PreflightRequestMaker] doPreflightRequest, Finished request");
         return false;
     }
 
     @Override
     protected void onPostExecute(Boolean result) {
         super.onPostExecute(result);
-        L.v("[ImmediateRequestMaker] onPostExecute");
+        L.v("[PreflightRequestMaker] onPostExecute");
 
         if (callback != null) {
             callback.callback(result ? new JSONObject() : null);
