@@ -19,6 +19,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +47,7 @@ public class TransparentActivity extends Activity {
 
         // there is a stripe at the top of the screen for contents
         // we eliminate it with hiding the system ui
-        hideSystemUI();
+        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -76,7 +77,8 @@ public class TransparentActivity extends Activity {
         params.y = config.y;
         params.height = config.height;
         params.width = config.width;
-        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         getWindow().setAttributes(params);
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
@@ -89,18 +91,6 @@ public class TransparentActivity extends Activity {
         // Add views
         relativeLayout.addView(webView);
         setContentView(relativeLayout);
-    }
-
-    private void hideSystemUI() {
-        // Enables regular immersive mode
-        getWindow().getDecorView().setSystemUiVisibility(
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN
-        );
     }
 
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
@@ -392,6 +382,7 @@ public class TransparentActivity extends Activity {
     @SuppressLint("SetJavaScriptEnabled")
     private WebView createWebView(TransparentActivityConfig config) {
         WebView webView = new CountlyWebView(this);
+        webView.setVisibility(View.INVISIBLE);
         RelativeLayout.LayoutParams webLayoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
@@ -423,7 +414,17 @@ public class TransparentActivity extends Activity {
                 return false;
             }
         });
+        client.afterPageFinished = (closeIt) -> {
+            if (closeIt) {
+                close(new HashMap<>());
 
+                if (Countly.sharedInstance().isInitialized()) {
+                    Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+                }
+            } else {
+                webView.setVisibility(View.VISIBLE);
+            }
+        };
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);
         return webView;
