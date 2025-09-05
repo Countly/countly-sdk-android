@@ -493,6 +493,10 @@ public class Countly {
                     @Override public ImmediateRequestI CreateImmediateRequestMaker() {
                         return (new ImmediateRequestMaker());
                     }
+
+                    @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                        return (new PreflightRequestMaker());
+                    }
                 };
             }
 

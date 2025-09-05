@@ -268,35 +268,45 @@ public class ModuleFeedback extends ModuleBase {
         widgetListUrl.append(customObjectToSendWithTheWidget);
 
         String preparedWidgetUrl = widgetListUrl.toString();
-
         L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrl + "]");
-        if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
-            L.d("[ModuleFeedback] Will use transparent activity for displaying the widget");
-            showFeedbackWidget_newActivity(context, preparedWidgetUrl, widgetInfo, devCallback);
-        } else {
-            L.d("[ModuleFeedback] Will use dialog for displaying the widget");
-            //enable for chrome debugging
-            // WebView.setWebContentsDebuggingEnabled(true);
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.post(new Runnable() {
-                public void run() {
-                    L.d("[ModuleFeedback] Calling on main thread");
 
-                    try {
-                        showFeedbackWidget(context, widgetInfo, closeButtonText, devCallback, preparedWidgetUrl);
+        iRGenerator.CreatePreflightRequestMaker().doWork(preparedWidgetUrl, null, requestQueueProvider.createConnectionProcessor(), false, true, preflightResponse -> {
+            if (preflightResponse == null) {
+                L.e("[ModuleFeedback] Failed to do preflight check for the widget url");
+                if (devCallback != null) {
+                    devCallback.onFinished("Failed to do preflight check for the widget url");
+                }
+                return;
+            }
 
-                        if (devCallback != null) {
-                            devCallback.onFinished(null);
-                        }
-                    } catch (Exception ex) {
-                        L.e("[ModuleFeedback] Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
-                        if (devCallback != null) {
-                            devCallback.onFinished("Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
+            if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
+                L.d("[ModuleFeedback] Will use transparent activity for displaying the widget");
+                showFeedbackWidget_newActivity(context, preparedWidgetUrl, widgetInfo, devCallback);
+            } else {
+                L.d("[ModuleFeedback] Will use dialog for displaying the widget");
+                //enable for chrome debugging
+                // WebView.setWebContentsDebuggingEnabled(true);
+                Handler handler = new Handler(Looper.getMainLooper());
+                handler.post(new Runnable() {
+                    public void run() {
+                        L.d("[ModuleFeedback] Calling on main thread");
+
+                        try {
+                            showFeedbackWidget(context, widgetInfo, closeButtonText, devCallback, preparedWidgetUrl);
+
+                            if (devCallback != null) {
+                                devCallback.onFinished(null);
+                            }
+                        } catch (Exception ex) {
+                            L.e("[ModuleFeedback] Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
+                            if (devCallback != null) {
+                                devCallback.onFinished("Failed at displaying feedback widget dialog, [" + ex.toString() + "]");
+                            }
                         }
                     }
-                }
-            });
-        }
+                });
+            }
+        }, L);
     }
 
     private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, String closeButtonText, FeedbackCallback devCallback, String url) {
