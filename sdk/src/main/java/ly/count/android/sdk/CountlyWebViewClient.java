@@ -47,7 +47,7 @@ class CountlyWebViewClient extends WebViewClient {
         super.onPageFinished(view, url);
         if (afterPageFinished != null) {
             pageLoadTime = System.currentTimeMillis() - pageLoadTime;
-            boolean timeOut = (pageLoadTime / 1000L) >= ConnectionProcessor.CONNECT_TIMEOUT_IN_MILLISECONDS;
+            boolean timeOut = (pageLoadTime / 1000L) >= 60;
             Log.d(Countly.TAG, "[CountlyWebViewClient] onPageFinished, pageLoadTime: " + pageLoadTime + " ms");
 
             afterPageFinished.onPageLoaded(timeOut);

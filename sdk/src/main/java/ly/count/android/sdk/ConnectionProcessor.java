@@ -49,7 +49,7 @@ import org.json.JSONObject;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class ConnectionProcessor implements Runnable {
-    static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30_000;
+    private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30_000;
     // used in backoff mechanism to accept half of the CONNECT_TIMEOUT_IN_MILLISECONDS
     private static final int READ_TIMEOUT_IN_MILLISECONDS = 30_000;
 
