@@ -1,5 +1,10 @@
 ## 25.4.3
-* Mitigated an ANR that occurred when the back button was pressed on the content activity.
+* Improved Health Check metric information.
+* Improved Content display mechanics.
+
+* Mitigated an issue that could have happened when navigating back from a Content.
+* Mitigated a persistency issue with configuration provided SBS and its initial state.
+* Mitigated an issue where SBS could have been fetched twice.
 
 ## 25.4.2
 * Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.

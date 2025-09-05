@@ -10,10 +10,13 @@ import java.util.List;
 
 class CountlyWebViewClient extends WebViewClient {
     private final List<WebViewUrlListener> listeners;
+    WebViewPageLoadedListener afterPageFinished;
+    long pageLoadTime;
 
     public CountlyWebViewClient() {
         super();
         this.listeners = new ArrayList<>();
+        this.pageLoadTime = System.currentTimeMillis();
     }
 
     @Override
@@ -36,6 +39,20 @@ class CountlyWebViewClient extends WebViewClient {
         }
 
         return false;
+    }
+
+    @Override
+    public void onPageFinished(WebView view, String url) {
+        Log.v(Countly.TAG, "[CountlyWebViewClient] onPageFinished, url: [" + url + "]");
+        super.onPageFinished(view, url);
+        if (afterPageFinished != null) {
+            pageLoadTime = System.currentTimeMillis() - pageLoadTime;
+            boolean timeOut = (pageLoadTime / 1000L) >= 60;
+            Log.d(Countly.TAG, "[CountlyWebViewClient] onPageFinished, pageLoadTime: " + pageLoadTime + " ms");
+
+            afterPageFinished.onPageLoaded(timeOut);
+            afterPageFinished = null;
+        }
     }
 
     public void registerWebViewUrlListener(WebViewUrlListener listener) {

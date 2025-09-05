@@ -493,6 +493,10 @@ public class Countly {
                     @Override public ImmediateRequestI CreateImmediateRequestMaker() {
                         return (new ImmediateRequestMaker());
                     }
+
+                    @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                        return (new PreflightRequestMaker());
+                    }
                 };
             }
 
@@ -969,13 +973,15 @@ public class Countly {
         }
 
         ++activityCount_;
-        if (activityCount_ == 1 && !moduleSessions.manualSessionControlEnabled) {
+        if (activityCount_ == 1) {
+            // start the timer in the first activity
+            moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
             //if we open the first activity
             //and we are not using manual session control,
             //begin a session
-
-            moduleSessions.beginSessionInternal();
-            moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
+            if (!moduleSessions.manualSessionControlEnabled) {
+                moduleSessions.beginSessionInternal();
+            }
         }
 
         config_.deviceInfo.inForeground();

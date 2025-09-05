@@ -62,7 +62,7 @@ class ModuleHealthCheck extends ModuleBase {
 
         healthCheckSent = true;
 
-        String preparedMetrics = deviceInfo.getMetricsHealthCheck(_cly.context_, _cly.config_.metricOverride);
+        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, _cly.config_.metricOverride, L);
 
         StringBuilder requestData = new StringBuilder(requestQueueProvider.prepareHealthCheckRequest(preparedMetrics));
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();

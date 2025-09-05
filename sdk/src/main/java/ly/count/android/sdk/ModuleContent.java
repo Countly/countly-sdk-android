@@ -76,28 +76,37 @@ public class ModuleContent extends ModuleBase {
             try {
                 if (validateResponse(checkResponse)) {
                     L.d("[ModuleContent] fetchContentsInternal, got new content data, showing it");
-                    Map<Integer, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
-                    if (placementCoordinates.isEmpty()) {
-                        L.d("[ModuleContent] fetchContentsInternal, placement coordinates are empty, skipping");
-                        return;
-                    }
 
-                    Intent intent = new Intent(_cly.context_, TransparentActivity.class);
-                    intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
-                    intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
-                    intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+                    iRGenerator.CreatePreflightRequestMaker().doWork(checkResponse.optString("html"), null, cp, false, true, preflightResponse -> {
+                        if (preflightResponse == null) {
+                            L.d("[ModuleContent] fetchContentsInternal, preflight check failed, skipping showing content");
+                            return;
+                        }
 
-                    Long id = System.currentTimeMillis();
-                    intent.putExtra(TransparentActivity.ID_CALLBACK, id);
-                    if (globalContentCallback != null) {
-                        TransparentActivity.contentCallbacks.put(id, globalContentCallback);
-                    }
+                        Map<Integer, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
+                        if (placementCoordinates.isEmpty()) {
+                            L.d("[ModuleContent] fetchContentsInternal, placement coordinates are empty, skipping");
+                            return;
+                        }
 
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    _cly.context_.startActivity(intent);
+                        L.d("[ModuleContent] fetchContentsInternal, preflight check succeeded");
+                        Intent intent = new Intent(_cly.context_, TransparentActivity.class);
+                        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
+                        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
+                        intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
 
-                    shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
-                    isCurrentlyInContentZone = true;
+                        Long id = System.currentTimeMillis();
+                        intent.putExtra(TransparentActivity.ID_CALLBACK, id);
+                        if (globalContentCallback != null) {
+                            TransparentActivity.contentCallbacks.put(id, globalContentCallback);
+                        }
+
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        _cly.context_.startActivity(intent);
+
+                        shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
+                        isCurrentlyInContentZone = true;
+                    }, L);
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
                 }

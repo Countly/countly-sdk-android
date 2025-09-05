@@ -247,6 +247,63 @@ public class ConnectionProcessor implements Runnable {
         return conn;
     }
 
+    synchronized public @NonNull URLConnection urlConnectionForPreflightRequest(@NonNull String preflightData) throws IOException {
+        long approxSize = preflightData.length();
+        URL url = new URL(preflightData);
+
+        long tOpen = pcc != null ? UtilsTime.getNanoTime() : 0;
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        if (conn instanceof HttpsURLConnection && (Countly.publicKeyPinCertificates != null || Countly.certificatePinCertificates != null)) {
+            ((HttpsURLConnection) conn).setSSLSocketFactory(sslContext_.getSocketFactory());
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_01_OpenURLConnection", UtilsTime.getNanoTime() - tOpen);
+            tOpen = UtilsTime.getNanoTime();
+        }
+
+        conn.setRequestMethod("HEAD");
+        conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
+        conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
+        conn.setUseCaches(false);
+        conn.setDoInput(true);
+        conn.setDoOutput(false);
+        conn.setInstanceFollowRedirects(true);
+
+        if (requestHeaderCustomValues_ != null) {
+            L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
+            for (Map.Entry<String, String> e : requestHeaderCustomValues_.entrySet()) {
+                if (e.getKey() != null && e.getValue() != null && !e.getKey().isEmpty()) {
+                    conn.addRequestProperty(e.getKey(), e.getValue());
+                }
+            }
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_02_ConfigureConnection", UtilsTime.getNanoTime() - tOpen);
+            tOpen = UtilsTime.getNanoTime();
+        }
+
+        try {
+            for (int i = 0; ; i++) {
+                String key = conn.getHeaderFieldKey(i);
+                if (key == null) break;
+                String value = conn.getHeaderField(i);
+                approxSize += key.getBytes(StandardCharsets.US_ASCII).length + value.getBytes(StandardCharsets.US_ASCII).length + 2L;
+            }
+        } catch (Exception e) {
+            L.e("[ConnectionProcessor] urlConnectionForPreflightRequest, exception while calculating header field size: " + e);
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_03_HeaderFieldSize", UtilsTime.getNanoTime() - tOpen);
+        }
+
+        L.v("[ConnectionProcessor] urlConnectionForPreflightRequest, Approx data size: [" + approxSize + " B]");
+        return conn;
+    }
+
     /**
      * Return the size of the text multipart entry
      *
@@ -530,7 +587,7 @@ public class ConnectionProcessor implements Runnable {
                         // this one from the stored events collection
                         storageProvider_.removeRequest(originalRequest);
 
-                        if (configProvider_.getBOMEnabled() && backoff(setupServerRequestTime, storedRequestCount, requestData)) {
+                        if (configProvider_.getBOMEnabled() && backoff(setupServerRequestTime, storedRequestCount - 1, requestData)) {
                             backoffCallback_.run();
                             break;
                         }
