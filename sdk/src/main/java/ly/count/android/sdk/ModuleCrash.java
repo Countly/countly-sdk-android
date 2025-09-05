@@ -336,7 +336,7 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        breadcrumbHelper.addBreadcrumb(breadcrumb, _cly.config_.sdkInternalLimits.maxValueSize);
+        breadcrumbHelper.addBreadcrumb(breadcrumb, _cly.config_.sdkInternalLimits.maxValueSize, _cly.config_.sdkInternalLimits.maxBreadcrumbCount);
         return _cly;
     }
 
