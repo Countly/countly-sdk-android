@@ -1,5 +1,12 @@
 ## XX.XX.XX
+
 * Mitigated an ANR that occurred when the back button was pressed on the content activity.
+
+* Health check requests now include additional metrics.
+
+* Mitigated an issue where behavior settings were not stored when only provided through configuration during initialization.
+* Mitigated an issue where, on the first run of the SDK, behavior settings returned null if none were previously stored.
+* Mitigated an issue where first behavior settings update calls sent twice.
 
 ## 25.4.2
 * Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
