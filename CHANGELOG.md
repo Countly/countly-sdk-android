@@ -1,12 +1,10 @@
-## XX.XX.XX
+## 25.4.3
+* Improved Health Check metric information.
+* Improved Content display mechanics.
 
-* Mitigated an ANR that occurred when the back button was pressed on the content activity.
-
-* Health check requests now include additional metrics.
-
-* Mitigated an issue where behavior settings were not stored when only provided through configuration during initialization.
-* Mitigated an issue where, on the first run of the SDK, behavior settings returned null if none were previously stored.
-* Mitigated an issue where first behavior settings update calls sent twice.
+* Mitigated an issue that could have happened when navigating back from a Content.
+* Mitigated a persistency issue with configuration provided SBS and its initial state.
+* Mitigated an issue where SBS could have been fetched twice.
 
 ## 25.4.2
 * Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
