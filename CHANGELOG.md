@@ -1,3 +1,6 @@
+## 25.4.3
+* Mitigated an ANR that occurred when the back button was pressed on the content activity.
+
 ## 25.4.2
 * Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
 
