@@ -1,7 +1,6 @@
 name: The Countly Android SDK Unit Test
 
 env:
-  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
   JAVA_V: 11
   JAVA_DIST: corretto
 
@@ -19,17 +18,15 @@ on:
       - master
       - staging
 jobs:
-  setup:
+  test:
     runs-on: ubuntu-latest
     name: Build and Test the SDK
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [21,22,23,24,25,26,27,28,29,30,31,32,33,34,35]
 
     steps:
-      - name: Install Docker to the Runner
-        run: sudo apt-get install containerd.io
-
-      - name: Pull Emulator from the Repo
-        run: docker pull ${{ env.EMULATOR_REPO }}
-    
       - name: Checkout SDK code
         uses: actions/checkout@v4
 
@@ -39,21 +36,36 @@ jobs:
           java-version: ${{ env.JAVA_V }}
           distribution: ${{ env.JAVA_DIST }}
 
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.10
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: 'google-apis'
+          arch: 'x86_64'
+          channel: 'stable'
 
       - name: Start ADB Server
         run: adb start-server
 
-      - name: Run Android Emulator Container
-        run: docker run -d -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 5555:5555/tcp ${{ env.EMULATOR_REPO }}
-      
-      - name: Connect to the Emulator
-        run: adb connect localhost:5555
+      - name: Set up AVD (Android Virtual Device)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils
+          sdkmanager --install "system-images;android-${{ matrix.api-level }};default;x86_64" "platform-tools" "emulator"
+          echo "no" | avdmanager create avd -n test -k "system-images;android-${{ matrix.api-level }};default;x86_64" --force
+          echo "Emulator path is: $ANDROID_HOME/emulator"
+          $ANDROID_HOME/emulator/emulator -avd test -no-window -no-audio -no-boot-anim -no-snapshot-load &
 
-      - name: Set AAPT2 for android 35
-        run: echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2"  | tee -a ${{ github.workspace }}/gradle.properties
-  
+      - name: Wait for Emulator to start
+        run: |
+          adb wait-for-device
+          
       - name: Build the SDK
         if: always()
         run: ./gradlew sdk:build
@@ -62,11 +74,15 @@ jobs:
         if: always()
         run: ./gradlew sdk:connectedAndroidTest
 
+      - name: Stop Emulator
+        if: always()
+        run: adb emu kill
+      
       - name: Publish Test Results to PR
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          check_name: "Unit Test Results :rocket:"
-          comment_title: "Unit Test Results :rocket:"
+          check_name: "Unit Test Results ${{ matrix.api-level }} :rocket:"
+          comment_title: "Unit Test Results ${{ matrix.api-level }} :rocket:"
           files: |
             sdk/build/outputs/androidTest-results/**/*.xml
