@@ -18,7 +18,7 @@ public class BreadcrumbHelperTests {
     @Test
     public void addBreadcrumb() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("test", 10);
+        breadcrumbHelper.addBreadcrumb("test", 10, 5);
         Assert.assertEquals(list("test"), breadcrumbHelper.getBreadcrumbs());
     }
 
@@ -75,7 +75,7 @@ public class BreadcrumbHelperTests {
     @Test
     public void clearBreadcrumbs() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(2, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("Test", 3);
+        breadcrumbHelper.addBreadcrumb("Test", 3, 2);
         Assert.assertEquals(list("Tes"), breadcrumbHelper.getBreadcrumbs());
         breadcrumbHelper.clearBreadcrumbs();
         Assert.assertEquals(list(), breadcrumbHelper.getBreadcrumbs());
