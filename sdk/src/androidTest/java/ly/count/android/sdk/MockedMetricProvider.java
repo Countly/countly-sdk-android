@@ -4,6 +4,8 @@ import android.content.Context;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.AbstractMap;
+import java.util.Map;
 
 public class MockedMetricProvider implements MetricProvider {
 
@@ -79,14 +81,6 @@ public class MockedMetricProvider implements MetricProvider {
         return "O";
     }
 
-    @Override public String getDiskCurrent() {
-        return "23";
-    }
-
-    @Override public String getDiskTotal() {
-        return "45";
-    }
-
     @Nullable @Override public String getBatteryLevel(Context context) {
         return "6";
     }
@@ -117,5 +111,9 @@ public class MockedMetricProvider implements MetricProvider {
 
     @Override public DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
         return new DisplayMetrics();
+    }
+
+    @Override public Map.Entry<String, String> getDiskSpaces(Context context) {
+        return new AbstractMap.SimpleEntry<>("45", "23");
     }
 }
