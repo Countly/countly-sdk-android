@@ -397,7 +397,7 @@ class DeviceInfo {
                     }
                     return "1";
                 }
-                
+
                 /**
                  * Returns total and used storage in MB for internal storage + root partition.
                  * SD card is excluded.
@@ -421,15 +421,22 @@ class DeviceInfo {
                             Countly.sharedInstance().L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
                         }
                     } else {
-                        // 1. Root directory (system + data partition)
-                        StatFs rootStat = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        totalBytes += rootStat.getTotalBytes();
-                        usedBytes += rootStat.getTotalBytes() - rootStat.getFreeBytes();
+                        try {
+                            File path = Environment.getDataDirectory(); // /data
+                            StatFs statFs = new StatFs(path.getAbsolutePath());
 
-                        // 2. Internal app storage
-                        StatFs internalStat = new StatFs(Environment.getDataDirectory().getAbsolutePath());
-                        totalBytes += internalStat.getTotalBytes();
-                        usedBytes += internalStat.getTotalBytes() - internalStat.getFreeBytes();
+                            long blockSize, totalBlocks, availableBlocks;
+
+                            blockSize = statFs.getBlockSizeLong();
+                            totalBlocks = statFs.getBlockCountLong();
+                            availableBlocks = statFs.getAvailableBlocksLong();
+
+                            totalBytes = totalBlocks * blockSize;
+                            long freeBytes = availableBlocks * blockSize;
+                            usedBytes = totalBytes - freeBytes;
+                        } catch (Exception e) {
+                            Countly.sharedInstance().L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
+                        }
                     }
 
                     long totalMb = totalBytes / 1024 / 1024;
