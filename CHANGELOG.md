@@ -1,5 +1,5 @@
-## XX.XX.XX
-* Mitigated an issue where disk statistics were being miscalculated when reported in crashes.
+## 25.4.4
+* Mitigated an issue where disk statistics were being miscalculated.
 
 ## 25.4.3
 * Improved Health Check metric information.
