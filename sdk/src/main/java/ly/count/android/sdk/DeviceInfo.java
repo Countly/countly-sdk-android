@@ -442,6 +442,7 @@ class DeviceInfo {
                     long totalMb = totalBytes / 1024 / 1024;
                     long usedMb = usedBytes / 1024 / 1024;
 
+                    Countly.sharedInstance().L.d("[DeviceInfo] getDiskSpaces, totalSpaceInMB:[" + totalMb + "], usedSpaceInMB:[" + usedMb + "]");
                     return new AbstractMap.SimpleEntry<>(Long.toString(totalMb), Long.toString(usedMb));
                 }
 
