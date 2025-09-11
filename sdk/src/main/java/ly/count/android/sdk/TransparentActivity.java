@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -10,7 +9,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -94,10 +92,7 @@ public class TransparentActivity extends Activity {
     }
 
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
-        final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        final Display display = wm.getDefaultDisplay();
-        final DisplayMetrics metrics = new DisplayMetrics(); // this gets all
-        display.getMetrics(metrics);
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
 
         if (config == null) {
             Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values with full screen size");
@@ -149,16 +144,22 @@ public class TransparentActivity extends Activity {
         }
 
         // CHANGE SCREEN SIZE
-        final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        final Display display = wm.getDefaultDisplay();
-        final DisplayMetrics metrics = new DisplayMetrics();
-        display.getMetrics(metrics);
-
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
         int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
         int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
 
         // refactor in the future to use the resize_me action
         webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        close(new HashMap<>());
+
+        if (Countly.sharedInstance().isInitialized()) {
+            Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+        }
     }
 
     private void resizeContentInternal() {
@@ -274,11 +275,7 @@ public class TransparentActivity extends Activity {
             return;
         }
         try {
-            final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-            final Display display = wm.getDefaultDisplay();
-            final DisplayMetrics metrics = new DisplayMetrics();
-            display.getMetrics(metrics);
-
+            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
             float density = metrics.density;
 
             JSONObject resizeMeJson = (JSONObject) resizeMe;
@@ -414,15 +411,17 @@ public class TransparentActivity extends Activity {
                 return false;
             }
         });
-        client.afterPageFinished = (closeIt) -> {
-            if (closeIt) {
-                close(new HashMap<>());
+        client.afterPageFinished = new WebViewPageLoadedListener() {
+            @Override public void onPageLoaded(boolean timedOut) {
+                if (timedOut) {
+                    close(new HashMap<>());
 
-                if (Countly.sharedInstance().isInitialized()) {
-                    Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+                    if (Countly.sharedInstance().isInitialized()) {
+                        Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+                    }
+                } else {
+                    webView.setVisibility(View.VISIBLE);
                 }
-            } else {
-                webView.setVisibility(View.VISIBLE);
             }
         };
         webView.setWebViewClient(client);

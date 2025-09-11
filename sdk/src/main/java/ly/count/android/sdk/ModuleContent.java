@@ -226,7 +226,6 @@ public class ModuleContent extends ModuleBase {
             int w = orientationPlacements.optInt("w");
             int h = orientationPlacements.optInt("h");
             L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
-
             TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
             config.url = content;
             return config;
