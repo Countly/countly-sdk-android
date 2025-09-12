@@ -17,14 +17,14 @@ class UtilsDevice {
     }
 
     @NonNull
-    static DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
+    static DisplayMetrics getDisplayMetrics(@NonNull final Context context, boolean ignoreStatusBar) {
         final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         final DisplayMetrics metrics = new DisplayMetrics();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            applyWindowMetrics(context, wm, metrics);
+            applyWindowMetrics(context, wm, metrics, ignoreStatusBar);
         } else {
-            applyLegacyMetrics(context, wm, metrics);
+            applyLegacyMetrics(wm, metrics);
         }
         return metrics;
     }
@@ -32,17 +32,27 @@ class UtilsDevice {
     @TargetApi(Build.VERSION_CODES.R)
     private static void applyWindowMetrics(@NonNull Context context,
         @NonNull WindowManager wm,
-        @NonNull DisplayMetrics outMetrics) {
+        @NonNull DisplayMetrics outMetrics, boolean ignoreStatusBar) {
         final WindowMetrics windowMetrics = wm.getCurrentWindowMetrics();
+        final WindowInsets windowInsets = windowMetrics.getWindowInsets();
 
-        // Exclude system insets (status bar, nav bar, cutout)
-        final Insets insets = windowMetrics.getWindowInsets()
-            .getInsetsIgnoringVisibility(
-                WindowInsets.Type.navigationBars()
-                    | WindowInsets.Type.displayCutout()
-                    | WindowInsets.Type.statusBars()
-            );
+        // Always respect status bar & cutout (they affect safe area even in fullscreen)
+        int types = 0;
 
+        // Only subtract navigation bar insets when navigation bar is actually visible
+        if (windowInsets.isVisible(WindowInsets.Type.navigationBars())) {
+            types |= WindowInsets.Type.navigationBars();
+        }
+
+        if (!ignoreStatusBar && windowInsets.isVisible(WindowInsets.Type.statusBars())) {
+            types |= WindowInsets.Type.statusBars();
+        }
+
+        if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+            types |= WindowInsets.Type.displayCutout();
+        }
+
+        final Insets insets = windowInsets.getInsets(types);
         final Rect bounds = windowMetrics.getBounds();
         final int width = bounds.width() - insets.left - insets.right;
         final int height = bounds.height() - insets.top - insets.bottom;
@@ -59,16 +69,9 @@ class UtilsDevice {
     }
 
     @SuppressWarnings("deprecation")
-    private static void applyLegacyMetrics(@NonNull final Context context,
-        @NonNull WindowManager wm,
+    private static void applyLegacyMetrics(@NonNull WindowManager wm,
         @NonNull DisplayMetrics outMetrics) {
         final Display display = wm.getDefaultDisplay();
         display.getMetrics(outMetrics);
-
-        // pre-api level 30 does not include status bar in heightPixels
-        int resourceId = context.getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            outMetrics.heightPixels -= context.getResources().getDimensionPixelSize(resourceId);
-        }
     }
 }

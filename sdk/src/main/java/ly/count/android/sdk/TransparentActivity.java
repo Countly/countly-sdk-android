@@ -6,12 +6,14 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -45,7 +47,8 @@ public class TransparentActivity extends Activity {
 
         // there is a stripe at the top of the screen for contents
         // we eliminate it with hiding the system ui
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+        hideSystemUI();
+        subscribeForSystemUiChanges();
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -92,7 +95,7 @@ public class TransparentActivity extends Activity {
     }
 
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
-        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this, false);
 
         if (config == null) {
             Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values with full screen size");
@@ -143,8 +146,12 @@ public class TransparentActivity extends Activity {
             currentOrientation = newConfig.orientation;
         }
 
+        resizeContent();
+    }
+
+    private void resizeContent() {
         // CHANGE SCREEN SIZE
-        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this, false);
         int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
         int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
 
@@ -159,6 +166,36 @@ public class TransparentActivity extends Activity {
 
         if (Countly.sharedInstance().isInitialized()) {
             Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+        }
+    }
+
+    private void hideSystemUI() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(false);
+            if (getWindow().getDecorView().getWindowInsetsController() != null) {
+                getWindow().getDecorView().getWindowInsetsController().hide(WindowInsets.Type.statusBars());
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+            );
+        }
+    }
+
+    private void subscribeForSystemUiChanges() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            View root = getWindow().getDecorView();
+            root.setOnApplyWindowInsetsListener((v, insets) -> {
+                resizeContent();
+                return insets;
+            });
+        } else {
+            View decorView = getWindow().getDecorView();
+            decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
+                resizeContent();
+            });
         }
     }
 
@@ -275,7 +312,7 @@ public class TransparentActivity extends Activity {
             return;
         }
         try {
-            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
+            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this, false);
             float density = metrics.density;
 
             JSONObject resizeMeJson = (JSONObject) resizeMe;
