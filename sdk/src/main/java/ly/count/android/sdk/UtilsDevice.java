@@ -18,12 +18,12 @@ class UtilsDevice {
     }
 
     @NonNull
-    static DisplayMetrics getDisplayMetrics(@NonNull final Context context, boolean ignoreStatusBar) {
+    static DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
         final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         final DisplayMetrics metrics = new DisplayMetrics();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            applyWindowMetrics(context, wm, metrics, ignoreStatusBar);
+            applyWindowMetrics(context, wm, metrics);
         } else {
             applyLegacyMetrics(wm, metrics);
         }
@@ -33,31 +33,34 @@ class UtilsDevice {
     @TargetApi(Build.VERSION_CODES.R)
     private static void applyWindowMetrics(@NonNull Context context,
         @NonNull WindowManager wm,
-        @NonNull DisplayMetrics outMetrics, boolean ignoreStatusBar) {
+        @NonNull DisplayMetrics outMetrics) {
         final WindowMetrics windowMetrics = wm.getCurrentWindowMetrics();
         final WindowInsets windowInsets = windowMetrics.getWindowInsets();
 
         // Always respect status bar & cutout (they affect safe area even in fullscreen)
         int types = 0;
+        boolean usePhysicalScreenSize = !(context instanceof Activity);
 
-        // Only subtract navigation bar insets when navigation bar is actually visible
-        if (windowInsets.isVisible(WindowInsets.Type.navigationBars())) {
-            types |= WindowInsets.Type.navigationBars();
-        }
+        // If not activity, we can't know system UI visibility, so always use physical screen size
+        if (!usePhysicalScreenSize) {
+            // Only subtract navigation bar insets when navigation bar is actually visible
+            if (windowInsets.isVisible(WindowInsets.Type.navigationBars())) {
+                types |= WindowInsets.Type.navigationBars();
+            }
 
-        if (!ignoreStatusBar && windowInsets.isVisible(WindowInsets.Type.statusBars())) {
-            types |= WindowInsets.Type.statusBars();
-        }
+            if (windowInsets.isVisible(WindowInsets.Type.statusBars())) {
+                types |= WindowInsets.Type.statusBars();
+            }
 
-        boolean drawUnderCutout = false;
-        if (context instanceof Activity) {
+            boolean drawUnderCutout;
             WindowManager.LayoutParams params = ((Activity) context).getWindow().getAttributes();
             drawUnderCutout = params.layoutInDisplayCutoutMode
                 == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-        }
 
-        if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
-            types |= WindowInsets.Type.displayCutout();
+            // Only subtract display cutout insets when not allowed to draw under the cutout
+            if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+                types |= WindowInsets.Type.displayCutout();
+            }
         }
 
         final Insets insets = windowInsets.getInsets(types);
