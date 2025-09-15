@@ -130,7 +130,7 @@ class DeviceInfo {
                 @NonNull
                 @Override
                 public DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
-                    return UtilsDevice.getDisplayMetrics(context, true);
+                    return UtilsDevice.getDisplayMetrics(context);
                 }
 
                 /**

@@ -13,7 +13,6 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -47,8 +46,6 @@ public class TransparentActivity extends Activity {
 
         // there is a stripe at the top of the screen for contents
         // we eliminate it with hiding the system ui
-        hideSystemUI();
-        subscribeForSystemUiChanges();
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
@@ -73,13 +70,16 @@ public class TransparentActivity extends Activity {
 
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        params.gravity = Gravity.TOP | Gravity.LEFT; // try out START
+        params.gravity = Gravity.TOP | Gravity.START; // try out START
         params.x = config.x;
         params.y = config.y;
         params.height = config.height;
         params.width = config.width;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
             | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
         getWindow().setAttributes(params);
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
@@ -95,7 +95,7 @@ public class TransparentActivity extends Activity {
     }
 
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
-        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this, false);
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
 
         if (config == null) {
             Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values with full screen size");
@@ -151,7 +151,7 @@ public class TransparentActivity extends Activity {
 
     private void resizeContent() {
         // CHANGE SCREEN SIZE
-        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this, false);
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
         int scaledWidth = (int) Math.ceil(metrics.widthPixels / metrics.density);
         int scaledHeight = (int) Math.ceil(metrics.heightPixels / metrics.density);
 
@@ -170,33 +170,14 @@ public class TransparentActivity extends Activity {
     }
 
     private void hideSystemUI() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            getWindow().setDecorFitsSystemWindows(false);
-            if (getWindow().getDecorView().getWindowInsetsController() != null) {
-                getWindow().getDecorView().getWindowInsetsController().hide(WindowInsets.Type.statusBars());
-            }
-        } else {
-            getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-            );
-        }
-    }
-
-    private void subscribeForSystemUiChanges() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            View root = getWindow().getDecorView();
-            root.setOnApplyWindowInsetsListener((v, insets) -> {
-                resizeContent();
-                return insets;
-            });
-        } else {
-            View decorView = getWindow().getDecorView();
-            decorView.setOnSystemUiVisibilityChangeListener(visibility -> {
-                resizeContent();
-            });
-        }
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+        );
     }
 
     private void resizeContentInternal() {
@@ -312,7 +293,7 @@ public class TransparentActivity extends Activity {
             return;
         }
         try {
-            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this, false);
+            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
             float density = metrics.density;
 
             JSONObject resizeMeJson = (JSONObject) resizeMe;
@@ -457,6 +438,7 @@ public class TransparentActivity extends Activity {
                         Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
                     }
                 } else {
+                    hideSystemUI();
                     webView.setVisibility(View.VISIBLE);
                 }
             }
