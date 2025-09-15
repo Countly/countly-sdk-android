@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Insets;
 import android.graphics.Rect;
@@ -48,7 +49,14 @@ class UtilsDevice {
             types |= WindowInsets.Type.statusBars();
         }
 
-        if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+        boolean drawUnderCutout = false;
+        if (context instanceof Activity) {
+            WindowManager.LayoutParams params = ((Activity) context).getWindow().getAttributes();
+            drawUnderCutout = params.layoutInDisplayCutoutMode
+                == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        }
+
+        if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
             types |= WindowInsets.Type.displayCutout();
         }
 
@@ -72,6 +80,7 @@ class UtilsDevice {
     private static void applyLegacyMetrics(@NonNull WindowManager wm,
         @NonNull DisplayMetrics outMetrics) {
         final Display display = wm.getDefaultDisplay();
-        display.getMetrics(outMetrics);
+        display.getRealMetrics(outMetrics);
+        //getMetrics gives us size minus navigation bar
     }
 }
