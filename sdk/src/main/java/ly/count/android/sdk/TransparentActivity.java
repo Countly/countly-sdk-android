@@ -79,6 +79,7 @@ public class TransparentActivity extends Activity {
             | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            // If this is disabled, UtilsDevice line 61 needs to be changed to subtract cutout always
         }
         getWindow().setAttributes(params);
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
