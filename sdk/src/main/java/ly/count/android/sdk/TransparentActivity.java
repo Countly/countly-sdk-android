@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -77,10 +76,10 @@ public class TransparentActivity extends Activity {
         params.width = config.width;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
             | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-            // If this is disabled, UtilsDevice line 61 needs to be changed to subtract cutout always
-        }
+        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        //    params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+        // If this is disabled, UtilsDevice line 61 needs to be changed to subtract cutout always
+        //}
         getWindow().setAttributes(params);
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
@@ -162,12 +161,12 @@ public class TransparentActivity extends Activity {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
         close(new HashMap<>());
 
         if (Countly.sharedInstance().isInitialized()) {
             Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
         }
+        super.onDestroy();
     }
 
     private void hideSystemUI() {
