@@ -126,6 +126,10 @@ public class ConnectionProcessorTests {
             @Override public int getBOMDuration() {
                 return 60;
             }
+
+            @Override public boolean getUseCutoutArea() {
+                return false;
+            }
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);

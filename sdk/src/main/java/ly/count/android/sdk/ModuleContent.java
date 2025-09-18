@@ -94,6 +94,7 @@ public class ModuleContent extends ModuleBase {
                         intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
                         intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
                         intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+                        intent.putExtra(TransparentActivity.USE_CUTOUT, configProvider.getUseCutoutArea());
 
                         Long id = System.currentTimeMillis();
                         intent.putExtra(TransparentActivity.ID_CALLBACK, id);

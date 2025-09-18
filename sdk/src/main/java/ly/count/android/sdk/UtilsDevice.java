@@ -13,7 +13,7 @@ import android.view.WindowManager;
 import android.view.WindowMetrics;
 import androidx.annotation.NonNull;
 
-class UtilsDevice {
+final class UtilsDevice {
     private UtilsDevice() {
     }
 
@@ -37,6 +37,12 @@ class UtilsDevice {
         final WindowMetrics windowMetrics = wm.getCurrentWindowMetrics();
         final WindowInsets windowInsets = windowMetrics.getWindowInsets();
 
+        boolean useCutoutArea = false;
+
+        if (Countly.sharedInstance().isInitialized()) {
+            useCutoutArea = Countly.sharedInstance().config_.configProvider.getUseCutoutArea();
+        }
+
         // Always respect status bar & cutout (they affect safe area even in fullscreen)
         int types = 0;
         boolean usePhysicalScreenSize = !(context instanceof Activity);
@@ -52,17 +58,26 @@ class UtilsDevice {
                 types |= WindowInsets.Type.statusBars();
             }
 
-            boolean drawUnderCutout;
-            WindowManager.LayoutParams params = ((Activity) context).getWindow().getAttributes();
-            drawUnderCutout = params.layoutInDisplayCutoutMode
-                == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            if (useCutoutArea) {
+                boolean drawUnderCutout;
+                WindowManager.LayoutParams params = ((Activity) context).getWindow().getAttributes();
+                drawUnderCutout = params.layoutInDisplayCutoutMode
+                    == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 
-            // Only subtract display cutout insets when not allowed to draw under the cutout
-            if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
-                types |= WindowInsets.Type.displayCutout();
+                // Only subtract display cutout insets when not allowed to draw under the cutout
+                if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+                    types |= WindowInsets.Type.displayCutout();
+                }
+
+                // Only subtract display cutout insets when not allowed to draw under the cutout
+                if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+                    types |= WindowInsets.Type.displayCutout();
+                }
             }
+        }
+
+        if (!useCutoutArea) {
             // Cutout is always respected as safe area for now even in fullscreen mode
-            // Only subtract display cutout insets when not allowed to draw under the cutout
             if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
                 types |= WindowInsets.Type.displayCutout();
             }

@@ -32,6 +32,7 @@ public class TransparentActivity extends Activity {
     static final String ORIENTATION = "orientation";
     static final String WIDGET_INFO = "widget_info";
     static final String ID_CALLBACK = "id_callback";
+    static final String USE_CUTOUT = "use_cutout";
     int currentOrientation = 0;
     long ID = -1;
     TransparentActivityConfig configLandscape = null;
@@ -77,7 +78,9 @@ public class TransparentActivity extends Activity {
         params.width = config.width;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
             | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+
+        boolean useCutoutArea = intent.getBooleanExtra(USE_CUTOUT, false);
+        if (useCutoutArea && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
             // If this is disabled, UtilsDevice line 61 needs to be changed to subtract cutout always
         }
