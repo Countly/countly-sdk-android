@@ -39,8 +39,6 @@ import android.os.StatFs;
 import android.os.storage.StorageManager;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
-import android.view.Display;
-import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.File;
@@ -131,19 +129,10 @@ class DeviceInfo {
                     return resolution;
                 }
 
-                /**
-                 * Return the display metrics collected from the WindowManager in the specified context.
-                 * @param context context to use to retrieve the current WindowManager
-                 * @return the display metrics of the current default display
-                 */
                 @NonNull
                 @Override
                 public DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
-                    final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-                    final Display display = wm.getDefaultDisplay();
-                    final DisplayMetrics metrics = new DisplayMetrics();
-                    display.getMetrics(metrics);
-                    return metrics;
+                    return UtilsDevice.getDisplayMetrics(context);
                 }
 
                 /**
