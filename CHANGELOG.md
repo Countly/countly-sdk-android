@@ -1,5 +1,5 @@
 ## 25.4.4
-* Mitigated an issue where disk statistics were being miscalculated.
+* Improved disk size calculation in crash reports.
 
 ## 25.4.3
 * Improved Health Check metric information.
