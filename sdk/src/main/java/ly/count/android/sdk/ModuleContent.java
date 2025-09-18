@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -55,6 +56,13 @@ public class ModuleContent extends ModuleBase {
     void initFinished(@NotNull CountlyConfig config) {
         if (configProvider.getContentZoneEnabled()) {
             enterContentZoneInternal(null, 0);
+        }
+    }
+
+    @Override
+    void onActivityStarted(Activity activity, int updatedActivityCount) {
+        if (UtilsDevice.cutout == null && activity != null) {
+            UtilsDevice.getCutout(activity);
         }
     }
 
