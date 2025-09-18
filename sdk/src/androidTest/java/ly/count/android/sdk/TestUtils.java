@@ -66,7 +66,16 @@ public class TestUtils {
             .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
-        cc.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+        cc.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                };
+            }
         };
         return cc;
     }
@@ -84,8 +93,16 @@ public class TestUtils {
             .disableHealthCheck();//mocked tests fail without disabling this
         cc.testModuleListener = testModuleListener;
         cc.requestQueueProvider = rqp;
-        cc.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+        cc.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                };
+            }
 
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                };
+            }
         };
         return cc;
     }
