@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue where content sizing was handled incorrectly on API level 35 and above.
+
 ## 25.4.3
 * Improved Health Check metric information.
 * Improved Content display mechanics.
