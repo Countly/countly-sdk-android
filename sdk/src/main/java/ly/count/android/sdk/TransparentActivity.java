@@ -77,10 +77,10 @@ public class TransparentActivity extends Activity {
         params.width = config.width;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
             | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
-        //if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-        //    params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
-        // If this is disabled, UtilsDevice line 61 needs to be changed to subtract cutout always
-        //}
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            params.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            // If this is disabled, UtilsDevice line 61 needs to be changed to subtract cutout always
+        }
         getWindow().setAttributes(params);
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
@@ -171,16 +171,13 @@ public class TransparentActivity extends Activity {
     }
 
     private void hideSystemUI() {
-        int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.P) {
-            flags = View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN;
-        }
-
-        getWindow().getDecorView().setSystemUiVisibility(flags);
+                | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
     private void resizeContentInternal() {

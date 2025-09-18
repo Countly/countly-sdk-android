@@ -13,7 +13,7 @@ import android.view.WindowManager;
 import android.view.WindowMetrics;
 import androidx.annotation.NonNull;
 
-final class UtilsDevice {
+class UtilsDevice {
     private UtilsDevice() {
     }
 
@@ -52,20 +52,20 @@ final class UtilsDevice {
                 types |= WindowInsets.Type.statusBars();
             }
 
-            //boolean drawUnderCutout;
-            //WindowManager.LayoutParams params = ((Activity) context).getWindow().getAttributes();
-            //drawUnderCutout = params.layoutInDisplayCutoutMode
-            //    == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            boolean drawUnderCutout;
+            WindowManager.LayoutParams params = ((Activity) context).getWindow().getAttributes();
+            drawUnderCutout = params.layoutInDisplayCutoutMode
+                == WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
 
             // Only subtract display cutout insets when not allowed to draw under the cutout
-            //if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
-            //   types |= WindowInsets.Type.displayCutout();
-            //} Cutout is always respected as safe area for now even in fullscreen mode
-        }
-
-        // Only subtract display cutout insets when not allowed to draw under the cutout
-        if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
-            types |= WindowInsets.Type.displayCutout();
+            if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+                types |= WindowInsets.Type.displayCutout();
+            }
+            // Cutout is always respected as safe area for now even in fullscreen mode
+            // Only subtract display cutout insets when not allowed to draw under the cutout
+            if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+                types |= WindowInsets.Type.displayCutout();
+            }
         }
 
         final Insets insets = windowInsets.getInsets(types);
@@ -88,11 +88,7 @@ final class UtilsDevice {
     private static void applyLegacyMetrics(@NonNull WindowManager wm,
         @NonNull DisplayMetrics outMetrics) {
         final Display display = wm.getDefaultDisplay();
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            display.getMetrics(outMetrics);
-        } else {
-            display.getRealMetrics(outMetrics);
-        }
+        display.getRealMetrics(outMetrics);
         //getMetrics gives us size minus navigation bar
     }
 }
