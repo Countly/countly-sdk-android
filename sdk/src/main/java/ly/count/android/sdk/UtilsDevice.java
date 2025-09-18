@@ -13,7 +13,7 @@ import android.view.WindowManager;
 import android.view.WindowMetrics;
 import androidx.annotation.NonNull;
 
-class UtilsDevice {
+final class UtilsDevice {
     private UtilsDevice() {
     }
 
@@ -88,7 +88,11 @@ class UtilsDevice {
     private static void applyLegacyMetrics(@NonNull WindowManager wm,
         @NonNull DisplayMetrics outMetrics) {
         final Display display = wm.getDefaultDisplay();
-        display.getRealMetrics(outMetrics);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            display.getMetrics(outMetrics);
+        } else {
+            display.getRealMetrics(outMetrics);
+        }
         //getMetrics gives us size minus navigation bar
     }
 }
