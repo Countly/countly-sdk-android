@@ -61,11 +61,11 @@ class UtilsDevice {
             if (!drawUnderCutout && windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
                 types |= WindowInsets.Type.displayCutout();
             }
-            // Cutout is always respected as safe area for now even in fullscreen mode
-            // Only subtract display cutout insets when not allowed to draw under the cutout
-            if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
-                types |= WindowInsets.Type.displayCutout();
-            }
+        }
+
+        // Cutout is always respected as safe area for now even in fullscreen mode
+        if (windowInsets.isVisible(WindowInsets.Type.displayCutout())) {
+            types |= WindowInsets.Type.displayCutout();
         }
 
         final Insets insets = windowInsets.getInsets(types);
