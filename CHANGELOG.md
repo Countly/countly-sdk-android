@@ -1,3 +1,6 @@
+## 25.4.4
+* Improved disk size calculation in crash reports.
+
 ## 25.4.3
 * Improved Health Check metric information.
 * Improved Content display mechanics.

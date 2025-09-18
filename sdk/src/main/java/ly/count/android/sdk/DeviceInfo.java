@@ -22,8 +22,8 @@ THE SOFTWARE.
 package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.ActivityManager;
+import android.app.usage.StorageStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -36,6 +36,7 @@ import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
+import android.os.storage.StorageManager;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -46,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
+import java.util.AbstractMap;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -397,41 +399,51 @@ class DeviceInfo {
                 }
 
                 /**
-                 * Returns the current device disk space.
+                 * Returns total and used storage in MB for internal storage + root partition.
+                 * SD card is excluded.
                  */
-                @TargetApi(18)
                 @NonNull
-                @Override
-                public String getDiskCurrent() {
-                    if (android.os.Build.VERSION.SDK_INT < 18) {
-                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
-                        long free = (long) statFs.getAvailableBlocks() * (long) statFs.getBlockSize();
-                        return Long.toString((total - free) / 1_048_576L);
-                    } else {
-                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
-                        long free = statFs.getAvailableBlocksLong() * statFs.getBlockSizeLong();
-                        return Long.toString((total - free) / 1048576L);
-                    }
-                }
+                public Map.Entry<String, String> getDiskSpaces(Context context) {
+                    long totalBytes = 0;
+                    long usedBytes = 0;
 
-                /**
-                 * Returns the current device disk space.
-                 */
-                @TargetApi(18)
-                @NonNull
-                @Override
-                public String getDiskTotal() {
-                    if (android.os.Build.VERSION.SDK_INT < 18) {
-                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = (long) statFs.getBlockCount() * (long) statFs.getBlockSize();
-                        return Long.toString(total / 1048576L);
+                    StorageManager sm = (StorageManager) context.getSystemService(Context.STORAGE_SERVICE);
+                    if (sm != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        try {
+                            for (android.os.storage.StorageVolume sv : sm.getStorageVolumes()) {
+                                if (sv.isPrimary()) {
+                                    StorageStatsManager stm = (StorageStatsManager) context.getSystemService(Context.STORAGE_STATS_SERVICE);
+                                    totalBytes += stm.getTotalBytes(StorageManager.UUID_DEFAULT);
+                                    usedBytes += stm.getTotalBytes(StorageManager.UUID_DEFAULT) - stm.getFreeBytes(StorageManager.UUID_DEFAULT);
+                                }
+                            }
+                        } catch (Exception e) {
+                            Countly.sharedInstance().L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
+                        }
                     } else {
-                        StatFs statFs = new StatFs(Environment.getRootDirectory().getAbsolutePath());
-                        long total = statFs.getBlockCountLong() * statFs.getBlockSizeLong();
-                        return Long.toString(total / 1048576L);
+                        try {
+                            File path = Environment.getDataDirectory(); // /data
+                            StatFs statFs = new StatFs(path.getAbsolutePath());
+
+                            long blockSize, totalBlocks, availableBlocks;
+
+                            blockSize = statFs.getBlockSizeLong();
+                            totalBlocks = statFs.getBlockCountLong();
+                            availableBlocks = statFs.getAvailableBlocksLong();
+
+                            totalBytes = totalBlocks * blockSize;
+                            long freeBytes = availableBlocks * blockSize;
+                            usedBytes = totalBytes - freeBytes;
+                        } catch (Exception e) {
+                            Countly.sharedInstance().L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
+                        }
                     }
+
+                    long totalMb = totalBytes / 1024 / 1024;
+                    long usedMb = usedBytes / 1024 / 1024;
+
+                    Countly.sharedInstance().L.d("[DeviceInfo] getDiskSpaces, totalSpaceInMB:[" + totalMb + "], usedSpaceInMB:[" + usedMb + "]");
+                    return new AbstractMap.SimpleEntry<>(Long.toString(totalMb), Long.toString(usedMb));
                 }
 
                 /**
@@ -705,16 +717,18 @@ class DeviceInfo {
     Map<String, Object> getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
         Map<String, Object> metrics = getCommonMetrics(context, metricOverride, L);
 
+        Map.Entry<String, String> storageMb = mp.getDiskSpaces(context);
+
         putIfNotNullAndNotEmpty(metrics, "_cpu", mp.getCpu());
         putIfNotNullAndNotEmpty(metrics, "_opengl", mp.getOpenGL(context));
         putIfNotNullAndNotEmpty(metrics, "_root", mp.isRooted());
         putIfNotNullAndNotEmpty(metrics, "_ram_total", mp.getRamTotal());
-        putIfNotNullAndNotEmpty(metrics, "_disk_total", mp.getDiskTotal());
+        putIfNotNullAndNotEmpty(metrics, "_disk_total", storageMb.getKey());
 
         if (!isNativeCrash) {
             //if is not a native crash
             putIfNotNullAndNotEmpty(metrics, "_ram_current", mp.getRamCurrent(context));
-            putIfNotNullAndNotEmpty(metrics, "_disk_current", mp.getDiskCurrent());
+            putIfNotNullAndNotEmpty(metrics, "_disk_current", storageMb.getValue());
             putIfNotNullAndNotEmpty(metrics, "_bat", mp.getBatteryLevel(context));
             putIfNotNullAndNotEmpty(metrics, "_run", mp.getRunningTime());
             putIfNotNullAndNotEmpty(metrics, "_orientation", mp.getOrientation(context));
