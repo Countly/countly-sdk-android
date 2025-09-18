@@ -644,7 +644,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void configurationParameterCount() {
-        int configParameterCount = 26; // plus config, timestamp and version parameters
+        int configParameterCount = 31; // plus config, timestamp and version parameters
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
             if (field.getName().startsWith("keyR")) {

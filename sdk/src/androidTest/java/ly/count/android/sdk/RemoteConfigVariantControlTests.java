@@ -235,21 +235,44 @@ public class RemoteConfigVariantControlTests {
     }
 
     ImmediateRequestGenerator createIRGForSpecificResponse(final String targetResponse) {
-        return () -> (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
-            if (targetResponse == null) {
-                callback.callback(null);
-                return;
+        return new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (targetResponse == null) {
+                        callback.callback(null);
+                        return;
+                    }
+
+                    JSONObject jobj = null;
+
+                    try {
+                        jobj = new JSONObject(targetResponse);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    callback.callback(jobj);
+                };
             }
 
-            JSONObject jobj = null;
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (targetResponse == null) {
+                        callback.callback(null);
+                        return;
+                    }
 
-            try {
-                jobj = new JSONObject(targetResponse);
-            } catch (JSONException e) {
-                e.printStackTrace();
+                    JSONObject jobj = null;
+
+                    try {
+                        jobj = new JSONObject(targetResponse);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    callback.callback(jobj);
+                };
             }
-
-            callback.callback(jobj);
         };
     }
 

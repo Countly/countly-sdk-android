@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Map;
 
 interface MetricProvider {
     String getOS();
@@ -41,10 +42,6 @@ interface MetricProvider {
 
     String getOpenGL(Context context);
 
-    String getDiskCurrent();
-
-    String getDiskTotal();
-
     @Nullable String getBatteryLevel(Context context);
 
     @Nullable String getOrientation(Context context);
@@ -60,4 +57,6 @@ interface MetricProvider {
     String getRunningTime();
 
     DisplayMetrics getDisplayMetrics(Context context);
+
+    Map.Entry<String, String> getDiskSpaces(Context context);
 }

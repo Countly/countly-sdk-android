@@ -74,11 +74,25 @@ public class ModuleRemoteConfigTests {
                 config.setRequiresConsent(true);
                 config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.remoteConfig });
             }
-            config.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
-                if (!requestData.endsWith("method=sc")) { // this is server config, disabling it for this test
-                    triggerCounter[0]++;
+
+            config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+                @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                    return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                        if (!requestData.endsWith("method=sc")) { // this is server config, disabling it for this test
+                            triggerCounter[0]++;
+                        }
+                    };
+                }
+
+                @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                    return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                        if (!requestData.endsWith("method=sc")) { // this is server config, disabling it for this test
+                            triggerCounter[0]++;
+                        }
+                    };
                 }
             };
+
             Countly countly = (new Countly()).init(config);
             Assert.assertEquals(++intendedCount, triggerCounter[0]);//init should create a request
 
@@ -281,8 +295,14 @@ public class ModuleRemoteConfigTests {
         config.RemoteConfigRegisterGlobalCallback(c1);
         config.RemoteConfigRegisterGlobalCallback(c2);
         config.setRemoteConfigAutomaticDownload(true, oldRCC);
-        config.immediateRequestGenerator = () -> (ImmediateRequestI) (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
-            callback.callback(null);
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(null);
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(null);
+            }
         };
 
         Countly countly = new Countly().init(config);
