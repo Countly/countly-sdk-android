@@ -544,13 +544,8 @@ class ConnectionQueue implements RequestQueueProvider {
         if (!checkInternalState()) {
             return;
         }
+        
         L.d("[ConnectionQueue] sendMetricsRequest");
-
-        if (!consentProvider.anyConsentGiven()) {
-            L.d("[ConnectionQueue] sendMetricsRequest, request ignored, no consent given");
-            return;
-        }
-
         addRequestToQueue(prepareCommonRequestData() + preparedMetrics, false);
         tick();
     }
