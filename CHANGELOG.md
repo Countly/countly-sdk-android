@@ -1,5 +1,6 @@
 ## 25.4.4
 * Improved disk size calculation in crash reports.
+* Added a new function "sendMetricsRequest(metricsOverride)" to send a manual metrics request, accessible through the requestQueue interface.
 
 * Mitigated an issue displaying Content on API level 35 and above.
 
