@@ -3,17 +3,24 @@ package ly.count.android.sdk;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Display;
+import android.view.DisplayCutout;
+import android.view.View;
+import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
 import androidx.annotation.NonNull;
 
 class UtilsDevice {
+
+    static DisplayCutout cutout = null;
+
     private UtilsDevice() {
     }
 
@@ -25,7 +32,7 @@ class UtilsDevice {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             applyWindowMetrics(context, wm, metrics);
         } else {
-            applyLegacyMetrics(wm, metrics);
+            applyLegacyMetrics(context, wm, metrics);
         }
         return metrics;
     }
@@ -84,11 +91,63 @@ class UtilsDevice {
         }
     }
 
+    /**
+     * Tries to extract cutout information from the activity for api level 28-29
+     *
+     * @param activity Activity to extract cutout from
+     */
+    static void getCutout(@NonNull Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            Window window = activity.getWindow();
+            if (window == null) return;
+
+            View decorView = window.getDecorView();
+            if (decorView == null) return;
+
+            decorView.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(View v) {
+                    WindowInsets insets = v.getRootWindowInsets();
+                    if (insets != null) {
+                        DisplayCutout cutout1 = insets.getDisplayCutout();
+                        if (cutout1 != null && !cutout1.getBoundingRects().isEmpty()) {
+                            cutout = cutout1;
+                        }
+                    }
+                    v.removeOnAttachStateChangeListener(this);
+                }
+
+                @Override
+                public void onViewDetachedFromWindow(View v) {
+                }
+            });
+        }
+    }
+
     @SuppressWarnings("deprecation")
-    private static void applyLegacyMetrics(@NonNull WindowManager wm,
+    private static void applyLegacyMetrics(@NonNull Context context,
+        @NonNull WindowManager wm,
         @NonNull DisplayMetrics outMetrics) {
         final Display display = wm.getDefaultDisplay();
         display.getRealMetrics(outMetrics);
-        //getMetrics gives us size minus navigation bar
+
+        if (context instanceof Activity) {
+            getCutout((Activity) context);
+        }
+
+        boolean isLandscape = context.getResources().getConfiguration().orientation
+            == Configuration.ORIENTATION_LANDSCAPE;
+
+        if (cutout != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            if (isLandscape) {
+                // In landscape, top/bottom insets become width, left/right become height
+                outMetrics.widthPixels -= (cutout.getSafeInsetTop() + cutout.getSafeInsetBottom());
+                outMetrics.heightPixels -= (cutout.getSafeInsetLeft() + cutout.getSafeInsetRight());
+            } else {
+                // Portrait
+                outMetrics.heightPixels -= (cutout.getSafeInsetTop() + cutout.getSafeInsetBottom());
+                outMetrics.widthPixels -= (cutout.getSafeInsetLeft() + cutout.getSafeInsetRight());
+            }
+        }
     }
 }
