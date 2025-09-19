@@ -2,6 +2,7 @@
 * Improved disk size calculation in crash reports.
 * Added "setRequestTimeoutDuration(requestTimeoutDuration)" init config method configure request timeout in seconds.
 
+* Rolled back Health Check metric information to previous state.
 * Mitigated an issue displaying Content on API level 35 and above.
 
 ## 25.4.3
