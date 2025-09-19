@@ -539,6 +539,22 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
+    @Override
+    public void sendMetricsRequest(@NonNull String preparedMetrics) {
+        if (!checkInternalState()) {
+            return;
+        }
+        L.d("[ConnectionQueue] sendMetricsRequest");
+
+        if (!consentProvider.anyConsentGiven()) {
+            L.d("[ConnectionQueue] sendMetricsRequest, request ignored, no consent given");
+            return;
+        }
+
+        addRequestToQueue(prepareCommonRequestData() + preparedMetrics, false);
+        tick();
+    }
+
     /**
      * Records the specified events and sends them to the server.
      *

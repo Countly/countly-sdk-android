@@ -41,6 +41,8 @@ interface RequestQueueProvider {
 
     void sendDirectRequest(@NonNull final Map<String, String> requestData);
 
+    void sendMetricsRequest(@NonNull String preparedMetrics);
+
     void enrollToKeys(@NonNull String[] keys);
 
     void exitForKeys(@NonNull String[] keys);
