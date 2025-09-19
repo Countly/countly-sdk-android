@@ -30,6 +30,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         Countly.CountlyFeatureNames.clicks,
         Countly.CountlyFeatureNames.scrolls,
         Countly.CountlyFeatureNames.content,
+        Countly.CountlyFeatureNames.metrics
     };
 
     public enum ConsentChangeSource {ChangeConsentCall, DeviceIDChangedNotMerged}

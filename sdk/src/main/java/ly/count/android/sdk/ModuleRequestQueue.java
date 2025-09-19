@@ -298,6 +298,11 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     }
 
     private void recordMetricsInternal(@NonNull Map<String, String> metricsOverride) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.metrics)) {
+            L.d("[ModuleRequestQueue] recordMetricsInternal, no consent given for metrics");
+            return;
+        }
+
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricsOverride, L);
         requestQueueProvider.sendMetricsRequest(preparedMetrics);
     }
