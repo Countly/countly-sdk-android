@@ -204,6 +204,7 @@ public class CountlyConfig {
     String sdkBehaviorSettings;
     boolean backOffMechanismEnabled = true;
     boolean sdkBehaviorSettingsRequestsDisabled = false;
+    int requestTimeoutDuration = 30; // in seconds
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED
@@ -1031,6 +1032,23 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig disableSDKBehaviorSettingsUpdates() {
         this.sdkBehaviorSettingsRequestsDisabled = true;
+        return this;
+    }
+
+    /**
+     * Set the request timeout duration in seconds
+     * Minimum value is "1" second
+     * Default value is "30" seconds
+     *
+     * @param requestTimeoutDuration The request timeout duration in seconds
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setRequestTimeoutDuration(int requestTimeoutDuration) {
+        int tempRequestTimeoutDuration = requestTimeoutDuration;
+        if (tempRequestTimeoutDuration <= 0) {
+            tempRequestTimeoutDuration = 1;
+        }
+        this.requestTimeoutDuration = tempRequestTimeoutDuration;
         return this;
     }
 

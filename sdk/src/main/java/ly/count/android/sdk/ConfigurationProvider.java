@@ -29,4 +29,6 @@ interface ConfigurationProvider {
     int getBOMRequestAge();
 
     int getBOMDuration();
+
+    int getRequestTimeoutDurationMillis();
 }
