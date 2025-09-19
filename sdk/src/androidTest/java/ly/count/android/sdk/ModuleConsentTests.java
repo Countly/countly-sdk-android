@@ -32,6 +32,7 @@ public class ModuleConsentTests {
         Countly.CountlyFeatureNames.clicks,
         Countly.CountlyFeatureNames.scrolls,
         Countly.CountlyFeatureNames.content,
+        Countly.CountlyFeatureNames.metrics,
     };
 
     @Before
@@ -253,12 +254,12 @@ public class ModuleConsentTests {
     protected static void validateConsentRequest(String deviceId, int idx, boolean[] consents) {
         Map<String, Object> consentsMap =
             TestUtils.map("sessions", consents[0], "crashes", consents[1], "users", consents[2], "push", consents[3], "feedback", consents[4], "scrolls", consents[5], "remote-config", consents[6], "attribution", consents[7], "clicks", consents[8], "location", consents[9], "star-rating",
-                consents[10], "events", consents[11], "views", consents[12], "apm", consents[13], "content", consents[14]);
+                consents[10], "events", consents[11], "views", consents[12], "apm", consents[13], "content", consents[14], "metrics", consents[15]);
         TestUtils.validateRequest(deviceId, TestUtils.map("consent", consentsMap), idx);
     }
 
     protected static void validateAllConsentRequest(String deviceId, int idx) {
-        validateConsentRequest(deviceId, idx, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, true, true, true });
+        validateConsentRequest(deviceId, idx, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true });
     }
 
     // TODO test that makes sure that the consent change request is created correctly
