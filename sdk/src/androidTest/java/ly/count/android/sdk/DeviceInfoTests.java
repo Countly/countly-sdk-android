@@ -74,7 +74,7 @@ public class DeviceInfoTests {
     @Test
     public void testGetResolution() {
         final DisplayMetrics metrics = new DisplayMetrics();
-        ((WindowManager) TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getMetrics(metrics);
+        ((WindowManager) TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(metrics);
         final String expected = metrics.widthPixels + "x" + metrics.heightPixels;
         assertEquals(expected, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
     }

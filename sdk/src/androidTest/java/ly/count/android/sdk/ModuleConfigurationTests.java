@@ -212,7 +212,7 @@ public class ModuleConfigurationTests {
 
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
 
         flow_allFeatures();
@@ -959,7 +959,7 @@ public class ModuleConfigurationTests {
 
         Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "_special_test");
         Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // changes nothing because no consent for attribution
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 1, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 1, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 2);
     }
 
