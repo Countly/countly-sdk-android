@@ -675,6 +675,32 @@ class DeviceInfo {
         return result;
     }
 
+    @NonNull
+    String getMetricsHealthCheck(@NonNull final Context context, @Nullable final Map<String, String> metricOverride) {
+        Map<String, Object> metrics = new ConcurrentHashMap<>();
+
+        String appVersion = mp.getAppVersion(context);
+
+        if (metricOverride != null) {
+            if (metricOverride.containsKey("_app_version")) {
+                appVersion = metricOverride.get("_app_version");
+            }
+        }
+
+        metrics.put("_app_version", appVersion);
+
+        String result = new JSONObject(metrics).toString();
+
+        try {
+            result = java.net.URLEncoder.encode(result, "UTF-8");
+        } catch (UnsupportedEncodingException ex) {
+            // should never happen because Android guarantees UTF-8 support
+            Countly.sharedInstance().L.e("[getMetrics] encode failed, [" + ex + "]");
+        }
+
+        return result;
+    }
+
     /**
      * Returns a JSON object containing the device crash report
      */
