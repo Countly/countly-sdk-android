@@ -544,9 +544,9 @@ class ConnectionQueue implements RequestQueueProvider {
         if (!checkInternalState()) {
             return;
         }
-        
+
         L.d("[ConnectionQueue] sendMetricsRequest");
-        addRequestToQueue(prepareCommonRequestData() + preparedMetrics, false);
+        addRequestToQueue(prepareCommonRequestData() + "&metrics=" + preparedMetrics, false);
         tick();
     }
 
