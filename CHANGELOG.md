@@ -5,7 +5,6 @@
 * Added a new Consent option "metrics" for controlling "sendMetricsRequest" method. (This has no effect on Session metrics.)
 * Added "setRequestTimeoutDuration(requestTimeoutDuration)" init config method to change request timeout duration in seconds.
 
-* Rolled back Health Check metric information to previous state.
 * Mitigated an issue displaying Content on API level 35 and above.
 
 ## 25.4.3
