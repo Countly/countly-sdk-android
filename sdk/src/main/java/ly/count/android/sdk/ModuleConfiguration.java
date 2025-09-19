@@ -494,4 +494,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     @Override public int getBOMDuration() {
         return currentVBOMDuration;
     }
+
+    @Override public int getRequestTimeoutDurationMillis() {
+        return _cly.config_.requestTimeoutDuration * 1000;
+    }
 }

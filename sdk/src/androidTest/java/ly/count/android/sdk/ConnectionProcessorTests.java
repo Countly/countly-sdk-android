@@ -126,6 +126,10 @@ public class ConnectionProcessorTests {
             @Override public int getBOMDuration() {
                 return 60;
             }
+
+            @Override public int getRequestTimeoutDurationMillis() {
+                return 30_000;
+            }
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);
