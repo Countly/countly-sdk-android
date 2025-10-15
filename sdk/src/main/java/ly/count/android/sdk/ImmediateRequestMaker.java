@@ -31,8 +31,13 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
         assert cp != null;
         assert log != null;
         assert callback != null;
-
-        this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
+        if (Countly.sharedInstance().useSerialExecutorInternal) {
+            log.d("[ImmediateRequestMaker] Using serial executor");
+            this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
+        } else {
+            log.d("[ImmediateRequestMaker] Using parallel executor");
+            this.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
+        }
     }
 
     /**

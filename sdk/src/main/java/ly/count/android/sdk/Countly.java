@@ -202,6 +202,9 @@ public class Countly {
 
     protected CountlyConfig config_ = null;
 
+    // for executor choice of immediate requests
+    boolean useSerialExecutorInternal = false;
+
     //fields for tracking push token debounce
     final static long lastRegistrationCallDebounceDuration = 60 * 1000;//60seconds
     long lastRegistrationCallTs = 0;
@@ -368,6 +371,9 @@ public class Countly {
             } else {
                 config.sdkInternalLimits.maxKeyLength = maxKeyLengthDefault;
             }
+
+            // should be here for sbs and hc
+            useSerialExecutorInternal = config.useSerialExecutor;
 
             if (config.sdkInternalLimits.maxValueSize != null) {
                 if (config.sdkInternalLimits.maxValueSize < 1) {
