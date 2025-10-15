@@ -1,3 +1,7 @@
+## X.X.X
+* Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
+* Immediate requests now will be run by parallel executor instead of serial by default.
+
 ## 25.4.4
 * Improved disk size calculation in crash reports.
   
