@@ -18,8 +18,13 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
         assert cp != null;
         assert log != null;
         assert callback != null;
-
-        this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
+        if (Countly.sharedInstance().useSerialExecutorInternal) {
+            log.d("[PreflightRequestMaker] Using serial executor");
+            this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
+        } else {
+            log.d("[PreflightRequestMaker] Using parallel executor");
+            this.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
+        }
     }
 
     /**
