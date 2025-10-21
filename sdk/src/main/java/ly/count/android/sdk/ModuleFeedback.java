@@ -344,20 +344,59 @@ public class ModuleFeedback extends ModuleBase {
         int currentOrientation = resources.getConfiguration().orientation;
         boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
 
-        int width = displayMetrics.widthPixels;
-        int height = displayMetrics.heightPixels;
+        int portraitWidth, portraitHeight, landscapeWidth, landscapeHeight;
+        int portraitTopOffset = 0;
+        int landscapeTopOffset = 0;
+        int portraitLeftOffset = 0;
+        int landscapeLeftOffset = 0;
 
-        // this calculation needs improvement for status bar and navigation bar
-        int portraitWidth = portrait ? width : height;
-        int portraitHeight = portrait ? height : width;
-        int landscapeWidth = portrait ? height : width;
-        int landscapeHeight = portrait ? width : height;
+        int totalWidthPx = displayMetrics.widthPixels;
+        int totalHeightPx = displayMetrics.heightPixels;
+        L.d("[ModuleFeedback] showFeedbackWidget_newActivity, total screen dimensions (px): [" + totalWidthPx + "x" + totalHeightPx + "], density: [" + displayMetrics.density + "]");
+
+        WebViewDisplayOption displayOption = _cly.config_.webViewDisplayOption;
+        L.d("[ModuleFeedback] showFeedbackWidget_newActivity, display option: [" + displayOption + "]");
+
+        if (displayOption == WebViewDisplayOption.SAFE_AREA) {
+            L.d("[ModuleFeedback] showFeedbackWidget_newActivity, calculating safe area dimensions...");
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, L);
+            
+            portraitWidth = safeArea.portraitWidth;
+            portraitHeight = safeArea.portraitHeight;
+            landscapeWidth = safeArea.landscapeWidth;
+            landscapeHeight = safeArea.landscapeHeight;
+            portraitTopOffset = safeArea.portraitTopOffset;
+            landscapeTopOffset = safeArea.landscapeTopOffset;
+            portraitLeftOffset = safeArea.portraitLeftOffset;
+            landscapeLeftOffset = safeArea.landscapeLeftOffset;
+            
+            L.d("[ModuleFeedback] showFeedbackWidget_newActivity, safe area dimensions (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], topOffset: [" + portraitTopOffset + "], leftOffset: [" + portraitLeftOffset + "]");
+            L.d("[ModuleFeedback] showFeedbackWidget_newActivity, safe area dimensions (px) - Landscape: [" + landscapeWidth + "x" + landscapeHeight + "], topOffset: [" + landscapeTopOffset + "], leftOffset: [" + landscapeLeftOffset + "]");
+        } else {
+            int width = displayMetrics.widthPixels;
+            int height = displayMetrics.heightPixels;
+
+            portraitWidth = portrait ? width : height;
+            portraitHeight = portrait ? height : width;
+            landscapeWidth = portrait ? height : width;
+            landscapeHeight = portrait ? width : height;
+            
+            L.d("[ModuleFeedback] showFeedbackWidget_newActivity, using immersive mode (full screen) dimensions (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], Landscape: [" + landscapeWidth + "x" + landscapeHeight + "]");
+        }
+
+        L.i("[ModuleFeedback] showFeedbackWidget_newActivity, FINAL dimensions for widget (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], Landscape: [" + landscapeWidth + "x" + landscapeHeight + "]");
 
         Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         TransparentActivityConfig pConfig = new TransparentActivityConfig(0, 0, portraitWidth, portraitHeight);
         TransparentActivityConfig lConfig = new TransparentActivityConfig(0, 0, landscapeWidth, landscapeHeight);
         pConfig.url = url;
         lConfig.url = url;
+        pConfig.useSafeArea = (displayOption == WebViewDisplayOption.SAFE_AREA);
+        lConfig.useSafeArea = (displayOption == WebViewDisplayOption.SAFE_AREA);
+        pConfig.topOffset = portraitTopOffset;
+        lConfig.topOffset = landscapeTopOffset;
+        pConfig.leftOffset = portraitLeftOffset;
+        lConfig.leftOffset = landscapeLeftOffset;
         placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, pConfig);
         placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, lConfig);
 

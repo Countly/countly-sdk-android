@@ -1,5 +1,9 @@
 ## X.X.X
 * Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
+* Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
+  * `IMMERSIVE` mode (default): Full-screen display (except cutouts).
+  * `SAFE_AREA` mode: Omits status bar, navigation bar and cutouts when displaying webviews.
+
 * Immediate requests now will be run by parallel executor instead of serial by default.
 
 ## 25.4.4

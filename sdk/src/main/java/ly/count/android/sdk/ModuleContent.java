@@ -190,14 +190,42 @@ public class ModuleContent extends ModuleBase {
         int currentOrientation = resources.getConfiguration().orientation;
         boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
 
-        int scaledWidth = (int) Math.ceil(displayMetrics.widthPixels / displayMetrics.density);
-        int scaledHeight = (int) Math.ceil(displayMetrics.heightPixels / displayMetrics.density);
+        int portraitWidth, portraitHeight, landscapeWidth, landscapeHeight;
 
-        // this calculation needs improvement for status bar and navigation bar
-        int portraitWidth = portrait ? scaledWidth : scaledHeight;
-        int portraitHeight = portrait ? scaledHeight : scaledWidth;
-        int landscapeWidth = portrait ? scaledHeight : scaledWidth;
-        int landscapeHeight = portrait ? scaledWidth : scaledHeight;
+        int totalWidthPx = displayMetrics.widthPixels;
+        int totalHeightPx = displayMetrics.heightPixels;
+        int totalWidthDp = (int) Math.ceil(totalWidthPx / displayMetrics.density);
+        int totalHeightDp = (int) Math.ceil(totalHeightPx / displayMetrics.density);
+        L.d("[ModuleContent] prepareContentFetchRequest, total screen dimensions (px): [" + totalWidthPx + "x" + totalHeightPx + "], (dp): [" + totalWidthDp + "x" + totalHeightDp + "], density: [" + displayMetrics.density + "]");
+
+        WebViewDisplayOption displayOption = _cly.config_.webViewDisplayOption;
+        L.d("[ModuleContent] prepareContentFetchRequest, display option: [" + displayOption + "]");
+
+        if (displayOption == WebViewDisplayOption.SAFE_AREA) {
+            L.d("[ModuleContent] prepareContentFetchRequest, calculating safe area dimensions...");
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(_cly.context_, L);
+            
+            // px to dp
+            portraitWidth = (int) Math.ceil(safeArea.portraitWidth / displayMetrics.density);
+            portraitHeight = (int) Math.ceil(safeArea.portraitHeight / displayMetrics.density);
+            landscapeWidth = (int) Math.ceil(safeArea.landscapeWidth / displayMetrics.density);
+            landscapeHeight = (int) Math.ceil(safeArea.landscapeHeight / displayMetrics.density);
+            
+            L.d("[ModuleContent] prepareContentFetchRequest, safe area dimensions (px->dp) - Portrait: [" + safeArea.portraitWidth + "x" + safeArea.portraitHeight + " px] -> [" + portraitWidth + "x" + portraitHeight + " dp], topOffset: [" + safeArea.portraitTopOffset + " px]");
+            L.d("[ModuleContent] prepareContentFetchRequest, safe area dimensions (px->dp) - Landscape: [" + safeArea.landscapeWidth + "x" + safeArea.landscapeHeight + " px] -> [" + landscapeWidth + "x" + landscapeHeight + " dp], topOffset: [" + safeArea.landscapeTopOffset + " px]");
+        } else {
+            int scaledWidth = totalWidthDp;
+            int scaledHeight = totalHeightDp;
+
+            portraitWidth = portrait ? scaledWidth : scaledHeight;
+            portraitHeight = portrait ? scaledHeight : scaledWidth;
+            landscapeWidth = portrait ? scaledHeight : scaledWidth;
+            landscapeHeight = portrait ? scaledWidth : scaledHeight;
+            
+            L.d("[ModuleContent] prepareContentFetchRequest, using immersive mode (full screen) dimensions (dp) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], Landscape: [" + landscapeWidth + "x" + landscapeHeight + "]");
+        }
+
+        L.i("[ModuleContent] prepareContentFetchRequest, FINAL dimensions to send to server (dp) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], Landscape: [" + landscapeWidth + "x" + landscapeHeight + "]");
 
         String language = Locale.getDefault().getLanguage().toLowerCase();
         String deviceType = deviceInfo.mp.getDeviceType(_cly.context_);
@@ -219,13 +247,28 @@ public class ModuleContent extends ModuleBase {
         JSONObject coordinates = response.optJSONObject("geo");
 
         assert coordinates != null;
-        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, extractOrientationPlacements(coordinates, displayMetrics.density, "p", content));
-        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, extractOrientationPlacements(coordinates, displayMetrics.density, "l", content));
+
+        WebViewDisplayOption displayOption = _cly.config_.webViewDisplayOption;
+        SafeAreaDimensions safeArea = null;
+        
+        if (displayOption == WebViewDisplayOption.SAFE_AREA) {
+            L.d("[ModuleContent] parseContent, calculating safe area for coordinate adjustment...");
+            safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(_cly.context_, L);
+        }
+
+        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, 
+            extractOrientationPlacements(coordinates, displayMetrics.density, "p", content, 
+                displayOption, safeArea != null ? safeArea.portraitTopOffset : 0, safeArea != null ? safeArea.portraitLeftOffset : 0));
+        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, 
+            extractOrientationPlacements(coordinates, displayMetrics.density, "l", content, 
+                displayOption, safeArea != null ? safeArea.landscapeTopOffset : 0, safeArea != null ? safeArea.landscapeLeftOffset : 0));
 
         return placementCoordinates;
     }
 
-    private TransparentActivityConfig extractOrientationPlacements(@NonNull JSONObject placements, float density, @NonNull String orientation, @NonNull String content) {
+    private TransparentActivityConfig extractOrientationPlacements(@NonNull JSONObject placements, 
+        float density, @NonNull String orientation, @NonNull String content, 
+        WebViewDisplayOption displayOption, int topOffset, int leftOffset) {
         if (placements.has(orientation)) {
             JSONObject orientationPlacements = placements.optJSONObject(orientation);
             assert orientationPlacements != null;
@@ -234,8 +277,21 @@ public class ModuleContent extends ModuleBase {
             int w = orientationPlacements.optInt("w");
             int h = orientationPlacements.optInt("h");
             L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], x: [" + x + "], y: [" + y + "], w: [" + w + "], h: [" + h + "]");
-            TransparentActivityConfig config = new TransparentActivityConfig((int) Math.ceil(x * density), (int) Math.ceil(y * density), (int) Math.ceil(w * density), (int) Math.ceil(h * density));
+            
+            int xPx = Math.round(x * density);
+            int yPx = Math.round(y * density);
+            int wPx = Math.round(w * density);
+            int hPx = Math.round(h * density);
+            L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], converting dp->px: [" + w + "x" + h + " dp] -> [" + wPx + "x" + hPx + " px], density: [" + density + "]");
+            
+            TransparentActivityConfig config = new TransparentActivityConfig(xPx, yPx, wPx, hPx);
             config.url = content;
+            config.useSafeArea = (displayOption == WebViewDisplayOption.SAFE_AREA);
+            config.topOffset = topOffset;
+            config.leftOffset = leftOffset;
+            
+            L.d("[ModuleContent] extractOrientationPlacements, orientation: [" + orientation + "], created config - useSafeArea: [" + config.useSafeArea + "], topOffset: [" + config.topOffset + "], leftOffset: [" + config.leftOffset + "]");
+            
             return config;
         }
 
