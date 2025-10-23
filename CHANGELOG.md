@@ -1,4 +1,5 @@
 ## X.X.X
+* Mitigated a potential issue where Remote Config calls could have block the main UI thread processes.
 * Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
 * Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
   * `IMMERSIVE` mode (default): Full-screen display (except cutouts).
