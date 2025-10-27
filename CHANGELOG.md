@@ -6,6 +6,8 @@
   * `SAFE_AREA` mode: Omits status bar, navigation bar and cutouts when displaying webviews.
 * Added a new init config option `disableGradualRequestCleaner()` to change request queue overflow behavior. When enabled, all overflowing requests (plus one slot) are removed at once instead of being cleaned gradually in limited batches.
 
+* Added a new method `requestQueue().addCustomNetworkRequestHeaders(Map<String,String>)` for providing or overriding custom headers after init 
+
 * Immediate requests now will be run by parallel executor instead of serial by default.
 
 ## 25.4.4
