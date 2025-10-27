@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import ly.count.android.sdk.internal.RemoteConfigHelper;
 import ly.count.android.sdk.internal.RemoteConfigValueStore;
 import org.json.JSONException;
@@ -21,6 +22,8 @@ public class ModuleRemoteConfig extends ModuleBase {
     Map<String, String[]> variantContainer = new HashMap<>(); // Stores the fetched A/B test variants
     Map<String, ExperimentInformation> experimentContainer = new HashMap<>(); // Stores the fetched A/B test information (includes exp ID, description etc.)
     RemoteConfig remoteConfigInterface = null;
+    // dedicated lock for remote config
+    private final Object remoteConfigLock = new Object();
 
     //if set to true, it will automatically download remote configs on module startup
     boolean automaticDownloadTriggersEnabled;
@@ -30,7 +33,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     boolean remoteConfigValuesShouldBeCached = false;
 
-    List<RCDownloadCallback> downloadCallbacks = new ArrayList<>(2);
+    List<RCDownloadCallback> downloadCallbacks = new CopyOnWriteArrayList<>();
 
     public final static String variantObjectNameKey = "name";
 
@@ -265,16 +268,13 @@ public class ModuleRemoteConfig extends ModuleBase {
      */
     void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, @NonNull Map<String, RCData> newRC) {
         //todo iterate over all response values and print a summary of the returned keys + ideally a summary of their payload.
-
-        //merge the new values into the current ones
-        RemoteConfigValueStore rcvs = loadConfig();
-        rcvs.mergeValues(newRC, clearOldValues);
-
-        L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
-
-        saveConfig(rcvs);
-
-        L.d("[ModuleRemoteConfig] Finished remote config saving");
+        synchronized (remoteConfigLock) {
+            RemoteConfigValueStore rcvs = loadConfig();
+            rcvs.mergeValues(newRC, clearOldValues);
+            L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
+            saveConfig(rcvs);
+            L.d("[ModuleRemoteConfig] Finished remote config saving");
+        }
     }
 
     /**
@@ -334,26 +334,32 @@ public class ModuleRemoteConfig extends ModuleBase {
     }
 
     void clearValueStoreInternal() {
-        storageProvider.setRemoteConfigValues("");
+        synchronized (remoteConfigLock) {
+            storageProvider.setRemoteConfigValues("");
+        }
     }
 
     @NonNull Map<String, Object> getAllRemoteConfigValuesInternalLegacy() {
-        try {
-            RemoteConfigValueStore rcvs = loadConfig();
-            return rcvs.getAllValuesLegacy();
-        } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
-            return new HashMap<>();
+        synchronized (remoteConfigLock) {
+            try {
+                RemoteConfigValueStore rcvs = loadConfig();
+                return rcvs.getAllValuesLegacy();
+            } catch (Exception ex) {
+                Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+                return new HashMap<>();
+            }
         }
     }
 
     @NonNull Map<String, RCData> getAllRemoteConfigValuesInternal() {
-        try {
-            RemoteConfigValueStore rcvs = loadConfig();
-            return rcvs.getAllValues();
-        } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
-            return new HashMap<>();
+        synchronized (remoteConfigLock) {
+            try {
+                RemoteConfigValueStore rcvs = loadConfig();
+                return rcvs.getAllValues();
+            } catch (Exception ex) {
+                Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+                return new HashMap<>();
+            }
         }
     }
 
@@ -363,7 +369,9 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @return
      */
     @NonNull Map<String, String[]> testingGetAllVariantsInternal() {
-        return variantContainer;
+        synchronized (remoteConfigLock) {
+            return new HashMap<>(variantContainer);
+        }
     }
 
     /**
@@ -373,12 +381,13 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @return
      */
     @Nullable String[] testingGetVariantsForKeyInternal(@NonNull String key) {
-        String[] variantResponse = null;
-        if (variantContainer.containsKey(key)) {
-            variantResponse = variantContainer.get(key);
+        synchronized (remoteConfigLock) {
+            if (variantContainer.containsKey(key)) {
+                String[] arr = variantContainer.get(key);
+                return arr == null ? null : arr.clone();
+            }
+            return null;
         }
-
-        return variantResponse;
     }
 
     void clearAndDownloadAfterIdChange() {
@@ -393,9 +402,11 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     void CacheOrClearRCValuesIfNeeded() {
         L.v("[RemoteConfig] CacheOrClearRCValuesIfNeeded, cacheclearing values");
-        RemoteConfigValueStore rc = loadConfig();
-        rc.cacheClearValues();
-        saveConfig(rc);
+        synchronized (remoteConfigLock) {
+            RemoteConfigValueStore rc = loadConfig();
+            rc.cacheClearValues();
+            saveConfig(rc);
+        }
     }
 
     void NotifyDownloadCallbacks(RCDownloadCallback devProvidedCallback, RequestResult requestResult, String message, boolean fullUpdate, Map<String, RCData> downloadedValues) {
@@ -680,9 +691,8 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @return The available RC values
          */
         public @NonNull Map<String, RCData> getValues() {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] getValues");
-
+            L.i("[RemoteConfig] getValues");
+            synchronized (remoteConfigLock) {
                 return getAllRemoteConfigValuesInternal();
             }
         }
@@ -693,29 +703,24 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @return The available RC values
          */
         public @NonNull Map<String, RCData> getAllValuesAndEnroll() {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] getAllValuesAndEnroll");
-                Map<String, RCData> values = getAllRemoteConfigValuesInternal();
-
-                if (values.isEmpty()) {
-                    L.i("[RemoteConfig] getAllValuesAndEnroll, No value to enroll");
-                } else {
-                    // assuming the values is not empty enroll for the keys
-                    Set<String> setOfKeys = values.keySet();
-                    String[] arrayOfKeys = new String[setOfKeys.size()];
-
-                    // set to array
-                    int i = 0;
-                    for (String key : setOfKeys) {
-                        arrayOfKeys[i++] = key;
-                    }
-
-                    // enroll
-                    enrollIntoABTestsForKeys(arrayOfKeys);
-                }
-
-                return values;
+            L.i("[RemoteConfig] getAllValuesAndEnroll");
+            Map<String, RCData> values;
+            synchronized (remoteConfigLock) {
+                values = getAllRemoteConfigValuesInternal();
             }
+
+            if (!values.isEmpty()) {
+                Set<String> setOfKeys = values.keySet();
+                String[] arrayOfKeys = new String[setOfKeys.size()];
+                int i = 0;
+                for (String key : setOfKeys) {
+                    arrayOfKeys[i++] = key;
+                }
+                enrollIntoABTestsForKeys(arrayOfKeys);
+            } else {
+                L.i("[RemoteConfig] getAllValuesAndEnroll, No value to enroll");
+            }
+            return values;
         }
 
         /**
@@ -725,14 +730,12 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @return The returned value. If no value existed for the key then the inner object (value) will be returned as "null"
          */
         public @NonNull RCData getValue(final @Nullable String key) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] getValue, key:[" + key + "]");
-
-                if (key == null || key.equals("")) {
-                    L.i("[RemoteConfig] getValue, A valid key should be provided to get its value.");
-                    return new RCData(null, true);
-                }
-
+            L.i("[RemoteConfig] getValue, key:[" + key + "]");
+            if (key == null || key.equals("")) {
+                L.i("[RemoteConfig] getValue, A valid key should be provided to get its value.");
+                return new RCData(null, true);
+            }
+            synchronized (remoteConfigLock) {
                 return getRCValue(key);
             }
         }
@@ -744,26 +747,22 @@ public class ModuleRemoteConfig extends ModuleBase {
          * @return The returned value. If no value existed for the key then the inner object will be returned as "null"
          */
         public @NonNull RCData getValueAndEnroll(@Nullable String key) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] getValueAndEnroll, key:[" + key + "]");
-
-                if (key == null || key.equals("")) {
-                    L.i("[RemoteConfig] getValueAndEnroll, A valid key should be provided to get its value.");
-                    return new RCData(null, true);
-                }
-
-                RCData data = getRCValue(key);
-
-                if (data.value == null) {
-                    L.i("[RemoteConfig] getValueAndEnroll, No value to enroll");
-                } else {
-                    // assuming value is not null enroll to key
-                    String[] arrayOfKeys = { key };
-                    enrollIntoABTestsForKeys(arrayOfKeys);
-                }
-
-                return data;
+            L.i("[RemoteConfig] getValueAndEnroll, key:[" + key + "]");
+            if (key == null || key.equals("")) {
+                L.i("[RemoteConfig] getValueAndEnroll, A valid key should be provided to get its value.");
+                return new RCData(null, true);
             }
+            RCData data;
+            synchronized (remoteConfigLock) {
+                data = getRCValue(key);
+            }
+            if (data.value != null) {
+                String[] arrayOfKeys = { key };
+                enrollIntoABTestsForKeys(arrayOfKeys);
+            } else {
+                L.i("[RemoteConfig] getValueAndEnroll, No value to enroll");
+            }
+            return data;
         }
 
         /**

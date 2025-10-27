@@ -545,6 +545,80 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals(0, ((JSONObject) vals.get("t")).length());
     }
 
+    /**
+     * Concurrency test: simulate rapid merge operations while concurrently reading values
+     * to ensure no ConcurrentModificationException or data corruption occurs after introducing
+     * fine-grained remoteConfigLock and CopyOnWriteArrayList for callbacks.
+     */
+    @Test
+    public void concurrentMergeAndReads() throws Exception {
+        CountlyConfig cc = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("dev1").setLoggingEnabled(true);
+        cc.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() { return (a,b,c,d,e,f,g) -> { if (f!=null) f.callback(null); }; }
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() { return (a,b,c,d,e,f,g) -> { if (f!=null) f.callback(null); }; }
+        };
+        Countly countly = new Countly().init(cc);
+
+        RemoteConfigValueStore rcvsA = RemoteConfigValueStore.dataFromString("{\"k1\":123,\"k2\":\"v2\"}", false);
+        RemoteConfigValueStore rcvsB = RemoteConfigValueStore.dataFromString("{\"k2\":777,\"k3\":{}}", false);
+        RemoteConfigValueStore rcvsC = RemoteConfigValueStore.dataFromString("{\"k4\":true,\"k5\":55.5}", false);
+
+        RemoteConfigValueStore[] arr = new RemoteConfigValueStore[] { rcvsA, rcvsB, rcvsC };
+
+        final int MERGE_THREADS = 3;
+        final int READ_THREADS = 4;
+        final int MERGE_OPS = 150;
+        final int READ_OPS = 600;
+
+        Thread[] mergers = new Thread[MERGE_THREADS];
+        Thread[] readers = new Thread[READ_THREADS];
+        final Exception[] failure = { null };
+
+        for (int i = 0; i < MERGE_THREADS; i++) {
+            final int idx = i;
+            mergers[i] = new Thread(() -> {
+                try {
+                    for (int j = 0; j < MERGE_OPS; j++) {
+                        RemoteConfigValueStore pick = arr[(idx + j) % arr.length];
+                        boolean clear = (j % 10) == 0; // occasionally force a clear path
+                        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(clear, RemoteConfigHelper.DownloadedValuesIntoMap(pick.values));
+                    }
+                } catch (Exception ex) {
+                    failure[0] = ex;
+                }
+            }, "RC-Merger-" + i);
+            mergers[i].start();
+        }
+
+        for (int i = 0; i < READ_THREADS; i++) {
+            readers[i] = new Thread(() -> {
+                try {
+                    for (int j = 0; j < READ_OPS; j++) {
+                        countly.remoteConfig().getValue("k1");
+                        countly.remoteConfig().getValues();
+                        countly.remoteConfig().getAllValuesAndEnroll();
+                    }
+                } catch (Exception ex) {
+                    failure[0] = ex;
+                }
+            }, "RC-Reader-" + i);
+            readers[i].start();
+        }
+
+        for (Thread t : mergers) { t.join(); }
+        for (Thread t : readers) { t.join(); }
+
+        if (failure[0] != null) {
+            Assert.fail("Concurrency test failure: " + failure[0]);
+        }
+
+        // resulting map should not contain partially written entries 
+        Map<String, RCData> finalVals = countly.remoteConfig().getValues();
+        for (Map.Entry<String, RCData> e : finalVals.entrySet()) {
+            Assert.assertNotNull("Null RCData encountered for key=" + e.getKey(), e.getValue());
+        }
+    }
+
     static void assertCValueCachedState(Map<String, RCData> rcValues, boolean valuesAreCached) {
         for (Map.Entry<String, RCData> entry : rcValues.entrySet()) {
             if (valuesAreCached) {
