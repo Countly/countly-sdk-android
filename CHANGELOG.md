@@ -4,6 +4,7 @@
 * Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
   * `IMMERSIVE` mode (default): Full-screen display (except cutouts).
   * `SAFE_AREA` mode: Omits status bar, navigation bar and cutouts when displaying webviews.
+* Added a new init config option `disableGradualRequestCleaner()` to change request queue overflow behavior. When enabled, all overflowing requests (plus one slot) are removed at once instead of being cleaned gradually in limited batches.
 
 * Immediate requests now will be run by parallel executor instead of serial by default.
 

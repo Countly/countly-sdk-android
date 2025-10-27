@@ -458,6 +458,11 @@ public class Countly {
             L.d("[Init] request queue size set to [" + config.maxRequestQueueSize + "]");
             countlyStore.setLimits(config.maxRequestQueueSize);
 
+            if (config.disableGradualRequestCleaner) {
+                L.d("[Init] Disabling gradual request queue cleaning. Overflow will be removed in one pass.");
+                countlyStore.setDisableGradualRequestCleaner(true);
+            }
+
             if (config.storageProvider == null) {
                 // outside of tests this should be null
                 config.storageProvider = config.countlyStore;

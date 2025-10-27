@@ -210,6 +210,9 @@ public class CountlyConfig {
     boolean useSerialExecutor = false;
     WebViewDisplayOption webViewDisplayOption = WebViewDisplayOption.IMMERSIVE;
 
+    // If set to true, request queue cleaner will remove all overflow at once instead of gradually (loop limited) removing
+    boolean disableGradualRequestCleaner = false;
+
     /**
      * THIS VARIABLE SHOULD NOT BE USED
      * IT IS ONLY FOR INTERNAL TESTING
@@ -1080,6 +1083,20 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setUseSerialExecutor(boolean useSerial) {
         this.useSerialExecutor = useSerial;
+        return this;
+    }
+
+    /**
+     * Disable the gradual request cleaner. By default when the request queue exceeds the configured
+     * maximum size, only a limited number of the oldest requests are removed per cleanup cycle
+     * (capped by an internal loop limit of 100) to gradually shrink the queue. Calling this method changes
+     * the behavior so that whenever the queue exceeds the maximum size, all overflowing requests
+     * (plus one extra slot for the new request) are removed in a single operation.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableGradualRequestCleaner() {
+        this.disableGradualRequestCleaner = true;
         return this;
     }
 
