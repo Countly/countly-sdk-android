@@ -1158,6 +1158,49 @@ public class Countly {
     }
 
     /**
+     * To add new header key/value pairs or override existing ones.
+     * A null or empty map is ignored. Null or empty keys, as well as null values, are ignored.
+     * Subsequent requests (including those created after overriding) will contain the updated header set.
+     *
+     * @param customHeaderValues map of header key/value pairs to add/override
+     * @return Returns the same Countly instance for convenient chaining
+     */
+    /* package */ synchronized void addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
+        if (!isInitialized()) {
+            L.e("[addCustomNetworkRequestHeaders] SDK must be initialised before calling this method");
+            return;
+        }
+
+        if (customHeaderValues == null || customHeaderValues.isEmpty()) {
+            L.d("[addCustomNetworkRequestHeaders] Provided map was null or empty, ignoring");
+            return;
+        }
+
+        if (requestHeaderCustomValues == null) {
+            requestHeaderCustomValues = new HashMap<>();
+        }
+
+        int added = 0;
+        int overridden = 0;
+        for (Map.Entry<String, String> entry : customHeaderValues.entrySet()) {
+            String k = entry.getKey();
+            String v = entry.getValue();
+            if (k == null || k.isEmpty() || v == null) {
+                continue; // skip invalid entries
+            }
+            if (requestHeaderCustomValues.containsKey(k)) {
+                overridden++;
+            } else {
+                added++;
+            }
+            requestHeaderCustomValues.put(k, v);
+        }
+
+        connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
+        L.i("[addCustomNetworkRequestHeaders] Added:" + added + " Overridden:" + overridden + " TotalNow:" + requestHeaderCustomValues.size());
+    }
+
+    /**
      * Check if logging has been enabled internally in the SDK
      *
      * @return true means "yes"
