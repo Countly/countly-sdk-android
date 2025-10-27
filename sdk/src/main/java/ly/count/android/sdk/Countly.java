@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "25.4.4";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "25.4.5-RC1";
     /**
      * Used as request meta data on every request
      */
