@@ -1,8 +1,17 @@
+## X.X.X
+* Mitigated a potential issue where Remote Config calls could have block the main UI thread processes.
+* Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
+* Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
+  * `IMMERSIVE` mode (default): Full-screen display (except cutouts).
+  * `SAFE_AREA` mode: Omits status bar, navigation bar and cutouts when displaying webviews.
+
+* Immediate requests now will be run by parallel executor instead of serial by default.
+
 ## 25.4.4
 * Improved disk size calculation in crash reports.
   
-* Added a new function "sendMetricsRequest(metricsOverride)" to send a device metrics request, accessible through the requestQueue interface.
-* Added a new Consent option "metrics" for controlling "sendMetricsRequest" method. (This has no effect on Session metrics.)
+* Added a new function "recordMetrics(metricsOverride)" to send a device metrics request, accessible through the requestQueue interface.
+* Added a new Consent option "metrics" for controlling "recordMetrics" method. (This has no effect on Session metrics.)
 * Added "setRequestTimeoutDuration(requestTimeoutDuration)" init config method to change request timeout duration in seconds.
 
 * Mitigated an issue displaying Content on API level 35 and above.

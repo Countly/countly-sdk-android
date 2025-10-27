@@ -8,6 +8,9 @@ class TransparentActivityConfig implements Serializable {
     Integer width;
     Integer height;
     String url;
+    boolean useSafeArea = false;
+    int topOffset = 0;
+    int leftOffset = 0;
 
     TransparentActivityConfig(Integer x, Integer y, Integer width, Integer height) {
         this.x = x;

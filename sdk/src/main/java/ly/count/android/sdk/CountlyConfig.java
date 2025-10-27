@@ -206,6 +206,10 @@ public class CountlyConfig {
     boolean sdkBehaviorSettingsRequestsDisabled = false;
     int requestTimeoutDuration = 30; // in seconds
 
+    // If set to true, immediate requests will use serial AsyncTask executor instead of the thread pool
+    boolean useSerialExecutor = false;
+    WebViewDisplayOption webViewDisplayOption = WebViewDisplayOption.IMMERSIVE;
+
     /**
      * THIS VARIABLE SHOULD NOT BE USED
      * IT IS ONLY FOR INTERNAL TESTING
@@ -1049,6 +1053,33 @@ public class CountlyConfig {
             tempRequestTimeoutDuration = 1;
         }
         this.requestTimeoutDuration = tempRequestTimeoutDuration;
+        return this;
+    }
+
+    /**
+     * Set the webview display option for Content and Feedback Widgets
+     *
+     * @param displayOption IMMERSIVE for full screen with hidden system UI, or
+     *                      SAFE_AREA to use app usable area and not overlap system UI
+     * @return config content to chain calls
+     */
+    public synchronized CountlyConfig setWebviewDisplayOption(WebViewDisplayOption displayOption) {
+        if (displayOption != null) {
+            this.webViewDisplayOption = displayOption;
+        }
+        return this;
+    }
+
+    /**
+     * To select the legacy AsyncTask.execute (serial executor) or
+     * instead executeOnExecutor(THREAD_POOL_EXECUTOR)
+     * Default is false and the SDK will use the thread pool executor.
+     *
+     * @param useSerial set to true to use serial executor
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setUseSerialExecutor(boolean useSerial) {
+        this.useSerialExecutor = useSerial;
         return this;
     }
 
