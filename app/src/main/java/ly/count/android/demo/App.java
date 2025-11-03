@@ -28,6 +28,7 @@ import ly.count.android.sdk.CountlyConfig;
 import ly.count.android.sdk.CrashData;
 import ly.count.android.sdk.GlobalCrashFilterCallback;
 import ly.count.android.sdk.ModuleLog;
+import ly.count.android.sdk.WebViewDisplayOption;
 import ly.count.android.sdk.messaging.CountlyConfigPush;
 import ly.count.android.sdk.messaging.CountlyPush;
 
@@ -146,7 +147,8 @@ public class App extends Application {
         Map<String, Object> customUserProperties = new ConcurrentHashMap<>();
         customUserProperties.put("A", 1);
 
-        CountlyConfig config = new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)//.setDeviceId("67567")
+        CountlyConfig config = new CountlyConfig(this, COUNTLY_APP_KEY, COUNTLY_SERVER_URL)
+            // .setDeviceId("a" + applicationStartTimestamp )
             .setLoggingEnabled(true)
             .setLogListener(new ModuleLog.LogCallback() {
                 @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
@@ -173,42 +175,30 @@ public class App extends Application {
                 }
             })
             .enableAutomaticViewTracking()
-            // uncomment the line below to enable auto enrolling the user to AB experiments when downloading RC data
             //.enrollABOnRCDownload()
-            // .setMaxRequestQueueSize(5)
+            //.setMaxRequestQueueSize(5)
             .enableAutomaticViewShortNames()
             .setGlobalViewSegmentation(automaticViewSegmentation)
             .setAutomaticViewTrackingExclusions(new Class[] { ActivityExampleCustomEvents.class })
-
             .setPushIntentAddMetadata(true)
-
             .setLocation("us", "Böston 墨尔本", "-23.8043604,-46.6718331", "10.2.33.12")
             //.setDisableLocation()
-
             //.enableManualSessionControl()
             //.enableManualSessionControlHybridMode()
-
             //.enableTemporaryDeviceIdMode()
-
             .setRequiresConsent(true)
-
-            //for giving all consent values
             .giveAllConsents()
-
-            //in case you want to control what consent is given during init
             //.setConsentEnabled(new String[] {
             //    Countly.CountlyFeatureNames.push, Countly.CountlyFeatureNames.sessions, Countly.CountlyFeatureNames.location,
             //    Countly.CountlyFeatureNames.attribution, Countly.CountlyFeatureNames.crashes, Countly.CountlyFeatureNames.events,
             //    Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.users, Countly.CountlyFeatureNames.views,
             //    Countly.CountlyFeatureNames.apm, Countly.CountlyFeatureNames.remoteConfig, Countly.CountlyFeatureNames.feedback
             //})
-
             .setHttpPostForced(false)
             .setParameterTamperingProtectionSalt("test-salt-checksum")
             .addCustomNetworkRequestHeaders(customHeaderValues)
             //.enableCertificatePinning(certificates)
             //.enablePublicKeyPinning(certificates)
-
             .RemoteConfigRegisterGlobalCallback((downloadResult, error, fullValueUpdate, downloadedValues) -> {
                 if (error == null) {
                     Log.d(Countly.TAG, "Automatic remote config download has completed. " + Countly.sharedInstance().remoteConfig().getValues());
@@ -216,14 +206,13 @@ public class App extends Application {
                     Log.d(Countly.TAG, "Automatic remote config download encountered a problem, " + error);
                 }
             })
-
             .setTrackOrientationChanges(true)
             //.setMetricOverride(metricOverride)
-
+            .setWebviewDisplayOption(WebViewDisplayOption.IMMERSIVE)
             //.enableServerConfiguration()
-
             .setUserProperties(customUserProperties);
 
+        // crash configuration
         config.crashes
             .enableCrashReporting()
             .enableRecordAllThreadsWithCrash()
@@ -234,13 +223,16 @@ public class App extends Application {
                 }
             });
 
+        // APM configuration    
         config.apm.enableAppStartTimeTracking()
             .enableForegroundBackgroundTracking()
             .setAppStartTimestampOverride(applicationStartTimestamp);
 
+
         Countly.sharedInstance().init(config);
         //Log.i(demoTag, "After calling init. This should return 'true', the value is:" + Countly.sharedInstance().isInitialized());
 
+        //--- PUSH NOTIFICATIONS SETUP ----//
         List<String> allowedClassNames = new ArrayList<>();
         allowedClassNames.add("MainActivity");
         List<String> allowedPackageNames = new ArrayList<>();

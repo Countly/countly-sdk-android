@@ -61,7 +61,7 @@ public class CountlyPush {
     private static Application.ActivityLifecycleCallbacks callbacks = null;
     private static Activity activity = null;
 
-    private static CountlyConfigPush countlyConfigPush = null;
+    protected static CountlyConfigPush countlyConfigPush = null;
 
     static Integer notificationAccentColor = null;
 
@@ -417,7 +417,6 @@ public class CountlyPush {
             Button button = msg.buttons().get(i);
 
             pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, i + 1, allowedIntentClassNames, allowedIntentPackageNames);
-
             builder.addAction(button.icon(), button.title(), PendingIntent.getActivity(context, msg.hashCode() + i + 1, pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
 
@@ -439,11 +438,11 @@ public class CountlyPush {
                             .setBigContentTitle(msg.title())
                             .setSummaryText(msg.message()));
                     }
-                    manager.notify(msg.hashCode(), builder.build());
+                    manager.notify(msg.id().hashCode(), builder.build());
                 }
             }, 1);
         } else {
-            manager.notify(msg.hashCode(), builder.build());
+            manager.notify(msg.id().hashCode(), builder.build());
         }
 
         return Boolean.TRUE;
@@ -555,6 +554,11 @@ public class CountlyPush {
                                 msg.recordAction(activity, 0);
                                 dialog.dismiss();
 
+                                if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.link().toString(), activity)) {
+                                    Countly.sharedInstance().L.d("[CountlyPush, displayDialog] Link handled by custom URL handler, skipping default link opening.");
+                                    return;
+                                }
+
                                 try {
                                     Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
                                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -596,18 +600,25 @@ public class CountlyPush {
             DialogInterface.OnClickListener listener = new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+
+                    boolean isPositiveButtonPressed = (which == DialogInterface.BUTTON_POSITIVE);
+                    if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link().toString(), context)) {
+                        Countly.sharedInstance().L.d("[CountlyPush, dialog button onClick] Link handled by custom URL handler, skipping default link opening.");
+                        return;
+                    }
+
                     try {
-                        msg.recordAction(context, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
-                        Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(which == DialogInterface.BUTTON_POSITIVE ? 1 : 0).link());
+                        msg.recordAction(context, isPositiveButtonPressed ? 2 : 1);
+                        Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link());
                         Bundle bundle = new Bundle();
                         bundle.putParcelable(EXTRA_MESSAGE, msg);
                         intent.putExtra(EXTRA_MESSAGE, bundle);
-                        intent.putExtra(EXTRA_ACTION_INDEX, which == DialogInterface.BUTTON_POSITIVE ? 2 : 1);
+                        intent.putExtra(EXTRA_ACTION_INDEX, isPositiveButtonPressed ? 2 : 1);
                         context.startActivity(intent);
                     } catch (Exception ex) {
-                        Countly.sharedInstance().L.e("[CountlyPush, dialog button onClick] Encountered issue while clicking on button #[" + which + "] [" + ex.toString() + "]");
+                        Countly.sharedInstance().L.e("[CountlyPush, dialog button onClick] Encountered issue while clicking on button #[" + which + "] [" + ex + "]");
                     }
-                    dialog.dismiss();
                 }
             };
             builder.setNeutralButton(msg.buttons().get(0).title(), listener);

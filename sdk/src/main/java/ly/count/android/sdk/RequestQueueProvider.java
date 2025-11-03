@@ -41,6 +41,8 @@ interface RequestQueueProvider {
 
     void sendDirectRequest(@NonNull final Map<String, String> requestData);
 
+    void sendMetricsRequest(@NonNull String preparedMetrics);
+
     void enrollToKeys(@NonNull String[] keys);
 
     void exitForKeys(@NonNull String[] keys);
@@ -70,5 +72,5 @@ interface RequestQueueProvider {
 
     String prepareHealthCheckRequest(String preparedMetrics);
 
-    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language);
+    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language, String deviceType);
 }

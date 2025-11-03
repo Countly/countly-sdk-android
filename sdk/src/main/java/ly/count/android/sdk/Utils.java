@@ -24,6 +24,10 @@ import java.util.concurrent.Future;
 import static android.content.Context.UI_MODE_SERVICE;
 
 public class Utils {
+    /**
+     * This is a communication url between web views and the SDK
+     */
+    protected static final String COMM_URL = "https://countly_action_event";
     private static final ExecutorService bg = Executors.newSingleThreadExecutor();
 
     public static Future<?> runInBackground(Runnable runnable) {

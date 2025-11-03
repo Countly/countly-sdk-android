@@ -34,6 +34,7 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -48,9 +49,6 @@ import org.json.JSONObject;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 public class ConnectionProcessor implements Runnable {
-    private static final int CONNECT_TIMEOUT_IN_MILLISECONDS = 30_000;
-    private static final int READ_TIMEOUT_IN_MILLISECONDS = 30_000;
-
     private static final String CRLF = "\r\n";
     private static final String charset = "UTF-8";
 
@@ -65,6 +63,7 @@ public class ConnectionProcessor implements Runnable {
     private final SSLContext sslContext_;
 
     private final Map<String, String> requestHeaderCustomValues_;
+    private final Runnable backoffCallback_;
 
     static String endPointOverrideTag = "&new_end_point=";
 
@@ -79,7 +78,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker) {
+        HealthTracker healthTracker, Runnable backoffCallback) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -87,6 +86,7 @@ public class ConnectionProcessor implements Runnable {
         sslContext_ = sslContext;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
+        backoffCallback_ = backoffCallback;
         L = logModule;
         this.healthTracker = healthTracker;
     }
@@ -96,7 +96,6 @@ public class ConnectionProcessor implements Runnable {
         if (customEndpoint != null) {
             urlEndpoint = customEndpoint;
         }
-
         // determine whether or not request has a binary image file, if it has request will be sent as POST request
         boolean hasPicturePath = requestData.contains(ModuleUserProfile.PICTURE_PATH_KEY);
         boolean usingHttpPost = requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced() || hasPicturePath;
@@ -145,8 +144,8 @@ public class ConnectionProcessor implements Runnable {
             pccTsConfigureConnection = UtilsTime.getNanoTime();
         }
 
-        conn.setConnectTimeout(CONNECT_TIMEOUT_IN_MILLISECONDS);
-        conn.setReadTimeout(READ_TIMEOUT_IN_MILLISECONDS);
+        conn.setConnectTimeout(configProvider_.getRequestTimeoutDurationMillis());
+        conn.setReadTimeout(configProvider_.getRequestTimeoutDurationMillis());
         conn.setUseCaches(false);
         conn.setDoInput(true);
         conn.setRequestMethod("GET");
@@ -229,7 +228,7 @@ public class ConnectionProcessor implements Runnable {
                     break;
                 }
                 String value = conn.getHeaderField(headerIndex++);
-                approximateDateSize += key.getBytes("US-ASCII").length + value.getBytes("US-ASCII").length + 2L;
+                approximateDateSize += key.getBytes(StandardCharsets.US_ASCII).length + value.getBytes(StandardCharsets.US_ASCII).length + 2L;
             }
         } catch (Exception e) {
             L.e("[Connection Processor] urlConnectionForServerRequest, exception while calculating header field size: " + e);
@@ -241,6 +240,63 @@ public class ConnectionProcessor implements Runnable {
 
         L.v("[ConnectionProcessor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
             + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
+        return conn;
+    }
+
+    synchronized public @NonNull URLConnection urlConnectionForPreflightRequest(@NonNull String preflightData) throws IOException {
+        long approxSize = preflightData.length();
+        URL url = new URL(preflightData);
+
+        long tOpen = pcc != null ? UtilsTime.getNanoTime() : 0;
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        if (conn instanceof HttpsURLConnection && (Countly.publicKeyPinCertificates != null || Countly.certificatePinCertificates != null)) {
+            ((HttpsURLConnection) conn).setSSLSocketFactory(sslContext_.getSocketFactory());
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_01_OpenURLConnection", UtilsTime.getNanoTime() - tOpen);
+            tOpen = UtilsTime.getNanoTime();
+        }
+
+        conn.setRequestMethod("HEAD");
+        conn.setConnectTimeout(configProvider_.getRequestTimeoutDurationMillis());
+        conn.setReadTimeout(configProvider_.getRequestTimeoutDurationMillis());
+        conn.setUseCaches(false);
+        conn.setDoInput(true);
+        conn.setDoOutput(false);
+        conn.setInstanceFollowRedirects(true);
+
+        if (requestHeaderCustomValues_ != null) {
+            L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
+            for (Map.Entry<String, String> e : requestHeaderCustomValues_.entrySet()) {
+                if (e.getKey() != null && e.getValue() != null && !e.getKey().isEmpty()) {
+                    conn.addRequestProperty(e.getKey(), e.getValue());
+                }
+            }
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_02_ConfigureConnection", UtilsTime.getNanoTime() - tOpen);
+            tOpen = UtilsTime.getNanoTime();
+        }
+
+        try {
+            for (int i = 0; ; i++) {
+                String key = conn.getHeaderFieldKey(i);
+                if (key == null) break;
+                String value = conn.getHeaderField(i);
+                approxSize += key.getBytes(StandardCharsets.US_ASCII).length + value.getBytes(StandardCharsets.US_ASCII).length + 2L;
+            }
+        } catch (Exception e) {
+            L.e("[ConnectionProcessor] urlConnectionForPreflightRequest, exception while calculating header field size: " + e);
+        }
+
+        if (pcc != null) {
+            pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_03_HeaderFieldSize", UtilsTime.getNanoTime() - tOpen);
+        }
+
+        L.v("[ConnectionProcessor] urlConnectionForPreflightRequest, Approx data size: [" + approxSize + " B]");
         return conn;
     }
 
@@ -339,8 +395,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             if (deviceIdProvider_.getDeviceId() == null) {
-                // When device ID is supplied by OpenUDID or by Google Advertising ID.
-                // In some cases it might take time for them to initialize. So, just wait for it.
+                // This might not be the case anymore, check it out TODO
                 L.i("[ConnectionProcessor] No Device ID available yet, skipping request " + storedRequests[0]);
                 break;
             }
@@ -435,6 +490,7 @@ public class ConnectionProcessor implements Runnable {
                     conn = urlConnectionForServerRequest(requestData, customEndpoint);
                     long setupServerRequestTime = UtilsTime.getNanoTime() - pccTsStartGetURLConnection;
                     L.d("[ConnectionProcessor] run, TIMING Setup server request took:[" + setupServerRequestTime / 1000000.0d + "] ms");
+
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_07_SetupServerRequest", setupServerRequestTime);
                         pccTsStartOnlyInternet = UtilsTime.getNanoTime();
@@ -473,7 +529,7 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     final RequestResult rRes;
-        
+
                     if (responseCode >= 200 && responseCode < 300) {
 
                         if (responseString.isEmpty()) {
@@ -526,6 +582,11 @@ public class ConnectionProcessor implements Runnable {
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
                         storageProvider_.removeRequest(originalRequest);
+
+                        if (configProvider_.getBOMEnabled() && backoff(setupServerRequestTime, storedRequestCount - 1, requestData)) {
+                            backoffCallback_.run();
+                            break;
+                        }
                     } else {
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
@@ -581,6 +642,41 @@ public class ConnectionProcessor implements Runnable {
         }
         long wholeQueueTime = UtilsTime.getNanoTime() - wholeQueueStart;
         L.v("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
+    }
+
+    /**
+     * Backoff mechanism to prevent flooding the server with requests when server is not able to respond
+     * Needs 3 conditions to met:
+     * - Request has a timestamp younger than 12 hrs
+     * - The number of requests inside the queue is less than 10% of the max queue size
+     * - The response time from the server is greater than or equal to ACCEPTED_TIMEOUT_SECONDS
+     *
+     * @param responseTimeMillis response time  in milliseconds
+     * @param storedRequestCount number of requests in the queue
+     * @param requestData request data
+     * @return true if the backoff mechanism is triggered
+     */
+    private boolean backoff(long responseTimeMillis, int storedRequestCount, String requestData) {
+        long responseTimeSeconds = responseTimeMillis / 1_000_000_000L;
+        boolean result = false;
+
+        if (responseTimeSeconds >= configProvider_.getBOMAcceptedTimeoutSeconds()) {
+            // FLAG 1
+            if (storedRequestCount <= storageProvider_.getMaxRequestQueueSize() * configProvider_.getBOMRQPercentage()) {
+                // FLAG 2
+                if (!Utils.isRequestTooOld(requestData, configProvider_.getBOMRequestAge(), "[ConnectionProcessor] backoff", L)) {
+                    // FLAG 3
+                    result = true;
+                    healthTracker.logBackoffRequest();
+                }
+            }
+        }
+
+        if (!result) {
+            healthTracker.logConsecutiveBackoffRequest();
+        }
+
+        return result;
     }
 
     String getServerURL() {

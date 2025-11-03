@@ -1,3 +1,68 @@
+## 25.4.5
+* Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
+* Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
+  * `IMMERSIVE` mode (default): Full-screen display (except cutouts).
+  * `SAFE_AREA` mode: Omits status bar, navigation bar and cutouts when displaying webviews.
+* Added a new config option `disableGradualRequestCleaner()` to change request queue overflow behavior. When enabled, all overflowing requests are removed at once instead of in batches.
+* Added a new method `requestQueue().addCustomNetworkRequestHeaders(Map<String,String>)` for providing or overriding custom headers after init .
+
+* Mitigated a potential issue where Remote Config calls could have blocked the main UI thread processes.
+
+* Immediate requests now will be run by parallel executor instead of serial by default.
+
+## 25.4.4
+* Improved disk size calculation in crash reports.
+  
+* Added a new function "recordMetrics(metricsOverride)" to send a device metrics request, accessible through the requestQueue interface.
+* Added a new Consent option "metrics" for controlling "recordMetrics" method. (This has no effect on Session metrics.)
+* Added "setRequestTimeoutDuration(requestTimeoutDuration)" init config method to change request timeout duration in seconds.
+
+* Mitigated an issue displaying Content on API level 35 and above.
+
+## 25.4.3
+* Improved Health Check metric information.
+* Improved Content display mechanics.
+
+* Mitigated an issue that could have happened when navigating back from a Content.
+* Mitigated a persistency issue with configuration provided SBS and its initial state.
+* Mitigated an issue where SBS could have been fetched twice.
+
+## 25.4.2
+* Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
+
+## 25.4.1
+* Improved request queue handling with a built-in backoff mechanism which is enabled by default.
+* Added "disableBackoffMechanism()" init config method to disable backoff behavior.
+* Added "disableSDKBehaviorSettingsUpdates()" init config method to disable server config updates.
+* Added fullscreen support for feedback widgets.
+* Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
+
+* Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
+
+## 25.4.0
+* ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
+* ! Minor breaking change ! Server Configuration is now enabled by default. Changes made on SDK Manager > SDK Configuration on your server will affect SDK behavior directly.
+
+* Added a Content feature method "refreshContentZone" that does a manual refresh.
+* Extended server configuration capabilities of the SDK.
+* Added a config method to provide server config in the initialization "setSDKBehaviorSettings(String)".
+* Added a new interface "CountlyNotificationButtonURLHandler" to allow custom handling of URLs when notification buttons are clicked. Could be set by "CountlyConfigPush.setNotificationButtonURLHandler"
+
+* Mitigated an issue that caused PN message data collision if two message with same ID was received.
+
+* Removed the deprecated function "CountlyConfig.setIdMode(idMode)"
+
+* Deprecated the experimental configuration function enableServerConfiguration.
+
+## 25.1.1
+* Mitigated an issue where after closing a content, they were not being fetched again.
+
+## 25.1.0
+* Improved content size management of content blocks.
+
+* Mitigated an issue where, the action bar was overlapping with the content display.
+* Improved the custom CertificateTrustManager to handle domain-specific configurations by supporting hostname-aware checkServerTrusted calls.
+
 ## 24.7.8
 * Added a config option to content (setZoneTimerInterval) to set content zone timer. (Experimental!)
 
@@ -7,7 +72,6 @@
 
 ## 24.7.6
 * Added support for localization of content blocks.
-
 * Mitigated an issue where visibility could have been wrongly assigned if a view was closed while going to background. (Experimental!)
 * Fixed a bug where passing the global content callback was not possible.
 * Mitigated an issue related to content actions navigation.

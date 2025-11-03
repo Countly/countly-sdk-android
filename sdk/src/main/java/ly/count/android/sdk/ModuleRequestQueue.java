@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
@@ -296,6 +297,16 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         }
     }
 
+    private void recordMetricsInternal(@NonNull Map<String, String> metricsOverride) {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.metrics)) {
+            L.d("[ModuleRequestQueue] recordMetricsInternal, no consent given for metrics");
+            return;
+        }
+
+        String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricsOverride, L);
+        requestQueueProvider.sendMetricsRequest(preparedMetrics);
+    }
+
     void esWriteCachesToPersistenceInternal(@Nullable ExplicitStorageCallback callback) {
         L.i("[ModuleRequestQueue] Calling esWriteCachesToPersistenceInternal");
         storageProvider.esWriteCacheToStorage(callback);
@@ -426,6 +437,39 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
             synchronized (_cly) {
                 L.i("[Countly] Calling esWriteCachesToStorage");
                 esWriteCachesToPersistenceInternal(callback);
+            }
+        }
+
+        /**
+         * Record device metrics manually as a standalone call
+         *
+         * @param metricsOverride map of key value pairs to override the default metrics
+         */
+        public void recordMetrics(@Nullable Map<String, String> metricsOverride) {
+            synchronized (_cly) {
+                L.i("[RequestQueue] recordMetrics, Calling recordMetrics");
+                Map<String, String> tempMetricsOverride = metricsOverride;
+                if (tempMetricsOverride == null) {
+                    tempMetricsOverride = new ConcurrentHashMap<>();
+                }
+
+                recordMetricsInternal(tempMetricsOverride);
+            }
+        }
+
+        /**
+         * To add new header key/value pairs or override existing ones.
+         * A null or empty map is ignored. Null or empty keys, as well as null values,
+         * are ignored.
+         * Subsequent requests (including those created after overriding) will contain
+         * the updated header set.
+         *
+         * @param customHeaderValues header key/value pairs to add or override
+         */
+        public void addCustomNetworkRequestHeaders(@Nullable Map<String, String> customHeaderValues) {
+            synchronized (_cly) {
+                L.i("[RequestQueue] addCustomNetworkRequestHeaders, Calling addCustomNetworkRequestHeaders");
+                _cly.addCustomNetworkRequestHeaders(customHeaderValues);
             }
         }
     }

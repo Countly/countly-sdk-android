@@ -13,7 +13,7 @@ import org.mockito.Mockito;
 public class ModuleSessionsTests {
     @Before
     public void setUp() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
     }
 
     @After

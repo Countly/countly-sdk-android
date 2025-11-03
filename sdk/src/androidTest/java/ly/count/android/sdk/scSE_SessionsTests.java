@@ -23,13 +23,13 @@ public class scSE_SessionsTests {
 
     @Before
     public void setUp() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
 
     @After
     public void tearDown() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
 
@@ -392,7 +392,7 @@ public class scSE_SessionsTests {
     }
 
     private void validateSessionConsentRequest(int idx, boolean consentForSession, String deviceId) {
-        ModuleConsentTests.validateConsentRequest(deviceId, idx, new boolean[] { consentForSession, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
+        ModuleConsentTests.validateConsentRequest(deviceId, idx, new boolean[] { consentForSession, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false });
     }
 
     private void validateRequest(Map<String, Object> expectedExtras, int idx) {

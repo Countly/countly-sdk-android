@@ -23,14 +23,14 @@ public class DeviceIdTests {
 
     @Before
     public void setUp() {
-        store = TestUtils.getCountyStore();
+        store = TestUtils.getCountlyStore();
         store.clear();
 
         Countly.sharedInstance().halt();
         Countly.sharedInstance().setLoggingEnabled(true);
 
         openUDIDProvider = new OpenUDIDProvider() {
-            @Override public String getOpenUDID() {
+            @Override public String getUUID() {
                 return currentOpenUDIDValue;
             }
         };
@@ -106,7 +106,7 @@ public class DeviceIdTests {
         store.clear();
 
         assertEquals(DeviceIdType.OPEN_UDID, new DeviceId(null, store, mock(ModuleLog.class), new OpenUDIDProvider() {
-            @Override public String getOpenUDID() {
+            @Override public String getUUID() {
                 return "abc";
             }
         }).getType());

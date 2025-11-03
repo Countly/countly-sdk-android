@@ -2,23 +2,22 @@ package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Display;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.RelativeLayout;
 import androidx.annotation.Nullable;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,77 +29,79 @@ public class TransparentActivity extends Activity {
     static final String CONFIGURATION_LANDSCAPE = "Landscape";
     static final String CONFIGURATION_PORTRAIT = "Portrait";
     static final String ORIENTATION = "orientation";
-    private static final String URL_START = "https://countly_action_event";
+    static final String WIDGET_INFO = "widget_info";
+    static final String ID_CALLBACK = "id_callback";
     int currentOrientation = 0;
+    long ID = -1;
     TransparentActivityConfig configLandscape = null;
     TransparentActivityConfig configPortrait = null;
     WebView webView;
     RelativeLayout relativeLayout;
-    static ContentCallback globalContentCallback;
+    static Map<Long, ContentCallback> contentCallbacks = new ConcurrentHashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         Log.d(Countly.TAG, "[TransparentActivity] onCreate, content received, showing it");
+
+        // there is a stripe at the top of the screen for contents
+        // we eliminate it with hiding the system ui
         super.onCreate(savedInstanceState);
         overridePendingTransition(0, 0);
 
         // Get extras
         Intent intent = getIntent();
-        currentOrientation = (int) intent.getSerializableExtra(ORIENTATION);
+        ID = intent.getLongExtra(ID_CALLBACK, -1);
+        currentOrientation = intent.getIntExtra(ORIENTATION, 0);
         configLandscape = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_LANDSCAPE);
         configPortrait = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_PORTRAIT);
         Log.v(Countly.TAG, "[TransparentActivity] onCreate, orientation: " + currentOrientation);
-        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configLandscape  x: [" + configLandscape.x + "] y: [" + configLandscape.y + "] width: [" + configLandscape.width + "] height: [" + configLandscape.height + "]");
-        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configPortrait  x: [" + configPortrait.x + "] y: [" + configPortrait.y + "] width: [" + configPortrait.width + "] height: [" + configPortrait.height + "]");
+        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configLandscape  x: [" + configLandscape.x + "] y: [" + configLandscape.y + "] width: [" + configLandscape.width + "] height: [" + configLandscape.height + "], topOffset: [" + configLandscape.topOffset + "], leftOffset: [" + configLandscape.leftOffset + "]");
+        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configPortrait  x: [" + configPortrait.x + "] y: [" + configPortrait.y + "] width: [" + configPortrait.width + "] height: [" + configPortrait.height + "], topOffset: [" + configPortrait.topOffset + "], leftOffset: [" + configPortrait.leftOffset + "]");
 
         TransparentActivityConfig config;
-        int navBarHeight = 0;
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             config = configLandscape;
         } else {
-            // This is only needed for the portrait mode and
-            // after android 35 the function that gives height gives the full height of the screen
-            // so we need to subtract the height of the navigation bar
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                navBarHeight = getNavigationBarHeight();
-            }
-
             config = configPortrait;
         }
 
         config = setupConfig(config);
 
-        int width = config.width;
-        int height = config.height - navBarHeight;
-
-        configLandscape.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configLandscape, webView);
-            }
-            return false;
-        });
-
-        configPortrait.listeners.add((url, webView) -> {
-            if (url.startsWith(URL_START)) {
-                return contentUrlAction(url, configPortrait, webView);
-            }
-            return false;
-        });
-
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
-        params.gravity = Gravity.TOP | Gravity.LEFT; // try out START
-        params.x = config.x;
-        params.y = config.y;
-        params.height = height;
-        params.width = width;
-        params.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+        params.gravity = Gravity.TOP | Gravity.START; // try out START
+        
+        int adjustedX = config.x;
+        int adjustedY = config.y;
+        
+        if (config.useSafeArea) {
+            if (config.leftOffset > 0) {
+                adjustedX += config.leftOffset;
+                Log.d(Countly.TAG, "[TransparentActivity] onCreate, using safe area mode, adjusting x from [" + config.x + "] to [" + adjustedX + "] (leftOffset: " + config.leftOffset + ")");
+            }
+            if (config.topOffset > 0) {
+                adjustedY += config.topOffset;
+                Log.d(Countly.TAG, "[TransparentActivity] onCreate, using safe area mode, adjusting y from [" + config.y + "] to [" + adjustedY + "] (topOffset: " + config.topOffset + ")");
+            }
+        }
+        
+        params.x = adjustedX;
+        params.y = adjustedY;
+        
+        params.height = config.height;
+        params.width = config.width;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
         getWindow().setAttributes(params);
+        
+        WindowManager.LayoutParams verifyParams = getWindow().getAttributes();
+        Log.d(Countly.TAG, "[TransparentActivity] onCreate, AFTER setAttributes - params.x: [" + verifyParams.x + "], params.y: [" + verifyParams.y + "], params.gravity: [" + verifyParams.gravity + "], width: [" + verifyParams.width + "], height: [" + verifyParams.height + "]");
+        
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         // Create and configure the layout
         relativeLayout = new RelativeLayout(this);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(width, height);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
         relativeLayout.setLayoutParams(layoutParams);
         webView = createWebView(config);
 
@@ -110,83 +111,166 @@ public class TransparentActivity extends Activity {
     }
 
     private TransparentActivityConfig setupConfig(@Nullable TransparentActivityConfig config) {
-        final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-        final Display display = wm.getDefaultDisplay();
-        final DisplayMetrics metrics = new DisplayMetrics(); // this gets all
-        display.getMetrics(metrics);
-
         if (config == null) {
-            Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values with full screen size");
+            Log.w(Countly.TAG, "[TransparentActivity] setupConfig, Config is null, using default values");
+            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
             return new TransparentActivityConfig(0, 0, metrics.widthPixels, metrics.heightPixels);
         }
 
-        if (config.width < 1) {
-            config.width = metrics.widthPixels;
+        if (!config.useSafeArea) {
+            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
+            
+            if (config.width < 1) {
+                config.width = metrics.widthPixels;
+            }
+            if (config.height < 1) {
+                config.height = metrics.heightPixels;
+            }
         }
-        if (config.height < 1) {
-            config.height = metrics.heightPixels;
-        }
+        
         if (config.x < 1) {
             config.x = 0;
         }
         if (config.y < 1) {
             config.y = 0;
         }
+        
+        Log.d(Countly.TAG, "[TransparentActivity] setupConfig, final config - x: [" + config.x + "], y: [" + config.y + "], width: [" + config.width + "], height: [" + config.height + "], useSafeArea: [" + config.useSafeArea + "]");
         return config;
     }
 
-    private void changeOrientation(TransparentActivityConfig config, int navBarHeight) {
-        Log.d(Countly.TAG, "[TransparentActivity] changeOrientation, config x: [" + config.x + "] y: [" + config.y + "] width: [" + config.width + "] height: [" + config.height + "]");
+    private void resizeContent(TransparentActivityConfig config) {
+        Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), config dimensions (px): [" + config.width + "x" + config.height + "], x: [" + config.x + "], y: [" + config.y + "], useSafeArea: [" + config.useSafeArea + "], topOffset: [" + config.topOffset + "], leftOffset: [" + config.leftOffset + "]");
+        
+        int adjustedX = config.x;
+        int adjustedY = config.y;
+        
+        if (config.useSafeArea) {
+            if (config.leftOffset > 0) {
+                adjustedX += config.leftOffset;
+                Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), applying left offset, adjusted x: [" + adjustedX + "]");
+            }
+            if (config.topOffset > 0) {
+                adjustedY += config.topOffset;
+                Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), applying top offset, adjusted y: [" + adjustedY + "]");
+            }
+        }
+        
         WindowManager.LayoutParams params = getWindow().getAttributes();
-        params.x = config.x;
-        params.y = config.y;
-        params.height = config.height - navBarHeight;
+        Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), BEFORE - params.x: [" + params.x + "], params.y: [" + params.y + "], params.gravity: [" + params.gravity + "]");
+        params.gravity = Gravity.TOP | Gravity.START; // safe?
+        params.x = adjustedX;
+        params.y = adjustedY;
+        params.height = config.height;
         params.width = config.width;
         getWindow().setAttributes(params);
+        
+        WindowManager.LayoutParams verifyParams = getWindow().getAttributes();
+        Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), AFTER - params.x: [" + verifyParams.x + "], params.y: [" + verifyParams.y + "], params.gravity: [" + verifyParams.gravity + "], width: [" + verifyParams.width + "], height: [" + verifyParams.height + "]");
 
         ViewGroup.LayoutParams layoutParams = relativeLayout.getLayoutParams();
         layoutParams.width = config.width;
-        layoutParams.height = config.height - navBarHeight;
+        layoutParams.height = config.height;
         relativeLayout.setLayoutParams(layoutParams);
 
         ViewGroup.LayoutParams webLayoutParams = webView.getLayoutParams();
         webLayoutParams.width = config.width;
-        webLayoutParams.height = config.height - navBarHeight;
+        webLayoutParams.height = config.height;
         webView.setLayoutParams(webLayoutParams);
+        
+        Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), layout params set - relativeLayout: [" + layoutParams.width + "x" + layoutParams.height + "], webView: [" + webLayoutParams.width + "x" + webLayoutParams.height + "]");
     }
 
     @Override
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
         Log.d(Countly.TAG, "[TransparentActivity] onConfigurationChanged orientation: [" + newConfig.orientation + "], currentOrientation: [" + currentOrientation + "]");
-        Log.v(Countly.TAG, "[TransparentActivity] onConfigurationChanged, Landscape: [" + Configuration.ORIENTATION_LANDSCAPE + "] Portrait: [" + Configuration.ORIENTATION_PORTRAIT + "]");
+
         if (currentOrientation != newConfig.orientation) {
             currentOrientation = newConfig.orientation;
-            Log.i(Countly.TAG, "[TransparentActivity] onConfigurationChanged, orientation changed to currentOrientation: [" + currentOrientation + "]");
-            changeOrientationInternal();
         }
+
+        resizeContent();
     }
 
-    private void changeOrientationInternal() {
+    private void resizeContent() {
+        TransparentActivityConfig currentConfig = (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) ? configLandscape : configPortrait;
+        
+        float density = getResources().getDisplayMetrics().density;
+        int widthPx, heightPx;
+        
+        if (currentConfig != null && currentConfig.useSafeArea) {
+            Log.d(Countly.TAG, "[TransparentActivity] resizeContent, recalculating safe area dimensions for orientation change");
+            
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(this, Countly.sharedInstance().L);
+            
+            configPortrait.topOffset = safeArea.portraitTopOffset;
+            configPortrait.leftOffset = safeArea.portraitLeftOffset;
+            configLandscape.topOffset = safeArea.landscapeTopOffset;
+            configLandscape.leftOffset = safeArea.landscapeLeftOffset;
+            
+            Log.d(Countly.TAG, "[TransparentActivity] resizeContent, updated offsets - Portrait: topOffset=[" + configPortrait.topOffset + "], leftOffset=[" + configPortrait.leftOffset + "]");
+            Log.d(Countly.TAG, "[TransparentActivity] resizeContent, updated offsets - Landscape: topOffset=[" + configLandscape.topOffset + "], leftOffset=[" + configLandscape.leftOffset + "]");
+            
+            int topOffset, leftOffset;
+            if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
+                widthPx = safeArea.landscapeWidth;
+                heightPx = safeArea.landscapeHeight;
+                topOffset = safeArea.landscapeTopOffset;
+                leftOffset = safeArea.landscapeLeftOffset;
+            } else {
+                widthPx = safeArea.portraitWidth;
+                heightPx = safeArea.portraitHeight;
+                topOffset = safeArea.portraitTopOffset;
+                leftOffset = safeArea.portraitLeftOffset;
+            }
+            
+            Log.d(Countly.TAG, "[TransparentActivity] resizeContent, safe area mode - sending dimensions to webview (px): [" + widthPx + "x" + heightPx + "], (dp): [" + Math.round(widthPx / density) + "x" + Math.round(heightPx / density) + "], density: [" + density + "], topOffset: [" + topOffset + "], leftOffset: [" + leftOffset + "]");
+        } else {
+            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
+            widthPx = metrics.widthPixels;
+            heightPx = metrics.heightPixels;
+            
+            Log.d(Countly.TAG, "[TransparentActivity] resizeContent, immersive mode - sending dimensions to webview (px): [" + widthPx + "x" + heightPx + "], (dp): [" + Math.round(widthPx / density) + "x" + Math.round(heightPx / density) + "], density: [" + density + "]");
+        }
+        
+        int scaledWidth = Math.round(widthPx / density);
+        int scaledHeight = Math.round(heightPx / density);
+        webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
+    }
+
+    @Override
+    public void onDestroy() {
+        close(new HashMap<>());
+
+        if (Countly.sharedInstance().isInitialized()) {
+            Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+        }
+        super.onDestroy();
+    }
+
+    private void hideSystemUI() {
+        getWindow().getDecorView().setSystemUiVisibility(
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE |
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN);
+    }
+
+    private void resizeContentInternal() {
         switch (currentOrientation) {
             case Configuration.ORIENTATION_LANDSCAPE:
                 if (configLandscape != null) {
                     configLandscape = setupConfig(configLandscape);
-                    changeOrientation(configLandscape, 0);
+                    resizeContent(configLandscape);
                 }
                 break;
             case Configuration.ORIENTATION_PORTRAIT:
                 if (configPortrait != null) {
                     configPortrait = setupConfig(configPortrait);
-                    // This is only needed for the portrait mode and
-                    // after android 35 the function that gives height gives the full height of the screen
-                    // so we need to subtract the height of the navigation bar
-                    // this is implemented twice because in the future resize_me action will be able to change the height of the content
-                    int navBarHeight = 0;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                        navBarHeight = getNavigationBarHeight();
-                    }
-                    changeOrientation(configPortrait, navBarHeight);
+                    resizeContent(configPortrait);
                 }
                 break;
             default:
@@ -194,7 +278,28 @@ public class TransparentActivity extends Activity {
         }
     }
 
-    private boolean contentUrlAction(String url, TransparentActivityConfig config, WebView view) {
+    private boolean widgetUrlAction(String url, WebView view) {
+        Map<String, Object> query = splitQuery(url);
+        Object widgetCommand = query.get("?cly_widget_command");
+
+        if (widgetCommand == null || !widgetCommand.equals("1")) {
+            Log.w(Countly.TAG, "[TransparentActivity] widgetUrlAction, event:[" + widgetCommand + "] this is not a countly widget command url");
+            return false;
+        }
+
+        if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
+            if (Countly.sharedInstance().isInitialized()) {
+                close(query);
+
+                ModuleFeedback.CountlyFeedbackWidget widgetInfo = (ModuleFeedback.CountlyFeedbackWidget) getIntent().getSerializableExtra(WIDGET_INFO);
+                Countly.sharedInstance().moduleFeedback.reportFeedbackWidgetCancelButton(widgetInfo);
+            }
+        }
+
+        return true;
+    }
+
+    private boolean contentUrlAction(String url, WebView view) {
         Log.d(Countly.TAG, "[TransparentActivity] contentUrlAction, url: [" + url + "]");
         Map<String, Object> query = splitQuery(url);
         Log.v(Countly.TAG, "[TransparentActivity] contentUrlAction, query: [" + query + "]");
@@ -228,11 +333,11 @@ public class TransparentActivity extends Activity {
         }
 
         if (query.containsKey("close") && Objects.equals(query.get("close"), "1")) {
-            if (globalContentCallback != null) { // TODO: verify this later
-                globalContentCallback.onContentCallback(ContentStatus.CLOSED, query);
+            close(query);
+
+            if (Countly.sharedInstance().isInitialized()) {
+                Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
             }
-            ModuleContent.waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
-            finish();
         }
 
         return true;
@@ -267,28 +372,41 @@ public class TransparentActivity extends Activity {
             return;
         }
         try {
-            final WindowManager wm = (WindowManager) getSystemService(Context.WINDOW_SERVICE);
-            final Display display = wm.getDefaultDisplay();
-            final DisplayMetrics metrics = new DisplayMetrics();
-            display.getMetrics(metrics);
-
+            final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
             float density = metrics.density;
 
             JSONObject resizeMeJson = (JSONObject) resizeMe;
             Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: [" + resizeMeJson + "]");
             JSONObject portrait = resizeMeJson.getJSONObject("p");
             JSONObject landscape = resizeMeJson.getJSONObject("l");
+            
+            boolean portraitUseSafeArea = configPortrait.useSafeArea;
+            boolean landscapeUseSafeArea = configLandscape.useSafeArea;
+            int portraitTopOffset = configPortrait.topOffset;
+            int landscapeTopOffset = configLandscape.topOffset;
+            int portraitLeftOffset = configPortrait.leftOffset;
+            int landscapeLeftOffset = configLandscape.leftOffset;
+            
             configPortrait.x = (int) Math.ceil(portrait.getInt("x") * density);
             configPortrait.y = (int) Math.ceil(portrait.getInt("y") * density);
             configPortrait.width = (int) Math.ceil(portrait.getInt("w") * density);
             configPortrait.height = (int) Math.ceil(portrait.getInt("h") * density);
+            configPortrait.useSafeArea = portraitUseSafeArea;
+            configPortrait.topOffset = portraitTopOffset;
+            configPortrait.leftOffset = portraitLeftOffset;
 
             configLandscape.x = (int) Math.ceil(landscape.getInt("x") * density);
             configLandscape.y = (int) Math.ceil(landscape.getInt("y") * density);
             configLandscape.width = (int) Math.ceil(landscape.getInt("w") * density);
             configLandscape.height = (int) Math.ceil(landscape.getInt("h") * density);
+            configLandscape.useSafeArea = landscapeUseSafeArea;
+            configLandscape.topOffset = landscapeTopOffset;
+            configLandscape.leftOffset = landscapeLeftOffset;
+            
+            Log.d(Countly.TAG, "[TransparentActivity] resizeMeAction, updated configs - Portrait: useSafeArea=[" + portraitUseSafeArea + "], topOffset=[" + portraitTopOffset + "], leftOffset=[" + portraitLeftOffset + "]");
+            Log.d(Countly.TAG, "[TransparentActivity] resizeMeAction, updated configs - Landscape: useSafeArea=[" + landscapeUseSafeArea + "], topOffset=[" + landscapeTopOffset + "], leftOffset=[" + landscapeLeftOffset + "]");
 
-            changeOrientationInternal();
+            resizeContentInternal();
         } catch (JSONException e) {
             Log.e(Countly.TAG, "[TransparentActivity] resizeMeAction, Failed to parse resize JSON", e);
         }
@@ -337,7 +455,7 @@ public class TransparentActivity extends Activity {
 
     private Map<String, Object> splitQuery(String url) {
         Map<String, Object> query_pairs = new ConcurrentHashMap<>();
-        String[] pairs = url.split("https://countly_action_event/?");
+        String[] pairs = url.split(Utils.COMM_URL + "/?");
         if (pairs.length != 2) {
             return query_pairs;
         }
@@ -364,9 +482,18 @@ public class TransparentActivity extends Activity {
         return query_pairs;
     }
 
+    private void close(Map<String, Object> contentData) {
+        if (contentCallbacks.get(ID) != null) {
+            contentCallbacks.get(ID).onContentCallback(ContentStatus.CLOSED, contentData);
+            contentCallbacks.remove(ID);
+        }
+        super.finish();
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     private WebView createWebView(TransparentActivityConfig config) {
         WebView webView = new CountlyWebView(this);
+        webView.setVisibility(View.INVISIBLE);
         RelativeLayout.LayoutParams webLayoutParams = new RelativeLayout.LayoutParams(config.width, config.height);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
         webLayoutParams.addRule(RelativeLayout.ALIGN_PARENT_END);
@@ -379,18 +506,44 @@ public class TransparentActivity extends Activity {
         webView.clearHistory();
 
         CountlyWebViewClient client = new CountlyWebViewClient();
-        client.registerWebViewUrlListeners(config.listeners);
+        client.registerWebViewUrlListener(new WebViewUrlListener() {
+            @Override public boolean onUrl(String url, WebView webView) {
+                if (url.startsWith(Utils.COMM_URL)) {
+                    if (url.contains("cly_x_action_event")) {
+                        return contentUrlAction(url, webView);
+                    } else if (url.contains("cly_widget_command")) {
+                        return widgetUrlAction(url, webView);
+                    }
+                }
 
+                if (url.endsWith("cly_x_int=1")) {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    startActivity(intent);
+                    return true;
+                }
+
+                return false;
+            }
+        });
+        client.afterPageFinished = new WebViewPageLoadedListener() {
+            @Override public void onPageLoaded(boolean timedOut) {
+                if (timedOut) {
+                    close(new HashMap<>());
+
+                    if (Countly.sharedInstance().isInitialized()) {
+                        Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
+                    }
+                } else {
+                    TransparentActivityConfig currentConfig = currentOrientation == Configuration.ORIENTATION_LANDSCAPE ? configLandscape : configPortrait;
+                    if (currentConfig != null && !currentConfig.useSafeArea) {
+                        hideSystemUI();
+                    }
+                    webView.setVisibility(View.VISIBLE);
+                }
+            }
+        };
         webView.setWebViewClient(client);
         webView.loadUrl(config.url);
         return webView;
-    }
-
-    private int getNavigationBarHeight() {
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            return getResources().getDimensionPixelSize(resourceId);
-        }
-        return 0;
     }
 }

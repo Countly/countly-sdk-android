@@ -2,7 +2,7 @@ name: The Countly Android SDK Unit Test
 
 env:
   EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
-  JAVA_V: 11
+  JAVA_V: 17
   JAVA_DIST: corretto
 
 permissions:
@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Install Docker to the Runner
-        run: sudo apt-get install docker
+        run: sudo apt-get install containerd.io
 
       - name: Pull Emulator from the Repo
         run: docker pull ${{ env.EMULATOR_REPO }}

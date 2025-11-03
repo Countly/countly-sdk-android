@@ -18,7 +18,7 @@ public class BreadcrumbHelperTests {
     @Test
     public void addBreadcrumb() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("test", 10);
+        breadcrumbHelper.addBreadcrumb("test", 10, 5);
         Assert.assertEquals(list("test"), breadcrumbHelper.getBreadcrumbs());
     }
 
@@ -29,7 +29,7 @@ public class BreadcrumbHelperTests {
     @Test(expected = AssertionError.class)
     public void addBreadcrumb_emptyString() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("", 10);
+        breadcrumbHelper.addBreadcrumb("", 10, 5);
     }
 
     /**
@@ -39,7 +39,7 @@ public class BreadcrumbHelperTests {
     @Test(expected = AssertionError.class)
     public void addBreadcrumb_null() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb(null, 10);
+        breadcrumbHelper.addBreadcrumb(null, 10, 5);
     }
 
     /**
@@ -49,7 +49,7 @@ public class BreadcrumbHelperTests {
     @Test
     public void addBreadcrumb_exceedsCharacterLimit() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(5, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("Test", 2);
+        breadcrumbHelper.addBreadcrumb("Test", 2, 5);
         Assert.assertEquals(list("Te"), breadcrumbHelper.getBreadcrumbs());
     }
 
@@ -60,11 +60,11 @@ public class BreadcrumbHelperTests {
     @Test
     public void addBreadcrumb_exceedsLimit() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(2, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("Test", 3);
+        breadcrumbHelper.addBreadcrumb("Test", 3, 2);
         Assert.assertEquals(list("Tes"), breadcrumbHelper.getBreadcrumbs());
-        breadcrumbHelper.addBreadcrumb("Doggy", 3);
+        breadcrumbHelper.addBreadcrumb("Doggy", 3, 2);
         Assert.assertEquals(list("Tes", "Dog"), breadcrumbHelper.getBreadcrumbs());
-        breadcrumbHelper.addBreadcrumb("Geralt", 3);
+        breadcrumbHelper.addBreadcrumb("Geralt", 3, 2);
         Assert.assertEquals(list("Dog", "Ger"), breadcrumbHelper.getBreadcrumbs());
     }
 
@@ -75,7 +75,7 @@ public class BreadcrumbHelperTests {
     @Test
     public void clearBreadcrumbs() {
         BreadcrumbHelper breadcrumbHelper = new BreadcrumbHelper(2, new ModuleLog());
-        breadcrumbHelper.addBreadcrumb("Test", 3);
+        breadcrumbHelper.addBreadcrumb("Test", 3, 2);
         Assert.assertEquals(list("Tes"), breadcrumbHelper.getBreadcrumbs());
         breadcrumbHelper.clearBreadcrumbs();
         Assert.assertEquals(list(), breadcrumbHelper.getBreadcrumbs());
