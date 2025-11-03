@@ -1,12 +1,12 @@
-## X.X.X
-* Mitigated a potential issue where Remote Config calls could have block the main UI thread processes.
+## 25.4.5
 * Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
 * Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
   * `IMMERSIVE` mode (default): Full-screen display (except cutouts).
   * `SAFE_AREA` mode: Omits status bar, navigation bar and cutouts when displaying webviews.
-* Added a new init config option `disableGradualRequestCleaner()` to change request queue overflow behavior. When enabled, all overflowing requests (plus one slot) are removed at once instead of being cleaned gradually in limited batches.
+* Added a new config option `disableGradualRequestCleaner()` to change request queue overflow behavior. When enabled, all overflowing requests are removed at once instead of in batches.
+* Added a new method `requestQueue().addCustomNetworkRequestHeaders(Map<String,String>)` for providing or overriding custom headers after init .
 
-* Added a new method `requestQueue().addCustomNetworkRequestHeaders(Map<String,String>)` for providing or overriding custom headers after init 
+* Mitigated a potential issue where Remote Config calls could have blocked the main UI thread processes.
 
 * Immediate requests now will be run by parallel executor instead of serial by default.
 
