@@ -55,8 +55,21 @@ public class TransparentActivity extends Activity {
         configLandscape = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_LANDSCAPE);
         configPortrait = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_PORTRAIT);
         Log.v(Countly.TAG, "[TransparentActivity] onCreate, orientation: " + currentOrientation);
-        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configLandscape  x: [" + configLandscape.x + "] y: [" + configLandscape.y + "] width: [" + configLandscape.width + "] height: [" + configLandscape.height + "], topOffset: [" + configLandscape.topOffset + "], leftOffset: [" + configLandscape.leftOffset + "]");
-        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configPortrait  x: [" + configPortrait.x + "] y: [" + configPortrait.y + "] width: [" + configPortrait.width + "] height: [" + configPortrait.height + "], topOffset: [" + configPortrait.topOffset + "], leftOffset: [" + configPortrait.leftOffset + "]");
+        Log.v(Countly.TAG, "[TransparentActivity] onCreate, configLandscape  x: ["
+            + configLandscape.x
+            + "] y: ["
+            + configLandscape.y
+            + "] width: ["
+            + configLandscape.width
+            + "] height: ["
+            + configLandscape.height
+            + "], topOffset: ["
+            + configLandscape.topOffset
+            + "], leftOffset: ["
+            + configLandscape.leftOffset
+            + "]");
+        Log.v(Countly.TAG,
+            "[TransparentActivity] onCreate, configPortrait  x: [" + configPortrait.x + "] y: [" + configPortrait.y + "] width: [" + configPortrait.width + "] height: [" + configPortrait.height + "], topOffset: [" + configPortrait.topOffset + "], leftOffset: [" + configPortrait.leftOffset + "]");
 
         TransparentActivityConfig config;
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -70,10 +83,10 @@ public class TransparentActivity extends Activity {
         // Configure window layout parameters
         WindowManager.LayoutParams params = new WindowManager.LayoutParams();
         params.gravity = Gravity.TOP | Gravity.START; // try out START
-        
+
         int adjustedX = config.x;
         int adjustedY = config.y;
-        
+
         if (config.useSafeArea) {
             if (config.leftOffset > 0) {
                 adjustedX += config.leftOffset;
@@ -84,10 +97,10 @@ public class TransparentActivity extends Activity {
                 Log.d(Countly.TAG, "[TransparentActivity] onCreate, using safe area mode, adjusting y from [" + config.y + "] to [" + adjustedY + "] (topOffset: " + config.topOffset + ")");
             }
         }
-        
+
         params.x = adjustedX;
         params.y = adjustedY;
-        
+
         params.height = config.height;
         params.width = config.width;
         params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
@@ -119,7 +132,7 @@ public class TransparentActivity extends Activity {
 
         if (!config.useSafeArea) {
             final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
-            
+
             if (config.width < 1) {
                 config.width = metrics.widthPixels;
             }
@@ -127,24 +140,25 @@ public class TransparentActivity extends Activity {
                 config.height = metrics.heightPixels;
             }
         }
-        
+
         if (config.x < 1) {
             config.x = 0;
         }
         if (config.y < 1) {
             config.y = 0;
         }
-        
+
         Log.d(Countly.TAG, "[TransparentActivity] setupConfig, final config - x: [" + config.x + "], y: [" + config.y + "], width: [" + config.width + "], height: [" + config.height + "], useSafeArea: [" + config.useSafeArea + "]");
         return config;
     }
 
     private void resizeContent(TransparentActivityConfig config) {
-        Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), config dimensions (px): [" + config.width + "x" + config.height + "], x: [" + config.x + "], y: [" + config.y + "], useSafeArea: [" + config.useSafeArea + "], topOffset: [" + config.topOffset + "], leftOffset: [" + config.leftOffset + "]");
-        
+        Log.d(Countly.TAG,
+            "[TransparentActivity] resizeContent(config), config dimensions (px): [" + config.width + "x" + config.height + "], x: [" + config.x + "], y: [" + config.y + "], useSafeArea: [" + config.useSafeArea + "], topOffset: [" + config.topOffset + "], leftOffset: [" + config.leftOffset + "]");
+
         int adjustedX = config.x;
         int adjustedY = config.y;
-        
+
         if (config.useSafeArea) {
             if (config.leftOffset > 0) {
                 adjustedX += config.leftOffset;
@@ -155,7 +169,7 @@ public class TransparentActivity extends Activity {
                 Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), applying top offset, adjusted y: [" + adjustedY + "]");
             }
         }
-        
+
         WindowManager.LayoutParams params = getWindow().getAttributes();
         Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), BEFORE - params.x: [" + params.x + "], params.y: [" + params.y + "], params.gravity: [" + params.gravity + "]");
         params.gravity = Gravity.TOP | Gravity.START; // safe?
@@ -164,7 +178,7 @@ public class TransparentActivity extends Activity {
         params.height = config.height;
         params.width = config.width;
         getWindow().setAttributes(params);
-        
+
         WindowManager.LayoutParams verifyParams = getWindow().getAttributes();
         Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), AFTER - params.x: [" + verifyParams.x + "], params.y: [" + verifyParams.y + "], params.gravity: [" + verifyParams.gravity + "], width: [" + verifyParams.width + "], height: [" + verifyParams.height + "]");
 
@@ -177,7 +191,7 @@ public class TransparentActivity extends Activity {
         webLayoutParams.width = config.width;
         webLayoutParams.height = config.height;
         webView.setLayoutParams(webLayoutParams);
-        
+
         Log.d(Countly.TAG, "[TransparentActivity] resizeContent(config), layout params set - relativeLayout: [" + layoutParams.width + "x" + layoutParams.height + "], webView: [" + webLayoutParams.width + "x" + webLayoutParams.height + "]");
     }
 
@@ -195,23 +209,23 @@ public class TransparentActivity extends Activity {
 
     private void resizeContent() {
         TransparentActivityConfig currentConfig = (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) ? configLandscape : configPortrait;
-        
+
         float density = getResources().getDisplayMetrics().density;
         int widthPx, heightPx;
-        
+
         if (currentConfig != null && currentConfig.useSafeArea) {
             Log.d(Countly.TAG, "[TransparentActivity] resizeContent, recalculating safe area dimensions for orientation change");
-            
+
             SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(this, Countly.sharedInstance().L);
-            
+
             configPortrait.topOffset = safeArea.portraitTopOffset;
             configPortrait.leftOffset = safeArea.portraitLeftOffset;
             configLandscape.topOffset = safeArea.landscapeTopOffset;
             configLandscape.leftOffset = safeArea.landscapeLeftOffset;
-            
+
             Log.d(Countly.TAG, "[TransparentActivity] resizeContent, updated offsets - Portrait: topOffset=[" + configPortrait.topOffset + "], leftOffset=[" + configPortrait.leftOffset + "]");
             Log.d(Countly.TAG, "[TransparentActivity] resizeContent, updated offsets - Landscape: topOffset=[" + configLandscape.topOffset + "], leftOffset=[" + configLandscape.leftOffset + "]");
-            
+
             int topOffset, leftOffset;
             if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
                 widthPx = safeArea.landscapeWidth;
@@ -224,16 +238,30 @@ public class TransparentActivity extends Activity {
                 topOffset = safeArea.portraitTopOffset;
                 leftOffset = safeArea.portraitLeftOffset;
             }
-            
-            Log.d(Countly.TAG, "[TransparentActivity] resizeContent, safe area mode - sending dimensions to webview (px): [" + widthPx + "x" + heightPx + "], (dp): [" + Math.round(widthPx / density) + "x" + Math.round(heightPx / density) + "], density: [" + density + "], topOffset: [" + topOffset + "], leftOffset: [" + leftOffset + "]");
+
+            Log.d(Countly.TAG, "[TransparentActivity] resizeContent, safe area mode - sending dimensions to webview (px): ["
+                + widthPx
+                + "x"
+                + heightPx
+                + "], (dp): ["
+                + Math.round(widthPx / density)
+                + "x"
+                + Math.round(heightPx / density)
+                + "], density: ["
+                + density
+                + "], topOffset: ["
+                + topOffset
+                + "], leftOffset: ["
+                + leftOffset
+                + "]");
         } else {
             final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(this);
             widthPx = metrics.widthPixels;
             heightPx = metrics.heightPixels;
-            
+
             Log.d(Countly.TAG, "[TransparentActivity] resizeContent, immersive mode - sending dimensions to webview (px): [" + widthPx + "x" + heightPx + "], (dp): [" + Math.round(widthPx / density) + "x" + Math.round(heightPx / density) + "], density: [" + density + "]");
         }
-        
+
         int scaledWidth = Math.round(widthPx / density);
         int scaledHeight = Math.round(heightPx / density);
         webView.loadUrl("javascript:window.postMessage({type: 'resize', width: " + scaledWidth + ", height: " + scaledHeight + "}, '*');");
@@ -379,14 +407,14 @@ public class TransparentActivity extends Activity {
             Log.v(Countly.TAG, "[TransparentActivity] resizeMeAction, resize_me JSON: [" + resizeMeJson + "]");
             JSONObject portrait = resizeMeJson.getJSONObject("p");
             JSONObject landscape = resizeMeJson.getJSONObject("l");
-            
+
             boolean portraitUseSafeArea = configPortrait.useSafeArea;
             boolean landscapeUseSafeArea = configLandscape.useSafeArea;
             int portraitTopOffset = configPortrait.topOffset;
             int landscapeTopOffset = configLandscape.topOffset;
             int portraitLeftOffset = configPortrait.leftOffset;
             int landscapeLeftOffset = configLandscape.leftOffset;
-            
+
             configPortrait.x = (int) Math.ceil(portrait.getInt("x") * density);
             configPortrait.y = (int) Math.ceil(portrait.getInt("y") * density);
             configPortrait.width = (int) Math.ceil(portrait.getInt("w") * density);
@@ -402,7 +430,7 @@ public class TransparentActivity extends Activity {
             configLandscape.useSafeArea = landscapeUseSafeArea;
             configLandscape.topOffset = landscapeTopOffset;
             configLandscape.leftOffset = landscapeLeftOffset;
-            
+
             Log.d(Countly.TAG, "[TransparentActivity] resizeMeAction, updated configs - Portrait: useSafeArea=[" + portraitUseSafeArea + "], topOffset=[" + portraitTopOffset + "], leftOffset=[" + portraitLeftOffset + "]");
             Log.d(Countly.TAG, "[TransparentActivity] resizeMeAction, updated configs - Landscape: useSafeArea=[" + landscapeUseSafeArea + "], topOffset=[" + landscapeTopOffset + "], leftOffset=[" + landscapeLeftOffset + "]");
 
