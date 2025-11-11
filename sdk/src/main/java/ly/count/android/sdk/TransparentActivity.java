@@ -554,8 +554,8 @@ public class TransparentActivity extends Activity {
             }
         });
         client.afterPageFinished = new WebViewPageLoadedListener() {
-            @Override public void onPageLoaded(boolean timedOut) {
-                if (timedOut) {
+            @Override public void onPageLoaded(boolean failed) {
+                if (failed) {
                     close(new HashMap<>());
 
                     if (Countly.sharedInstance().isInitialized()) {
