@@ -103,13 +103,13 @@ public class TransparentActivity extends Activity {
 
         params.height = config.height;
         params.width = config.width;
-        params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-            | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
+        params.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         getWindow().setAttributes(params);
-        
+
         WindowManager.LayoutParams verifyParams = getWindow().getAttributes();
         Log.d(Countly.TAG, "[TransparentActivity] onCreate, AFTER setAttributes - params.x: [" + verifyParams.x + "], params.y: [" + verifyParams.y + "], params.gravity: [" + verifyParams.gravity + "], width: [" + verifyParams.width + "], height: [" + verifyParams.height + "]");
-        
+
         getWindow().setBackgroundDrawableResource(android.R.color.transparent);
 
         // Create and configure the layout
@@ -562,6 +562,11 @@ public class TransparentActivity extends Activity {
                         Countly.sharedInstance().moduleContent.notifyAfterContentIsClosed();
                     }
                 } else {
+                    getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                        | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH);
+
                     TransparentActivityConfig currentConfig = currentOrientation == Configuration.ORIENTATION_LANDSCAPE ? configLandscape : configPortrait;
                     if (currentConfig != null && !currentConfig.useSafeArea) {
                         hideSystemUI();
