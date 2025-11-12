@@ -123,14 +123,14 @@ public class scUP_UserProfileTests {
     /**
      * Related user properties should not be saved with session calls,
      * call order, user property before session, begin session, user property after begin session, update session, user property after update session, end session
-     * generated request order begin_session + orientation + update_session + user properties + end_session
+     * generated request order begin_session  + update_session + user properties + end_session
      * manual sessions are enabled
      * UPDATE: session calls now trigger saving properties like events as well
-     * UPDATED_REQUEST_ORDER: user property before session + begin_session + orientation + user property after begin session + update_session + user property after update session + end_session
+     * UPDATED_REQUEST_ORDER: user property before session + begin_session  + user property after begin session + update_session + user property after update session + end_session
      */
     @Test
     public void eventSaveScenario_sessionCallsTriggersSave_M() throws JSONException, InterruptedException {
-        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl());
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl().setTrackOrientationChanges(false));
 
         TestUtils.assertRQSize(0);
         countly.userProfile().setProperty("before_session", true);
@@ -147,20 +147,20 @@ public class scUP_UserProfileTests {
         Thread.sleep(2000);
 
         countly.sessions().updateSession();
-        TestUtils.assertRQSize(5); // only begin session, orientation and update session requests, UPDATE: user property request after update session
+        TestUtils.assertRQSize(4); // only begin session and update session requests, UPDATE: user property request after begin and update session
 
-        ModuleUserProfileTests.validateUserProfileRequest(3, 5, TestUtils.map(), TestUtils.map("after_begin_session", true));
-        ModuleSessionsTests.validateSessionUpdateRequest(4, 2, TestUtils.commonDeviceId);
+        ModuleUserProfileTests.validateUserProfileRequest(2, 4, TestUtils.map(), TestUtils.map("after_begin_session", true));
+        ModuleSessionsTests.validateSessionUpdateRequest(3, 2, TestUtils.commonDeviceId);
 
         countly.userProfile().setProperty("after_update_session", true);
-        TestUtils.assertRQSize(5); // still begin session and update session requests
+        TestUtils.assertRQSize(4); // still begin session and update session requests
         // no new user property request because it is validated along with update session
         Thread.sleep(2000);
 
         countly.sessions().endSession();
-        TestUtils.assertRQSize(7); // begin, update, user properties and end session requests
-        ModuleUserProfileTests.validateUserProfileRequest(5, 7, TestUtils.map(), TestUtils.map("after_update_session", true));
-        ModuleSessionsTests.validateSessionEndRequest(6, 2, TestUtils.commonDeviceId);
+        TestUtils.assertRQSize(6); // begin, update, user properties and end session requests
+        ModuleUserProfileTests.validateUserProfileRequest(4, 6, TestUtils.map(), TestUtils.map("after_update_session", true));
+        ModuleSessionsTests.validateSessionEndRequest(5, 2, TestUtils.commonDeviceId);
     }
 
     /**
