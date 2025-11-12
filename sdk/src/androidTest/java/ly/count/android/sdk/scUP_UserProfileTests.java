@@ -124,11 +124,12 @@ public class scUP_UserProfileTests {
      * Related user properties should not be saved with session calls,
      * call order, user property before session, begin session, user property after begin session, update session, user property after update session, end session
      * generated request order begin_session + orientation + update_session + user properties + end_session
+     * manual sessions are enabled
      * UPDATE: session calls now trigger saving properties like events as well
      * UPDATED_REQUEST_ORDER: user property before session + begin_session + orientation + user property after begin session + update_session + user property after update session + end_session
      */
     @Test
-    public void eventSaveScenario_sessionCallsTriggersSave() throws JSONException, InterruptedException {
+    public void eventSaveScenario_sessionCallsTriggersSave_M() throws JSONException, InterruptedException {
         Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl());
 
         TestUtils.assertRQSize(0);
