@@ -1,3 +1,6 @@
+## XX.XX.XX
+* ! Minor breaking change ! User properties will also be automatically saved before beginning, updating, and ending a session.
+
 ## 25.4.5
 * Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
 * Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
