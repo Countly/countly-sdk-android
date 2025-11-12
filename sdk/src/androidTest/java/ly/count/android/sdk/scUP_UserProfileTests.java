@@ -128,7 +128,7 @@ public class scUP_UserProfileTests {
      * UPDATED_REQUEST_ORDER: user property before session + begin_session + orientation + user property after begin session + update_session + user property after update session + end_session
      */
     @Test
-    public void eventSaveScenario_sessionCallsTriggersSave_legacyBehavior() throws JSONException, InterruptedException {
+    public void eventSaveScenario_sessionCallsTriggersSave() throws JSONException, InterruptedException {
         Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl());
 
         TestUtils.assertRQSize(0);
