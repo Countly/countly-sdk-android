@@ -121,6 +121,34 @@ public class scUP_UserProfileTests {
     }
 
     /**
+     * Related user properties should not be saved with session calls,
+     * call order, user property before session, begin session, user property after begin session, update session, user property after update session, end session
+     * generated request order begin_session + update_session + user properties + end_session
+     */
+    @Test
+    public void eventSaveScenario_sessionCallsTriggersSave_legacyBehavior() {
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl());
+
+        TestUtils.assertRQSize(0);
+        countly.userProfile().setProperty("before_session", true);
+
+        countly.sessions().beginSession();
+        TestUtils.assertRQSize(1); // only begin session request
+
+        countly.userProfile().setProperty("after_begin_session", true);
+        TestUtils.assertRQSize(1); // still begin session
+
+        countly.sessions().updateSession();
+        TestUtils.assertRQSize(2); // only begin session and update session requests
+
+        countly.userProfile().setProperty("after_update_session", true);
+        TestUtils.assertRQSize(2); // still begin session and update session requests
+
+        countly.sessions().endSession();
+        TestUtils.assertRQSize(4); // begin, update, user properties and end session requests
+    }
+
+    /**
      * 1. 200_CNR_A
      * Init SDK
      * sendUserProperties
