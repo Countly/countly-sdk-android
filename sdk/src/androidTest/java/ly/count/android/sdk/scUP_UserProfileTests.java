@@ -164,6 +164,52 @@ public class scUP_UserProfileTests {
     }
 
     /**
+     * Related user properties should be saved with automatic session calls,
+     * call order, user property before session, user property after begin session, session, user property after update session
+     * generated request order user_properties + begin_session  + user_properties + update_session + user properties + end_session
+     */
+    @Test
+    public void eventSaveScenario_sessionCallsTriggersSave_A() throws JSONException, InterruptedException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setTrackOrientationChanges(false);
+        TestLifecycleObserver testLifecycleObserver = new TestLifecycleObserver();
+        config.lifecycleObserver = testLifecycleObserver;
+        config.setUpdateSessionTimerDelay(3);
+        Countly countly = new Countly().init(config);
+
+        TestUtils.assertRQSize(0);
+        countly.userProfile().setProperty("before_session", true);
+
+        testLifecycleObserver.bringToForeground();
+        countly.onStart(null);
+
+        TestUtils.assertRQSize(2);
+        ModuleUserProfileTests.validateUserProfileRequest(0, 2, TestUtils.map(), TestUtils.map("before_session", true));
+        ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
+
+        countly.userProfile().setProperty("after_begin_session", true);
+        TestUtils.assertRQSize(2);
+
+        Thread.sleep(3000);
+
+        TestUtils.assertRQSize(4);
+
+        ModuleUserProfileTests.validateUserProfileRequest(2, 4, TestUtils.map(), TestUtils.map("after_begin_session", true));
+        ModuleSessionsTests.validateSessionUpdateRequest(3, 3, TestUtils.commonDeviceId);
+
+        countly.userProfile().setProperty("after_update_session", true);
+        TestUtils.assertRQSize(4);
+
+        Thread.sleep(2000);
+
+        testLifecycleObserver.goToBackground();
+        countly.onStop();
+
+        TestUtils.assertRQSize(6);
+        ModuleUserProfileTests.validateUserProfileRequest(4, 6, TestUtils.map(), TestUtils.map("after_update_session", true));
+        ModuleSessionsTests.validateSessionEndRequest(5, 2, TestUtils.commonDeviceId);
+    }
+
+    /**
      * 1. 200_CNR_A
      * Init SDK
      * sendUserProperties
