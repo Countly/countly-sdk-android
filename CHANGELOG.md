@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 25.4.6
 * Updated user properties caching mechanism according to sessions.
 
 ## 25.4.5
