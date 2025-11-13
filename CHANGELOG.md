@@ -1,5 +1,5 @@
 ## XX.XX.XX
-* ! Minor breaking change ! User properties will also be automatically saved before beginning, updating, and ending a session.
+* Updated user properties caching mechanism according to sessions.
 
 ## 25.4.5
 * Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
