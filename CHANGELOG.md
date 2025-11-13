@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 25.4.6
 * Improved content error handling and display mechanics.
 
 ## 25.4.5
