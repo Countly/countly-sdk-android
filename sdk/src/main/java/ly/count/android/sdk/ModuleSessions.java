@@ -60,6 +60,8 @@ public class ModuleSessions extends ModuleBase {
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
         sessionRunning = true;
         prevSessionDurationStartTime_ = System.currentTimeMillis();
+        _cly.moduleUserProfile.saveInternal();
+
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
 
         if (_cly.moduleViews.trackOrientationChanges) {
@@ -85,6 +87,8 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
+            _cly.moduleUserProfile.saveInternal();
+
             requestQueueProvider.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
         }
     }
