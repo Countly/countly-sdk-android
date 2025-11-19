@@ -50,14 +50,6 @@ class UtilsDevice {
 
         // If not activity, we can't know system UI visibility, so always use physical screen size
         if (!usePhysicalScreenSize) {
-            // Only subtract navigation bar insets when navigation bar is actually visible
-            if (windowInsets.isVisible(WindowInsets.Type.navigationBars())) {
-                types |= WindowInsets.Type.navigationBars();
-            }
-
-            if (windowInsets.isVisible(WindowInsets.Type.statusBars())) {
-                types |= WindowInsets.Type.statusBars();
-            }
 
             boolean drawUnderCutout;
             WindowManager.LayoutParams params = ((Activity) context).getWindow().getAttributes();
