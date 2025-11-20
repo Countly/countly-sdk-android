@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue where push notifications were blocked when consent was not required.
+
 ## 25.4.7
 * Mitigated an issue where the navigation bar showed an unwanted shadow during content display.
 
