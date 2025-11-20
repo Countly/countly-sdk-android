@@ -186,8 +186,8 @@ public class ModuleContent extends ModuleBase {
 
         int totalWidthPx = displayMetrics.widthPixels;
         int totalHeightPx = displayMetrics.heightPixels;
-        int totalWidthDp = (int) Math.ceil(totalWidthPx / displayMetrics.density);
-        int totalHeightDp = (int) Math.ceil(totalHeightPx / displayMetrics.density);
+        int totalWidthDp = (int) Math.floor(totalWidthPx / displayMetrics.density);
+        int totalHeightDp = (int) Math.floor(totalHeightPx / displayMetrics.density);
         L.d("[ModuleContent] prepareContentFetchRequest, total screen dimensions (px): [" + totalWidthPx + "x" + totalHeightPx + "], (dp): [" + totalWidthDp + "x" + totalHeightDp + "], density: [" + displayMetrics.density + "]");
 
         WebViewDisplayOption displayOption = _cly.config_.webViewDisplayOption;
@@ -198,10 +198,10 @@ public class ModuleContent extends ModuleBase {
             SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(_cly.context_, L);
 
             // px to dp
-            portraitWidth = (int) Math.ceil(safeArea.portraitWidth / displayMetrics.density);
-            portraitHeight = (int) Math.ceil(safeArea.portraitHeight / displayMetrics.density);
-            landscapeWidth = (int) Math.ceil(safeArea.landscapeWidth / displayMetrics.density);
-            landscapeHeight = (int) Math.ceil(safeArea.landscapeHeight / displayMetrics.density);
+            portraitWidth = (int) Math.floor(safeArea.portraitWidth / displayMetrics.density);
+            portraitHeight = (int) Math.floor(safeArea.portraitHeight / displayMetrics.density);
+            landscapeWidth = (int) Math.floor(safeArea.landscapeWidth / displayMetrics.density);
+            landscapeHeight = (int) Math.floor(safeArea.landscapeHeight / displayMetrics.density);
 
             L.d("[ModuleContent] prepareContentFetchRequest, safe area dimensions (px->dp) - Portrait: [" + safeArea.portraitWidth + "x" + safeArea.portraitHeight + " px] -> [" + portraitWidth + "x" + portraitHeight + " dp], topOffset: [" + safeArea.portraitTopOffset + " px]");
             L.d("[ModuleContent] prepareContentFetchRequest, safe area dimensions (px->dp) - Landscape: [" + safeArea.landscapeWidth + "x" + safeArea.landscapeHeight + " px] -> [" + landscapeWidth + "x" + landscapeHeight + " dp], topOffset: [" + safeArea.landscapeTopOffset + " px]");
