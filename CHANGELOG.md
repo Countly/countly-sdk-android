@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue where push notifications were blocked when consent was not required.
+
 ## 25.4.6
 * Improved content error handling and display mechanics.
 * Updated user properties caching mechanism according to sessions.
