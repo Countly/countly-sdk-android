@@ -1,4 +1,6 @@
 ## XX.XX.XX
+* Added a new config option `disableStoreDefaultPushConsent()` to change push consent storing behavior. When enabled default push consent will be stored if consent is not required.
+
 * Mitigated an issue where push notifications were blocked when consent was not required.
 
 ## 25.4.7
