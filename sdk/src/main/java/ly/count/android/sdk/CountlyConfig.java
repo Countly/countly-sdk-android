@@ -214,7 +214,7 @@ public class CountlyConfig {
     boolean disableGradualRequestCleaner = false;
 
     // If set to true, the SDK will not store the default push consent state on initialization for not requiring consent
-    boolean disableStoreDefaultPushConsent = false;
+    boolean disableStoringDefaultPushConsent = false;
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED
@@ -1111,8 +1111,8 @@ public class CountlyConfig {
      *
      * @return Returns the same config object for convenient linking
      */
-    public synchronized CountlyConfig disableStoreDefaultPushConsent() {
-        this.disableStoreDefaultPushConsent = true;
+    public synchronized CountlyConfig disableStoringDefaultPushConsent() {
+        this.disableStoringDefaultPushConsent = true;
         return this;
     }
 

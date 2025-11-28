@@ -1,7 +1,5 @@
-## XX.XX.XX
-* Added a new config option `disableStoreDefaultPushConsent()` to change push consent storing behavior. When enabled default push consent will be stored if consent is not required.
-
-* Mitigated an issue where push notifications were blocked when consent was not required.
+## 25.4.8
+* Mitigated an issue where push notifications were not shown when consent was not required and app is killed. To reverse that behavior you can call config option `disableStoringDefaultPushConsent()`.
 
 ## 25.4.7
 * Mitigated an issue where the navigation bar showed an unwanted shadow during content display.
