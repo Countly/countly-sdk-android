@@ -1,3 +1,6 @@
+## 25.4.8
+* Mitigated an issue where push notifications were not shown when consent was not required and app was killed.
+
 ## 25.4.7
 * Mitigated an issue where the navigation bar showed an unwanted shadow during content display.
 

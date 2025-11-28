@@ -284,6 +284,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             if (L.logEnabled()) {
                 checkAllConsentInternal();
             }
+        } else if (!config.disableStoringDefaultPushConsent) {
+            //if consent is not required, we need to make sure that the push consent is set to true
+            //so that the "getConsentPushNoInit" returns true
+            doPushConsentSpecialAction(true);
         }
     }
 
