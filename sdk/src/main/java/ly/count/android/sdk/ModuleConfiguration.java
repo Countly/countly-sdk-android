@@ -2,7 +2,12 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -47,6 +52,12 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRBOMRQPercentage = "bom_rqp";
     final static String keyRBOMRequestAge = "bom_ra";
     final static String keyRBOMDuration = "bom_d";
+    final static String keyRUserPropertyCacheLimit = "upcl";
+    final static String keyRFilterPreset = "filter_preset";
+    final static String keyREventFilterList = "eb";
+    final static String keyRUserPropertyFilterList = "upb";
+    final static String keyRSegmentationFilterList = "sb";
+    final static String keyREventSegmentationFilterList = "esb"; // json
     // FLAGS
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
@@ -64,6 +75,14 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     double currentVBOMRQPercentage = 0.5;
     int currentVBOMRequestAge = 24; // in hours
     int currentVBOMDuration = 60; // in seconds
+    int currentVUserPropertyCacheLimit = 100;
+
+    // FILTERS
+    String currentVFilterPreset = "Blacklisting";
+    Set<String> currentVEventFilterList = new HashSet<>();
+    Set<String> currentVUserPropertyFilterList = new HashSet<>();
+    Set<String> currentVSegmentationFilterList = new HashSet<>();
+    Map<String, Set<String>> currentVEventSegmentationFilterList = new ConcurrentHashMap<>();
 
     // SERVER CONFIGURATION PARAMS
     Integer serverConfigUpdateInterval; // in hours
@@ -207,6 +226,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVBOMRQPercentage = extractValue(keyRBOMRQPercentage, sb, currentVBOMRQPercentage, currentVBOMRQPercentage, Double.class, (Double value) -> value > 0.0 && value < 1.0);
         currentVBOMRequestAge = extractValue(keyRBOMRequestAge, sb, currentVBOMRequestAge, currentVBOMRequestAge, Integer.class, (Integer value) -> value > 0);
         currentVBOMDuration = extractValue(keyRBOMDuration, sb, currentVBOMDuration, currentVBOMDuration, Integer.class, (Integer value) -> value > 0);
+        currentVUserPropertyCacheLimit = extractValue(keyRUserPropertyCacheLimit, sb, currentVUserPropertyCacheLimit, currentVUserPropertyCacheLimit, Integer.class, (Integer value) -> value > 0);
+        currentVFilterPreset = extractValue(keyRFilterPreset, sb, currentVFilterPreset, currentVFilterPreset, String.class, (String value) -> value.equals("Blacklisting") || value.equals("Whitelisting"));
 
         clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class, (Integer value) -> value > 0));
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class, (Integer value) -> value > 0));
@@ -222,10 +243,49 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, clyConfig.shouldRequireConsent));
         clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, clyConfig.dropAgeHours, Integer.class, (Integer value) -> value >= 0));
 
+        updateListingFilters();
+
         String updatedValues = sb.toString();
         if (!updatedValues.isEmpty()) {
             L.i("[ModuleConfiguration] updateConfigVariables, SDK configuration has changed, notifying the SDK, new values: [" + updatedValues + "]");
             _cly.onSdkConfigurationChanged(clyConfig);
+        }
+    }
+
+    private void updateListingFilters() {
+        JSONArray eventFilterListJSARR = latestRetrievedConfiguration.optJSONArray(keyREventFilterList);
+        JSONArray userPropertyFilterListJSARR = latestRetrievedConfiguration.optJSONArray(keyRUserPropertyFilterList);
+        JSONArray segmentationFilterListJSARR = latestRetrievedConfiguration.optJSONArray(keyRSegmentationFilterList);
+        JSONObject eventSegmentationFilterListJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationFilterList);
+
+        extractFilterSetFromJSONArray(eventFilterListJSARR, currentVEventFilterList);
+        extractFilterSetFromJSONArray(userPropertyFilterListJSARR, currentVUserPropertyFilterList);
+        extractFilterSetFromJSONArray(segmentationFilterListJSARR, currentVSegmentationFilterList);
+        if (eventSegmentationFilterListJSOBJ != null) {
+            currentVEventSegmentationFilterList.clear();
+            Iterator<String> keys = eventSegmentationFilterListJSOBJ.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                JSONArray jsonArray = eventSegmentationFilterListJSOBJ.optJSONArray(key);
+                if (jsonArray != null) {
+                    Set<String> filterSet = new HashSet<>();
+                    extractFilterSetFromJSONArray(jsonArray, filterSet);
+                    currentVEventSegmentationFilterList.put(key, filterSet);
+                }
+            }
+        }
+    }
+
+    private void extractFilterSetFromJSONArray(@Nullable JSONArray jsonArray, @NonNull Set<String> targetSet) {
+        if (jsonArray == null) {
+            return;
+        }
+        targetSet.clear();
+        for (int i = 0; i < jsonArray.length(); i++) {
+            String item = jsonArray.optString(i, null);
+            if (item != null) {
+                targetSet.add(item);
+            }
         }
     }
 
@@ -293,6 +353,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 case keyRLimitBreadcrumb:
                 case keyRLimitTraceLine:
                 case keyRLimitTraceLength:
+                case keyRUserPropertyCacheLimit:
                     isValid = value instanceof Integer && ((Integer) value) > 0;
                     break;
 
@@ -309,6 +370,19 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 // --- Double between 0.0 and 1.0 ---
                 case keyRBOMRQPercentage:
                     isValid = value instanceof Double && ((Double) value > 0.0 && (Double) value < 1.0);
+                    break;
+
+                // --- Filtering keys ---
+                case keyRFilterPreset:
+                    isValid = value instanceof String && (value.equals("Blacklisting") || value.equals("Whitelisting"));
+                    break;
+                case keyREventFilterList:
+                case keyRUserPropertyFilterList:
+                case keyRSegmentationFilterList:
+                    isValid = value instanceof JSONArray;
+                    break;
+                case keyREventSegmentationFilterList:
+                    isValid = value instanceof JSONObject;
                     break;
                 // --- Unknown keys ---
                 default:
@@ -497,5 +571,29 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public int getRequestTimeoutDurationMillis() {
         return _cly.config_.requestTimeoutDuration * 1000;
+    }
+
+    @Override public int getUserPropertyCacheLimit() {
+        return currentVUserPropertyCacheLimit;
+    }
+
+    @Override public boolean getFilterIsWhitelist() {
+        return currentVFilterPreset.equals("Whitelisting");
+    }
+
+    @Override public Set<String> getEventFilterSet() {
+        return currentVEventFilterList;
+    }
+
+    @Override public Set<String> getUserPropertyFilterSet() {
+        return currentVUserPropertyFilterList;
+    }
+
+    @Override public Set<String> getSegmentationFilterSet() {
+        return currentVSegmentationFilterList;
+    }
+
+    @Override public Map<String, Set<String>> getEventSegmentationFilterMap() {
+        return currentVEventSegmentationFilterList;
     }
 }
