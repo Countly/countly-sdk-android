@@ -30,7 +30,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -129,6 +132,30 @@ public class ConnectionProcessorTests {
 
             @Override public int getRequestTimeoutDurationMillis() {
                 return 30_000;
+            }
+
+            @Override public int getUserPropertyCacheLimit() {
+                return 100;
+            }
+
+            @Override public boolean getFilterIsWhitelist() {
+                return false;
+            }
+
+            @Override public Set<String> getEventFilterSet() {
+                return new HashSet<>();
+            }
+
+            @Override public Set<String> getUserPropertyFilterSet() {
+                return new HashSet<>();
+            }
+
+            @Override public Set<String> getSegmentationFilterSet() {
+                return new HashSet<>();
+            }
+
+            @Override public Map<String, Set<String>> getEventSegmentationFilterMap() {
+                return new ConcurrentHashMap<>();
             }
         };
 

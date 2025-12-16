@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1123,7 +1124,15 @@ public class ModuleConfigurationTests {
             .segmentationValuesLimit(25)
             .breadcrumbLimit(90)
             .traceLengthLimit(78)
-            .traceLinesLimit(89);
+            .traceLinesLimit(89)
+            .userPropertyCacheLimit(67)
+
+            // Filters
+            .filterPreset("Whitelisting")
+            .eventFilterList(new HashSet<>())
+            .userPropertyFilterList(new HashSet<>())
+            .segmentationFilterList(new HashSet<>())
+            .eventSegmentationFilterMap(new ConcurrentHashMap<>());
 
         String serverConfig = builder.build();
         CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false);
