@@ -1,10 +1,11 @@
 package ly.count.android.sdk;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import org.json.JSONArray;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -240,10 +241,10 @@ class ServerConfigBuilder {
         userPropertyCacheLimit(100);
 
         filterPreset("Blacklisting");
-        eventFilterList(new JSONArray());
-        userPropertyFilterList(new JSONArray());
-        segmentationFilterList(new JSONArray());
-        eventSegmentationFilterMap(new JSONObject());
+        eventFilterList(new HashSet<>());
+        userPropertyFilterList(new HashSet<>());
+        segmentationFilterList(new HashSet<>());
+        eventSegmentationFilterMap(new ConcurrentHashMap<>());
 
         return this;
     }
@@ -313,16 +314,16 @@ class ServerConfigBuilder {
     private void validateFilterSettings(Countly countly) {
         Assert.assertEquals(config.get(keyRFilterPreset), countly.moduleConfiguration.currentVFilterPreset);
 
-        JSONArray eventFilterList = (JSONArray) config.get(keyREventFilterList);
+        Set<String> eventFilterList = (Set<String>) config.get(keyREventFilterList);
         Assert.assertEquals(Objects.requireNonNull(eventFilterList).toString(), countly.moduleConfiguration.getEventFilterSet().toString());
 
-        JSONArray userPropertyFilterList = (JSONArray) config.get(keyRUserPropertyFilterList);
+        Set<String> userPropertyFilterList = (Set<String>) config.get(keyRUserPropertyFilterList);
         Assert.assertEquals(Objects.requireNonNull(userPropertyFilterList).toString(), countly.moduleConfiguration.getUserPropertyFilterSet().toString());
 
-        JSONArray segmentationFilterList = (JSONArray) config.get(keyRSegmentationFilterList);
+        Set<String> segmentationFilterList = (Set<String>) config.get(keyRSegmentationFilterList);
         Assert.assertEquals(Objects.requireNonNull(segmentationFilterList).toString(), countly.moduleConfiguration.getSegmentationFilterSet().toString());
 
-        JSONObject eventSegmentationFilterMap = (JSONObject) config.get(keyREventSegmentationFilterList);
+        Map<String, Set<String>> eventSegmentationFilterMap = (Map<String, Set<String>>) config.get(keyREventSegmentationFilterList);
         Assert.assertEquals(Objects.requireNonNull(eventSegmentationFilterMap).toString(), countly.moduleConfiguration.getEventSegmentationFilterMap().toString());
     }
 } 

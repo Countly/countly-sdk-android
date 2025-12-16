@@ -645,7 +645,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void configurationParameterCount() {
-        int configParameterCount = 31; // plus config, timestamp and version parameters
+        int configParameterCount = 37; // plus config, timestamp and version parameters, UPDATE: list filters, and user property cache limit
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
             if (field.getName().startsWith("keyR")) {
