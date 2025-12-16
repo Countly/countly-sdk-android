@@ -1,3 +1,6 @@
+## 25.4.9
+* Added a new config option `disableViewRestartForManualRecording()` to change restart behavior of manual views in background/foreground switches. When enabled, they restarted automatically to measure view duration better. 
+
 ## 25.4.8
 * Mitigated an issue where push notifications were not shown when consent was not required and app was killed.
 
