@@ -2,6 +2,9 @@ package ly.count.android.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -13,7 +16,10 @@ import static ly.count.android.sdk.ModuleConfiguration.keyRCrashReporting;
 import static ly.count.android.sdk.ModuleConfiguration.keyRCustomEventTracking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRDropOldRequestTime;
 import static ly.count.android.sdk.ModuleConfiguration.keyREnterContentZone;
+import static ly.count.android.sdk.ModuleConfiguration.keyREventFilterList;
 import static ly.count.android.sdk.ModuleConfiguration.keyREventQueueSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyREventSegmentationFilterList;
+import static ly.count.android.sdk.ModuleConfiguration.keyRFilterPreset;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitBreadcrumb;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitKeyLength;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitSegValues;
@@ -25,11 +31,14 @@ import static ly.count.android.sdk.ModuleConfiguration.keyRLogging;
 import static ly.count.android.sdk.ModuleConfiguration.keyRNetworking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRRefreshContentZone;
 import static ly.count.android.sdk.ModuleConfiguration.keyRReqQueueSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyRSegmentationFilterList;
 import static ly.count.android.sdk.ModuleConfiguration.keyRServerConfigUpdateInterval;
 import static ly.count.android.sdk.ModuleConfiguration.keyRSessionTracking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRSessionUpdateInterval;
 import static ly.count.android.sdk.ModuleConfiguration.keyRTimestamp;
 import static ly.count.android.sdk.ModuleConfiguration.keyRTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRUserPropertyCacheLimit;
+import static ly.count.android.sdk.ModuleConfiguration.keyRUserPropertyFilterList;
 import static ly.count.android.sdk.ModuleConfiguration.keyRVersion;
 import static ly.count.android.sdk.ModuleConfiguration.keyRViewTracking;
 
@@ -169,6 +178,36 @@ class ServerConfigBuilder {
         return this;
     }
 
+    ServerConfigBuilder userPropertyCacheLimit(int limit) {
+        config.put(keyRUserPropertyCacheLimit, limit);
+        return this;
+    }
+
+    ServerConfigBuilder filterPreset(String preset) {
+        config.put(keyRFilterPreset, preset);
+        return this;
+    }
+
+    ServerConfigBuilder eventFilterList(Set<String> filterList) {
+        config.put(keyREventFilterList, filterList);
+        return this;
+    }
+
+    ServerConfigBuilder userPropertyFilterList(Set<String> filterList) {
+        config.put(keyRUserPropertyFilterList, filterList);
+        return this;
+    }
+
+    ServerConfigBuilder segmentationFilterList(Set<String> filterList) {
+        config.put(keyRSegmentationFilterList, filterList);
+        return this;
+    }
+
+    ServerConfigBuilder eventSegmentationFilterMap(Map<String, Set<String>> filterMap) {
+        config.put(keyREventSegmentationFilterList, filterMap);
+        return this;
+    }
+
     ServerConfigBuilder defaults() {
         // Feature flags
         tracking(true);
@@ -198,6 +237,13 @@ class ServerConfigBuilder {
         breadcrumbLimit(Countly.maxBreadcrumbCountDefault);
         traceLengthLimit(Countly.maxStackTraceLineLengthDefault);
         traceLinesLimit(Countly.maxStackTraceLinesPerThreadDefault);
+        userPropertyCacheLimit(100);
+
+        filterPreset("Blacklisting");
+        eventFilterList(new JSONArray());
+        userPropertyFilterList(new JSONArray());
+        segmentationFilterList(new JSONArray());
+        eventSegmentationFilterMap(new JSONObject());
 
         return this;
     }
@@ -221,6 +267,7 @@ class ServerConfigBuilder {
         validateFeatureFlags(countly);
         validateIntervalsAndSizes(countly);
         validateLimits(countly);
+        validateFilterSettings(countly);
     }
 
     private void validateFeatureFlags(Countly countly) {
@@ -260,5 +307,22 @@ class ServerConfigBuilder {
         Assert.assertEquals(config.get(keyRLimitBreadcrumb), countly.config_.sdkInternalLimits.maxBreadcrumbCount);
         Assert.assertEquals(config.get(keyRLimitTraceLength), countly.config_.sdkInternalLimits.maxStackTraceLineLength);
         Assert.assertEquals(config.get(keyRLimitTraceLine), countly.config_.sdkInternalLimits.maxStackTraceLinesPerThread);
+        Assert.assertEquals(config.get(keyRUserPropertyCacheLimit), countly.moduleConfiguration.getUserPropertyCacheLimit());
+    }
+
+    private void validateFilterSettings(Countly countly) {
+        Assert.assertEquals(config.get(keyRFilterPreset), countly.moduleConfiguration.currentVFilterPreset);
+
+        JSONArray eventFilterList = (JSONArray) config.get(keyREventFilterList);
+        Assert.assertEquals(Objects.requireNonNull(eventFilterList).toString(), countly.moduleConfiguration.getEventFilterSet().toString());
+
+        JSONArray userPropertyFilterList = (JSONArray) config.get(keyRUserPropertyFilterList);
+        Assert.assertEquals(Objects.requireNonNull(userPropertyFilterList).toString(), countly.moduleConfiguration.getUserPropertyFilterSet().toString());
+
+        JSONArray segmentationFilterList = (JSONArray) config.get(keyRSegmentationFilterList);
+        Assert.assertEquals(Objects.requireNonNull(segmentationFilterList).toString(), countly.moduleConfiguration.getSegmentationFilterSet().toString());
+
+        JSONObject eventSegmentationFilterMap = (JSONObject) config.get(keyREventSegmentationFilterList);
+        Assert.assertEquals(Objects.requireNonNull(eventSegmentationFilterMap).toString(), countly.moduleConfiguration.getEventSegmentationFilterMap().toString());
     }
 } 
