@@ -12,11 +12,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
     private final ImmediateRequestGenerator iRGenerator;
+    private ExecutorService refreshExecutor; // to not block main thread during refresh
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
@@ -25,12 +28,12 @@ public class ModuleContent extends ModuleBase {
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
-    int REFRESH_CONTENT_ZONE_DELAY_MS = 2500; // 2.5 seconds
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + config.content.zoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
         iRGenerator = config.immediateRequestGenerator;
+        refreshExecutor = Executors.newSingleThreadExecutor();
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
@@ -295,6 +298,7 @@ public class ModuleContent extends ModuleBase {
         contentInterface = null;
         countlyTimer.stopTimer(L);
         countlyTimer = null;
+        refreshExecutor.shutdown();
     }
 
     @Override
@@ -329,13 +333,13 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
-        if (!shouldFetchContents) {
-            exitContentZoneInternal();
-        }
+        exitContentZoneInternal();
 
-        _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
-
-        enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
+        refreshExecutor.execute(() -> {
+            _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal(true);
+            L.d("[ModuleContent] refreshContentZone, RQ flush done, re-entering content zone");
+            enterContentZoneInternal(null, 0);
+        });
     }
 
     public class Content {
