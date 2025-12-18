@@ -197,7 +197,18 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * attempt to process stored requests on demand
      */
     public void attemptToSendStoredRequestsInternal() {
-        L.i("[ModuleRequestQueue] Calling attemptToSendStoredRequests");
+        attemptToSendStoredRequestsInternal(false);
+    }
+
+    /**
+     * This method sends all RQ synchronously if forceFlushRQ is true
+     *
+     * @param forceFlushRQ whether to force flush the request queue
+     * Be cautious when using this flag as it may cause ANRs if used on main thread
+     * Wrap calls in a separate thread to unsure non-Blocking UI or main thread
+     */
+    protected void attemptToSendStoredRequestsInternal(boolean forceFlushRQ) {
+        L.i("[ModuleRequestQueue] attemptToSendStoredRequestsInternal, forceFlushRQ: [" + forceFlushRQ + "]");
 
         //combine all available events into a request
         sendEventsIfNeeded(true);
@@ -206,7 +217,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         _cly.moduleUserProfile.saveInternal();
 
         //trigger the processing of the request queue
-        requestQueueProvider.tick();
+        requestQueueProvider.tick(forceFlushRQ);
     }
 
     /**
