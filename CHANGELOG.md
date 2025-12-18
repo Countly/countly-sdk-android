@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Improved Content refresh mechanics.
+
 ## 25.4.8
 * Mitigated an issue where push notifications were not shown when consent was not required and app was killed.
 
