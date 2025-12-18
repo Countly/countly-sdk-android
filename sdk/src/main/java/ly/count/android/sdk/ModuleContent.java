@@ -14,12 +14,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
     private final ImmediateRequestGenerator iRGenerator;
     private final ExecutorService refreshExecutor; // to not block main thread during refresh
+    Future<?> refreshContentZoneInternalFuture; // for test access
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
@@ -335,7 +337,7 @@ public class ModuleContent extends ModuleBase {
 
         exitContentZoneInternal();
 
-        refreshExecutor.execute(() -> {
+        refreshContentZoneInternalFuture = refreshExecutor.submit(() -> {
             _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal(true);
             L.d("[ModuleContent] refreshContentZone, RQ flush done, re-entering content zone");
             enterContentZoneInternal(null, 0);
