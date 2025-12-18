@@ -19,7 +19,7 @@ import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
     private final ImmediateRequestGenerator iRGenerator;
-    private ExecutorService refreshExecutor; // to not block main thread during refresh
+    private final ExecutorService refreshExecutor; // to not block main thread during refresh
     Content contentInterface;
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
