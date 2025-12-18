@@ -887,6 +887,15 @@ class ConnectionQueue implements RequestQueueProvider {
      * Should only be called if SDK is initialized
      */
     public void tick() {
+        tick(false);
+    }
+
+    /**
+     * This function blocks caller until RQ flushes, so be cautious when using it.
+     *
+     * @param forceFlushRQ if true, will block until RQ is fully flushed
+     */
+    public void tick(boolean forceFlushRQ) {
         //todo enable later
         //assert storageProvider != null;
         if (backoff_.get()) {
@@ -906,8 +915,17 @@ class ConnectionQueue implements RequestQueueProvider {
 
         if (!rqEmpty && (connectionProcessorFuture_ == null || cpDoneIfOngoing)) {
             L.d("[ConnectionQueue] tick, Starting ConnectionProcessor");
-            ensureExecutor();
-            connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
+            Runnable cp = createConnectionProcessor();
+            if (forceFlushRQ) {
+                try {
+                    cp.run();
+                } catch (Exception e) {
+                    L.e("[ConnectionQueue] tick, forceFlushRQ encountered an error: " + e.getMessage());
+                }
+            } else {
+                ensureExecutor();
+                connectionProcessorFuture_ = executor_.submit(cp);
+            }
         }
     }
 
