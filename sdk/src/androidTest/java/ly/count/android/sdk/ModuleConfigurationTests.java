@@ -1128,11 +1128,10 @@ public class ModuleConfigurationTests {
             .userPropertyCacheLimit(67)
 
             // Filters
-            .filterPreset("Whitelisting")
-            .eventFilterList(new HashSet<>())
-            .userPropertyFilterList(new HashSet<>())
-            .segmentationFilterList(new HashSet<>())
-            .eventSegmentationFilterMap(new ConcurrentHashMap<>());
+            .eventFilterList(new HashSet<>(), false)
+            .userPropertyFilterList(new HashSet<>(), false)
+            .segmentationFilterList(new HashSet<>(), false)
+            .eventSegmentationFilterMap(new ConcurrentHashMap<>(), false);
 
         String serverConfig = builder.build();
         CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false);

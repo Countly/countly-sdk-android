@@ -138,24 +138,20 @@ public class ConnectionProcessorTests {
                 return 100;
             }
 
-            @Override public boolean getFilterIsWhitelist() {
-                return false;
+            @Override public FilterList<Set<String>> getEventFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
             }
 
-            @Override public Set<String> getEventFilterSet() {
-                return new HashSet<>();
+            @Override public FilterList<Set<String>> getUserPropertyFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
             }
 
-            @Override public Set<String> getUserPropertyFilterSet() {
-                return new HashSet<>();
+            @Override public FilterList<Set<String>> getSegmentationFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
             }
 
-            @Override public Set<String> getSegmentationFilterSet() {
-                return new HashSet<>();
-            }
-
-            @Override public Map<String, Set<String>> getEventSegmentationFilterMap() {
-                return new ConcurrentHashMap<>();
+            @Override public FilterList<Map<String, Set<String>>> getEventSegmentationFilterList() {
+                return new FilterList<>(new ConcurrentHashMap<>(), false);
             }
         };
 
