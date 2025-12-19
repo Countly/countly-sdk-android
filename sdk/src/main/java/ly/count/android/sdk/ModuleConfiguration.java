@@ -53,11 +53,15 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRBOMRequestAge = "bom_ra";
     final static String keyRBOMDuration = "bom_d";
     final static String keyRUserPropertyCacheLimit = "upcl";
-    final static String keyRFilterPreset = "filter_preset";
-    final static String keyREventFilterList = "eb";
-    final static String keyRUserPropertyFilterList = "upb";
-    final static String keyRSegmentationFilterList = "sb";
-    final static String keyREventSegmentationFilterList = "esb"; // json
+    final static String keyREventBlacklist = "eb";
+    final static String keyRUserPropertyBlacklist = "upb";
+    final static String keyRSegmentationBlacklist = "sb";
+    final static String keyREventSegmentationBlacklist = "esb"; // json
+    final static String keyREventWhitelist = "ew";
+    final static String keyRUserPropertyWhitelist = "upw";
+    final static String keyRSegmentationWhitelist = "sw";
+    final static String keyREventSegmentationWhitelist = "esw"; // json
+
     // FLAGS
     boolean currentVTracking = true;
     boolean currentVNetworking = true;
@@ -78,11 +82,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     int currentVUserPropertyCacheLimit = 100;
 
     // FILTERS
-    String currentVFilterPreset = "Blacklisting";
-    Set<String> currentVEventFilterList = new HashSet<>();
-    Set<String> currentVUserPropertyFilterList = new HashSet<>();
-    Set<String> currentVSegmentationFilterList = new HashSet<>();
-    Map<String, Set<String>> currentVEventSegmentationFilterList = new ConcurrentHashMap<>();
+    FilterList<Set<String>> currentVEventFilterList = new FilterList<>(new HashSet<>(), false);
+    FilterList<Set<String>> currentVUserPropertyFilterList = new FilterList<>(new HashSet<>(), false);
+    FilterList<Set<String>> currentVSegmentationFilterList = new FilterList<>(new HashSet<>(), false);
+    FilterList<Map<String, Set<String>>> currentVEventSegmentationFilterList = new FilterList<>(new ConcurrentHashMap<>(), false);
 
     // SERVER CONFIGURATION PARAMS
     Integer serverConfigUpdateInterval; // in hours
@@ -227,7 +230,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVBOMRequestAge = extractValue(keyRBOMRequestAge, sb, currentVBOMRequestAge, currentVBOMRequestAge, Integer.class, (Integer value) -> value > 0);
         currentVBOMDuration = extractValue(keyRBOMDuration, sb, currentVBOMDuration, currentVBOMDuration, Integer.class, (Integer value) -> value > 0);
         currentVUserPropertyCacheLimit = extractValue(keyRUserPropertyCacheLimit, sb, currentVUserPropertyCacheLimit, currentVUserPropertyCacheLimit, Integer.class, (Integer value) -> value > 0);
-        currentVFilterPreset = extractValue(keyRFilterPreset, sb, currentVFilterPreset, currentVFilterPreset, String.class, (String value) -> value.equals("Blacklisting") || value.equals("Whitelisting"));
 
         clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class, (Integer value) -> value > 0));
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, Countly.sharedInstance().EVENT_QUEUE_SIZE_THRESHOLD, Integer.class, (Integer value) -> value > 0));
@@ -253,24 +255,63 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     private void updateListingFilters() {
-        JSONArray eventFilterListJSARR = latestRetrievedConfiguration.optJSONArray(keyREventFilterList);
-        JSONArray userPropertyFilterListJSARR = latestRetrievedConfiguration.optJSONArray(keyRUserPropertyFilterList);
-        JSONArray segmentationFilterListJSARR = latestRetrievedConfiguration.optJSONArray(keyRSegmentationFilterList);
-        JSONObject eventSegmentationFilterListJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationFilterList);
+        JSONArray eventBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventBlacklist);
+        JSONArray eventWhitelistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventWhitelist);
+        JSONArray userPropertyBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyRUserPropertyBlacklist);
+        JSONArray userPropertyWhitelistJSARR = latestRetrievedConfiguration.optJSONArray(keyRUserPropertyWhitelist);
+        JSONArray segmentationBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyRSegmentationBlacklist);
+        JSONArray segmentationWhitelistJSARR = latestRetrievedConfiguration.optJSONArray(keyRSegmentationWhitelist);
+        JSONObject eventSegmentationBlacklistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationBlacklist);
+        JSONObject eventSegmentationWhitelistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationWhitelist);
 
-        extractFilterSetFromJSONArray(eventFilterListJSARR, currentVEventFilterList);
-        extractFilterSetFromJSONArray(userPropertyFilterListJSARR, currentVUserPropertyFilterList);
-        extractFilterSetFromJSONArray(segmentationFilterListJSARR, currentVSegmentationFilterList);
-        if (eventSegmentationFilterListJSOBJ != null) {
-            currentVEventSegmentationFilterList.clear();
-            Iterator<String> keys = eventSegmentationFilterListJSOBJ.keys();
+        if (eventWhitelistJSARR != null) {
+            extractFilterSetFromJSONArray(eventWhitelistJSARR, currentVEventFilterList.filterList);
+            currentVEventFilterList.isWhitelist = true;
+        } else if (eventBlacklistJSARR != null) {
+            extractFilterSetFromJSONArray(eventBlacklistJSARR, currentVEventFilterList.filterList);
+            currentVEventFilterList.isWhitelist = false;
+        }
+
+        if (userPropertyWhitelistJSARR != null) {
+            extractFilterSetFromJSONArray(userPropertyWhitelistJSARR, currentVUserPropertyFilterList.filterList);
+            currentVUserPropertyFilterList.isWhitelist = true;
+        } else if (userPropertyBlacklistJSARR != null) {
+            extractFilterSetFromJSONArray(userPropertyBlacklistJSARR, currentVUserPropertyFilterList.filterList);
+            currentVUserPropertyFilterList.isWhitelist = false;
+        }
+
+        if (segmentationWhitelistJSARR != null) {
+            extractFilterSetFromJSONArray(segmentationWhitelistJSARR, currentVSegmentationFilterList.filterList);
+            currentVSegmentationFilterList.isWhitelist = true;
+        } else if (segmentationBlacklistJSARR != null) {
+            extractFilterSetFromJSONArray(segmentationBlacklistJSARR, currentVSegmentationFilterList.filterList);
+            currentVSegmentationFilterList.isWhitelist = false;
+        }
+
+        if (eventSegmentationWhitelistJSOBJ != null) {
+            currentVEventSegmentationFilterList.filterList.clear();
+            currentVEventSegmentationFilterList.isWhitelist = true;
+            Iterator<String> keys = eventSegmentationWhitelistJSOBJ.keys();
             while (keys.hasNext()) {
                 String key = keys.next();
-                JSONArray jsonArray = eventSegmentationFilterListJSOBJ.optJSONArray(key);
+                JSONArray jsonArray = eventSegmentationWhitelistJSOBJ.optJSONArray(key);
                 if (jsonArray != null) {
                     Set<String> filterSet = new HashSet<>();
                     extractFilterSetFromJSONArray(jsonArray, filterSet);
-                    currentVEventSegmentationFilterList.put(key, filterSet);
+                    currentVEventSegmentationFilterList.filterList.put(key, filterSet);
+                }
+            }
+        } else if (eventSegmentationBlacklistJSOBJ != null) {
+            currentVEventSegmentationFilterList.filterList.clear();
+            currentVEventSegmentationFilterList.isWhitelist = false;
+            Iterator<String> keys = eventSegmentationBlacklistJSOBJ.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                JSONArray jsonArray = eventSegmentationBlacklistJSOBJ.optJSONArray(key);
+                if (jsonArray != null) {
+                    Set<String> filterSet = new HashSet<>();
+                    extractFilterSetFromJSONArray(jsonArray, filterSet);
+                    currentVEventSegmentationFilterList.filterList.put(key, filterSet);
                 }
             }
         }
@@ -373,15 +414,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                     break;
 
                 // --- Filtering keys ---
-                case keyRFilterPreset:
-                    isValid = value instanceof String && (value.equals("Blacklisting") || value.equals("Whitelisting"));
-                    break;
-                case keyREventFilterList:
-                case keyRUserPropertyFilterList:
-                case keyRSegmentationFilterList:
+                case keyREventBlacklist:
+                case keyRSegmentationBlacklist:
+                case keyRUserPropertyBlacklist:
+                case keyREventWhitelist:
+                case keyRSegmentationWhitelist:
+                case keyRUserPropertyWhitelist:
                     isValid = value instanceof JSONArray;
                     break;
-                case keyREventSegmentationFilterList:
+                case keyREventSegmentationBlacklist:
+                case keyREventSegmentationWhitelist:
                     isValid = value instanceof JSONObject;
                     break;
                 // --- Unknown keys ---
@@ -577,23 +619,19 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return currentVUserPropertyCacheLimit;
     }
 
-    @Override public boolean getFilterIsWhitelist() {
-        return currentVFilterPreset.equals("Whitelisting");
-    }
-
-    @Override public Set<String> getEventFilterSet() {
+    @Override public FilterList<Set<String>> getEventFilterList() {
         return currentVEventFilterList;
     }
 
-    @Override public Set<String> getUserPropertyFilterSet() {
+    @Override public FilterList<Set<String>> getUserPropertyFilterList() {
         return currentVUserPropertyFilterList;
     }
 
-    @Override public Set<String> getSegmentationFilterSet() {
+    @Override public FilterList<Set<String>> getSegmentationFilterList() {
         return currentVSegmentationFilterList;
     }
 
-    @Override public Map<String, Set<String>> getEventSegmentationFilterMap() {
+    @Override public FilterList<Map<String, Set<String>>> getEventSegmentationFilterList() {
         return currentVEventSegmentationFilterList;
     }
 }
