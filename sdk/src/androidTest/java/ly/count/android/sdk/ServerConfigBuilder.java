@@ -325,9 +325,9 @@ class ServerConfigBuilder {
     }
 
     private void validateFilterSettings(Countly countly) {
-        Set<String> eventFilterList = (Set<String>) config.get(keyREventSegmentationBlacklist);
+        Set<String> eventFilterList = (Set<String>) config.get(keyREventBlacklist);
         if (eventFilterList == null) {
-            eventFilterList = (Set<String>) config.get(keyREventSegmentationWhitelist);
+            eventFilterList = (Set<String>) config.get(keyREventWhitelist);
         }
         Assert.assertEquals(Objects.requireNonNull(eventFilterList).toString(), countly.moduleConfiguration.getEventFilterList().filterList.toString());
 
