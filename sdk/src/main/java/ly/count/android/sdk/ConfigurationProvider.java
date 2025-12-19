@@ -38,13 +38,22 @@ interface ConfigurationProvider {
     int getUserPropertyCacheLimit();
 
     // LISTING FILTERS
-    boolean getFilterIsWhitelist();
 
-    Set<String> getEventFilterSet();
+    FilterList<Set<String>> getEventFilterList();
 
-    Set<String> getUserPropertyFilterSet();
+    FilterList<Set<String>> getUserPropertyFilterList();
 
-    Set<String> getSegmentationFilterSet();
+    FilterList<Set<String>> getSegmentationFilterList();
 
-    Map<String, Set<String>> getEventSegmentationFilterMap();
+    FilterList<Map<String, Set<String>>> getEventSegmentationFilterList();
+
+    class FilterList<T> {
+        T filterList;
+        boolean isWhitelist;
+
+        FilterList(T filterList, boolean isWhitelist) {
+            this.filterList = filterList;
+            this.isWhitelist = isWhitelist;
+        }
+    }
 }
