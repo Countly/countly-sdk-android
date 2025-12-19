@@ -11,32 +11,36 @@ public class UtilsListingFilters {
     }
 
     static boolean applyEventFilter(@NonNull String eventName, @NonNull ConfigurationProvider configProvider) {
-        return applyListFilter(eventName, configProvider.getEventFilterSet(), configProvider.getFilterIsWhitelist());
+        ConfigurationProvider.FilterList<Set<String>> eventFilterList = configProvider.getEventFilterList();
+        return applyListFilter(eventName, eventFilterList.filterList, eventFilterList.isWhitelist);
     }
 
     static boolean applyUserPropertyFilter(@NonNull String propertyName, @NonNull ConfigurationProvider configProvider) {
-        return applyListFilter(propertyName, configProvider.getUserPropertyFilterSet(), configProvider.getFilterIsWhitelist());
+        ConfigurationProvider.FilterList<Set<String>> userPropertyFilterList = configProvider.getUserPropertyFilterList();
+        return applyListFilter(propertyName, userPropertyFilterList.filterList, userPropertyFilterList.isWhitelist);
     }
 
     static void applySegmentationFilter(@NonNull Map<String, Object> segmentation, @NonNull ConfigurationProvider configProvider, @NonNull ModuleLog L) {
         if (segmentation.isEmpty()) {
             return;
         }
-        applyMapFilter(segmentation, configProvider.getSegmentationFilterSet(), configProvider.getFilterIsWhitelist(), L);
+
+        applyMapFilter(segmentation, configProvider.getSegmentationFilterList().filterList, configProvider.getSegmentationFilterList().isWhitelist, L);
     }
 
     static void applyEventSegmentationFilter(@NonNull String eventName, @NonNull Map<String, Object> segmentation,
         @NonNull ConfigurationProvider configProvider, @NonNull ModuleLog L) {
-        if (segmentation.isEmpty() || configProvider.getEventSegmentationFilterMap().isEmpty()) {
+        ConfigurationProvider.FilterList<Map<String, Set<String>>> eventSegmentationFilterList = configProvider.getEventSegmentationFilterList();
+        if (segmentation.isEmpty() || eventSegmentationFilterList.filterList.isEmpty()) {
             return;
         }
 
-        Set<String> segmentationSet = configProvider.getEventSegmentationFilterMap().get(eventName);
+        Set<String> segmentationSet = eventSegmentationFilterList.filterList.get(eventName);
         if (segmentationSet == null || segmentationSet.isEmpty()) {
             // No rules defined for this event so allow everything
             return;
         }
-        applyMapFilter(segmentation, segmentationSet, configProvider.getFilterIsWhitelist(), L);
+        applyMapFilter(segmentation, segmentationSet, eventSegmentationFilterList.isWhitelist, L);
     }
 
     private static void applyMapFilter(@NonNull Map<String, Object> map, @NonNull Set<String> filterSet, boolean isWhitelist, @NonNull ModuleLog L) {
