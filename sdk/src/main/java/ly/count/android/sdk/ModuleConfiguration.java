@@ -255,6 +255,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     private void updateListingFilters() {
+        L.d("[ModuleConfiguration] updateListingFilters, current listing filters before updating: \n" +
+            "Event Filter List: " + currentVEventFilterList.filterList + ", isWhitelist: " + currentVEventFilterList.isWhitelist + "\n" +
+            "User Property Filter List: " + currentVUserPropertyFilterList.filterList + ", isWhitelist: " + currentVUserPropertyFilterList.isWhitelist + "\n" +
+            "Segmentation Filter List: " + currentVSegmentationFilterList.filterList + ", isWhitelist: " + currentVSegmentationFilterList.isWhitelist + "\n" +
+            "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist);
         JSONArray eventBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventBlacklist);
         JSONArray eventWhitelistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventWhitelist);
         JSONArray userPropertyBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyRUserPropertyBlacklist);
@@ -264,44 +269,31 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         JSONObject eventSegmentationBlacklistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationBlacklist);
         JSONObject eventSegmentationWhitelistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationWhitelist);
 
-        if (eventWhitelistJSARR != null) {
-            extractFilterSetFromJSONArray(eventWhitelistJSARR, currentVEventFilterList.filterList);
-            currentVEventFilterList.isWhitelist = true;
-        } else if (eventBlacklistJSARR != null) {
+        if (eventBlacklistJSARR != null) {
             extractFilterSetFromJSONArray(eventBlacklistJSARR, currentVEventFilterList.filterList);
             currentVEventFilterList.isWhitelist = false;
+        } else if (eventWhitelistJSARR != null) {
+            extractFilterSetFromJSONArray(eventWhitelistJSARR, currentVEventFilterList.filterList);
+            currentVEventFilterList.isWhitelist = true;
         }
 
-        if (userPropertyWhitelistJSARR != null) {
-            extractFilterSetFromJSONArray(userPropertyWhitelistJSARR, currentVUserPropertyFilterList.filterList);
-            currentVUserPropertyFilterList.isWhitelist = true;
-        } else if (userPropertyBlacklistJSARR != null) {
+        if (userPropertyBlacklistJSARR != null) {
             extractFilterSetFromJSONArray(userPropertyBlacklistJSARR, currentVUserPropertyFilterList.filterList);
             currentVUserPropertyFilterList.isWhitelist = false;
+        } else if (userPropertyWhitelistJSARR != null) {
+            extractFilterSetFromJSONArray(userPropertyWhitelistJSARR, currentVUserPropertyFilterList.filterList);
+            currentVUserPropertyFilterList.isWhitelist = true;
         }
 
-        if (segmentationWhitelistJSARR != null) {
-            extractFilterSetFromJSONArray(segmentationWhitelistJSARR, currentVSegmentationFilterList.filterList);
-            currentVSegmentationFilterList.isWhitelist = true;
-        } else if (segmentationBlacklistJSARR != null) {
+        if (segmentationBlacklistJSARR != null) {
             extractFilterSetFromJSONArray(segmentationBlacklistJSARR, currentVSegmentationFilterList.filterList);
             currentVSegmentationFilterList.isWhitelist = false;
+        } else if (segmentationWhitelistJSARR != null) {
+            extractFilterSetFromJSONArray(segmentationWhitelistJSARR, currentVSegmentationFilterList.filterList);
+            currentVSegmentationFilterList.isWhitelist = true;
         }
 
-        if (eventSegmentationWhitelistJSOBJ != null) {
-            currentVEventSegmentationFilterList.filterList.clear();
-            currentVEventSegmentationFilterList.isWhitelist = true;
-            Iterator<String> keys = eventSegmentationWhitelistJSOBJ.keys();
-            while (keys.hasNext()) {
-                String key = keys.next();
-                JSONArray jsonArray = eventSegmentationWhitelistJSOBJ.optJSONArray(key);
-                if (jsonArray != null) {
-                    Set<String> filterSet = new HashSet<>();
-                    extractFilterSetFromJSONArray(jsonArray, filterSet);
-                    currentVEventSegmentationFilterList.filterList.put(key, filterSet);
-                }
-            }
-        } else if (eventSegmentationBlacklistJSOBJ != null) {
+        if (eventSegmentationBlacklistJSOBJ != null) {
             currentVEventSegmentationFilterList.filterList.clear();
             currentVEventSegmentationFilterList.isWhitelist = false;
             Iterator<String> keys = eventSegmentationBlacklistJSOBJ.keys();
@@ -314,7 +306,26 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                     currentVEventSegmentationFilterList.filterList.put(key, filterSet);
                 }
             }
+        } else if (eventSegmentationWhitelistJSOBJ != null) {
+            currentVEventSegmentationFilterList.filterList.clear();
+            currentVEventSegmentationFilterList.isWhitelist = true;
+            Iterator<String> keys = eventSegmentationWhitelistJSOBJ.keys();
+            while (keys.hasNext()) {
+                String key = keys.next();
+                JSONArray jsonArray = eventSegmentationWhitelistJSOBJ.optJSONArray(key);
+                if (jsonArray != null) {
+                    Set<String> filterSet = new HashSet<>();
+                    extractFilterSetFromJSONArray(jsonArray, filterSet);
+                    currentVEventSegmentationFilterList.filterList.put(key, filterSet);
+                }
+            }
         }
+
+        L.d("[ModuleConfiguration] updateListingFilters, current listing filters after updating: \n" +
+            "Event Filter List: " + currentVEventFilterList.filterList + ", isWhitelist: " + currentVEventFilterList.isWhitelist + "\n" +
+            "User Property Filter List: " + currentVUserPropertyFilterList.filterList + ", isWhitelist: " + currentVUserPropertyFilterList.isWhitelist + "\n" +
+            "Segmentation Filter List: " + currentVSegmentationFilterList.filterList + ", isWhitelist: " + currentVSegmentationFilterList.isWhitelist + "\n" +
+            "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist);
     }
 
     private void extractFilterSetFromJSONArray(@Nullable JSONArray jsonArray, @NonNull Set<String> targetSet) {
