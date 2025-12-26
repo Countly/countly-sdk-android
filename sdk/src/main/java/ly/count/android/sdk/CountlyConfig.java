@@ -216,6 +216,9 @@ public class CountlyConfig {
     // If set to true, the SDK will not store the default push consent state on initialization for not requiring consent
     boolean disableStoringDefaultPushConsent = false;
 
+    // If set to true, the SDK will not restart manual views while switching between foreground and background
+    boolean disableViewRestartForManualRecording = false;
+
     /**
      * THIS VARIABLE SHOULD NOT BE USED
      * IT IS ONLY FOR INTERNAL TESTING
@@ -1113,6 +1116,19 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig disableStoringDefaultPushConsent() {
         this.disableStoringDefaultPushConsent = true;
+        return this;
+    }
+
+    /**
+     * Disable view restart when manual view recording is done.
+     * By default, if automatic view tracking is not enabled and a manual view is recorded,
+     * the SDK was restarting the views to properly track the view duration in bg/fg transitions.
+     * Now, with this option enabled, the SDK will not restart the views on manual view recording.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableViewRestartForManualRecording() {
+        this.disableViewRestartForManualRecording = true;
         return this;
     }
 
