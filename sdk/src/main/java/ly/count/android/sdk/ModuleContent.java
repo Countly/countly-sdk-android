@@ -64,6 +64,17 @@ public class ModuleContent extends ModuleBase {
         if (UtilsDevice.cutout == null && activity != null) {
             UtilsDevice.getCutout(activity);
         }
+        if (isCurrentlyInContentZone
+                && activity != null
+                && !(activity instanceof TransparentActivity)) {
+            try {
+                Intent bringToFront = new Intent(activity, TransparentActivity.class);
+                bringToFront.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                activity.startActivity(bringToFront);
+            } catch (Exception ex) {
+                L.w("[ModuleContent] onActivityStarted, failed to reorder TransparentActivity to front", ex);
+            }
+        }
     }
 
     void fetchContentsInternal(@NonNull String[] categories) {
