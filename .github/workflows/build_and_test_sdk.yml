@@ -24,12 +24,6 @@ jobs:
     name: Build and Test the SDK
 
     steps:
-      - name: Install Docker to the Runner
-        run: sudo apt-get install containerd.io
-
-      - name: Pull Emulator from the Repo
-        run: docker pull ${{ env.EMULATOR_REPO }}
-    
       - name: Checkout SDK code
         uses: actions/checkout@v4
 
@@ -42,15 +36,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.10
 
-      - name: Start ADB Server
-        run: adb start-server
-
-      - name: Run Android Emulator Container
-        run: docker run -d -e "ADBKEY=$(cat ~/.android/adbkey)" --device /dev/kvm --publish 5555:5555/tcp ${{ env.EMULATOR_REPO }}
-      
-      - name: Connect to the Emulator
-        run: adb connect localhost:5555
-
       - name: Set AAPT2 for android 35
         run: echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2"  | tee -a ${{ github.workspace }}/gradle.properties
   
@@ -58,15 +43,22 @@ jobs:
         if: always()
         run: ./gradlew sdk:build
 
-      - name: Run the Android Unit Tests
-        if: always()
-        run: ./gradlew sdk:connectedAndroidTest
+      - name: Build the Android Test Apk
+        run: ./gradlew sdk:assembleAndroidTest
 
-      - name: Publish Test Results to PR
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        if: always()
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
         with:
-          check_name: "Unit Test Results :rocket:"
-          comment_title: "Unit Test Results :rocket:"
-          files: |
-            sdk/build/outputs/androidTest-results/**/*.xml
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}' #service account json
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+        with:
+          version: '>= 363.0.0'
+
+      - name: Set current project
+        run: gcloud config set project ${{ secrets.FIREBASE_PROJECT_ID }}
+  
+      - name: Run Instrumentation Tests in Firebase Test Lab
+        run: gcloud firebase test android run --type instrumentation --app sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --test sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk --device model=MediumPhone.arm,version=26 --device model=MediumPhone.arm,version=27 --device model=MediumPhone.arm,version=28 --device model=MediumPhone.arm,version=29 --device model=MediumPhone.arm,version=30 --device model=MediumPhone.arm,version=31 --device model=MediumPhone.arm,version=32 --device model=MediumPhone.arm,version=33 --device model=MediumPhone.arm,version=34 --device model=MediumPhone.arm,version=35
+  
