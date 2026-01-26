@@ -620,6 +620,10 @@ public class ConnectionProcessor implements Runnable {
                     }
                 } catch (Exception e) {
                     L.d("[ConnectionProcessor] Got exception while trying to submit request data: [" + requestData + "] [" + e + "]");
+                    if (requestCallback != null) {
+                        requestCallback.onRequestCompleted(e.getMessage(), false);
+                    }
+                    internalRequestCallbacks_.remove(callbackID);
                     // if exception occurred, stop processing, let next tick take care of retrying
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_11_NetworkWholeQueueException", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
