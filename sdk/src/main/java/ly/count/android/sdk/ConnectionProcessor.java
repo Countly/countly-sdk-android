@@ -64,6 +64,7 @@ public class ConnectionProcessor implements Runnable {
 
     private final Map<String, String> requestHeaderCustomValues_;
     private final Runnable backoffCallback_;
+    private final Map<String, InternalRequestCallback> internalRequestCallbacks_;
 
     static String endPointOverrideTag = "&new_end_point=";
 
@@ -78,7 +79,7 @@ public class ConnectionProcessor implements Runnable {
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
         final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
-        HealthTracker healthTracker, Runnable backoffCallback) {
+        HealthTracker healthTracker, Runnable backoffCallback, final Map<String, InternalRequestCallback> internalRequestCallbacks) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
@@ -87,6 +88,7 @@ public class ConnectionProcessor implements Runnable {
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
         backoffCallback_ = backoffCallback;
+        internalRequestCallbacks_ = internalRequestCallbacks;
         L = logModule;
         this.healthTracker = healthTracker;
     }

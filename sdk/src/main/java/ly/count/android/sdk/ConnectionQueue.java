@@ -929,7 +929,7 @@ class ConnectionQueue implements RequestQueueProvider {
                     }
                 }, configProvider.getBOMDuration(), TimeUnit.SECONDS);
             }
-        });
+        }, internalRequestCallbacks);
         cp.pcc = pcc;
         return cp;
     }
