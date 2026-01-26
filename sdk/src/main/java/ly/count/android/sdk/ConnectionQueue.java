@@ -26,6 +26,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -70,6 +72,7 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
+    private Map<String, InternalRequestCallback> internalRequestCallbacks = new ConcurrentHashMap<>();
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -208,7 +211,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         Countly.sharedInstance().isBeginSessionSent = true;
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -233,7 +236,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
             + "&new_end_point=/o/sdk";
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -260,7 +263,7 @@ class ConnectionQueue implements RequestQueueProvider {
             data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys);
         }
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -286,7 +289,7 @@ class ConnectionQueue implements RequestQueueProvider {
             String data = prepareCommonRequestData();
             data += "&session_duration=" + duration;
 
-            addRequestToQueue(data, false);
+            addRequestToQueue(data, false, null);
             tick();
         }
     }
@@ -301,7 +304,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         data += "&old_device_id=" + UtilsNetworking.urlEncodeString(oldDeviceId);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -330,7 +333,7 @@ class ConnectionQueue implements RequestQueueProvider {
             @Override
             public void run() {
                 L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
-                addRequestToQueue(data, false);
+                addRequestToQueue(data, false, null);
                 tick();
             }
         }, 10, TimeUnit.SECONDS);
@@ -356,7 +359,7 @@ class ConnectionQueue implements RequestQueueProvider {
             data += "&session_duration=" + duration;
         }
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -373,7 +376,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         data += prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -395,7 +398,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + userdata;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -418,7 +421,7 @@ class ConnectionQueue implements RequestQueueProvider {
         String param = "&aid=" + UtilsNetworking.urlEncodeString(attributionObj);
 
         String data = prepareCommonRequestData() + param;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -442,7 +445,7 @@ class ConnectionQueue implements RequestQueueProvider {
         String res = "&attribution_data=" + UtilsNetworking.urlEncodeString(attributionData);
 
         String data = prepareCommonRequestData() + res;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -473,7 +476,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + res;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -498,7 +501,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&crash=" + UtilsNetworking.urlEncodeString(crashData);
 
         //in case of a fatal crash, write it in sync to shared preferences
-        addRequestToQueue(data, !nonFatalCrash);
+        addRequestToQueue(data, !nonFatalCrash, null);
 
         tick();
     }
@@ -535,7 +538,7 @@ class ConnectionQueue implements RequestQueueProvider {
             ));
         }
 
-        addRequestToQueue(data.toString(), false);
+        addRequestToQueue(data.toString(), false, null);
         tick();
     }
 
@@ -546,7 +549,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         L.d("[ConnectionQueue] sendMetricsRequest");
-        addRequestToQueue(prepareCommonRequestData() + "&metrics=" + preparedMetrics, false);
+        addRequestToQueue(prepareCommonRequestData() + "&metrics=" + preparedMetrics, false, null);
         tick();
     }
 
@@ -569,7 +572,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&events=" + events;
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -582,7 +585,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&consent=" + UtilsNetworking.urlEncodeString(formattedConsentChanges);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -609,7 +612,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -637,7 +640,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -662,7 +665,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -687,7 +690,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -944,8 +947,15 @@ class ConnectionQueue implements RequestQueueProvider {
         return false;
     }
 
-    void addRequestToQueue(final @NonNull String requestData, final boolean writeInSync) {
-        storageProvider.addRequest(requestData, writeInSync);
+    void addRequestToQueue(final @NonNull String requestData, final boolean writeInSync, InternalRequestCallback callback) {
+        if (callback == null) {
+            storageProvider.addRequest(requestData, writeInSync);
+        } else {
+            String callbackID = UUID.randomUUID().toString();
+            internalRequestCallbacks.put(callbackID, callback);
+            String callbackParam = "&callback_id=" + UtilsNetworking.urlEncodeString(callbackID);
+            storageProvider.addRequest(requestData + callbackParam, writeInSync);
+        }
     }
 
     /**
