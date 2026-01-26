@@ -26,6 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -101,8 +102,11 @@ class ConnectionQueue implements RequestQueueProvider {
     public ConnectionQueue() {
         internalRequestCallbacks.put(GLOBAL_RC_CALLBACK, new InternalRequestCallback() {
             @Override public void onRQFinished() {
-                for (Runnable r : internalGlobalRequestCallbackActions) {
-                    r.run();
+                Iterator<Runnable> iter = internalGlobalRequestCallbackActions.iterator();
+                while (iter.hasNext()) {
+                    Runnable action = iter.next();
+                    action.run();
+                    iter.remove();
                 }
             }
         });
