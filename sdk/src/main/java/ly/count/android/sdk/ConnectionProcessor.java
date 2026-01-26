@@ -462,6 +462,15 @@ public class ConnectionProcessor implements Runnable {
                 L.v("[ConnectionProcessor] Custom end point detected for the request:[" + customEndpoint + "]");
             }
 
+            String[] callbackExtraction = Utils.extractValueFromString(requestData, "&callback_id=", "&");
+            InternalRequestCallback requestCallback = null;
+            String callbackID = callbackExtraction[1];
+            if (callbackID != null) {
+                requestData = callbackExtraction[0];
+                requestCallback = internalRequestCallbacks_.get(callbackID);
+                L.v("[ConnectionProcessor] run, Internal request callback detected for the request");
+            }
+
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_04_NetworkCustomEndpoint", UtilsTime.getNanoTime() - pccTsStartEndpointCheck);
             }
@@ -581,6 +590,10 @@ public class ConnectionProcessor implements Runnable {
                     // an 'if' needs to be used here so that a 'switch' statement does not 'eat' the 'break' call
                     // that is used to get out of the request loop
                     if (rRes == RequestResult.OK) {
+                        if (requestCallback != null) {
+                            requestCallback.onRequestCompleted(null, true);
+                            internalRequestCallbacks_.remove(callbackID);
+                        }
                         // successfully submitted event data to Count.ly server, so remove
                         // this one from the stored events collection
                         storageProvider_.removeRequest(originalRequest);
@@ -590,6 +603,10 @@ public class ConnectionProcessor implements Runnable {
                             break;
                         }
                     } else {
+                        if (requestCallback != null) {
+                            requestCallback.onRequestCompleted(responseString, false);
+                            internalRequestCallbacks_.remove(callbackID);
+                        }
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
                         healthTracker.logFailedNetworkRequest(responseCode, responseString);//notify the health tracker of the issue
