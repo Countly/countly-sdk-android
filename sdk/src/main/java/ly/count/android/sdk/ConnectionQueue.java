@@ -24,7 +24,9 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -50,6 +52,7 @@ import org.json.JSONObject;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 class ConnectionQueue implements RequestQueueProvider {
+    static final String GLOBAL_RC_CALLBACK = "global_request_callback";
     private ExecutorService executor_;
     private Context context_;
     private Future<?> connectionProcessorFuture_;
@@ -72,7 +75,8 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
-    private Map<String, InternalRequestCallback> internalRequestCallbacks = new ConcurrentHashMap<>();
+    private final Map<String, InternalRequestCallback> internalRequestCallbacks = new ConcurrentHashMap<>();
+    private final List<Runnable> internalGlobalRequestCallbackActions = new ArrayList<>();
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -92,6 +96,16 @@ class ConnectionQueue implements RequestQueueProvider {
 
     void setContext(final Context context) {
         context_ = context;
+    }
+
+    public ConnectionQueue() {
+        internalRequestCallbacks.put(GLOBAL_RC_CALLBACK, new InternalRequestCallback() {
+            @Override public void onRQFinished() {
+                for (Runnable r : internalGlobalRequestCallbackActions) {
+                    r.run();
+                }
+            }
+        });
     }
 
     void setupSSLContext() {
@@ -956,6 +970,10 @@ class ConnectionQueue implements RequestQueueProvider {
             String callbackParam = "&callback_id=" + UtilsNetworking.urlEncodeString(callbackID);
             storageProvider.addRequest(requestData + callbackParam, writeInSync);
         }
+    }
+
+    void registerInternalGlobalRequestCallbackAction(Runnable runnable) {
+        internalGlobalRequestCallbackActions.add(runnable);
     }
 
     /**

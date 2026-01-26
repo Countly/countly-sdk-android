@@ -51,7 +51,6 @@ import org.json.JSONObject;
 public class ConnectionProcessor implements Runnable {
     private static final String CRLF = "\r\n";
     private static final String charset = "UTF-8";
-
     private final StorageProvider storageProvider_;
     private final DeviceIdProvider deviceIdProvider_;
     final ConfigurationProvider configProvider_;
@@ -65,7 +64,6 @@ public class ConnectionProcessor implements Runnable {
     private final Map<String, String> requestHeaderCustomValues_;
     private final Runnable backoffCallback_;
     private final Map<String, InternalRequestCallback> internalRequestCallbacks_;
-
     static String endPointOverrideTag = "&new_end_point=";
 
     ModuleLog L;
@@ -393,6 +391,10 @@ public class ConnectionProcessor implements Runnable {
             if (storedRequests == null || storedRequestCount == 0) {
                 L.i("[ConnectionProcessor] No requests in the queue, request queue skipped");
                 // currently no data to send, we are done for now
+                InternalRequestCallback globalCallback = internalRequestCallbacks_.get(ConnectionQueue.GLOBAL_RC_CALLBACK);
+                if (globalCallback != null) {
+                    globalCallback.onRQFinished();
+                }
                 break;
             }
 
