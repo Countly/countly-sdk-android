@@ -319,7 +319,7 @@ public class ModuleContent extends ModuleBase {
         waitForDelay = 0;
     }
 
-    private void refreshContentZoneInternal() {
+    void refreshContentZoneInternal(boolean callRQFlush) {
         if (!configProvider.getRefreshContentZoneEnabled()) {
             return;
         }
@@ -333,7 +333,9 @@ public class ModuleContent extends ModuleBase {
             exitContentZoneInternal();
         }
 
-        _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+        if (callRQFlush) {
+            _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+        }
 
         enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
     }
@@ -379,7 +381,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            refreshContentZoneInternal();
+            refreshContentZoneInternal(true);
         }
     }
 }

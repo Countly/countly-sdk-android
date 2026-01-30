@@ -583,6 +583,17 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void recordEvents(final String events) {
+        recordEvents(events, null);
+    }
+
+    /**
+     * Records the specified events and sends them to the server.
+     *
+     * @param events URL-encoded JSON string of event data
+     * @param callback InternalRequestCallback to be called when request is finished
+     * @throws IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    public void recordEvents(final String events, InternalRequestCallback callback) {
         if (!checkInternalState()) {
             return;
         }
@@ -595,7 +606,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&events=" + events;
 
-        addRequestToQueue(data, false, null);
+        addRequestToQueue(data, false, callback);
         tick();
     }
 

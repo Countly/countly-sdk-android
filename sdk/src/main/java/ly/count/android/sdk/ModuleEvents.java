@@ -230,6 +230,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     return;
                 }
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
+                    // apply journey trigger events here
+                    boolean triggerRefreshContentZone = configProvider.getJourneyTriggerEvents().contains(key);
+
                     String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
                     if (segmentation == null) {
                         segmentation = new HashMap<>();
@@ -244,7 +247,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     previousEventName = keyTruncated;
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(triggerRefreshContentZone, triggerRefreshContentZone);
                 }
                 break;
         }
