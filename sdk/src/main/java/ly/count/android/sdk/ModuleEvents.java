@@ -230,6 +230,11 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     return;
                 }
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
+                    //apply custom event listing filter
+                    if (!UtilsListingFilters.applyEventFilter(key, configProvider)) {
+                        L.w("[ModuleEvents] recordEventInternal, Event key [" + key + "] was filtered out by event filter list. Event will not be recorded.");
+                        return;
+                    }
                     // apply journey trigger events here
                     boolean triggerRefreshContentZone = configProvider.getJourneyTriggerEvents().contains(key);
 
