@@ -24,12 +24,12 @@ package ly.count.android.sdk;
 import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -76,7 +76,8 @@ class ConnectionQueue implements RequestQueueProvider {
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
     private final Map<String, InternalRequestCallback> internalRequestCallbacks = new ConcurrentHashMap<>();
-    private final List<Runnable> internalGlobalRequestCallbackActions = new ArrayList<>();
+    // Using CopyOnWriteArrayList for thread safety - allows iteration while modifications may occur from other threads
+    private final List<Runnable> internalGlobalRequestCallbackActions = new CopyOnWriteArrayList<>();
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -99,10 +100,18 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public ConnectionQueue() {
+        // Register the global callback that executes all registered actions when the request queue finishes processing
         internalRequestCallbacks.put(GLOBAL_RC_CALLBACK, new InternalRequestCallback() {
             @Override public void onRQFinished() {
+                // Execute each registered action with try-catch to prevent one failing action from blocking others
                 for (Runnable r : internalGlobalRequestCallbackActions) {
-                    r.run();
+                    try {
+                        r.run();
+                    } catch (Exception e) {
+                        if (L != null) {
+                            L.e("[ConnectionQueue] Exception while executing global request callback action: " + e.getMessage());
+                        }
+                    }
                 }
             }
         });
@@ -961,6 +970,18 @@ class ConnectionQueue implements RequestQueueProvider {
         return false;
     }
 
+    /**
+     * Adds a request to the queue with an optional callback.
+     * <p>
+     * When a callback is provided:
+     * - A unique UUID is generated and stored with the callback in internalRequestCallbacks
+     * - The callback_id is appended to the request data
+     * - When the request completes (success, failure, or dropped), the callback is invoked and removed
+     *
+     * @param requestData The request data to queue
+     * @param writeInSync Whether to write synchronously (used for crash reports)
+     * @param callback Optional callback to be notified when the request completes. May be null.
+     */
     void addRequestToQueue(final @NonNull String requestData, final boolean writeInSync, InternalRequestCallback callback) {
         if (callback == null) {
             storageProvider.addRequest(requestData, writeInSync);
@@ -972,10 +993,27 @@ class ConnectionQueue implements RequestQueueProvider {
         }
     }
 
+    /**
+     * Registers an action to be executed when the request queue finishes processing (becomes empty).
+     * <p>
+     * Important behaviors:
+     * - Actions persist across multiple queue completions (they are NOT automatically cleared)
+     * - Actions are executed in the order they were registered
+     * - If an action throws an exception, it is logged but does not prevent other actions from running
+     * - To clear all actions, call {@link #flushInternalGlobalRequestCallbackActions()}
+     *
+     * @param runnable The action to execute when the queue finishes
+     */
     void registerInternalGlobalRequestCallbackAction(Runnable runnable) {
         internalGlobalRequestCallbackActions.add(runnable);
     }
 
+    /**
+     * Clears all registered global request callback actions.
+     * <p>
+     * After calling this method, no actions will be executed on future queue completions
+     * until new actions are registered via {@link #registerInternalGlobalRequestCallbackAction(Runnable)}.
+     */
     void flushInternalGlobalRequestCallbackActions() {
         internalGlobalRequestCallbackActions.clear();
     }
