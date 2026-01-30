@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -1174,7 +1175,6 @@ public class ModuleConfigurationTests {
         countlyConfig.metricProviderOverride = new MockedMetricProvider();
         Countly.sharedInstance().init(countlyConfig);
         Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
         return counts;
     }
 
@@ -1224,6 +1224,11 @@ public class ModuleConfigurationTests {
         Thread.sleep(1000);
 
         Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+        try {
+            // wait for refresh to complete
+            Countly.sharedInstance().moduleContent.refreshContentZoneInternalFuture.get(5, TimeUnit.SECONDS);
+        } catch (Exception ignored) {
+        }
     }
 
     private void feedbackFlow_allFeatures() {
