@@ -4,10 +4,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
 import static org.mockito.Mockito.mock;
 
 /**
@@ -51,7 +53,8 @@ public class CustomHeaderRuntimeTests {
             mCountly.requestHeaderCustomValues,
             mCountly.L,
             mCountly.config_.healthTracker,
-            mock(Runnable.class)
+            mock(Runnable.class),
+            new ConcurrentHashMap<>()
         );
 
         URLConnection urlConnection = cp.urlConnectionForServerRequest("a=b", null);
