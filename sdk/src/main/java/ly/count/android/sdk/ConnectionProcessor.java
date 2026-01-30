@@ -657,6 +657,13 @@ public class ConnectionProcessor implements Runnable {
                     L.i("[ConnectionProcessor] Device identified as an app crawler, removing request " + originalRequest);
                 }
 
+                // Notify callback that request was dropped (not sent to server)
+                if (requestCallback != null) {
+                    String reason = isRequestOld ? "Request too old" : "Device is app crawler";
+                    requestCallback.onRequestCompleted(reason, false);
+                    internalRequestCallbacks_.remove(callbackID);
+                }
+
                 //remove stored data
                 storageProvider_.removeRequest(originalRequest);
             }
