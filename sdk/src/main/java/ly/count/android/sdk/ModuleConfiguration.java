@@ -61,6 +61,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRUserPropertyWhitelist = "upw";
     final static String keyRSegmentationWhitelist = "sw";
     final static String keyREventSegmentationWhitelist = "esw"; // json
+    final static String keyRJourneyTriggerEvents = "jte";
 
     // FLAGS
     boolean currentVTracking = true;
@@ -86,6 +87,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     FilterList<Set<String>> currentVUserPropertyFilterList = new FilterList<>(new HashSet<>(), false);
     FilterList<Set<String>> currentVSegmentationFilterList = new FilterList<>(new HashSet<>(), false);
     FilterList<Map<String, Set<String>>> currentVEventSegmentationFilterList = new FilterList<>(new ConcurrentHashMap<>(), false);
+    Set<String> currentVJourneyTriggerEvents = new HashSet<>();
 
     // SERVER CONFIGURATION PARAMS
     Integer serverConfigUpdateInterval; // in hours
@@ -259,7 +261,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             "Event Filter List: " + currentVEventFilterList.filterList + ", isWhitelist: " + currentVEventFilterList.isWhitelist + "\n" +
             "User Property Filter List: " + currentVUserPropertyFilterList.filterList + ", isWhitelist: " + currentVUserPropertyFilterList.isWhitelist + "\n" +
             "Segmentation Filter List: " + currentVSegmentationFilterList.filterList + ", isWhitelist: " + currentVSegmentationFilterList.isWhitelist + "\n" +
-            "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist);
+            "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist + "\n" +
+            "Journey Trigger Events: " + currentVJourneyTriggerEvents);
         JSONArray eventBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventBlacklist);
         JSONArray eventWhitelistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventWhitelist);
         JSONArray userPropertyBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyRUserPropertyBlacklist);
@@ -268,6 +271,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         JSONArray segmentationWhitelistJSARR = latestRetrievedConfiguration.optJSONArray(keyRSegmentationWhitelist);
         JSONObject eventSegmentationBlacklistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationBlacklist);
         JSONObject eventSegmentationWhitelistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationWhitelist);
+        JSONArray journeyTriggerEventsJSARR = latestRetrievedConfiguration.optJSONArray(keyRJourneyTriggerEvents);
 
         if (eventBlacklistJSARR != null) {
             extractFilterSetFromJSONArray(eventBlacklistJSARR, currentVEventFilterList.filterList);
@@ -321,11 +325,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             }
         }
 
+        if (journeyTriggerEventsJSARR != null) {
+            extractFilterSetFromJSONArray(journeyTriggerEventsJSARR, currentVJourneyTriggerEvents);
+        }
+
         L.d("[ModuleConfiguration] updateListingFilters, current listing filters after updating: \n" +
             "Event Filter List: " + currentVEventFilterList.filterList + ", isWhitelist: " + currentVEventFilterList.isWhitelist + "\n" +
             "User Property Filter List: " + currentVUserPropertyFilterList.filterList + ", isWhitelist: " + currentVUserPropertyFilterList.isWhitelist + "\n" +
             "Segmentation Filter List: " + currentVSegmentationFilterList.filterList + ", isWhitelist: " + currentVSegmentationFilterList.isWhitelist + "\n" +
-            "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist);
+            "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist + "\n" +
+            "Journey Trigger Events: " + currentVJourneyTriggerEvents);
     }
 
     private void extractFilterSetFromJSONArray(@Nullable JSONArray jsonArray, @NonNull Set<String> targetSet) {
@@ -431,6 +440,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 case keyREventWhitelist:
                 case keyRSegmentationWhitelist:
                 case keyRUserPropertyWhitelist:
+                case keyRJourneyTriggerEvents:
                     isValid = value instanceof JSONArray;
                     break;
                 case keyREventSegmentationBlacklist:
@@ -644,5 +654,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public FilterList<Map<String, Set<String>>> getEventSegmentationFilterList() {
         return currentVEventSegmentationFilterList;
+    }
+
+    @Override public Set<String> getJourneyTriggerEvents() {
+        return currentVJourneyTriggerEvents;
     }
 }

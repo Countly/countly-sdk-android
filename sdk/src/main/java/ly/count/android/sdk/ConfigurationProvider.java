@@ -47,6 +47,8 @@ interface ConfigurationProvider {
 
     FilterList<Map<String, Set<String>>> getEventSegmentationFilterList();
 
+    Set<String> getJourneyTriggerEvents();
+
     class FilterList<T> {
         T filterList;
         boolean isWhitelist;
