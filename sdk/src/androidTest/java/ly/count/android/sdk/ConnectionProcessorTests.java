@@ -31,6 +31,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -161,7 +162,7 @@ public class ConnectionProcessorTests {
             }
         };
 
-        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class));
+        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
         testDeviceId = "123";
     }
 
@@ -170,7 +171,7 @@ public class ConnectionProcessorTests {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
         final DeviceIdProvider mockDeviceId = mock(DeviceIdProvider.class);
-        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class));
+        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
     }
@@ -237,7 +238,7 @@ public class ConnectionProcessorTests {
         customValues.put("5", "");
         customValues.put("6", null);
 
-        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class));
+        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest("eventData", null);
 
         assertEquals("bb", urlConnection.getRequestProperty("aa"));
