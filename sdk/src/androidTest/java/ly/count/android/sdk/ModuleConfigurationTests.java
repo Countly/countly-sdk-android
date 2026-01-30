@@ -645,7 +645,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void configurationParameterCount() {
-        int configParameterCount = 40; // plus config, timestamp and version parameters, UPDATE: list filters, and user property cache limit
+        int configParameterCount = 41; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, and journey trigger events
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
             if (field.getName().startsWith("keyR")) {
@@ -1131,7 +1131,8 @@ public class ModuleConfigurationTests {
             .eventFilterList(new HashSet<>(), false)
             .userPropertyFilterList(new HashSet<>(), false)
             .segmentationFilterList(new HashSet<>(), false)
-            .eventSegmentationFilterMap(new ConcurrentHashMap<>(), false);
+            .eventSegmentationFilterMap(new ConcurrentHashMap<>(), false)
+            .journeyTriggerEvents(new HashSet<>());
 
         String serverConfig = builder.build();
         CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false);

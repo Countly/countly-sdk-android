@@ -22,6 +22,7 @@ import static ly.count.android.sdk.ModuleConfiguration.keyREventQueueSize;
 import static ly.count.android.sdk.ModuleConfiguration.keyREventSegmentationBlacklist;
 import static ly.count.android.sdk.ModuleConfiguration.keyREventSegmentationWhitelist;
 import static ly.count.android.sdk.ModuleConfiguration.keyREventWhitelist;
+import static ly.count.android.sdk.ModuleConfiguration.keyRJourneyTriggerEvents;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitBreadcrumb;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitKeyLength;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitSegValues;
@@ -223,6 +224,11 @@ class ServerConfigBuilder {
         return this;
     }
 
+    ServerConfigBuilder journeyTriggerEvents(Set<String> journeyTriggerEvents) {
+        config.put(keyRJourneyTriggerEvents, journeyTriggerEvents);
+        return this;
+    }
+
     ServerConfigBuilder defaults() {
         // Feature flags
         tracking(true);
@@ -258,6 +264,7 @@ class ServerConfigBuilder {
         userPropertyFilterList(new HashSet<>(), false);
         segmentationFilterList(new HashSet<>(), false);
         eventSegmentationFilterMap(new ConcurrentHashMap<>(), false);
+        journeyTriggerEvents(new HashSet<>());
 
         return this;
     }
@@ -348,5 +355,8 @@ class ServerConfigBuilder {
             eventSegmentationFilterMap = (Map<String, Set<String>>) config.get(keyREventSegmentationWhitelist);
         }
         Assert.assertEquals(Objects.requireNonNull(eventSegmentationFilterMap).toString(), countly.moduleConfiguration.getEventSegmentationFilterList().filterList.toString());
+
+        Set<String> journeyTriggerEvents = (Set<String>) config.get(keyRJourneyTriggerEvents);
+        Assert.assertEquals(Objects.requireNonNull(journeyTriggerEvents).toString(), countly.moduleConfiguration.getJourneyTriggerEvents().toString());
     }
 } 
