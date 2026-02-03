@@ -189,36 +189,48 @@ class ServerConfigBuilder {
     }
 
     ServerConfigBuilder eventFilterList(Set<String> filterList, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
         if (isWhitelist) {
+            config.remove(keyREventBlacklist);
             config.put(keyREventWhitelist, filterList);
         } else {
+            config.remove(keyREventWhitelist);
             config.put(keyREventBlacklist, filterList);
         }
         return this;
     }
 
     ServerConfigBuilder userPropertyFilterList(Set<String> filterList, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
         if (isWhitelist) {
+            config.remove(keyRUserPropertyBlacklist);
             config.put(keyRUserPropertyWhitelist, filterList);
         } else {
+            config.remove(keyRUserPropertyWhitelist);
             config.put(keyRUserPropertyBlacklist, filterList);
         }
         return this;
     }
 
     ServerConfigBuilder segmentationFilterList(Set<String> filterList, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
         if (isWhitelist) {
+            config.remove(keyRSegmentationBlacklist);
             config.put(keyRSegmentationWhitelist, filterList);
         } else {
+            config.remove(keyRSegmentationWhitelist);
             config.put(keyRSegmentationBlacklist, filterList);
         }
         return this;
     }
 
     ServerConfigBuilder eventSegmentationFilterMap(Map<String, Set<String>> filterMap, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
         if (isWhitelist) {
+            config.remove(keyREventSegmentationBlacklist);
             config.put(keyREventSegmentationWhitelist, filterMap);
         } else {
+            config.remove(keyREventSegmentationWhitelist);
             config.put(keyREventSegmentationBlacklist, filterMap);
         }
         return this;

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -1285,5 +1286,1105 @@ public class ModuleConfigurationTests {
         Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, hc, fc, rc, cc, scc);
+    }
+
+    // ================ Event Filter Tests ================
+
+    /**
+     * Tests that event blacklist properly blocks filtered events.
+     * Events in the blacklist should not be recorded.
+     */
+    @Test
+    public void eventFilter_blacklist_blocksFilteredEvents() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("blocked_event");
+        blacklist.add("another_blocked");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Record a blocked event - should not be recorded
+        Countly.sharedInstance().events().recordEvent("blocked_event");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        // Record another blocked event - should not be recorded
+        Countly.sharedInstance().events().recordEvent("another_blocked");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        // Record an allowed event - should be recorded
+        Countly.sharedInstance().events().recordEvent("allowed_event");
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+        Assert.assertTrue(countlyStore.getEvents()[0].contains("allowed_event"));
+
+        // Verify the filter state
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventFilterList().filterList.contains("blocked_event"));
+    }
+
+    /**
+     * Tests that event whitelist only allows specified events.
+     * Only events in the whitelist should be recorded.
+     */
+    @Test
+    public void eventFilter_whitelist_onlyAllowsSpecifiedEvents() throws JSONException {
+        Set<String> whitelist = new HashSet<>();
+        whitelist.add("allowed_event");
+        whitelist.add("another_allowed");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(whitelist, true).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Record an allowed event - should be recorded
+        Countly.sharedInstance().events().recordEvent("allowed_event");
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+
+        // Record another allowed event - should be recorded
+        Countly.sharedInstance().events().recordEvent("another_allowed");
+        Assert.assertEquals(2, countlyStore.getEventQueueSize());
+
+        // Record an event not in whitelist - should not be recorded
+        Countly.sharedInstance().events().recordEvent("not_in_whitelist");
+        Assert.assertEquals(2, countlyStore.getEventQueueSize());
+
+        Assert.assertFalse(countlyStore.getEvents()[0].contains("not_in_whitelist"));
+        Assert.assertFalse(countlyStore.getEvents()[1].contains("not_in_whitelist"));
+
+        // Verify the filter state
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventFilterList().filterList.contains("allowed_event"));
+    }
+
+    /**
+     * Tests that an empty event filter allows all events.
+     * When no filter rules are defined, all events should pass through.
+     */
+    @Test
+    public void eventFilter_emptyFilter_allowsAllEvents() throws JSONException {
+        Set<String> emptySet = new HashSet<>();
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(emptySet, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // All events should be recorded with empty filter
+        Countly.sharedInstance().events().recordEvent("event_1");
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("event_2");
+        Assert.assertEquals(2, countlyStore.getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("any_event");
+        Assert.assertEquals(3, countlyStore.getEventQueueSize());
+    }
+
+    /**
+     * Tests that internal events bypass event filters.
+     * Internal SDK events like views should not be affected by event filters.
+     */
+    @Test
+    public void eventFilter_internalEventsNotAffected() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("[CLY]_view"); // Try to block view events
+        blacklist.add("test_blocked"); // A custom event to block
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        int initialQueueSize = countlyStore.getEventQueueSize();
+
+        // View events should still be recorded (internal events bypass filters)
+        Countly.sharedInstance().views().startView("test_view");
+        Assert.assertEquals(initialQueueSize + 1, countlyStore.getEventQueueSize());
+
+        // Custom blocked event should be blocked
+        Countly.sharedInstance().events().recordEvent("test_blocked");
+        Assert.assertEquals(initialQueueSize + 1, countlyStore.getEventQueueSize()); // Still same, blocked
+
+        Assert.assertTrue(countlyStore.getEvents()[initialQueueSize].contains("[CLY]_view"));
+    }
+
+    // ================ User Property Filter Tests ================
+
+    /**
+     * Tests that user property blacklist properly blocks filtered properties.
+     * Properties in the blacklist should not be recorded.
+     */
+    @Test
+    public void userPropertyFilter_blacklist_blocksFilteredProperties() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("blocked_prop");
+        blacklist.add("another_blocked");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Set properties - blocked ones should be filtered
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("blocked_prop", "value1");
+        properties.put("another_blocked", "value2");
+        properties.put("allowed_prop", "value3");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // Only allowed_prop should be set in custom properties
+        Assert.assertNotNull(Countly.sharedInstance().moduleUserProfile.custom);
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("allowed_prop"));
+        Assert.assertFalse(Countly.sharedInstance().moduleUserProfile.custom.containsKey("blocked_prop"));
+        Assert.assertFalse(Countly.sharedInstance().moduleUserProfile.custom.containsKey("another_blocked"));
+
+        // Save and verify request only contains allowed property
+        Countly.sharedInstance().userProfile().save();
+        ModuleUserProfileTests.validateUserProfileRequest(TestUtils.map(), TestUtils.map("allowed_prop", "value3"));
+    }
+
+    /**
+     * Tests that user property whitelist only allows specified properties.
+     */
+    @Test
+    public void userPropertyFilter_whitelist_onlyAllowsSpecifiedProperties() throws JSONException {
+        Set<String> whitelist = new HashSet<>();
+        whitelist.add("allowed_prop");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyFilterList(whitelist, true).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("allowed_prop", "value1");
+        properties.put("not_allowed", "value2");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        Assert.assertNotNull(Countly.sharedInstance().moduleUserProfile.custom);
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("allowed_prop"));
+        Assert.assertFalse(Countly.sharedInstance().moduleUserProfile.custom.containsKey("not_allowed"));
+
+        // Save and verify request only contains allowed property
+        Countly.sharedInstance().userProfile().save();
+        ModuleUserProfileTests.validateUserProfileRequest(TestUtils.map(), TestUtils.map("allowed_prop", "value1"));
+    }
+
+    /**
+     * Tests that named user properties bypass filters.
+     * Named properties like name, email, username should not be filtered.
+     */
+    @Test
+    public void userPropertyFilter_namedPropertiesBypassFilter() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("name");
+        blacklist.add("email");
+        blacklist.add("custom_blocked");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("name", "John Doe");
+        properties.put("email", "john@example.com");
+        properties.put("custom_blocked", "blocked_value");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // Named properties should be set despite being in blacklist
+        Assert.assertEquals("John Doe", Countly.sharedInstance().moduleUserProfile.name);
+        Assert.assertEquals("john@example.com", Countly.sharedInstance().moduleUserProfile.email);
+
+        // Save and verify named properties are in request but custom_blocked is not
+        Countly.sharedInstance().userProfile().save();
+        ModuleUserProfileTests.validateUserProfileRequest(
+            TestUtils.map("name", "John Doe", "email", "john@example.com"),
+            TestUtils.map()  // custom_blocked should be filtered out
+        );
+    }
+
+    /**
+     * Tests that modifyCustomData respects user property filters.
+     */
+    @Test
+    public void userPropertyFilter_modifyCustomData_respectsFilter() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("blocked_prop");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Try to increment a blocked property - should be ignored
+        Countly.sharedInstance().userProfile().incrementBy("blocked_prop", 5);
+        Assert.assertNull(Countly.sharedInstance().moduleUserProfile.customMods);
+
+        // Increment an allowed property - should work
+        Countly.sharedInstance().userProfile().incrementBy("allowed_prop", 5);
+        Assert.assertNotNull(Countly.sharedInstance().moduleUserProfile.customMods);
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.customMods.containsKey("allowed_prop"));
+
+        // Save and verify request only contains allowed property with increment
+        Countly.sharedInstance().userProfile().save();
+        JSONObject expectedMod = new JSONObject();
+        expectedMod.put("$inc", 5);
+        ModuleUserProfileTests.validateUserProfileRequest(
+            TestUtils.map(),
+            TestUtils.map("allowed_prop", expectedMod)
+        );
+    }
+
+    // ================ Segmentation Filter Tests ================
+
+    /**
+     * Tests that segmentation blacklist removes filtered keys from event segmentation.
+     */
+    @Test
+    public void segmentationFilter_blacklist_removesFilteredKeys() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("blocked_key");
+        blacklist.add("another_blocked");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().segmentationFilterList(blacklist, false).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("blocked_key", "value1");
+        segmentation.put("another_blocked", "value2");
+        segmentation.put("allowed_key", "value3");
+
+        Countly.sharedInstance().events().recordEvent("test_event", segmentation);
+
+        // Verify only allowed_key is in the recorded event
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("test_event", TestUtils.map("allowed_key", "value3"), 0, 1, 0, 1);
+    }
+
+    /**
+     * Tests that segmentation whitelist only keeps specified keys.
+     */
+    @Test
+    public void segmentationFilter_whitelist_onlyKeepsSpecifiedKeys() throws JSONException {
+        Set<String> whitelist = new HashSet<>();
+        whitelist.add("allowed_key");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().segmentationFilterList(whitelist, true).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("allowed_key", "value1");
+        segmentation.put("not_allowed_1", "value2");
+        segmentation.put("not_allowed_2", "value3");
+
+        Countly.sharedInstance().events().recordEvent("test_event", segmentation);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("test_event", TestUtils.map("allowed_key", "value1"), 0, 1, 0, 1);
+    }
+
+    /**
+     * Tests that empty segmentation filter allows all keys.
+     */
+    @Test
+    public void segmentationFilter_emptyFilter_allowsAllKeys() throws JSONException {
+        Set<String> emptySet = new HashSet<>();
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().segmentationFilterList(emptySet, false).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("key1", "value1");
+        segmentation.put("key2", "value2");
+
+        Countly.sharedInstance().events().recordEvent("test_event", segmentation);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("test_event", TestUtils.map("key1", "value1", "key2", "value2"), 0, 1, 0, 1);
+    }
+
+    // ================ Event Segmentation Filter Tests ================
+
+    /**
+     * Tests that event-specific segmentation blacklist only affects specified events.
+     */
+    @Test
+    public void eventSegmentationFilter_blacklist_affectsSpecificEvents() throws JSONException {
+        Map<String, Set<String>> filterMap = new ConcurrentHashMap<>();
+        Set<String> event1Filter = new HashSet<>();
+        event1Filter.add("blocked_for_event1");
+        filterMap.put("event1", event1Filter);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventSegmentationFilterMap(filterMap, false).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // For event1, blocked_for_event1 should be removed
+        Map<String, Object> segmentation1 = new HashMap<>();
+        segmentation1.put("blocked_for_event1", "value1");
+        segmentation1.put("allowed_key", "value2");
+        Countly.sharedInstance().events().recordEvent("event1", segmentation1);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("event1", TestUtils.map("allowed_key", "value2"), 0, 1, 0, 1);
+
+        // For event2, blocked_for_event1 should NOT be removed (filter only applies to event1)
+        Map<String, Object> segmentation2 = new HashMap<>();
+        segmentation2.put("blocked_for_event1", "value1");
+        segmentation2.put("other_key", "value2");
+        Countly.sharedInstance().events().recordEvent("event2", segmentation2);
+
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("event2", TestUtils.map("blocked_for_event1", "value1", "other_key", "value2"), 1, 2, 0, 1);
+    }
+
+    /**
+     * Tests that event-specific segmentation whitelist only keeps specified keys for that event.
+     */
+    @Test
+    public void eventSegmentationFilter_whitelist_onlyKeepsSpecifiedKeysForEvent() throws JSONException {
+        Map<String, Set<String>> filterMap = new ConcurrentHashMap<>();
+        Set<String> event1Filter = new HashSet<>();
+        event1Filter.add("allowed_for_event1");
+        filterMap.put("event1", event1Filter);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventSegmentationFilterMap(filterMap, true).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // For event1, only allowed_for_event1 should remain
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("allowed_for_event1", "value1");
+        segmentation.put("not_allowed", "value2");
+        Countly.sharedInstance().events().recordEvent("event1", segmentation);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("event1", TestUtils.map("allowed_for_event1", "value1"), 0, 1, 0, 1);
+    }
+
+    /**
+     * Tests that events without specific rules pass all segmentation.
+     */
+    @Test
+    public void eventSegmentationFilter_noRulesForEvent_allowsAllSegmentation() throws JSONException {
+        Map<String, Set<String>> filterMap = new ConcurrentHashMap<>();
+        Set<String> event1Filter = new HashSet<>();
+        event1Filter.add("some_key");
+        filterMap.put("event1", event1Filter);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventSegmentationFilterMap(filterMap, false).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // event2 has no rules, so all segmentation should pass
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("any_key", "value1");
+        segmentation.put("any_other_key", "value2");
+        Countly.sharedInstance().events().recordEvent("event2", segmentation);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("event2", TestUtils.map("any_key", "value1", "any_other_key", "value2"), 0, 1, 0, 1);
+    }
+
+    /**
+     * Tests that both general segmentation filter and event-specific filter are applied.
+     */
+    @Test
+    public void segmentationFilters_combined_bothFiltersApplied() throws JSONException {
+        // General segmentation blacklist
+        Set<String> generalBlacklist = new HashSet<>();
+        generalBlacklist.add("general_blocked");
+
+        // Event-specific blacklist
+        Map<String, Set<String>> eventFilterMap = new ConcurrentHashMap<>();
+        Set<String> eventFilter = new HashSet<>();
+        eventFilter.add("event_specific_blocked");
+        eventFilterMap.put("test_event", eventFilter);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .segmentationFilterList(generalBlacklist, false)
+                .eventSegmentationFilterMap(eventFilterMap, false)
+                .eventQueueSize(1)
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> segmentation = new HashMap<>();
+        segmentation.put("general_blocked", "value1");
+        segmentation.put("event_specific_blocked", "value2");
+        segmentation.put("allowed_key", "value3");
+
+        Countly.sharedInstance().events().recordEvent("test_event", segmentation);
+
+        // Both general and event-specific blocked keys should be removed
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("test_event", TestUtils.map("allowed_key", "value3"), 0, 1, 0, 1);
+    }
+
+    // ================ Journey Trigger Events Tests ================
+
+    /**
+     * Tests that journey trigger events are correctly configured.
+     */
+    @Test
+    public void journeyTriggerEvents_configuredCorrectly() throws JSONException {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("trigger_event");
+        triggerEvents.add("another_trigger");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .journeyTriggerEvents(triggerEvents)
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Verify trigger events are configured
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().contains("trigger_event"));
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().contains("another_trigger"));
+        Assert.assertEquals(2, Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().size());
+    }
+
+    /**
+     * Tests that empty journey trigger events set is handled correctly.
+     */
+    @Test
+    public void journeyTriggerEvents_emptySet_noRefresh() throws JSONException {
+        Set<String> emptyTriggerEvents = new HashSet<>();
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().journeyTriggerEvents(emptyTriggerEvents).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().isEmpty());
+    }
+
+    /**
+     * Tests that journey trigger events can be updated via server config.
+     */
+    @Test
+    public void journeyTriggerEvents_serverConfigUpdate() throws JSONException {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("new_trigger_event");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().journeyTriggerEvents(triggerEvents).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().contains("new_trigger_event"));
+    }
+
+    // ================ User Property Cache Limit Tests ================
+
+    /**
+     * Tests that user property cache limit default value is correct.
+     */
+    @Test
+    public void userPropertyCacheLimit_defaultValue() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(100, Countly.sharedInstance().moduleConfiguration.getUserPropertyCacheLimit());
+    }
+
+    /**
+     * Tests that user property cache limit can be updated via server configuration.
+     */
+    @Test
+    public void userPropertyCacheLimit_serverConfigUpdate() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(50).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(50, Countly.sharedInstance().moduleConfiguration.getUserPropertyCacheLimit());
+    }
+
+    /**
+     * Tests that user property cache limit can be configured via SDK behavior settings.
+     * This tests loading from local configuration rather than server response.
+     */
+    @Test
+    public void userPropertyCacheLimit_configuredViaSdkBehaviorSettings() throws JSONException {
+        // Create a server config with custom value and use it as SDK behavior settings
+        String serverConfig = new ServerConfigBuilder().defaults().userPropertyCacheLimit(75).build();
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.setSDKBehaviorSettings(serverConfig);
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(75, Countly.sharedInstance().moduleConfiguration.getUserPropertyCacheLimit());
+    }
+
+    /**
+     * Tests that user property cache limit enforcement removes oldest properties when exceeded.
+     * When more custom properties are set than the limit, oldest ones should be removed.
+     */
+    @Test
+    public void userPropertyCacheLimit_enforcesLimitOnSetProperties() throws JSONException {
+        // Set a small cache limit
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(3).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(3, Countly.sharedInstance().moduleConfiguration.getUserPropertyCacheLimit());
+
+        // Set more properties than the limit
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("prop1", "value1");
+        properties.put("prop2", "value2");
+        properties.put("prop3", "value3");
+        properties.put("prop4", "value4");
+        properties.put("prop5", "value5");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // Only 3 properties should remain (the limit)
+        Assert.assertNotNull(Countly.sharedInstance().moduleUserProfile.custom);
+        Assert.assertEquals(3, Countly.sharedInstance().moduleUserProfile.custom.size());
+    }
+
+    /**
+     * Tests that user property cache limit does not affect properties when under limit.
+     */
+    @Test
+    public void userPropertyCacheLimit_allowsPropertiesUnderLimit() throws JSONException {
+        // Set a cache limit higher than properties we'll add
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(10).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Set fewer properties than the limit
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("prop1", "value1");
+        properties.put("prop2", "value2");
+        properties.put("prop3", "value3");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // All properties should remain
+        Assert.assertNotNull(Countly.sharedInstance().moduleUserProfile.custom);
+        Assert.assertEquals(3, Countly.sharedInstance().moduleUserProfile.custom.size());
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("prop1"));
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("prop2"));
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("prop3"));
+    }
+
+    /**
+     * Tests that named properties are not affected by user property cache limit.
+     * Named properties (name, email, etc.) should be separate from custom properties limit.
+     */
+    @Test
+    public void userPropertyCacheLimit_namedPropertiesNotAffected() throws JSONException {
+        // Set a small cache limit for custom properties
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(2).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Set named properties plus custom properties exceeding limit
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("name", "John Doe");
+        properties.put("email", "john@example.com");
+        properties.put("username", "johndoe");
+        properties.put("custom1", "value1");
+        properties.put("custom2", "value2");
+        properties.put("custom3", "value3");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // Named properties should be set regardless of limit
+        Assert.assertEquals("John Doe", Countly.sharedInstance().moduleUserProfile.name);
+        Assert.assertEquals("john@example.com", Countly.sharedInstance().moduleUserProfile.email);
+        Assert.assertEquals("johndoe", Countly.sharedInstance().moduleUserProfile.username);
+
+        // Custom properties should be limited to 2
+        Assert.assertNotNull(Countly.sharedInstance().moduleUserProfile.custom);
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.custom.size());
+    }
+
+    /**
+     * Tests that cache limit enforcement works across multiple setProperties calls.
+     */
+    @Test
+    public void userPropertyCacheLimit_enforcesAcrossMultipleCalls() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(3).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // First call - add 2 properties
+        Map<String, Object> props1 = new HashMap<>();
+        props1.put("prop1", "value1");
+        props1.put("prop2", "value2");
+        Countly.sharedInstance().userProfile().setProperties(props1);
+
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.custom.size());
+
+        // Second call - add 2 more (total 4, but limit is 3)
+        Map<String, Object> props2 = new HashMap<>();
+        props2.put("prop3", "value3");
+        props2.put("prop4", "value4");
+        Countly.sharedInstance().userProfile().setProperties(props2);
+
+        // Should be limited to 3
+        Assert.assertEquals(3, Countly.sharedInstance().moduleUserProfile.custom.size());
+    }
+
+    /**
+     * Tests that cache limit of 1 only keeps one property.
+     */
+    @Test
+    public void userPropertyCacheLimit_limitOfOne() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("prop1", "value1");
+        properties.put("prop2", "value2");
+        properties.put("prop3", "value3");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // Only 1 property should remain
+        Assert.assertEquals(1, Countly.sharedInstance().moduleUserProfile.custom.size());
+    }
+
+    /**
+     * Tests that cache limit is enforced on modification operations (incrementBy).
+     * When using incrementBy on multiple properties exceeding the limit, oldest should be removed.
+     */
+    @Test
+    public void userPropertyCacheLimit_enforcesOnIncrementBy() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(2).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Add multiple increment operations exceeding the limit
+        Countly.sharedInstance().userProfile().incrementBy("counter1", 1);
+        Assert.assertEquals(1, Countly.sharedInstance().moduleUserProfile.customMods.size());
+
+        Countly.sharedInstance().userProfile().incrementBy("counter2", 2);
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+
+        Countly.sharedInstance().userProfile().incrementBy("counter3", 3);
+        // Should be limited to 2
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+
+        Countly.sharedInstance().userProfile().incrementBy("counter4", 4);
+        // Still limited to 2
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+    }
+
+    /**
+     * Tests that cache limit is enforced on multiply operations.
+     */
+    @Test
+    public void userPropertyCacheLimit_enforcesOnMultiply() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(2).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Countly.sharedInstance().userProfile().multiply("value1", 2);
+        Countly.sharedInstance().userProfile().multiply("value2", 3);
+        Countly.sharedInstance().userProfile().multiply("value3", 4);
+
+        // Should be limited to 2
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+    }
+
+    /**
+     * Tests that cache limit is enforced on push operations.
+     */
+    @Test
+    public void userPropertyCacheLimit_enforcesOnPush() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(2).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Countly.sharedInstance().userProfile().push("array1", "item1");
+        Countly.sharedInstance().userProfile().push("array2", "item2");
+        Countly.sharedInstance().userProfile().push("array3", "item3");
+
+        // Should be limited to 2
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+    }
+
+    /**
+     * Tests that cache limit is enforced on mixed modification operations.
+     */
+    @Test
+    public void userPropertyCacheLimit_enforcesOnMixedMods() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(3).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Countly.sharedInstance().userProfile().incrementBy("counter", 1);
+        Countly.sharedInstance().userProfile().multiply("multiplier", 2);
+        Countly.sharedInstance().userProfile().push("array", "item");
+        Countly.sharedInstance().userProfile().saveMax("maxValue", 100);
+        Countly.sharedInstance().userProfile().saveMin("minValue", 1);
+
+        // Should be limited to 3
+        Assert.assertEquals(3, Countly.sharedInstance().moduleUserProfile.customMods.size());
+    }
+
+    /**
+     * Tests that updating the same property doesn't increase count.
+     */
+    @Test
+    public void userPropertyCacheLimit_samePropertyUpdateDoesNotIncreaseCount() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(2).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Increment same property multiple times
+        Countly.sharedInstance().userProfile().incrementBy("counter", 1);
+        Assert.assertEquals(1, Countly.sharedInstance().moduleUserProfile.customMods.size());
+
+        Countly.sharedInstance().userProfile().incrementBy("counter", 2);
+        Assert.assertEquals(1, Countly.sharedInstance().moduleUserProfile.customMods.size());
+
+        Countly.sharedInstance().userProfile().incrementBy("counter", 3);
+        Assert.assertEquals(1, Countly.sharedInstance().moduleUserProfile.customMods.size());
+
+        // Add a different property
+        Countly.sharedInstance().userProfile().incrementBy("otherCounter", 1);
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+    }
+
+    /**
+     * Tests that custom properties and customMods have separate limits.
+     * Both should respect the same cache limit independently.
+     */
+    @Test
+    public void userPropertyCacheLimit_separateLimitsForCustomAndMods() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(2).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Add properties via setProperties
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("prop1", "value1");
+        properties.put("prop2", "value2");
+        properties.put("prop3", "value3");
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // Custom should be limited to 2
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.custom.size());
+
+        // Add modifications
+        Countly.sharedInstance().userProfile().incrementBy("counter1", 1);
+        Countly.sharedInstance().userProfile().incrementBy("counter2", 2);
+        Countly.sharedInstance().userProfile().incrementBy("counter3", 3);
+
+        // CustomMods should also be limited to 2
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+
+        // Both limits are independent
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.custom.size());
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.customMods.size());
+    }
+
+    // ================ Filter Configuration Parsing Tests ================
+
+    /**
+     * Tests that filter configuration is correctly parsed from server response.
+     */
+    @Test
+    public void filterConfigParsing_allFiltersCorrectlyParsed() throws JSONException {
+        Set<String> eventBlacklist = new HashSet<>();
+        eventBlacklist.add("blocked_event");
+
+        Set<String> userPropertyBlacklist = new HashSet<>();
+        userPropertyBlacklist.add("blocked_prop");
+
+        Set<String> segmentationBlacklist = new HashSet<>();
+        segmentationBlacklist.add("blocked_seg");
+
+        Map<String, Set<String>> eventSegBlacklist = new ConcurrentHashMap<>();
+        Set<String> eventSpecificSeg = new HashSet<>();
+        eventSpecificSeg.add("specific_key");
+        eventSegBlacklist.put("specific_event", eventSpecificSeg);
+
+        Set<String> journeyTriggers = new HashSet<>();
+        journeyTriggers.add("journey_event");
+
+        ServerConfigBuilder builder = new ServerConfigBuilder().defaults()
+            .eventFilterList(eventBlacklist, false)
+            .userPropertyFilterList(userPropertyBlacklist, false)
+            .segmentationFilterList(segmentationBlacklist, false)
+            .eventSegmentationFilterMap(eventSegBlacklist, false)
+            .journeyTriggerEvents(journeyTriggers)
+            .userPropertyCacheLimit(200);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(builder.build());
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Verify all filters are correctly configured
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventFilterList().filterList.contains("blocked_event"));
+
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getUserPropertyFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getUserPropertyFilterList().filterList.contains("blocked_prop"));
+
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getSegmentationFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getSegmentationFilterList().filterList.contains("blocked_seg"));
+
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getEventSegmentationFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventSegmentationFilterList().filterList.containsKey("specific_event"));
+
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().contains("journey_event"));
+
+        Assert.assertEquals(200, Countly.sharedInstance().moduleConfiguration.getUserPropertyCacheLimit());
+    }
+
+    /**
+     * Tests that blacklist mode is correctly set when using blacklist.
+     */
+    @Test
+    public void filterConfigParsing_blacklistModeSet() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("blocked_event");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Should be blacklist mode
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventFilterList().filterList.contains("blocked_event"));
+    }
+
+    /**
+     * Tests that whitelist mode is correctly set when using whitelist.
+     */
+    @Test
+    public void filterConfigParsing_whitelistModeSet() throws JSONException {
+        Set<String> whitelist = new HashSet<>();
+        whitelist.add("allowed_event");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(whitelist, true).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Should be whitelist mode
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getEventFilterList().filterList.contains("allowed_event"));
+    }
+
+    // ================ Edge Case Tests ================
+
+    /**
+     * Tests filter behavior with special characters in event names.
+     */
+    @Test
+    public void edgeCase_specialCharactersInEventName() throws JSONException {
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("event with spaces");
+        blacklist.add("event-with-dashes");
+        blacklist.add("event_with_underscores");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // All should be blocked
+        Countly.sharedInstance().events().recordEvent("event with spaces");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("event-with-dashes");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        Countly.sharedInstance().events().recordEvent("event_with_underscores");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        // This should pass
+        Countly.sharedInstance().events().recordEvent("normal_event");
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+    }
+
+    /**
+     * Tests filter behavior with empty segmentation map.
+     */
+    @Test
+    public void edgeCase_emptySegmentationMap() throws JSONException {
+        Set<String> segBlacklist = new HashSet<>();
+        segBlacklist.add("some_key");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().segmentationFilterList(segBlacklist, false).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Record event with empty segmentation - should work fine
+        Countly.sharedInstance().events().recordEvent("test_event", new HashMap<>());
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * Tests filter behavior with null segmentation.
+     */
+    @Test
+    public void edgeCase_nullSegmentation() throws JSONException {
+        Set<String> segBlacklist = new HashSet<>();
+        segBlacklist.add("some_key");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().segmentationFilterList(segBlacklist, false).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Record event with null segmentation - should work fine
+        Countly.sharedInstance().events().recordEvent("test_event");
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * Tests that filter configuration update works during runtime.
+     */
+    @Test
+    public void edgeCase_filterConfigurationRuntimeUpdate() throws JSONException {
+        // Start with no filters
+        Set<String> emptySet = new HashSet<>();
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(emptySet, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // Events should be allowed
+        Countly.sharedInstance().events().recordEvent("test_event");
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+
+        // Reinitialize with filter
+        Countly.sharedInstance().halt();
+        countlyStore.clear(); // Clear storage for fresh start
+
+        Set<String> blacklist = new HashSet<>();
+        blacklist.add("test_event");
+        CountlyConfig config2 = TestUtils.createBaseConfig().enableManualSessionControl();
+        config2.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventFilterList(blacklist, false).build()
+        );
+        Countly.sharedInstance().init(config2);
+
+        // Now event should be blocked
+        Countly.sharedInstance().events().recordEvent("test_event");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize()); // 0 because blocked
+
+        // Different event should pass
+        Countly.sharedInstance().events().recordEvent("other_event");
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+    }
+
+    /**
+     * Tests multiple events with different filter rules applied correctly.
+     */
+    @Test
+    public void edgeCase_multipleEventsWithDifferentFilters() throws JSONException {
+        Map<String, Set<String>> eventSegFilterMap = new ConcurrentHashMap<>();
+
+        Set<String> event1Filter = new HashSet<>();
+        event1Filter.add("key_a");
+        eventSegFilterMap.put("event1", event1Filter);
+
+        Set<String> event2Filter = new HashSet<>();
+        event2Filter.add("key_b");
+        eventSegFilterMap.put("event2", event2Filter);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().eventSegmentationFilterMap(eventSegFilterMap, false).eventQueueSize(1).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // event1: key_a should be blocked, key_b allowed
+        Map<String, Object> seg1 = new HashMap<>();
+        seg1.put("key_a", "value");
+        seg1.put("key_b", "value");
+        Countly.sharedInstance().events().recordEvent("event1", seg1);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("event1", TestUtils.map("key_b", "value"), 0, 1, 0, 1);
+
+        // event2: key_b should be blocked, key_a allowed
+        Map<String, Object> seg2 = new HashMap<>();
+        seg2.put("key_a", "value");
+        seg2.put("key_b", "value");
+        Countly.sharedInstance().events().recordEvent("event2", seg2);
+
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("event2", TestUtils.map("key_a", "value"), 1, 2, 0, 1);
     }
 }
