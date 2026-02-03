@@ -1,6 +1,10 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry;
+import androidx.test.runner.lifecycle.Stage;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -9,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -31,8 +36,63 @@ public class ModuleConfigurationTests {
     private CountlyStore countlyStore;
     private Countly countly;
 
+    /**
+     * Finishes all running TransparentActivity instances and waits for them to be destroyed.
+     * This prevents crashes when halt() is called while activities are still running.
+     */
+    private void finishAllTransparentActivities() {
+        // First, finish all activities
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)) {
+                if (activity instanceof TransparentActivity) {
+                    activity.finish();
+                }
+            }
+            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.STARTED)) {
+                if (activity instanceof TransparentActivity) {
+                    activity.finish();
+                }
+            }
+            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.CREATED)) {
+                if (activity instanceof TransparentActivity) {
+                    activity.finish();
+                }
+            }
+        });
+
+        // Wait until all TransparentActivity instances are destroyed
+        long startTime = System.currentTimeMillis();
+        long timeout = 5000; // 5 second timeout
+
+        while (System.currentTimeMillis() - startTime < timeout) {
+            final boolean[] hasRunningActivity = { false };
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                for (Stage stage : new Stage[] { Stage.RESUMED, Stage.STARTED, Stage.CREATED, Stage.STOPPED, Stage.PAUSED }) {
+                    for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(stage)) {
+                        if (activity instanceof TransparentActivity) {
+                            hasRunningActivity[0] = true;
+                            return;
+                        }
+                    }
+                }
+            });
+
+            if (!hasRunningActivity[0]) {
+                return; // All activities destroyed
+            }
+
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ignored) {
+            }
+        }
+    }
+
     @Before
     public void setUp() {
+        // Finish any stale TransparentActivity instances from previous tests
+        // before calling halt() to prevent NPE crashes
+        finishAllTransparentActivities();
         countlyStore = TestUtils.getCountlyStore();
         countlyStore.clear();
         Countly.sharedInstance().halt();
@@ -40,6 +100,7 @@ public class ModuleConfigurationTests {
 
     @After
     public void tearDown() {
+        finishAllTransparentActivities();
         TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
@@ -1422,6 +1483,38 @@ public class ModuleConfigurationTests {
     // ================ User Property Filter Tests ================
 
     /**
+     * Tests that an empty user property filter allows all properties.
+     * When no filter rules are defined, all properties should pass through.
+     */
+    @Test
+    public void userPropertyFilter_emptyFilter_allowsAllProperties() throws JSONException {
+        Set<String> emptySet = new HashSet<>();
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyFilterList(emptySet, false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // All properties should be allowed with empty filter
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("prop1", "value1");
+        properties.put("prop2", "value2");
+        properties.put("any_prop", "value3");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        Assert.assertEquals(3, Countly.sharedInstance().moduleUserProfile.custom.size());
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("prop1"));
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("prop2"));
+        Assert.assertTrue(Countly.sharedInstance().moduleUserProfile.custom.containsKey("any_prop"));
+
+        Countly.sharedInstance().userProfile().save();
+        ModuleUserProfileTests.validateUserProfileRequest(TestUtils.map(),
+            TestUtils.map("prop1", "value1", "prop2", "value2", "any_prop", "value3"));
+    }
+
+    /**
      * Tests that user property blacklist properly blocks filtered properties.
      * Properties in the blacklist should not be recorded.
      */
@@ -1903,6 +1996,250 @@ public class ModuleConfigurationTests {
         }
     }
 
+    /**
+     * Tests that journey trigger does NOT send content request when event request fails.
+     * The content refresh callback is only called on success, so failed event requests
+     * should not trigger content zone refresh.
+     */
+    @Test
+    public void journeyTriggerEvents_noContentRequestOnEventFailure() throws Exception {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("journey_event");
+
+        final AtomicInteger contentRequestCount = new AtomicInteger(0);
+        final AtomicInteger eventRequestCount = new AtomicInteger(0);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        try (MockWebServer server = new MockWebServer()) {
+            server.setDispatcher(new Dispatcher() {
+                @NotNull @Override public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) throws InterruptedException {
+                    // Track content requests
+                    if (recordedRequest.getPath().contains("&method=queue")) {
+                        contentRequestCount.incrementAndGet();
+                        return new MockResponse().setResponseCode(200)
+                            .setHeader("Content-Type", "application/json")
+                            .setBody("{\"result\": \"Success\"}");
+                    }
+                    // Server config request - return JTE config without auto content zone
+                    if (recordedRequest.getPath().contains("&method=sc")) {
+                        try {
+                            return new MockResponse().setResponseCode(200)
+                                .setHeader("Content-Type", "application/json")
+                                .setBody(new ServerConfigBuilder().defaults()
+                                    .journeyTriggerEvents(triggerEvents)
+                                    .build());
+                        } catch (JSONException ignored) {
+                        }
+                    }
+                    // Event request - return failure (500)
+                    if (recordedRequest.getPath().contains("events=")) {
+                        eventRequestCount.incrementAndGet();
+                        return new MockResponse().setResponseCode(500)
+                            .setBody("Internal Server Error");
+                    }
+                    return new MockResponse().setResponseCode(200)
+                        .setHeader("Content-Type", "application/json")
+                        .setBody("{\"result\": \"Success\"}");
+                }
+            });
+
+            server.start();
+            String serverUrl = server.url("/").toString();
+            serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+
+            countlyConfig.metricProviderOverride = new MockedMetricProvider();
+            countlyConfig.setServerURL(serverUrl);
+            Countly.sharedInstance().init(countlyConfig);
+            Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0;
+            Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0;
+
+            Thread.sleep(1000);
+            int initialContentCount = contentRequestCount.get();
+
+            // Record JTE event - this should try to send but fail
+            Countly.sharedInstance().events().recordEvent("journey_event");
+            Thread.sleep(2000);
+
+            // Event request should have been attempted
+            Assert.assertTrue(eventRequestCount.get() >= 1);
+
+            // Content request should NOT have been made since event failed
+            // The callback only fires on success
+            Assert.assertEquals(initialContentCount, contentRequestCount.get());
+
+            server.shutdown();
+        }
+    }
+
+    /**
+     * Tests that journey trigger skips content refresh when already in content zone.
+     * When isCurrentlyInContentZone is true, refreshContentZone should skip.
+     */
+    @Test
+    public void journeyTriggerEvents_skipsRefreshWhenInContentZone() throws Exception {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("journey_event");
+        triggerEvents.add("journey_event_2");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        // Provide custom lifecycle observer that always returns false to prevent auto-sessions
+        // when TransparentActivity is launched
+        countlyConfig.lifecycleObserver = () -> false;
+
+        try (MockWebServer server = new MockWebServer()) {
+            AtomicInteger contentRequestCount = new AtomicInteger(0);
+            AtomicBoolean returnContent = new AtomicBoolean(false);
+            server.setDispatcher(new Dispatcher() {
+                @NotNull @Override public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) throws InterruptedException {
+                    MockResponse response = new MockResponse().setResponseCode(200)
+                        .setHeader("Content-Type", "application/json");
+                    if (recordedRequest.getPath().contains("&method=queue")) {
+                        contentRequestCount.incrementAndGet();
+                        // Return valid content JSON when returnContent is true
+                        // This will set isCurrentlyInContentZone=true in ModuleContent
+                        if (returnContent.get()) {
+                            String contentJson = "{\"html\":\"https://countly.com\",\"geo\":{\"p\":{\"x\":0,\"y\":0,\"w\":100,\"h\":100},\"l\":{\"x\":0,\"y\":0,\"w\":100,\"h\":100}}}";
+                            return response.setBody(contentJson);
+                        }
+                    } else if (recordedRequest.getPath().contains("&method=sc")) {
+                        try {
+                            return response.setBody(new ServerConfigBuilder().defaults()
+                                .journeyTriggerEvents(triggerEvents)
+                                .contentZone(true)
+                                .sessionTracking(false)  // Disable to prevent auto sessions
+                                .build());
+                        } catch (JSONException ignored) {
+                        }
+                    }
+                    return response.setBody("{\"result\": \"Success\"}");
+                }
+            });
+            // Start server on localhost - both server and SDK run inside emulator
+            server.start();
+            String serverUrl = server.url("/").toString();
+            // Remove trailing slash
+            serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+
+            countlyConfig.metricProviderOverride = new MockedMetricProvider();
+            countlyConfig.setServerURL(serverUrl);
+            Countly.sharedInstance().init(countlyConfig);
+            Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0;
+            Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0;
+
+            // Wait for server config to be fetched and applied
+            Thread.sleep(2000);
+            // verify that enter is called
+            Assert.assertEquals(1, contentRequestCount.get());
+
+            // Record JTE event - this adds request with callback to RQ
+            returnContent.set(true);
+            Countly.sharedInstance().events().recordEvent("journey_event");
+            Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+
+            Thread.sleep(2000);  // Allow time for content to be fetched and TransparentActivity to launch
+            Assert.assertEquals(2, contentRequestCount.get());
+
+            // Note: RQ may contain session requests from activity lifecycle when TransparentActivity launches
+            // This is expected behavior - the core test is verifying content refresh is skipped
+
+            // Record another JTE - should NOT trigger content refresh since isCurrentlyInContentZone=true
+            Countly.sharedInstance().events().recordEvent("journey_event_2");
+            Thread.sleep(1000);
+            // Content request count should NOT increase since we're already in content zone, so refresh should skip
+            Assert.assertEquals(2, contentRequestCount.get());
+            server.shutdown();
+
+            // Finish all TransparentActivity instances before calling exitContentZone
+            // This ensures the activity lifecycle completes while SDK is still initialized
+            finishAllTransparentActivities();
+            Thread.sleep(2000); // Wait for activity lifecycle to complete
+
+            Countly.sharedInstance().contents().exitContentZone();
+        }
+    }
+
+    /**
+     * Tests that multiple journey trigger events each trigger their own flush.
+     * Each JTE event should be immediately flushed with its own callback_id.
+     */
+    @Test
+    public void journeyTriggerEvents_multipleEventsEachFlush() throws JSONException {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("jte_1");
+        triggerEvents.add("jte_2");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .journeyTriggerEvents(triggerEvents)
+                .eventQueueSize(100)  // High threshold to verify force flush
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        // Record first JTE event
+        Countly.sharedInstance().events().recordEvent("jte_1");
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        String firstCallbackId = TestUtils.getCurrentRQ()[0].get("callback_id");
+        Assert.assertNotNull(firstCallbackId);
+
+        // Record second JTE event
+        Countly.sharedInstance().events().recordEvent("jte_2");
+        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
+        String secondCallbackId = TestUtils.getCurrentRQ()[1].get("callback_id");
+        Assert.assertNotNull(secondCallbackId);
+
+        // Each event should have its own callback_id
+        Assert.assertNotEquals(firstCallbackId, secondCallbackId);
+    }
+
+    /**
+     * Tests that non-journey events stay queued while JTE events are flushed immediately.
+     * This verifies the selective flush behavior.
+     */
+    @Test
+    public void journeyTriggerEvents_nonJteStaysQueued() throws JSONException {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("journey_event");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .journeyTriggerEvents(triggerEvents)
+                .eventQueueSize(100)  // High threshold
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        // Record a non-JTE event - should stay in queue
+        Countly.sharedInstance().events().recordEvent("regular_event");
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+
+        // Record another non-JTE event
+        Countly.sharedInstance().events().recordEvent("another_regular");
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(2, countlyStore.getEventQueueSize());
+
+        // Record a JTE event - should flush ALL events
+        Countly.sharedInstance().events().recordEvent("journey_event");
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        // Verify the flushed request contains all 3 events
+        Map<String, String>[] rq = TestUtils.getCurrentRQ();
+        String events = rq[0].get("events");
+        Assert.assertNotNull(events);
+        Assert.assertTrue(events.contains("regular_event"));
+        Assert.assertTrue(events.contains("another_regular"));
+        Assert.assertTrue(events.contains("journey_event"));
+    }
+
     // ================ User Property Cache Limit Tests ================
 
     /**
@@ -2090,6 +2427,32 @@ public class ModuleConfigurationTests {
 
         // Only 1 property should remain
         Assert.assertEquals(1, Countly.sharedInstance().moduleUserProfile.custom.size());
+    }
+
+    /**
+     * Tests that cache limit of 0 is treated as invalid and the default limit (100) is used.
+     * The SDK validation requires values > 0, so 0 is rejected.
+     */
+    @Test
+    public void userPropertyCacheLimit_limitOfZero_usesDefault() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().userPropertyCacheLimit(0).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("prop1", "value1");
+        properties.put("prop2", "value2");
+
+        Countly.sharedInstance().userProfile().setProperties(properties);
+
+        // Limit of 0 is invalid (SDK requires > 0), so default (100) is used
+        // Both properties should be stored
+        Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.custom.size());
+
+        // Verify default limit is applied
+        Assert.assertEquals(100, Countly.sharedInstance().moduleConfiguration.getUserPropertyCacheLimit());
     }
 
     /**
