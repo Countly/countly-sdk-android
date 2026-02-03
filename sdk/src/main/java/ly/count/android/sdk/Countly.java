@@ -990,11 +990,13 @@ public class Countly {
         ++activityCount_;
         if (activityCount_ == 1) {
             // start the timer in the first activity
-            moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
+            if (moduleConfiguration != null) {
+                moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
+            }
             //if we open the first activity
             //and we are not using manual session control,
             //begin a session
-            if (!moduleSessions.manualSessionControlEnabled) {
+            if (moduleSessions != null && !moduleSessions.manualSessionControlEnabled) {
                 moduleSessions.beginSessionInternal();
             }
         }
@@ -1017,7 +1019,7 @@ public class Countly {
         }
 
         --activityCount_;
-        if (activityCount_ == 0 && !moduleSessions.manualSessionControlEnabled) {
+        if (activityCount_ == 0 && moduleSessions != null && !moduleSessions.manualSessionControlEnabled) {
             // if we don't use manual session control
             // Called when final Activity is stopped.
             // Sends an end session event to the server, also sends any unsent custom events.
@@ -1168,7 +1170,8 @@ public class Countly {
      * @param customHeaderValues map of header key/value pairs to add/override
      * @return Returns the same Countly instance for convenient chaining
      */
-    /* package */ synchronized void addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
+    /* package */
+    synchronized void addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
         if (!isInitialized()) {
             L.e("[addCustomNetworkRequestHeaders] SDK must be initialised before calling this method");
             return;
