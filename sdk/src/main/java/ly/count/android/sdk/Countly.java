@@ -960,6 +960,9 @@ public class Countly {
         moduleHealthCheck = null;
         moduleContent = null;
 
+        // Reset configuration values that may have been changed during runtime
+        EVENT_QUEUE_SIZE_THRESHOLD = 100;
+
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
 
