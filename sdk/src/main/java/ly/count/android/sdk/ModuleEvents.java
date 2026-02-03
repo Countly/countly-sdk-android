@@ -235,13 +235,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         L.w("[ModuleEvents] recordEventInternal, Event key [" + key + "] was filtered out by event filter list. Event will not be recorded.");
                         return;
                     }
+
+                    if (segmentation == null) {
+                        segmentation = new HashMap<>();
+                    }
+
+                    // apply event segmentation listing filters
+                    UtilsListingFilters.applyEventSegmentationFilter(key, segmentation, configProvider, L);
+
                     // apply journey trigger events here
                     boolean triggerRefreshContentZone = configProvider.getJourneyTriggerEvents().contains(key);
 
                     String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
-                    if (segmentation == null) {
-                        segmentation = new HashMap<>();
-                    }
+
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
 
                     if (viewNameRecordingEnabled) {
