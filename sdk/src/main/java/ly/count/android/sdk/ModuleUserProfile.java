@@ -252,7 +252,10 @@ public class ModuleUserProfile extends ModuleBase {
                 }
                 ob.accumulate(mod, valueAdded);
             }
+
             customMods.put(truncatedKey, ob);
+            applyUserPropertyCacheLimit(customMods);
+
             isSynced = false;
         } catch (JSONException e) {
             e.printStackTrace();
@@ -329,17 +332,20 @@ public class ModuleUserProfile extends ModuleBase {
         }
 
         custom.putAll(dataCustomFields);
+        applyUserPropertyCacheLimit(custom);
 
+        isSynced = false;
+    }
+
+    private void applyUserPropertyCacheLimit(Map<String, ?> map) {
         int cacheLimit = configProvider.getUserPropertyCacheLimit();
-        while (custom.size() > cacheLimit) {
-            Iterator<String> iterator = custom.keySet().iterator();
+        while (map.size() > cacheLimit) {
+            Iterator<String> iterator = map.keySet().iterator();
             if (iterator.hasNext()) {
                 iterator.next();
                 iterator.remove();
             }
         }
-
-        isSynced = false;
     }
 
     /**
