@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-public class UtilsListingFilters {
+final class UtilsListingFilters {
 
     private UtilsListingFilters() {
     }
