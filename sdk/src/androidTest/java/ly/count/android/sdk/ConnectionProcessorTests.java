@@ -29,6 +29,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -152,6 +153,10 @@ public class ConnectionProcessorTests {
 
             @Override public FilterList<Map<String, Set<String>>> getEventSegmentationFilterList() {
                 return new FilterList<>(new ConcurrentHashMap<>(), false);
+            }
+
+            @Override public Set<String> getJourneyTriggerEvents() {
+                return Collections.emptySet();
             }
         };
 

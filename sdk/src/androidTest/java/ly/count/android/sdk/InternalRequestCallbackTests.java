@@ -5,7 +5,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -355,11 +357,25 @@ public class InternalRequestCallbackTests {
         HealthTracker healthTracker = mock(HealthTracker.class);
 
         RequestInfoProvider requestInfoProvider = new RequestInfoProvider() {
-            @Override public boolean isHttpPostForced() { return false; }
-            @Override public boolean isDeviceAppCrawler() { return false; }
-            @Override public boolean ifShouldIgnoreCrawlers() { return false; }
-            @Override public int getRequestDropAgeHours() { return 1; }
-            @Override public String getRequestSalt() { return null; }
+            @Override public boolean isHttpPostForced() {
+                return false;
+            }
+
+            @Override public boolean isDeviceAppCrawler() {
+                return false;
+            }
+
+            @Override public boolean ifShouldIgnoreCrawlers() {
+                return false;
+            }
+
+            @Override public int getRequestDropAgeHours() {
+                return 1;
+            }
+
+            @Override public String getRequestSalt() {
+                return null;
+            }
         };
 
         ConnectionProcessor cp = new ConnectionProcessor(
@@ -421,11 +437,25 @@ public class InternalRequestCallbackTests {
         HealthTracker healthTracker = mock(HealthTracker.class);
 
         RequestInfoProvider requestInfoProvider = new RequestInfoProvider() {
-            @Override public boolean isHttpPostForced() { return false; }
-            @Override public boolean isDeviceAppCrawler() { return true; }
-            @Override public boolean ifShouldIgnoreCrawlers() { return true; }
-            @Override public int getRequestDropAgeHours() { return 0; }
-            @Override public String getRequestSalt() { return null; }
+            @Override public boolean isHttpPostForced() {
+                return false;
+            }
+
+            @Override public boolean isDeviceAppCrawler() {
+                return true;
+            }
+
+            @Override public boolean ifShouldIgnoreCrawlers() {
+                return true;
+            }
+
+            @Override public int getRequestDropAgeHours() {
+                return 0;
+            }
+
+            @Override public String getRequestSalt() {
+                return null;
+            }
         };
 
         ConnectionProcessor cp = new ConnectionProcessor(
@@ -819,21 +849,89 @@ public class InternalRequestCallbackTests {
      */
     private ConfigurationProvider createConfigurationProvider() {
         return new ConfigurationProvider() {
-            @Override public boolean getNetworkingEnabled() { return true; }
-            @Override public boolean getTrackingEnabled() { return true; }
-            @Override public boolean getSessionTrackingEnabled() { return false; }
-            @Override public boolean getViewTrackingEnabled() { return false; }
-            @Override public boolean getCustomEventTrackingEnabled() { return false; }
-            @Override public boolean getContentZoneEnabled() { return false; }
-            @Override public boolean getCrashReportingEnabled() { return true; }
-            @Override public boolean getLocationTrackingEnabled() { return true; }
-            @Override public boolean getRefreshContentZoneEnabled() { return true; }
-            @Override public boolean getBOMEnabled() { return false; }
-            @Override public int getBOMAcceptedTimeoutSeconds() { return 10; }
-            @Override public double getBOMRQPercentage() { return 0.5; }
-            @Override public int getBOMRequestAge() { return 24; }
-            @Override public int getBOMDuration() { return 60; }
-            @Override public int getRequestTimeoutDurationMillis() { return 30_000; }
+            @Override public boolean getNetworkingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getSessionTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getViewTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getCustomEventTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getContentZoneEnabled() {
+                return false;
+            }
+
+            @Override public boolean getCrashReportingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getLocationTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getRefreshContentZoneEnabled() {
+                return true;
+            }
+
+            @Override public boolean getBOMEnabled() {
+                return false;
+            }
+
+            @Override public int getBOMAcceptedTimeoutSeconds() {
+                return 10;
+            }
+
+            @Override public double getBOMRQPercentage() {
+                return 0.5;
+            }
+
+            @Override public int getBOMRequestAge() {
+                return 24;
+            }
+
+            @Override public int getBOMDuration() {
+                return 60;
+            }
+
+            @Override public int getRequestTimeoutDurationMillis() {
+                return 30_000;
+            }
+
+            @Override public int getUserPropertyCacheLimit() {
+                return 0;
+            }
+
+            @Override public FilterList<Set<String>> getEventFilterList() {
+                return null;
+            }
+
+            @Override public FilterList<Set<String>> getUserPropertyFilterList() {
+                return null;
+            }
+
+            @Override public FilterList<Set<String>> getSegmentationFilterList() {
+                return null;
+            }
+
+            @Override public FilterList<Map<String, Set<String>>> getEventSegmentationFilterList() {
+                return null;
+            }
+
+            @Override public Set<String> getJourneyTriggerEvents() {
+                return Collections.emptySet();
+            }
         };
     }
 
@@ -842,11 +940,25 @@ public class InternalRequestCallbackTests {
      */
     private RequestInfoProvider createRequestInfoProvider() {
         return new RequestInfoProvider() {
-            @Override public boolean isHttpPostForced() { return false; }
-            @Override public boolean isDeviceAppCrawler() { return false; }
-            @Override public boolean ifShouldIgnoreCrawlers() { return false; }
-            @Override public int getRequestDropAgeHours() { return 0; }
-            @Override public String getRequestSalt() { return null; }
+            @Override public boolean isHttpPostForced() {
+                return false;
+            }
+
+            @Override public boolean isDeviceAppCrawler() {
+                return false;
+            }
+
+            @Override public boolean ifShouldIgnoreCrawlers() {
+                return false;
+            }
+
+            @Override public int getRequestDropAgeHours() {
+                return 0;
+            }
+
+            @Override public String getRequestSalt() {
+                return null;
+            }
         };
     }
 }
