@@ -310,6 +310,7 @@ public class ModuleUserProfile extends ModuleBase {
                     L.w("[ModuleUserProfile] setPropertiesInternal, key: [" + key + "] is filtered out by user property filter, omitting call");
                     continue;
                 }
+
                 String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 if (UtilsInternalLimits.isSupportedDataType(value)) {
                     dataCustomFields.put(truncatedKey, value);
@@ -328,6 +329,15 @@ public class ModuleUserProfile extends ModuleBase {
         }
 
         custom.putAll(dataCustomFields);
+
+        int cacheLimit = configProvider.getUserPropertyCacheLimit();
+        while (custom.size() > cacheLimit) {
+            Iterator<String> iterator = custom.keySet().iterator();
+            if (iterator.hasNext()) {
+                iterator.next();
+                iterator.remove();
+            }
+        }
 
         isSynced = false;
     }

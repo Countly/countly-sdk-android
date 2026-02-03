@@ -80,7 +80,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     double currentVBOMRQPercentage = 0.5;
     int currentVBOMRequestAge = 24; // in hours
     int currentVBOMDuration = 60; // in seconds
-    int currentVUserPropertyCacheLimit = 100;
+    int currentVUserPropertyCacheLimit = 10_000;
 
     // FILTERS
     FilterList<Set<String>> currentVEventFilterList = new FilterList<>(new HashSet<>(), false);
