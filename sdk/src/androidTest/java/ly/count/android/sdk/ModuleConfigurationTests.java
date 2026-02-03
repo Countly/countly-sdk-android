@@ -12,6 +12,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -1808,6 +1813,111 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().contains("new_trigger_event"));
+    }
+
+    /**
+     * Tests that recording a journey trigger event forces event flush and registers
+     * a callback for content zone refresh.
+     * Verifies:
+     * 1. JTE event is immediately flushed to RQ (force flush behavior)
+     * 2. The request contains callback_id (refresh will be triggered on completion)
+     * 3. Non-JTE events don't trigger this behavior
+     */
+    @Test
+    public void journeyTriggerEvents_triggersRefreshContentZone() throws JSONException {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("jte_event");
+
+        // Use high event queue threshold to verify force flush behavior
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .journeyTriggerEvents(triggerEvents)
+                .eventQueueSize(100)  // High threshold
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        // Record a non-JTE event - should NOT force flush (queue threshold is 100)
+        Countly.sharedInstance().events().recordEvent("regular_event");
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);  // Still in event queue
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+
+        // Record a JTE event - should force flush and have callback_id
+        Countly.sharedInstance().events().recordEvent("jte_event");
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);  // Force flushed to RQ
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());  // Event queue emptied
+
+        // Verify the request contains callback_id (indicates refresh callback registered)
+        Map<String, String>[] rq = TestUtils.getCurrentRQ();
+        Assert.assertTrue(rq[0].containsKey("callback_id"));
+    }
+
+    /**
+     * Tests that when a journey trigger event is recorded and successfully delivered,
+     * refreshContentZone is called.
+     * Uses a mocked ConnectionProcessor to simulate HTTP responses through the SDK's normal flow.
+     */
+    @Test
+    public void journeyTriggerEvents_contentZoneRefreshFlow() throws Exception {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("purchase_complete");
+
+        final AtomicInteger contentRequestCount = new AtomicInteger(0);
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        try (MockWebServer server = new MockWebServer()) {
+            server.setDispatcher(new Dispatcher() {
+                @NotNull @Override public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) throws InterruptedException {
+                    MockResponse response = new MockResponse().setResponseCode(200)
+                        .setHeader("Content-Type", "application/json");
+                    if (recordedRequest.getPath().contains("&method=queue")) {
+                        contentRequestCount.incrementAndGet();
+                    } else if (recordedRequest.getPath().contains("&method=sc")) {
+                        try {
+                            return response.setBody(new ServerConfigBuilder().defaults()
+                                .journeyTriggerEvents(triggerEvents)
+                                .contentZone(true)
+                                .build());
+                        } catch (JSONException ignored) {
+                        }
+                    }
+                    return response.setBody("{\"result\": \"Success\"}");
+                }
+            });
+
+            // Start server on localhost - both server and SDK run inside emulator
+            server.start();
+            String serverUrl = server.url("/").toString();
+            // Remove trailing slash
+            serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+
+            countlyConfig.metricProviderOverride = new MockedMetricProvider();
+            countlyConfig.setServerURL(serverUrl);
+            Countly.sharedInstance().init(countlyConfig);
+            Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0;
+            Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0;
+
+            // Wait for server config to be fetched and applied
+            Thread.sleep(2000);
+            // verify that enter is called
+            Assert.assertEquals(1, contentRequestCount.get());
+
+            // Record JTE event - this adds request with callback to RQ
+            Countly.sharedInstance().events().recordEvent("purchase_complete");
+            Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+
+            // Get the callback_id from the request
+            Map<String, String>[] rq = TestUtils.getCurrentRQ();
+            String callbackId = rq[0].get("callback_id");
+            Assert.assertNotNull(callbackId);
+            Thread.sleep(1000);
+            Assert.assertEquals(2, contentRequestCount.get());
+            Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+            server.shutdown();
+        }
     }
 
     // ================ User Property Cache Limit Tests ================
