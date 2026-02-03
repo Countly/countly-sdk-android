@@ -240,7 +240,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         segmentation = new HashMap<>();
                     }
 
-                    // apply event segmentation listing filters
+                    // apply segmentation listing filters
+                    UtilsListingFilters.applySegmentationFilter(segmentation, configProvider, L);
+
+                    // then apply specific event segmentation listing filters if any
                     UtilsListingFilters.applyEventSegmentationFilter(key, segmentation, configProvider, L);
 
                     // apply journey trigger events here
