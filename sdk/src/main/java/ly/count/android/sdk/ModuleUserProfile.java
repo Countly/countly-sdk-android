@@ -219,6 +219,12 @@ public class ModuleUserProfile extends ModuleBase {
                 return;
             }
 
+            // apply user property filter
+            if (!UtilsListingFilters.applyUserPropertyFilter(key, configProvider)) {
+                L.w("[ModuleUserProfile] modifyCustomData, key: [" + key + "] is filtered out by user property filter, omitting call");
+                return;
+            }
+
             Object valueAdded;
             String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
             if (value instanceof String) {
@@ -299,6 +305,11 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             if (!isNamed) {
+                // user property filter
+                if (!UtilsListingFilters.applyUserPropertyFilter(key, configProvider)) {
+                    L.w("[ModuleUserProfile] setPropertiesInternal, key: [" + key + "] is filtered out by user property filter, omitting call");
+                    continue;
+                }
                 String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 if (UtilsInternalLimits.isSupportedDataType(value)) {
                     dataCustomFields.put(truncatedKey, value);
