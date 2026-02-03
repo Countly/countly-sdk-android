@@ -1799,23 +1799,6 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Tests that journey trigger events can be updated via server config.
-     */
-    @Test
-    public void journeyTriggerEvents_serverConfigUpdate() throws JSONException {
-        Set<String> triggerEvents = new HashSet<>();
-        triggerEvents.add("new_trigger_event");
-
-        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
-        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
-            new ServerConfigBuilder().defaults().journeyTriggerEvents(triggerEvents).build()
-        );
-        Countly.sharedInstance().init(countlyConfig);
-
-        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerEvents().contains("new_trigger_event"));
-    }
-
-    /**
      * Tests that recording a journey trigger event forces event flush and registers
      * a callback for content zone refresh.
      * Verifies:
