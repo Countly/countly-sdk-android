@@ -1497,7 +1497,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // All properties should be allowed with empty filter
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("prop1", "value1");
         properties.put("prop2", "value2");
         properties.put("any_prop", "value3");
@@ -1531,7 +1531,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // Set properties - blocked ones should be filtered
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("blocked_prop", "value1");
         properties.put("another_blocked", "value2");
         properties.put("allowed_prop", "value3");
@@ -1563,7 +1563,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("allowed_prop", "value1");
         properties.put("not_allowed", "value2");
 
@@ -1595,7 +1595,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("name", "John Doe");
         properties.put("email", "john@example.com");
         properties.put("custom_blocked", "blocked_value");
@@ -1664,7 +1664,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("blocked_key", "value1");
         segmentation.put("another_blocked", "value2");
         segmentation.put("allowed_key", "value3");
@@ -1690,7 +1690,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("allowed_key", "value1");
         segmentation.put("not_allowed_1", "value2");
         segmentation.put("not_allowed_2", "value3");
@@ -1714,7 +1714,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("key1", "value1");
         segmentation.put("key2", "value2");
 
@@ -1743,7 +1743,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // For event1, blocked_for_event1 should be removed
-        Map<String, Object> segmentation1 = new HashMap<>();
+        Map<String, Object> segmentation1 = new ConcurrentHashMap<>();
         segmentation1.put("blocked_for_event1", "value1");
         segmentation1.put("allowed_key", "value2");
         Countly.sharedInstance().events().recordEvent("event1", segmentation1);
@@ -1752,7 +1752,7 @@ public class ModuleConfigurationTests {
         validateEventInRQ("event1", TestUtils.map("allowed_key", "value2"), 0, 1, 0, 1);
 
         // For event2, blocked_for_event1 should NOT be removed (filter only applies to event1)
-        Map<String, Object> segmentation2 = new HashMap<>();
+        Map<String, Object> segmentation2 = new ConcurrentHashMap<>();
         segmentation2.put("blocked_for_event1", "value1");
         segmentation2.put("other_key", "value2");
         Countly.sharedInstance().events().recordEvent("event2", segmentation2);
@@ -1778,7 +1778,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // For event1, only allowed_for_event1 should remain
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("allowed_for_event1", "value1");
         segmentation.put("not_allowed", "value2");
         Countly.sharedInstance().events().recordEvent("event1", segmentation);
@@ -1804,7 +1804,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // event2 has no rules, so all segmentation should pass
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("any_key", "value1");
         segmentation.put("any_other_key", "value2");
         Countly.sharedInstance().events().recordEvent("event2", segmentation);
@@ -1838,7 +1838,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> segmentation = new HashMap<>();
+        Map<String, Object> segmentation = new ConcurrentHashMap<>();
         segmentation.put("general_blocked", "value1");
         segmentation.put("event_specific_blocked", "value2");
         segmentation.put("allowed_key", "value3");
@@ -2188,12 +2188,15 @@ public class ModuleConfigurationTests {
     }
 
     /**
-     * Tests that JTE events still flush immediately but content refresh doesn't happen
-     * when refreshContentZone is disabled. The callback_id is still registered but
-     * the refreshContentZoneInternal early returns when refresh is disabled.
+     * Tests that JTE triggers content zone refresh with retry mechanism on empty responses.
+     * When the server returns an empty content response, the SDK should retry up to 3 times.
+     * Verifies:
+     * 1. JTE event flushes immediately with callback_id
+     * 2. Content fetch is triggered after successful event delivery
+     * 3. Empty responses trigger retry mechanism (total 4 requests: 1 initial + 3 retries)
      */
     @Test
-    public void journeyTriggerEvents_noRefreshWhenRefreshContentZoneDisabled() throws Exception {
+    public void journeyTriggerEvents_refreshRetriesCorrectlyAfterProvidingEmptyResponse() throws Exception {
         Set<String> triggerEvents = new HashSet<>();
         triggerEvents.add("journey_event");
 
@@ -2203,6 +2206,7 @@ public class ModuleConfigurationTests {
         testJTEWithMockedWebServer((request, response) -> {
             if (request.getPath().contains("&method=queue")) {
                 contentRequestCount.incrementAndGet();
+                response.setBody("[]");  // Simulate empty content response
             }
             // Track event requests
             if (request.getPath().contains("events=")) {
@@ -2240,6 +2244,74 @@ public class ModuleConfigurationTests {
 
                 // Verify that retry happened 3 times
                 Assert.assertEquals(4, contentRequestCount.get());
+            } catch (InterruptedException ignored) {
+            }
+        });
+    }
+
+    /**
+     * Tests that content zone refresh retries stop when valid content is received.
+     * When empty responses are followed by a valid content response, retries should cease.
+     * Verifies:
+     * 1. JTE event flushes immediately with callback_id
+     * 2. Empty responses trigger retry mechanism
+     * 3. Valid content response stops further retries (content shown, no more requests)
+     */
+    @Test
+    public void journeyTriggerEvents_refreshRetryStopAfterValidContentResponse() throws Exception {
+        Set<String> triggerEvents = new HashSet<>();
+        triggerEvents.add("journey_event");
+
+        final AtomicInteger contentRequestCount = new AtomicInteger(0);
+        final AtomicInteger eventRequestCount = new AtomicInteger(0);
+        final AtomicBoolean returnContent = new AtomicBoolean(false);
+
+        testJTEWithMockedWebServer((request, response) -> {
+            if (request.getPath().contains("&method=queue")) {
+                contentRequestCount.incrementAndGet();
+                response.setBody("[]");  // Simulate empty content response
+                if (returnContent.get()) {
+                    String contentJson = "{\"html\":\"https://countly.com\",\"geo\":{\"p\":{\"x\":0,\"y\":0,\"w\":100,\"h\":100},\"l\":{\"x\":0,\"y\":0,\"w\":100,\"h\":100}}}";
+                    response.setBody(contentJson);
+                }
+            }
+            // Track event requests
+            if (request.getPath().contains("events=")) {
+                eventRequestCount.incrementAndGet();
+            }
+            // Server config request - return JTE config with refreshContentZone disabled
+            if (request.getPath().contains("&method=sc")) {
+                try {
+                    response.setBody(new ServerConfigBuilder().defaults()
+                        .journeyTriggerEvents(triggerEvents)
+                        .contentZone(true)  // Content zone enabled but refresh disabled
+                        .build());
+                } catch (JSONException ignored) {
+                }
+            }
+        }, () -> {
+            try {
+                Thread.sleep(1000);
+
+                // Content zone is enabled, so enter should be called
+                Assert.assertEquals(1, contentRequestCount.get());
+
+                // Record JTE event - should still flush immediately with callback_id
+                Countly.sharedInstance().events().recordEvent("journey_event");
+                Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+
+                // Verify callback_id is present (callback is still registered)
+                Map<String, String>[] rq = TestUtils.getCurrentRQ();
+                Assert.assertTrue(rq[0].containsKey("callback_id"));
+
+                Thread.sleep(2000);
+                returnContent.set(true);
+
+                // Event should have been sent
+                Assert.assertTrue(eventRequestCount.get() >= 1);
+
+                // Verify that retry happened 2 times and it got the valid content on 3rd try
+                Assert.assertEquals(3, contentRequestCount.get());
             } catch (InterruptedException ignored) {
             }
         });
@@ -2338,7 +2410,7 @@ public class ModuleConfigurationTests {
         Assert.assertEquals(3, Countly.sharedInstance().moduleConfiguration.getUserPropertyCacheLimit());
 
         // Set more properties than the limit
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("prop1", "value1");
         properties.put("prop2", "value2");
         properties.put("prop3", "value3");
@@ -2365,7 +2437,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // Set fewer properties than the limit
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("prop1", "value1");
         properties.put("prop2", "value2");
         properties.put("prop3", "value3");
@@ -2394,7 +2466,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // Set named properties plus custom properties exceeding limit
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("name", "John Doe");
         properties.put("email", "john@example.com");
         properties.put("username", "johndoe");
@@ -2426,7 +2498,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // First call - add 2 properties
-        Map<String, Object> props1 = new HashMap<>();
+        Map<String, Object> props1 = new ConcurrentHashMap<>();
         props1.put("prop1", "value1");
         props1.put("prop2", "value2");
         Countly.sharedInstance().userProfile().setProperties(props1);
@@ -2434,7 +2506,7 @@ public class ModuleConfigurationTests {
         Assert.assertEquals(2, Countly.sharedInstance().moduleUserProfile.custom.size());
 
         // Second call - add 2 more (total 4, but limit is 3)
-        Map<String, Object> props2 = new HashMap<>();
+        Map<String, Object> props2 = new ConcurrentHashMap<>();
         props2.put("prop3", "value3");
         props2.put("prop4", "value4");
         Countly.sharedInstance().userProfile().setProperties(props2);
@@ -2454,7 +2526,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("prop1", "value1");
         properties.put("prop2", "value2");
         properties.put("prop3", "value3");
@@ -2477,7 +2549,7 @@ public class ModuleConfigurationTests {
         );
         Countly.sharedInstance().init(countlyConfig);
 
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("prop1", "value1");
         properties.put("prop2", "value2");
 
@@ -2617,7 +2689,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // Add properties via setProperties
-        Map<String, Object> properties = new HashMap<>();
+        Map<String, Object> properties = new ConcurrentHashMap<>();
         properties.put("prop1", "value1");
         properties.put("prop2", "value2");
         properties.put("prop3", "value3");
@@ -2862,7 +2934,7 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().init(countlyConfig);
 
         // event1: key_a should be blocked, key_b allowed
-        Map<String, Object> seg1 = new HashMap<>();
+        Map<String, Object> seg1 = new ConcurrentHashMap<>();
         seg1.put("key_a", "value");
         seg1.put("key_b", "value");
         Countly.sharedInstance().events().recordEvent("event1", seg1);
@@ -2871,7 +2943,7 @@ public class ModuleConfigurationTests {
         validateEventInRQ("event1", TestUtils.map("key_b", "value"), 0, 1, 0, 1);
 
         // event2: key_b should be blocked, key_a allowed
-        Map<String, Object> seg2 = new HashMap<>();
+        Map<String, Object> seg2 = new ConcurrentHashMap<>();
         seg2.put("key_a", "value");
         seg2.put("key_b", "value");
         Countly.sharedInstance().events().recordEvent("event2", seg2);
