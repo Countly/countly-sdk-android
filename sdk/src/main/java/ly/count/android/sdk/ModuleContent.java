@@ -23,6 +23,7 @@ public class ModuleContent extends ModuleBase {
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
     private boolean isCurrentlyInContentZone = false;
+    private boolean isCurrentlyRetrying = false;
     private int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
@@ -50,14 +51,14 @@ public class ModuleContent extends ModuleBase {
                 exitContentZoneInternal();
             }
             waitForDelay = 0;
-            enterContentZoneInternal(null, 0);
+            enterContentZoneInternal(null, 0, null);
         }
     }
 
     @Override
     void initFinished(@NotNull CountlyConfig config) {
         if (configProvider.getContentZoneEnabled()) {
-            enterContentZoneInternal(null, 0);
+            enterContentZoneInternal(null, 0, null);
         }
     }
 
@@ -68,7 +69,7 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
-    void fetchContentsInternal(@NonNull String[] categories) {
+    void fetchContentsInternal(@NonNull String[] categories, @Nullable Runnable callbackOnFailure) {
         L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(categories) + "]");
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
@@ -109,16 +110,23 @@ public class ModuleContent extends ModuleBase {
 
                     shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
                     isCurrentlyInContentZone = true;
+                    isCurrentlyRetrying = false;
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
+                    if (callbackOnFailure != null) {
+                        callbackOnFailure.run();
+                    }
                 }
             } catch (Exception ex) {
                 L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
+                if (callbackOnFailure != null) {
+                    callbackOnFailure.run();
+                }
             }
         }, L);
     }
 
-    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS) {
+    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS, @Nullable Runnable callbackOnFailure) {
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
             return;
@@ -167,13 +175,18 @@ public class ModuleContent extends ModuleBase {
                         return;
                     }
 
-                    fetchContentsInternal(validCategories);
+                    fetchContentsInternal(validCategories, callbackOnFailure);
                 }
             }, L);
         }
     }
 
     private void enterContentZoneWithRetriesInternal() {
+        if (isCurrentlyRetrying) {
+            L.w("[ModuleContent] enterContentZoneWithRetriesInternal, already retrying, skipping");
+            return;
+        }
+        isCurrentlyRetrying = true;
         Handler handler = new Handler(Looper.getMainLooper());
         int maxRetries = 3;
         int delayMillis = 1000;
@@ -184,20 +197,31 @@ public class ModuleContent extends ModuleBase {
             @Override
             public void run() {
                 if (isCurrentlyInContentZone) {
+                    isCurrentlyRetrying = false; // Reset flag on success
                     return;
                 }
 
                 if (countlyTimer != null) { // for tests
                     countlyTimer.stopTimer(L);
                 }
-                enterContentZoneInternal(null, 0);
 
-                attempt++;
-                if (attempt < maxRetries) {
-                    handler.postDelayed(this, delayMillis);
-                } else {
-                    L.w("[ModuleContent] enterContentZoneWithRetriesInternal, " + maxRetries + " attempted");
-                }
+                final Runnable self = this; // Capture reference to outer Runnable
+
+                enterContentZoneInternal(null, 0, new Runnable() {
+                    @Override public void run() {
+                        if (isCurrentlyInContentZone) {
+                            isCurrentlyRetrying = false; // Reset flag on success
+                            return;
+                        }
+                        attempt++;
+                        if (attempt < maxRetries) {
+                            handler.postDelayed(self, delayMillis);
+                        } else {
+                            L.w("[ModuleContent] enterContentZoneWithRetriesInternal, " + maxRetries + " attempted");
+                            isCurrentlyRetrying = false;
+                        }
+                    }
+                });
             }
         };
 
@@ -370,7 +394,7 @@ public class ModuleContent extends ModuleBase {
 
         if (callRQFlush) {
             _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
-            enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
+            enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS, null);
         } else {
             enterContentZoneWithRetriesInternal();
         }
@@ -389,7 +413,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            enterContentZoneInternal(null, 0);
+            enterContentZoneInternal(null, 0, null);
         }
 
         /**
