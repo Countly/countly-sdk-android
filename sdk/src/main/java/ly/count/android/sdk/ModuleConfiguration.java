@@ -62,6 +62,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRSegmentationWhitelist = "sw";
     final static String keyREventSegmentationWhitelist = "esw"; // json
     final static String keyRJourneyTriggerEvents = "jte";
+    final static String keyRListingFilterPreset = "filter_preset";
 
     // FLAGS
     boolean currentVTracking = true;
@@ -400,6 +401,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                     isValid = value instanceof Boolean;
                     break;
 
+                case keyRListingFilterPreset:
+                    isValid = value instanceof String && (value.equals("Whitelisting") || value.equals("Blacklisting"));
+                    break;
+
                 // --- Positive Integer keys (> 0) ---
                 case keyRServerConfigUpdateInterval:
                 case keyRBOMAcceptedTimeout:
@@ -490,6 +495,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Failed to merge version/timestamp.", e);
         }
 
+        removeListingFilterKeysFromConfig(newInner);
+
         Iterator<String> keys = newInner.keys();
         while (keys.hasNext()) {
             String key = keys.next();
@@ -505,6 +512,22 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         // Save updated config
         storageProvider.setServerConfig(latestRetrievedConfigurationFull.toString());
+    }
+
+    private void removeListingFilterKeysFromConfig(JSONObject newConfig) {
+        String filterPreset = newConfig.optString(keyRListingFilterPreset, "Blacklisting");
+
+        if (filterPreset.equals("Whitelisting")) {
+            latestRetrievedConfiguration.remove(keyREventBlacklist);
+            latestRetrievedConfiguration.remove(keyRUserPropertyBlacklist);
+            latestRetrievedConfiguration.remove(keyRSegmentationBlacklist);
+            latestRetrievedConfiguration.remove(keyREventSegmentationBlacklist);
+        } else {
+            latestRetrievedConfiguration.remove(keyREventWhitelist);
+            latestRetrievedConfiguration.remove(keyRUserPropertyWhitelist);
+            latestRetrievedConfiguration.remove(keyRSegmentationWhitelist);
+            latestRetrievedConfiguration.remove(keyREventSegmentationWhitelist);
+        }
     }
 
     /**
