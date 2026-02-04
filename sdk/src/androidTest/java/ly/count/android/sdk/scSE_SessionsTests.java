@@ -66,7 +66,7 @@ public class scSE_SessionsTests {
      */
     @Test
     public void SE_200_CR_CG_M() throws InterruptedException {
-        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" });
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().setRequiresConsent(true).setConsentEnabled(new String[] { "sessions" }).setTrackOrientationChanges(false);
         Countly countly = new Countly().init(config);
 
         flowManualSessions(countly);
@@ -92,12 +92,11 @@ public class scSE_SessionsTests {
      */
     @Test
     public void SE_201_CNR_M() throws InterruptedException {
-        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().setRequiresConsent(false);
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().setRequiresConsent(false).setTrackOrientationChanges(false);
         Countly countly = new Countly().init(config);
 
         flowManualSessions(countly);
 
-        TestUtils.removeRequestContains("orientation"); //TODO fix for now, tweak this
         Assert.assertEquals(4, TestUtils.getCurrentRQ().length);
         validateSessionBeginRequest(0, TestUtils.commonDeviceId);
         validateSessionUpdateRequest(1, 2, TestUtils.commonDeviceId);

@@ -712,7 +712,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void configurationParameterCount() {
-        int configParameterCount = 41; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, and journey trigger events
+        int configParameterCount = 42; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, and journey trigger events and filter_preset
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
             if (field.getName().startsWith("keyR")) {
@@ -805,7 +805,9 @@ public class ModuleConfigurationTests {
         ServerConfigBuilder serverConfigBuilder = new ServerConfigBuilder()
             .defaults();
 
-        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build()));
+        config.setTrackOrientationChanges(false); // disable orientation to avoid extra event
+        Countly countly = new Countly().init(config);
         countly.onStartInternal(null);
         // Verify initial state
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
@@ -813,11 +815,17 @@ public class ModuleConfigurationTests {
 
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // begin session request
 
+        // Properly cleanup before reinitializing with different config
+        countly.halt();
+        countlyStore.clear();
+
         serverConfigBuilder.tracking(false);
-        countly = new Countly().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
+        CountlyConfig config2 = TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build()));
+        config2.setTrackOrientationChanges(false);
+        countly = new Countly().init(config2);
         countly.onStartInternal(null);
         Thread.sleep(1000);
-        Assert.assertEquals(1, TestUtils.getCurrentRQ().length); // assert that no new request is added
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length); // assert that no request is added when tracking disabled
     }
 
     /**

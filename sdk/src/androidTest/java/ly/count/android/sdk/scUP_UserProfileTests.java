@@ -71,6 +71,7 @@ public class scUP_UserProfileTests {
     public void eventSaveScenario_onTimer() throws InterruptedException, JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.sessionUpdateTimerDelay = 2; // trigger update call for property save
+        config.setTrackOrientationChanges(false); // disable orientation tracking to avoid extra event
         Countly countly = new Countly().init(config);
 
         TestUtils.assertRQSize(0); // no begin session because of no consent
@@ -189,7 +190,7 @@ public class scUP_UserProfileTests {
         countly.userProfile().setProperty("after_begin_session", true);
         TestUtils.assertRQSize(2);
 
-        Thread.sleep(3000);
+        Thread.sleep(4000); // Increased to ensure session update timer fires
 
         TestUtils.assertRQSize(4);
 
@@ -522,7 +523,7 @@ public class scUP_UserProfileTests {
      */
     @Test
     public void UP_210_CNR_M_duration() throws InterruptedException, JSONException {
-        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl().setUpdateSessionTimerDelay(5));
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl().setUpdateSessionTimerDelay(5).setTrackOrientationChanges(false));
 
         sendUserData(countly);
         Thread.sleep(6000);
