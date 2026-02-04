@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -151,22 +153,55 @@ public class ModuleContent extends ModuleBase {
             contentInitialDelay += CONTENT_START_DELAY_MS;
         }
 
-        countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
-            @Override public void run() {
-                L.d("[ModuleContent] enterContentZoneInternal, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
-                if (waitForDelay > 0) {
-                    waitForDelay--;
+        if (countlyTimer != null) { // for tests, in normal conditions this should never be null here
+            countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
+                @Override public void run() {
+                    L.d("[ModuleContent] enterContentZoneInternal, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+                    if (waitForDelay > 0) {
+                        waitForDelay--;
+                        return;
+                    }
+
+                    if (!shouldFetchContents) {
+                        L.w("[ModuleContent] enterContentZoneInternal, shouldFetchContents is false, skipping");
+                        return;
+                    }
+
+                    fetchContentsInternal(validCategories);
+                }
+            }, L);
+        }
+    }
+
+    private void enterContentZoneWithRetriesInternal() {
+        Handler handler = new Handler(Looper.getMainLooper());
+        int maxRetries = 3;
+        int delayMillis = 1000;
+
+        Runnable retryRunnable = new Runnable() {
+            int attempt = 0;
+
+            @Override
+            public void run() {
+                if (isCurrentlyInContentZone) {
                     return;
                 }
 
-                if (!shouldFetchContents) {
-                    L.w("[ModuleContent] enterContentZoneInternal, shouldFetchContents is false, skipping");
-                    return;
+                if (countlyTimer != null) { // for tests
+                    countlyTimer.stopTimer(L);
                 }
+                enterContentZoneInternal(null, 0);
 
-                fetchContentsInternal(validCategories);
+                attempt++;
+                if (attempt < maxRetries) {
+                    handler.postDelayed(this, delayMillis);
+                } else {
+                    L.w("[ModuleContent] enterContentZoneWithRetriesInternal, " + maxRetries + " attempted");
+                }
             }
-        }, L);
+        };
+
+        handler.post(retryRunnable);
     }
 
     void notifyAfterContentIsClosed() {
@@ -335,9 +370,10 @@ public class ModuleContent extends ModuleBase {
 
         if (callRQFlush) {
             _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+            enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
+        } else {
+            enterContentZoneWithRetriesInternal();
         }
-
-        enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
     }
 
     public class Content {
