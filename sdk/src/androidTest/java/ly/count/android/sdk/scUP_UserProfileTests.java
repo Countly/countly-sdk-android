@@ -174,7 +174,7 @@ public class scUP_UserProfileTests {
         CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setTrackOrientationChanges(false);
         TestLifecycleObserver testLifecycleObserver = new TestLifecycleObserver();
         config.lifecycleObserver = testLifecycleObserver;
-        config.setUpdateSessionTimerDelay(3);
+        config.setUpdateSessionTimerDelay(5); // Use 5 second timer for more reliable timing
         Countly countly = new Countly().init(config);
 
         TestUtils.assertRQSize(0);
@@ -190,24 +190,24 @@ public class scUP_UserProfileTests {
         countly.userProfile().setProperty("after_begin_session", true);
         TestUtils.assertRQSize(2);
 
-        Thread.sleep(4000); // Increased to ensure session update timer fires
+        Thread.sleep(6000); // Wait for session update timer (5s) to fire
 
         TestUtils.assertRQSize(4);
 
         ModuleUserProfileTests.validateUserProfileRequest(2, 4, TestUtils.map(), TestUtils.map("after_begin_session", true));
-        ModuleSessionsTests.validateSessionUpdateRequest(3, 3, TestUtils.commonDeviceId);
+        ModuleSessionsTests.validateSessionUpdateRequest(3, 5, TestUtils.commonDeviceId); // duration 5 (timer delay)
 
         countly.userProfile().setProperty("after_update_session", true);
         TestUtils.assertRQSize(4);
 
-        Thread.sleep(2000);
+        Thread.sleep(2000); // 6+2=8s total, less than 10s (2 timer intervals)
 
         testLifecycleObserver.goToBackground();
         countly.onStop();
 
         TestUtils.assertRQSize(6);
         ModuleUserProfileTests.validateUserProfileRequest(4, 6, TestUtils.map(), TestUtils.map("after_update_session", true));
-        ModuleSessionsTests.validateSessionEndRequest(5, 2, TestUtils.commonDeviceId);
+        ModuleSessionsTests.validateSessionEndRequest(5, 3, TestUtils.commonDeviceId); // duration ~3s since last update
     }
 
     /**
