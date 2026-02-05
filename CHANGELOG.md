@@ -1,3 +1,12 @@
+## XX.XX.XX
+* Extended server configuration capabilities with server-controlled listing filters:
+  * Event filters (blacklist/whitelist) to control which events are recorded.
+  * User property filters (blacklist/whitelist) to control which user properties are recorded.
+  * Segmentation filters (blacklist/whitelist) to control which segmentation keys are recorded.
+  * Event-specific segmentation filters (blacklist/whitelist) to control segmentation keys per event.
+* Added support for Journey Trigger Events that trigger a content zone refresh when recorded.
+* Added a configurable user property cache limit through server configuration.
+
 ## 25.4.9
 * Added a new config option `disableViewRestartForManualRecording()` to disable auto close/restart behavior of manual views on app background/foreground actions.
 
