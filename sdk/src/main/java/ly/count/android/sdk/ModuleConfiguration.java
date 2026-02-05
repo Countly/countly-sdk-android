@@ -62,7 +62,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRSegmentationWhitelist = "sw";
     final static String keyREventSegmentationWhitelist = "esw"; // json
     final static String keyRJourneyTriggerEvents = "jte";
-    final static String keyRListingFilterPreset = "filter_preset";
 
     // FLAGS
     boolean currentVTracking = true;
@@ -401,10 +400,6 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                     isValid = value instanceof Boolean;
                     break;
 
-                case keyRListingFilterPreset:
-                    isValid = value instanceof String && (value.equals("Whitelisting") || value.equals("Blacklisting"));
-                    break;
-
                 // --- Positive Integer keys (> 0) ---
                 case keyRServerConfigUpdateInterval:
                 case keyRBOMAcceptedTimeout:
@@ -515,19 +510,31 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     private void removeListingFilterKeysFromConfig(JSONObject newConfig) {
-        String filterPreset = newConfig.optString(keyRListingFilterPreset, "Blacklisting");
+        boolean hasAnyWhitelist = newConfig.has(keyREventWhitelist)
+            || newConfig.has(keyRUserPropertyWhitelist)
+            || newConfig.has(keyRSegmentationWhitelist)
+            || newConfig.has(keyREventSegmentationWhitelist);
 
-        if (filterPreset.equals("Whitelisting")) {
+        boolean hasAnyBlacklist = newConfig.has(keyREventBlacklist)
+            || newConfig.has(keyRUserPropertyBlacklist)
+            || newConfig.has(keyRSegmentationBlacklist)
+            || newConfig.has(keyREventSegmentationBlacklist);
+
+        // Only remove opposite type when we actually have data for current type
+        if (hasAnyWhitelist) {
             latestRetrievedConfiguration.remove(keyREventBlacklist);
             latestRetrievedConfiguration.remove(keyRUserPropertyBlacklist);
             latestRetrievedConfiguration.remove(keyRSegmentationBlacklist);
             latestRetrievedConfiguration.remove(keyREventSegmentationBlacklist);
-        } else {
+        }
+
+        if (hasAnyBlacklist) {
             latestRetrievedConfiguration.remove(keyREventWhitelist);
             latestRetrievedConfiguration.remove(keyRUserPropertyWhitelist);
             latestRetrievedConfiguration.remove(keyRSegmentationWhitelist);
             latestRetrievedConfiguration.remove(keyREventSegmentationWhitelist);
         }
+        // If neither has data, don't remove anything - preserve existing filters
     }
 
     /**

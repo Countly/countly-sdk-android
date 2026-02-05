@@ -712,7 +712,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void configurationParameterCount() {
-        int configParameterCount = 42; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, and journey trigger events and filter_preset
+        int configParameterCount = 41; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, and journey trigger events
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
             if (field.getName().startsWith("keyR")) {
