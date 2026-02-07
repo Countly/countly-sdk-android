@@ -283,6 +283,40 @@ public class ModuleViewsTests {
         validateView(act.getClass().getSimpleName(), 1.0, 1, 2, false, false, TestUtils.map("aa", "11", "aagfg", "1133", "1", 123, "2", 234, "3", true), "idv1", "");
     }
 
+    @Test
+    public void pauseResumeViewsOnBackgroundByDefault() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        mCountly.views().startView("view-one");
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
+
+        String viewId = mCountly.moduleViews.getCurrentViewId();
+        ModuleViews.ViewData vd = mCountly.moduleViews.viewDataMap.get(viewId);
+        Assert.assertNotNull(vd);
+        Assert.assertTrue(vd.viewStartTimeSeconds > 0);
+
+        clearInvocations(ep);
+        mCountly.moduleViews.onActivityStopped(0);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
+
+        vd = mCountly.moduleViews.viewDataMap.get(viewId);
+        Assert.assertNotNull(vd);
+        Assert.assertEquals(0, vd.viewStartTimeSeconds);
+        Assert.assertTrue(vd.pausedByAppBackground);
+
+        clearInvocations(ep);
+        Activity activity = mock(Activity.class);
+        mCountly.moduleViews.onActivityStarted(activity, 1);
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+
+        vd = mCountly.moduleViews.viewDataMap.get(viewId);
+        Assert.assertNotNull(vd);
+        Assert.assertTrue(vd.viewStartTimeSeconds > 0);
+        Assert.assertFalse(vd.pausedByAppBackground);
+    }
+
     /**
      * Validate pure "recordView" flow without using segmentation
      *
@@ -1753,6 +1787,7 @@ public class ModuleViewsTests {
         countlyConfig.setApplication(null);
         countlyConfig.setContext(TestUtils.getContext());
         countlyConfig.setGlobalViewSegmentation(TestUtils.map("try", "this", "maybe", false));
+        countlyConfig.setEnableAutoViewStartStop(true);
 
         countlyConfig.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(countlyConfig);
@@ -1817,6 +1852,7 @@ public class ModuleViewsTests {
         countlyConfig.setApplication(null);
         countlyConfig.setContext(TestUtils.getContext());
         countlyConfig.setGlobalViewSegmentation(TestUtils.map("try", "this", "maybe", false));
+        countlyConfig.setEnableAutoViewStartStop(true);
 
         countlyConfig.setEventQueueSizeToSend(1);
         Countly countly = new Countly().init(countlyConfig);
@@ -1908,7 +1944,7 @@ public class ModuleViewsTests {
         try {
             validateView("test", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
             validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
-        } catch (Exception ignored) {
+        } catch (AssertionError ignored) {
             validateView("test", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
             validateView("test2", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
         }

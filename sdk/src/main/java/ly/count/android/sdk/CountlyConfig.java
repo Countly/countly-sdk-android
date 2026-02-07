@@ -114,6 +114,8 @@ public class CountlyConfig {
 
     protected boolean autoTrackingUseShortName = false;
 
+    protected boolean enableAutoViewStartStop = false;
+
     protected Class[] automaticViewTrackingExceptions = null;
 
     protected Map<String, Object> globalViewSegmentation = null;
@@ -411,6 +413,18 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableAutomaticViewShortNames() {
         this.autoTrackingUseShortName = true;
+        return this;
+    }
+
+    /**
+     * Enable automatic view stop/start on app background/foreground transitions.
+     * Default is false, which pauses/resumes active views instead.
+     *
+     * @param enable set true to enable auto stop/start
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setEnableAutoViewStartStop(boolean enable) {
+        this.enableAutoViewStartStop = enable;
         return this;
     }
 

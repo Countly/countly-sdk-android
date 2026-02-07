@@ -120,6 +120,7 @@ public class CountlyConfigTests {
         config.enableCrashReporting();
         config.setViewTracking(true);
         config.setAutoTrackingUseShortName(true);
+        config.setEnableAutoViewStartStop(true);
         config.addCustomNetworkRequestHeaders(hv);
         config.setPushIntentAddMetadata(true);
         config.setRemoteConfigAutomaticDownload(true, rcc2);
@@ -171,6 +172,7 @@ public class CountlyConfigTests {
         Assert.assertTrue(config.crashes.enableUnhandledCrashReporting);
         Assert.assertTrue(config.enableAutomaticViewTracking);
         Assert.assertTrue(config.autoTrackingUseShortName);
+        Assert.assertTrue(config.enableAutoViewStartStop);
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
         Assert.assertTrue(config.pushIntentAddMetadata);
         Assert.assertTrue(config.enableRemoteConfigAutomaticDownloadTriggers);
@@ -273,6 +275,7 @@ public class CountlyConfigTests {
         Assert.assertFalse(config.crashes.enableUnhandledCrashReporting);
         Assert.assertFalse(config.enableAutomaticViewTracking);
         Assert.assertFalse(config.autoTrackingUseShortName);
+        Assert.assertFalse(config.enableAutoViewStartStop);
         Assert.assertNull(config.customNetworkRequestHeaders);
         Assert.assertFalse(config.pushIntentAddMetadata);
         Assert.assertFalse(config.enableRemoteConfigAutomaticDownloadTriggers);

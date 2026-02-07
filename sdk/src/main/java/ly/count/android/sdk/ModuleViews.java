@@ -21,6 +21,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     private boolean firstView = true;
     boolean autoViewTracker = false;
     boolean automaticTrackingShouldUseShortName = false;
+    boolean enableAutoViewStartStop = false;
 
     //track orientation changes
     boolean trackOrientationChanges;
@@ -55,6 +56,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         boolean isAutoStoppedView = false;//views started with "startAutoStoppedView" would have this as "true". If set to "true" views should be automatically closed when another one is started.
         Map<String, Object> viewSegmentation = null; // segmentation that can be updated while a view is on
         boolean willStartAgain = false; // if this is true, the view will be started again when the app comes back to the foreground
+        boolean pausedByAppBackground = false; // true when paused due to app backgrounding
     }
 
     //interface for SDK users
@@ -77,6 +79,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.d("[ModuleViews] Enabling automatic view tracking short names");
             automaticTrackingShouldUseShortName = config.autoTrackingUseShortName;
         }
+
+        enableAutoViewStartStop = config.enableAutoViewStartStop;
 
         config.viewIdProvider = this;
         safeViewIDGenerator = config.safeViewIDGenerator;
@@ -503,6 +507,53 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
     }
 
+    void pauseRunningViews() {
+        L.d("[ModuleViews] pauseRunningViews, app is going to the background, pausing views");
+
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (vd == null) {
+                continue;
+            }
+            if (vd.viewStartTimeSeconds > 0) {
+                vd.pausedByAppBackground = true;
+                pauseViewWithIDInternal(vd.viewID);
+            }
+        }
+    }
+
+    void resumePausedViews() {
+        L.d("[ModuleViews] resumePausedViews, app is coming back to the foreground, resuming views");
+
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (vd == null) {
+                continue;
+            }
+            if (vd.pausedByAppBackground) {
+                vd.pausedByAppBackground = false;
+                resumeViewWithIDInternal(vd.viewID);
+            }
+        }
+    }
+
+    boolean resumePausedViewWithName(@Nullable String viewName) {
+        if (viewName == null || viewName.isEmpty()) {
+            return false;
+        }
+
+        for (Map.Entry<String, ViewData> entry : viewDataMap.entrySet()) {
+            ViewData vd = entry.getValue();
+            if (vd != null && vd.pausedByAppBackground && viewName.equals(vd.viewName)) {
+                vd.pausedByAppBackground = false;
+                resumeViewWithIDInternal(vd.viewID);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     void onConfigurationChanged(Configuration newConfig) {
         if (trackOrientationChanges) {
@@ -522,7 +573,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     @Override
     void onActivityStopped(int updatedActivityCount) {
-        if (autoViewTracker) {
+        if (autoViewTracker && enableAutoViewStartStop) {
             //main purpose of this is handling transitions when the app is getting closed/minimised
             //for cases when going from one view to another we would report the duration there
             if (updatedActivityCount <= 0) {
@@ -532,8 +583,13 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (updatedActivityCount <= 0) {
-            //if we go to the background, stop all running views
-            stopRunningViewsAndSend();
+            if (enableAutoViewStartStop) {
+                //if we go to the background, stop all running views
+                stopRunningViewsAndSend();
+            } else {
+                //default behavior: pause running views to resume timing on foreground
+                pauseRunningViews();
+            }
         }
     }
 
@@ -552,7 +608,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                     }
                 }
 
-                startViewInternal(usedActivityName, automaticViewSegmentation, true);
+                if (!enableAutoViewStartStop && updatedActivityCount == 1 && resumePausedViewWithName(usedActivityName)) {
+                    L.d("[ModuleViews] [onStart] Resumed paused view: [" + usedActivityName + "]");
+                } else {
+                    startViewInternal(usedActivityName, automaticViewSegmentation, true);
+                }
             } else {
                 L.d("[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
             }
@@ -567,8 +627,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (updatedActivityCount == 1) {
-            //if we go to the background, stop all running views
-            startStoppedViews();
+            if (enableAutoViewStartStop) {
+                //if we go to the background, stop all running views
+                startStoppedViews();
+            } else {
+                resumePausedViews();
+            }
         }
     }
 
