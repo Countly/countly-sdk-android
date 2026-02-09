@@ -29,8 +29,11 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Before;
 import org.junit.Test;
@@ -130,6 +133,30 @@ public class ConnectionProcessorTests {
 
             @Override public int getRequestTimeoutDurationMillis() {
                 return 30_000;
+            }
+
+            @Override public int getUserPropertyCacheLimit() {
+                return 100;
+            }
+
+            @Override public FilterList<Set<String>> getEventFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
+            }
+
+            @Override public FilterList<Set<String>> getUserPropertyFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
+            }
+
+            @Override public FilterList<Set<String>> getSegmentationFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
+            }
+
+            @Override public FilterList<Map<String, Set<String>>> getEventSegmentationFilterList() {
+                return new FilterList<>(new ConcurrentHashMap<>(), false);
+            }
+
+            @Override public Set<String> getJourneyTriggerEvents() {
+                return Collections.emptySet();
             }
         };
 

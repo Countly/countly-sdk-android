@@ -1,7 +1,11 @@
 package ly.count.android.sdk;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -13,7 +17,12 @@ import static ly.count.android.sdk.ModuleConfiguration.keyRCrashReporting;
 import static ly.count.android.sdk.ModuleConfiguration.keyRCustomEventTracking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRDropOldRequestTime;
 import static ly.count.android.sdk.ModuleConfiguration.keyREnterContentZone;
+import static ly.count.android.sdk.ModuleConfiguration.keyREventBlacklist;
 import static ly.count.android.sdk.ModuleConfiguration.keyREventQueueSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyREventSegmentationBlacklist;
+import static ly.count.android.sdk.ModuleConfiguration.keyREventSegmentationWhitelist;
+import static ly.count.android.sdk.ModuleConfiguration.keyREventWhitelist;
+import static ly.count.android.sdk.ModuleConfiguration.keyRJourneyTriggerEvents;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitBreadcrumb;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitKeyLength;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitSegValues;
@@ -25,11 +34,16 @@ import static ly.count.android.sdk.ModuleConfiguration.keyRLogging;
 import static ly.count.android.sdk.ModuleConfiguration.keyRNetworking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRRefreshContentZone;
 import static ly.count.android.sdk.ModuleConfiguration.keyRReqQueueSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyRSegmentationBlacklist;
+import static ly.count.android.sdk.ModuleConfiguration.keyRSegmentationWhitelist;
 import static ly.count.android.sdk.ModuleConfiguration.keyRServerConfigUpdateInterval;
 import static ly.count.android.sdk.ModuleConfiguration.keyRSessionTracking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRSessionUpdateInterval;
 import static ly.count.android.sdk.ModuleConfiguration.keyRTimestamp;
 import static ly.count.android.sdk.ModuleConfiguration.keyRTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRUserPropertyBlacklist;
+import static ly.count.android.sdk.ModuleConfiguration.keyRUserPropertyCacheLimit;
+import static ly.count.android.sdk.ModuleConfiguration.keyRUserPropertyWhitelist;
 import static ly.count.android.sdk.ModuleConfiguration.keyRVersion;
 import static ly.count.android.sdk.ModuleConfiguration.keyRViewTracking;
 
@@ -169,6 +183,64 @@ class ServerConfigBuilder {
         return this;
     }
 
+    ServerConfigBuilder userPropertyCacheLimit(int limit) {
+        config.put(keyRUserPropertyCacheLimit, limit);
+        return this;
+    }
+
+    ServerConfigBuilder eventFilterList(Set<String> filterList, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
+        if (isWhitelist) {
+            config.remove(keyREventBlacklist);
+            config.put(keyREventWhitelist, filterList);
+        } else {
+            config.remove(keyREventWhitelist);
+            config.put(keyREventBlacklist, filterList);
+        }
+        return this;
+    }
+
+    ServerConfigBuilder userPropertyFilterList(Set<String> filterList, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
+        if (isWhitelist) {
+            config.remove(keyRUserPropertyBlacklist);
+            config.put(keyRUserPropertyWhitelist, filterList);
+        } else {
+            config.remove(keyRUserPropertyWhitelist);
+            config.put(keyRUserPropertyBlacklist, filterList);
+        }
+        return this;
+    }
+
+    ServerConfigBuilder segmentationFilterList(Set<String> filterList, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
+        if (isWhitelist) {
+            config.remove(keyRSegmentationBlacklist);
+            config.put(keyRSegmentationWhitelist, filterList);
+        } else {
+            config.remove(keyRSegmentationWhitelist);
+            config.put(keyRSegmentationBlacklist, filterList);
+        }
+        return this;
+    }
+
+    ServerConfigBuilder eventSegmentationFilterMap(Map<String, Set<String>> filterMap, boolean isWhitelist) {
+        // Remove the conflicting key to ensure mutual exclusivity
+        if (isWhitelist) {
+            config.remove(keyREventSegmentationBlacklist);
+            config.put(keyREventSegmentationWhitelist, filterMap);
+        } else {
+            config.remove(keyREventSegmentationWhitelist);
+            config.put(keyREventSegmentationBlacklist, filterMap);
+        }
+        return this;
+    }
+
+    ServerConfigBuilder journeyTriggerEvents(Set<String> journeyTriggerEvents) {
+        config.put(keyRJourneyTriggerEvents, journeyTriggerEvents);
+        return this;
+    }
+
     ServerConfigBuilder defaults() {
         // Feature flags
         tracking(true);
@@ -198,6 +270,13 @@ class ServerConfigBuilder {
         breadcrumbLimit(Countly.maxBreadcrumbCountDefault);
         traceLengthLimit(Countly.maxStackTraceLineLengthDefault);
         traceLinesLimit(Countly.maxStackTraceLinesPerThreadDefault);
+        userPropertyCacheLimit(100);
+
+        eventFilterList(new HashSet<>(), false);
+        userPropertyFilterList(new HashSet<>(), false);
+        segmentationFilterList(new HashSet<>(), false);
+        eventSegmentationFilterMap(new ConcurrentHashMap<>(), false);
+        journeyTriggerEvents(new HashSet<>());
 
         return this;
     }
@@ -221,6 +300,7 @@ class ServerConfigBuilder {
         validateFeatureFlags(countly);
         validateIntervalsAndSizes(countly);
         validateLimits(countly);
+        validateFilterSettings(countly);
     }
 
     private void validateFeatureFlags(Countly countly) {
@@ -260,5 +340,35 @@ class ServerConfigBuilder {
         Assert.assertEquals(config.get(keyRLimitBreadcrumb), countly.config_.sdkInternalLimits.maxBreadcrumbCount);
         Assert.assertEquals(config.get(keyRLimitTraceLength), countly.config_.sdkInternalLimits.maxStackTraceLineLength);
         Assert.assertEquals(config.get(keyRLimitTraceLine), countly.config_.sdkInternalLimits.maxStackTraceLinesPerThread);
+        Assert.assertEquals(config.get(keyRUserPropertyCacheLimit), countly.moduleConfiguration.getUserPropertyCacheLimit());
+    }
+
+    private void validateFilterSettings(Countly countly) {
+        Set<String> eventFilterList = (Set<String>) config.get(keyREventBlacklist);
+        if (eventFilterList == null) {
+            eventFilterList = (Set<String>) config.get(keyREventWhitelist);
+        }
+        Assert.assertEquals(Objects.requireNonNull(eventFilterList).toString(), countly.moduleConfiguration.getEventFilterList().filterList.toString());
+
+        Set<String> userPropertyFilterList = (Set<String>) config.get(keyRUserPropertyBlacklist);
+        if (userPropertyFilterList == null) {
+            userPropertyFilterList = (Set<String>) config.get(keyRUserPropertyWhitelist);
+        }
+        Assert.assertEquals(Objects.requireNonNull(userPropertyFilterList).toString(), countly.moduleConfiguration.getUserPropertyFilterList().filterList.toString());
+
+        Set<String> segmentationFilterList = (Set<String>) config.get(keyRSegmentationBlacklist);
+        if (segmentationFilterList == null) {
+            segmentationFilterList = (Set<String>) config.get(keyRSegmentationWhitelist);
+        }
+        Assert.assertEquals(Objects.requireNonNull(segmentationFilterList).toString(), countly.moduleConfiguration.getSegmentationFilterList().filterList.toString());
+
+        Map<String, Set<String>> eventSegmentationFilterMap = (Map<String, Set<String>>) config.get(keyREventSegmentationBlacklist);
+        if (eventSegmentationFilterMap == null) {
+            eventSegmentationFilterMap = (Map<String, Set<String>>) config.get(keyREventSegmentationWhitelist);
+        }
+        Assert.assertEquals(Objects.requireNonNull(eventSegmentationFilterMap).toString(), countly.moduleConfiguration.getEventSegmentationFilterList().filterList.toString());
+
+        Set<String> journeyTriggerEvents = (Set<String>) config.get(keyRJourneyTriggerEvents);
+        Assert.assertEquals(Objects.requireNonNull(journeyTriggerEvents).toString(), countly.moduleConfiguration.getJourneyTriggerEvents().toString());
     }
 } 
