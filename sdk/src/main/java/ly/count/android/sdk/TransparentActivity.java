@@ -54,6 +54,7 @@ public class TransparentActivity extends Activity {
         currentOrientation = intent.getIntExtra(ORIENTATION, 0);
         configLandscape = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_LANDSCAPE);
         configPortrait = (TransparentActivityConfig) intent.getSerializableExtra(CONFIGURATION_PORTRAIT);
+
         Log.v(Countly.TAG, "[TransparentActivity] onCreate, orientation: " + currentOrientation);
         Log.v(Countly.TAG, "[TransparentActivity] onCreate, configLandscape  x: ["
             + configLandscape.x
@@ -328,7 +329,9 @@ public class TransparentActivity extends Activity {
                 close(query);
 
                 ModuleFeedback.CountlyFeedbackWidget widgetInfo = (ModuleFeedback.CountlyFeedbackWidget) getIntent().getSerializableExtra(WIDGET_INFO);
-                Countly.sharedInstance().moduleFeedback.reportFeedbackWidgetCancelButton(widgetInfo);
+                if (widgetInfo != null) {
+                    Countly.sharedInstance().moduleFeedback.reportFeedbackWidgetCancelButton(widgetInfo);
+                }
             }
         }
 
