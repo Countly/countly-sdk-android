@@ -20,6 +20,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     String currentViewName = "";
     private boolean firstView = true;
     boolean autoViewTracker = false;
+    boolean restartManualViews = true;
     boolean automaticTrackingShouldUseShortName = false;
 
     //track orientation changes
@@ -84,6 +85,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         setGlobalViewSegmentationInternal(config.globalViewSegmentation);
         autoTrackingActivityExceptions = config.automaticViewTrackingExceptions;
         trackOrientationChanges = config.trackOrientationChange;
+        restartManualViews = !config.disableViewRestartForManualRecording;
 
         viewsInterface = new Views();
     }
@@ -552,7 +554,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        if (updatedActivityCount <= 0) {
+        if (updatedActivityCount <= 0 && (autoViewTracker || restartManualViews)) {
             //if we go to the background, stop all running views
             stopRunningViewsAndSend();
         }
@@ -587,8 +589,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        if (updatedActivityCount == 1) {
-            //if we go to the background, stop all running views
+        if (updatedActivityCount == 1 && (autoViewTracker || restartManualViews)) {
             startStoppedViews();
         }
     }

@@ -25,7 +25,11 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -48,6 +52,7 @@ import org.json.JSONObject;
  * of this bug in dexmaker: https://code.google.com/p/dexmaker/issues/detail?id=34
  */
 class ConnectionQueue implements RequestQueueProvider {
+    static final String GLOBAL_RC_CALLBACK = "global_request_callback";
     private ExecutorService executor_;
     private Context context_;
     private Future<?> connectionProcessorFuture_;
@@ -70,6 +75,9 @@ class ConnectionQueue implements RequestQueueProvider {
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
+    private final Map<String, InternalRequestCallback> internalRequestCallbacks = new ConcurrentHashMap<>();
+    // Using CopyOnWriteArrayList for thread safety - allows iteration while modifications may occur from other threads
+    private final List<Runnable> internalGlobalRequestCallbackActions = new CopyOnWriteArrayList<>();
 
     void setBaseInfoProvider(BaseInfoProvider bip) {
         baseInfoProvider = bip;
@@ -89,6 +97,24 @@ class ConnectionQueue implements RequestQueueProvider {
 
     void setContext(final Context context) {
         context_ = context;
+    }
+
+    public ConnectionQueue() {
+        // Register the global callback that executes all registered actions when the request queue finishes processing
+        internalRequestCallbacks.put(GLOBAL_RC_CALLBACK, new InternalRequestCallback() {
+            @Override public void onRQFinished() {
+                // Execute each registered action with try-catch to prevent one failing action from blocking others
+                for (Runnable r : internalGlobalRequestCallbackActions) {
+                    try {
+                        r.run();
+                    } catch (Exception e) {
+                        if (L != null) {
+                            L.e("[ConnectionQueue] Exception while executing global request callback action: " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        });
     }
 
     void setupSSLContext() {
@@ -208,7 +234,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         Countly.sharedInstance().isBeginSessionSent = true;
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -233,7 +259,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&keys=" + UtilsNetworking.encodedArrayBuilder(keys)
             + "&new_end_point=/o/sdk";
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -260,7 +286,7 @@ class ConnectionQueue implements RequestQueueProvider {
             data += "&keys=" + UtilsNetworking.encodedArrayBuilder(keys);
         }
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -286,7 +312,7 @@ class ConnectionQueue implements RequestQueueProvider {
             String data = prepareCommonRequestData();
             data += "&session_duration=" + duration;
 
-            addRequestToQueue(data, false);
+            addRequestToQueue(data, false, null);
             tick();
         }
     }
@@ -301,7 +327,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         data += "&old_device_id=" + UtilsNetworking.urlEncodeString(oldDeviceId);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -330,7 +356,7 @@ class ConnectionQueue implements RequestQueueProvider {
             @Override
             public void run() {
                 L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
-                addRequestToQueue(data, false);
+                addRequestToQueue(data, false, null);
                 tick();
             }
         }, 10, TimeUnit.SECONDS);
@@ -356,7 +382,7 @@ class ConnectionQueue implements RequestQueueProvider {
             data += "&session_duration=" + duration;
         }
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -373,7 +399,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
         data += prepareLocationData(locationDisabled, locationCountryCode, locationCity, locationGpsCoordinates, locationIpAddress);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -395,7 +421,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + userdata;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
         tick();
     }
 
@@ -418,7 +444,7 @@ class ConnectionQueue implements RequestQueueProvider {
         String param = "&aid=" + UtilsNetworking.urlEncodeString(attributionObj);
 
         String data = prepareCommonRequestData() + param;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -442,7 +468,7 @@ class ConnectionQueue implements RequestQueueProvider {
         String res = "&attribution_data=" + UtilsNetworking.urlEncodeString(attributionData);
 
         String data = prepareCommonRequestData() + res;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -473,7 +499,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + res;
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -498,7 +524,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&crash=" + UtilsNetworking.urlEncodeString(crashData);
 
         //in case of a fatal crash, write it in sync to shared preferences
-        addRequestToQueue(data, !nonFatalCrash);
+        addRequestToQueue(data, !nonFatalCrash, null);
 
         tick();
     }
@@ -535,7 +561,7 @@ class ConnectionQueue implements RequestQueueProvider {
             ));
         }
 
-        addRequestToQueue(data.toString(), false);
+        addRequestToQueue(data.toString(), false, null);
         tick();
     }
 
@@ -546,7 +572,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         L.d("[ConnectionQueue] sendMetricsRequest");
-        addRequestToQueue(prepareCommonRequestData() + "&metrics=" + preparedMetrics, false);
+        addRequestToQueue(prepareCommonRequestData() + "&metrics=" + preparedMetrics, false, null);
         tick();
     }
 
@@ -557,6 +583,17 @@ class ConnectionQueue implements RequestQueueProvider {
      * @throws IllegalStateException if context, app key, store, or server URL have not been set
      */
     public void recordEvents(final String events) {
+        recordEvents(events, null);
+    }
+
+    /**
+     * Records the specified events and sends them to the server.
+     *
+     * @param events URL-encoded JSON string of event data
+     * @param callback InternalRequestCallback to be called when request is finished
+     * @throws IllegalStateException if context, app key, store, or server URL have not been set
+     */
+    public void recordEvents(final String events, InternalRequestCallback callback) {
         if (!checkInternalState()) {
             return;
         }
@@ -569,7 +606,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&events=" + events;
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, callback);
         tick();
     }
 
@@ -582,7 +619,7 @@ class ConnectionQueue implements RequestQueueProvider {
         final String data = prepareCommonRequestData()
             + "&consent=" + UtilsNetworking.urlEncodeString(formattedConsentChanges);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -609,7 +646,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -637,7 +674,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -662,7 +699,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -687,7 +724,7 @@ class ConnectionQueue implements RequestQueueProvider {
             + "&count=1"
             + "&apm=" + UtilsNetworking.urlEncodeString(apmData);
 
-        addRequestToQueue(data, false);
+        addRequestToQueue(data, false, null);
 
         tick();
     }
@@ -926,7 +963,7 @@ class ConnectionQueue implements RequestQueueProvider {
                     }
                 }, configProvider.getBOMDuration(), TimeUnit.SECONDS);
             }
-        });
+        }, internalRequestCallbacks);
         cp.pcc = pcc;
         return cp;
     }
@@ -944,8 +981,52 @@ class ConnectionQueue implements RequestQueueProvider {
         return false;
     }
 
-    void addRequestToQueue(final @NonNull String requestData, final boolean writeInSync) {
-        storageProvider.addRequest(requestData, writeInSync);
+    /**
+     * Adds a request to the queue with an optional callback.
+     * <p>
+     * When a callback is provided:
+     * - A unique UUID is generated and stored with the callback in internalRequestCallbacks
+     * - The callback_id is appended to the request data
+     * - When the request completes (success, failure, or dropped), the callback is invoked and removed
+     *
+     * @param requestData The request data to queue
+     * @param writeInSync Whether to write synchronously (used for crash reports)
+     * @param callback Optional callback to be notified when the request completes. May be null.
+     */
+    void addRequestToQueue(final @NonNull String requestData, final boolean writeInSync, InternalRequestCallback callback) {
+        if (callback == null) {
+            storageProvider.addRequest(requestData, writeInSync);
+        } else {
+            String callbackID = UUID.randomUUID().toString();
+            internalRequestCallbacks.put(callbackID, callback);
+            String callbackParam = "&callback_id=" + UtilsNetworking.urlEncodeString(callbackID);
+            storageProvider.addRequest(requestData + callbackParam, writeInSync);
+        }
+    }
+
+    /**
+     * Registers an action to be executed when the request queue finishes processing (becomes empty).
+     * <p>
+     * Important behaviors:
+     * - Actions persist across multiple queue completions (they are NOT automatically cleared)
+     * - Actions are executed in the order they were registered
+     * - If an action throws an exception, it is logged but does not prevent other actions from running
+     * - To clear all actions, call {@link #flushInternalGlobalRequestCallbackActions()}
+     *
+     * @param runnable The action to execute when the queue finishes
+     */
+    void registerInternalGlobalRequestCallbackAction(Runnable runnable) {
+        internalGlobalRequestCallbackActions.add(runnable);
+    }
+
+    /**
+     * Clears all registered global request callback actions.
+     * <p>
+     * After calling this method, no actions will be executed on future queue completions
+     * until new actions are registered via {@link #registerInternalGlobalRequestCallbackAction(Runnable)}.
+     */
+    void flushInternalGlobalRequestCallbackActions() {
+        internalGlobalRequestCallbackActions.clear();
     }
 
     /**

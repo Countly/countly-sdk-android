@@ -230,10 +230,27 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     return;
                 }
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.events)) {
-                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
+                    //apply custom event listing filter
+                    if (!UtilsListingFilters.applyEventFilter(key, configProvider)) {
+                        L.w("[ModuleEvents] recordEventInternal, Event key [" + key + "] was filtered out by event filter list. Event will not be recorded.");
+                        return;
+                    }
+
                     if (segmentation == null) {
                         segmentation = new HashMap<>();
                     }
+
+                    // apply segmentation listing filters
+                    UtilsListingFilters.applySegmentationFilter(segmentation, configProvider, L);
+
+                    // then apply specific event segmentation listing filters if any
+                    UtilsListingFilters.applyEventSegmentationFilter(key, segmentation, configProvider, L);
+
+                    // apply journey trigger events here
+                    boolean triggerRefreshContentZone = configProvider.getJourneyTriggerEvents().contains(key);
+
+                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
+
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
 
                     if (viewNameRecordingEnabled) {
@@ -244,7 +261,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     previousEventName = keyTruncated;
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(triggerRefreshContentZone, triggerRefreshContentZone);
                 }
                 break;
         }

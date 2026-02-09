@@ -1937,7 +1937,7 @@ public class ModuleViewsTests {
         try {
             validateView("test", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
             validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
-        } catch (Exception ignored) {
+        } catch (AssertionError ignored) {
             validateView("test", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
             validateView("test2", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
         }
@@ -2060,6 +2060,92 @@ public class ModuleViewsTests {
 
         ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 8);
         Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * "startView" with bg/fg switch case
+     * - Validate that after an auto stopped view is started and app gone to background
+     * running view should not stop because behavior is disabled
+     * - After coming from the background to foreground no view should be started because behavior is disabled
+     *
+     * @throws InterruptedException if the thread is interrupted
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_restartAfterActivityComesFromForeground_behaviorDisabled() throws InterruptedException, JSONException {
+        CountlyConfig countlyConfig = TestUtils.createScenarioEventIDConfig(TestUtils.incrementalViewIdGenerator(), TestUtils.incrementalEventIdGenerator());
+        countlyConfig.setApplication(null);
+        countlyConfig.setContext(TestUtils.getContext());
+        countlyConfig.disableViewRestartForManualRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Activity activity = mock(Activity.class);
+
+        TestUtils.assertRQSize(0);
+
+        countly.onStart(activity);
+        countly.views().startView("test");
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide1", "_CLY_", "", "_CLY_", 1, 3, 0, 1);
+        validateView("test", 0.0, 2, 3, true, true, null, "idv1", "");
+
+        Thread.sleep(1000);
+
+        countly.onStop();
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
+        Thread.sleep(1000);
+        countly.onStart(activity);
+
+        ModuleSessionsTests.validateSessionBeginRequest(4, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide2", "_CLY_", "idv1", "_CLY_", 5, 6, 0, 1);
+
+        Thread.sleep(1000);
+
+        countly.views().stopViewWithName("test");
+        validateView("test", 3.0, 6, 7, false, false, null, "idv1", "");
+        countly.onStop();
+
+        ModuleSessionsTests.validateSessionEndRequest(7, 1, TestUtils.commonDeviceId);
+        TestUtils.assertRQSize(8);
+    }
+
+    /**
+     * Auto view tracking with restart is disabled for manual views
+     * Validate that after an auto stopped view is started and app gone to background
+     * running view should stop because auto views are not affected by the disabled behavior
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void autoViewTracking_restartDisabledForManualViews() throws JSONException, InterruptedException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig(TestUtils.getContext());
+        countlyConfig.setLoggingEnabled(true);
+        countlyConfig.enableAutomaticViewTracking();
+        countlyConfig.disableViewRestartForManualRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        Activity activity = Mockito.mock(Activity.class);
+        countly.onStart(activity);
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0, 0, 1, 3);
+        validateView(activity.getClass().getName(), 0.0, 2, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        Thread.sleep(1000);
+        countly.onStop();
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
+        validateView(activity.getClass().getName(), 1.0, 4, 5, false, false, null, "_CLY_", "_CLY_");
+
+        countly.onStart(activity);
+        Thread.sleep(1000);
+        ModuleSessionsTests.validateSessionBeginRequest(5, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0, 0, 6, 8);
+
+        validateView(activity.getClass().getName(), 0.0, 7, 8, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
     }
 
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {

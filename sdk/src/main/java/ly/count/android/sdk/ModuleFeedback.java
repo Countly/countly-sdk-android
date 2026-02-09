@@ -270,19 +270,18 @@ public class ModuleFeedback extends ModuleBase {
         String preparedWidgetUrl = widgetListUrl.toString();
         L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrl + "]");
 
-        iRGenerator.CreatePreflightRequestMaker().doWork(preparedWidgetUrl, null, requestQueueProvider.createConnectionProcessor(), false, true, preflightResponse -> {
-            if (preflightResponse == null) {
-                L.e("[ModuleFeedback] Failed to do preflight check for the widget url");
-                if (devCallback != null) {
-                    devCallback.onFinished("Failed to do preflight check for the widget url");
+        if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
+            L.d("[ModuleFeedback] Will use transparent activity for displaying the widget");
+            showFeedbackWidget_newActivity(context, preparedWidgetUrl, widgetInfo, devCallback);
+        } else {
+            iRGenerator.CreatePreflightRequestMaker().doWork(preparedWidgetUrl, null, requestQueueProvider.createConnectionProcessor(), false, true, preflightResponse -> {
+                if (preflightResponse == null) {
+                    L.e("[ModuleFeedback] Failed to do preflight check for the widget url");
+                    if (devCallback != null) {
+                        devCallback.onFinished("Failed to do preflight check for the widget url");
+                    }
+                    return;
                 }
-                return;
-            }
-
-            if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
-                L.d("[ModuleFeedback] Will use transparent activity for displaying the widget");
-                showFeedbackWidget_newActivity(context, preparedWidgetUrl, widgetInfo, devCallback);
-            } else {
                 L.d("[ModuleFeedback] Will use dialog for displaying the widget");
                 //enable for chrome debugging
                 // WebView.setWebContentsDebuggingEnabled(true);
@@ -305,8 +304,8 @@ public class ModuleFeedback extends ModuleBase {
                         }
                     }
                 });
-            }
-        }, L);
+            }, L);
+        }
     }
 
     private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, String closeButtonText, FeedbackCallback devCallback, String url) {
@@ -360,7 +359,7 @@ public class ModuleFeedback extends ModuleBase {
         if (displayOption == WebViewDisplayOption.SAFE_AREA) {
             L.d("[ModuleFeedback] showFeedbackWidget_newActivity, calculating safe area dimensions...");
             SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, L);
-            
+
             portraitWidth = safeArea.portraitWidth;
             portraitHeight = safeArea.portraitHeight;
             landscapeWidth = safeArea.landscapeWidth;
@@ -369,7 +368,7 @@ public class ModuleFeedback extends ModuleBase {
             landscapeTopOffset = safeArea.landscapeTopOffset;
             portraitLeftOffset = safeArea.portraitLeftOffset;
             landscapeLeftOffset = safeArea.landscapeLeftOffset;
-            
+
             L.d("[ModuleFeedback] showFeedbackWidget_newActivity, safe area dimensions (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], topOffset: [" + portraitTopOffset + "], leftOffset: [" + portraitLeftOffset + "]");
             L.d("[ModuleFeedback] showFeedbackWidget_newActivity, safe area dimensions (px) - Landscape: [" + landscapeWidth + "x" + landscapeHeight + "], topOffset: [" + landscapeTopOffset + "], leftOffset: [" + landscapeLeftOffset + "]");
         } else {
@@ -380,7 +379,7 @@ public class ModuleFeedback extends ModuleBase {
             portraitHeight = portrait ? height : width;
             landscapeWidth = portrait ? height : width;
             landscapeHeight = portrait ? width : height;
-            
+
             L.d("[ModuleFeedback] showFeedbackWidget_newActivity, using immersive mode (full screen) dimensions (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], Landscape: [" + landscapeWidth + "x" + landscapeHeight + "]");
         }
 

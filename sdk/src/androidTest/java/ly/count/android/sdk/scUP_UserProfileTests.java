@@ -71,6 +71,7 @@ public class scUP_UserProfileTests {
     public void eventSaveScenario_onTimer() throws InterruptedException, JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.sessionUpdateTimerDelay = 2; // trigger update call for property save
+        config.setTrackOrientationChanges(false); // disable orientation tracking to avoid extra event
         Countly countly = new Countly().init(config);
 
         TestUtils.assertRQSize(0); // no begin session because of no consent
@@ -118,6 +119,95 @@ public class scUP_UserProfileTests {
         // first user property request + 3 events + user property request with light_mode
         ModuleUserProfileTests.validateUserProfileRequest(0, 3, TestUtils.map(), TestUtils.map("theme", "dark_mode"));
         ModuleUserProfileTests.validateUserProfileRequest(2, 3, TestUtils.map(), TestUtils.map("theme", "light_mode"));
+    }
+
+    /**
+     * Related user properties should not be saved with session calls,
+     * call order, user property before session, begin session, user property after begin session, update session, user property after update session, end session
+     * generated request order begin_session  + update_session + user properties + end_session
+     * manual sessions are enabled
+     * UPDATE: session calls now trigger saving properties like events as well
+     * UPDATED_REQUEST_ORDER: user property before session + begin_session  + user property after begin session + update_session + user property after update session + end_session
+     */
+    @Test
+    public void eventSaveScenario_sessionCallsTriggersSave_M() throws JSONException, InterruptedException {
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl().setTrackOrientationChanges(false));
+
+        TestUtils.assertRQSize(0);
+        countly.userProfile().setProperty("before_session", true);
+
+        countly.sessions().beginSession();
+        TestUtils.assertRQSize(2); // only begin session request, UPDATE: user property request before session
+        ModuleUserProfileTests.validateUserProfileRequest(0, 2, TestUtils.map(), TestUtils.map("before_session", true));
+        ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
+
+        countly.userProfile().setProperty("after_begin_session", true);
+        TestUtils.assertRQSize(2); // still begin session, UPDATE: user property request after begin session
+        // no new user property request because it is validated along with begin session
+
+        Thread.sleep(2000);
+
+        countly.sessions().updateSession();
+        TestUtils.assertRQSize(4); // only begin session and update session requests, UPDATE: user property request after begin and update session
+
+        ModuleUserProfileTests.validateUserProfileRequest(2, 4, TestUtils.map(), TestUtils.map("after_begin_session", true));
+        ModuleSessionsTests.validateSessionUpdateRequest(3, 2, TestUtils.commonDeviceId);
+
+        countly.userProfile().setProperty("after_update_session", true);
+        TestUtils.assertRQSize(4); // still begin session and update session requests
+        // no new user property request because it is validated along with update session
+        Thread.sleep(2000);
+
+        countly.sessions().endSession();
+        TestUtils.assertRQSize(6); // begin, update, user properties and end session requests
+        ModuleUserProfileTests.validateUserProfileRequest(4, 6, TestUtils.map(), TestUtils.map("after_update_session", true));
+        ModuleSessionsTests.validateSessionEndRequest(5, 2, TestUtils.commonDeviceId);
+    }
+
+    /**
+     * Related user properties should be saved with automatic session calls,
+     * call order, user property before session, user property after begin session, session, user property after update session
+     * generated request order user_properties + begin_session  + user_properties + update_session + user properties + end_session
+     */
+    @Test
+    public void eventSaveScenario_sessionCallsTriggersSave_A() throws JSONException, InterruptedException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext()).setTrackOrientationChanges(false);
+        TestLifecycleObserver testLifecycleObserver = new TestLifecycleObserver();
+        config.lifecycleObserver = testLifecycleObserver;
+        config.setUpdateSessionTimerDelay(5); // Use 5 second timer for more reliable timing
+        Countly countly = new Countly().init(config);
+
+        TestUtils.assertRQSize(0);
+        countly.userProfile().setProperty("before_session", true);
+
+        testLifecycleObserver.bringToForeground();
+        countly.onStart(null);
+
+        TestUtils.assertRQSize(2);
+        ModuleUserProfileTests.validateUserProfileRequest(0, 2, TestUtils.map(), TestUtils.map("before_session", true));
+        ModuleSessionsTests.validateSessionBeginRequest(1, TestUtils.commonDeviceId);
+
+        countly.userProfile().setProperty("after_begin_session", true);
+        TestUtils.assertRQSize(2);
+
+        Thread.sleep(6000); // Wait for session update timer (5s) to fire
+
+        TestUtils.assertRQSize(4);
+
+        ModuleUserProfileTests.validateUserProfileRequest(2, 4, TestUtils.map(), TestUtils.map("after_begin_session", true));
+        ModuleSessionsTests.validateSessionUpdateRequest(3, 5, TestUtils.commonDeviceId); // duration 5 (timer delay)
+
+        countly.userProfile().setProperty("after_update_session", true);
+        TestUtils.assertRQSize(4);
+
+        Thread.sleep(2000); // 6+2=8s total, less than 10s (2 timer intervals)
+
+        testLifecycleObserver.goToBackground();
+        countly.onStop();
+
+        TestUtils.assertRQSize(6);
+        ModuleUserProfileTests.validateUserProfileRequest(4, 6, TestUtils.map(), TestUtils.map("after_update_session", true));
+        ModuleSessionsTests.validateSessionEndRequest(5, 3, TestUtils.commonDeviceId); // duration ~3s since last update
     }
 
     /**
@@ -433,7 +523,7 @@ public class scUP_UserProfileTests {
      */
     @Test
     public void UP_210_CNR_M_duration() throws InterruptedException, JSONException {
-        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl().setUpdateSessionTimerDelay(5));
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl().setUpdateSessionTimerDelay(5).setTrackOrientationChanges(false));
 
         sendUserData(countly);
         Thread.sleep(6000);

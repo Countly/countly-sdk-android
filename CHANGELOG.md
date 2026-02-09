@@ -1,3 +1,28 @@
+## 26.1.0
+* Extended server configuration capabilities with server-controlled listing filters:
+  * Event filters (blacklist/whitelist) to control which events are recorded.
+  * User property filters (blacklist/whitelist) to control which user properties are recorded.
+  * Segmentation filters (blacklist/whitelist) to control which segmentation keys are recorded.
+  * Event-specific segmentation filters (blacklist/whitelist) to control segmentation keys per event.
+* Added support for Journey Trigger Events that trigger a content zone refresh when recorded.
+* Added a configurable user property cache limit through server configuration.
+
+* Mitigated an issue where closing surveys that were presented via journeys was triggering an exception.
+* Mitigated an issue where when a content started loading opening a new activity could have hide it.
+
+## 25.4.9
+* Added a new config option `disableViewRestartForManualRecording()` to disable auto close/restart behavior of manual views on app background/foreground actions.
+
+## 25.4.8
+* Mitigated an issue where push notifications were not shown when consent was not required and app was killed.
+
+## 25.4.7
+* Mitigated an issue where the navigation bar showed an unwanted shadow during content display.
+
+## 25.4.6
+* Improved content error handling and display mechanics.
+* Updated user properties caching mechanism according to sessions.
+
 ## 25.4.5
 * Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
 * Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
