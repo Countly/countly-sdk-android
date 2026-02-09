@@ -1,4 +1,4 @@
-## 26.1.0
+## 26.1.0
 * Extended server configuration capabilities with server-controlled listing filters:
   * Event filters (blacklist/whitelist) to control which events are recorded.
   * User property filters (blacklist/whitelist) to control which user properties are recorded.
