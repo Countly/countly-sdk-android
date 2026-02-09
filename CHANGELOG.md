@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue where closing surveys that were presented via journeys was triggering an exception.
+
 ## 25.4.9
 * Added a new config option `disableViewRestartForManualRecording()` to disable auto close/restart behavior of manual views on app background/foreground actions.
 
