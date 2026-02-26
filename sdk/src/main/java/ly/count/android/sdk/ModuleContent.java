@@ -28,7 +28,6 @@ public class ModuleContent extends ModuleBase {
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
-    int REFRESH_CONTENT_ZONE_DELAY_MS = 2500; // 2.5 seconds
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -68,8 +67,8 @@ public class ModuleContent extends ModuleBase {
             UtilsDevice.getCutout(activity);
         }
         if (isCurrentlyInContentZone
-                && activity != null
-                && !(activity instanceof TransparentActivity)) {
+            && activity != null
+            && !(activity instanceof TransparentActivity)) {
             try {
                 Intent bringToFront = new Intent(activity, TransparentActivity.class);
                 bringToFront.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
@@ -404,8 +403,12 @@ public class ModuleContent extends ModuleBase {
         }
 
         if (callRQFlush) {
+            requestQueueProvider.registerInternalGlobalRequestCallbackAction(new Runnable() {
+                @Override public void run() {
+                    enterContentZoneInternal(null, 0, null);
+                }
+            });
             _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
-            enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS, null);
         } else {
             enterContentZoneWithRetriesInternal();
         }
