@@ -52,8 +52,6 @@ interface RequestQueueProvider {
 
     void tick();
 
-    void tick(boolean forceFlushRQ);
-
     ConnectionProcessor createConnectionProcessor();
 
     String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics);
