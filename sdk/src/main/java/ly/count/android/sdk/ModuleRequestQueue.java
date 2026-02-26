@@ -152,11 +152,30 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
      * They will be sent either if the exceed the Threshold size or if their sending is forced
      */
     protected void sendEventsIfNeeded(boolean forceSendingEvents) {
+        sendEventsIfNeeded(forceSendingEvents, false);
+    }
+
+    /**
+     * Check if events from event queue need to be added to the request queue
+     * They will be sent either if they exceed the Threshold size or if their sending is forced
+     */
+    protected void sendEventsIfNeeded(boolean forceSendingEvents, boolean triggerRefreshContentZone) {
         int eventsInEventQueue = storageProvider.getEventQueueSize();
         L.v("[ModuleRequestQueue] forceSendingEvents, forced:[" + forceSendingEvents + "], event count:[" + eventsInEventQueue + "]");
 
+        InternalRequestCallback callback = null;
+        if (triggerRefreshContentZone) {
+            callback = new InternalRequestCallback() {
+                @Override public void onRequestCompleted(String response, boolean success) {
+                    if (success) {
+                        _cly.moduleContent.refreshContentZoneInternal(false);
+                    }
+                }
+            };
+        }
+
         if ((forceSendingEvents && eventsInEventQueue > 0) || eventsInEventQueue >= _cly.EVENT_QUEUE_SIZE_THRESHOLD) {
-            requestQueueProvider.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue());
+            requestQueueProvider.recordEvents(storageProvider.getEventsForRequestAndEmptyEventQueue(), callback);
         }
     }
 

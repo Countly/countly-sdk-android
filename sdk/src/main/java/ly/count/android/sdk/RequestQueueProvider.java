@@ -29,6 +29,8 @@ interface RequestQueueProvider {
 
     void recordEvents(final String events);
 
+    void recordEvents(final String events, @Nullable InternalRequestCallback callback);
+
     void sendConsentChanges(String formattedConsentChanges);
 
     void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs, String customMetrics);

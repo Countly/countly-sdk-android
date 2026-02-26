@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,6 +23,7 @@ public class ModuleContent extends ModuleBase {
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
     private boolean isCurrentlyInContentZone = false;
+    private boolean isCurrentlyRetrying = false;
     private int zoneTimerInterval;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
@@ -48,14 +51,14 @@ public class ModuleContent extends ModuleBase {
                 exitContentZoneInternal();
             }
             waitForDelay = 0;
-            enterContentZoneInternal(null, 0);
+            enterContentZoneInternal(null, 0, null);
         }
     }
 
     @Override
     void initFinished(@NotNull CountlyConfig config) {
         if (configProvider.getContentZoneEnabled()) {
-            enterContentZoneInternal(null, 0);
+            enterContentZoneInternal(null, 0, null);
         }
     }
 
@@ -64,9 +67,20 @@ public class ModuleContent extends ModuleBase {
         if (UtilsDevice.cutout == null && activity != null) {
             UtilsDevice.getCutout(activity);
         }
+        if (isCurrentlyInContentZone
+                && activity != null
+                && !(activity instanceof TransparentActivity)) {
+            try {
+                Intent bringToFront = new Intent(activity, TransparentActivity.class);
+                bringToFront.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                activity.startActivity(bringToFront);
+            } catch (Exception ex) {
+                L.w("[ModuleContent] onActivityStarted, failed to reorder TransparentActivity to front", ex);
+            }
+        }
     }
 
-    void fetchContentsInternal(@NonNull String[] categories) {
+    void fetchContentsInternal(@NonNull String[] categories, @Nullable Runnable callbackOnFailure) {
         L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(categories) + "]");
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
@@ -107,16 +121,23 @@ public class ModuleContent extends ModuleBase {
 
                     shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
                     isCurrentlyInContentZone = true;
+                    isCurrentlyRetrying = false;
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
+                    if (callbackOnFailure != null) {
+                        callbackOnFailure.run();
+                    }
                 }
             } catch (Exception ex) {
                 L.e("[ModuleContent] fetchContentsInternal, Encountered internal issue while trying to fetch contents, [" + ex + "]");
+                if (callbackOnFailure != null) {
+                    callbackOnFailure.run();
+                }
             }
         }, L);
     }
 
-    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS) {
+    private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS, @Nullable Runnable callbackOnFailure) {
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
             return;
@@ -151,22 +172,71 @@ public class ModuleContent extends ModuleBase {
             contentInitialDelay += CONTENT_START_DELAY_MS;
         }
 
-        countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
-            @Override public void run() {
-                L.d("[ModuleContent] enterContentZoneInternal, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
-                if (waitForDelay > 0) {
-                    waitForDelay--;
+        if (countlyTimer != null) { // for tests, in normal conditions this should never be null here
+            countlyTimer.startTimer(zoneTimerInterval, contentInitialDelay, new Runnable() {
+                @Override public void run() {
+                    L.d("[ModuleContent] enterContentZoneInternal, waitForDelay: [" + waitForDelay + "], shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(validCategories) + "]");
+                    if (waitForDelay > 0) {
+                        waitForDelay--;
+                        return;
+                    }
+
+                    if (!shouldFetchContents) {
+                        L.w("[ModuleContent] enterContentZoneInternal, shouldFetchContents is false, skipping");
+                        return;
+                    }
+
+                    fetchContentsInternal(validCategories, callbackOnFailure);
+                }
+            }, L);
+        }
+    }
+
+    private void enterContentZoneWithRetriesInternal() {
+        if (isCurrentlyRetrying) {
+            L.w("[ModuleContent] enterContentZoneWithRetriesInternal, already retrying, skipping");
+            return;
+        }
+        isCurrentlyRetrying = true;
+        Handler handler = new Handler(Looper.getMainLooper());
+        int maxRetries = 3;
+        int delayMillis = 1000;
+
+        Runnable retryRunnable = new Runnable() {
+            int attempt = 0;
+
+            @Override
+            public void run() {
+                if (isCurrentlyInContentZone) {
+                    isCurrentlyRetrying = false; // Reset flag on success
                     return;
                 }
 
-                if (!shouldFetchContents) {
-                    L.w("[ModuleContent] enterContentZoneInternal, shouldFetchContents is false, skipping");
-                    return;
+                if (countlyTimer != null) { // for tests
+                    countlyTimer.stopTimer(L);
                 }
 
-                fetchContentsInternal(validCategories);
+                final Runnable self = this; // Capture reference to outer Runnable
+
+                enterContentZoneInternal(null, 0, new Runnable() {
+                    @Override public void run() {
+                        if (isCurrentlyInContentZone) {
+                            isCurrentlyRetrying = false; // Reset flag on success
+                            return;
+                        }
+                        attempt++;
+                        if (attempt < maxRetries) {
+                            handler.postDelayed(self, delayMillis);
+                        } else {
+                            L.w("[ModuleContent] enterContentZoneWithRetriesInternal, " + maxRetries + " attempted");
+                            isCurrentlyRetrying = false;
+                        }
+                    }
+                });
             }
-        }, L);
+        };
+
+        handler.post(retryRunnable);
     }
 
     void notifyAfterContentIsClosed() {
@@ -319,7 +389,7 @@ public class ModuleContent extends ModuleBase {
         waitForDelay = 0;
     }
 
-    private void refreshContentZoneInternal() {
+    void refreshContentZoneInternal(boolean callRQFlush) {
         if (!configProvider.getRefreshContentZoneEnabled()) {
             return;
         }
@@ -333,9 +403,12 @@ public class ModuleContent extends ModuleBase {
             exitContentZoneInternal();
         }
 
-        _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
-
-        enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS);
+        if (callRQFlush) {
+            _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+            enterContentZoneInternal(null, REFRESH_CONTENT_ZONE_DELAY_MS, null);
+        } else {
+            enterContentZoneWithRetriesInternal();
+        }
     }
 
     public class Content {
@@ -351,7 +424,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            enterContentZoneInternal(null, 0);
+            enterContentZoneInternal(null, 0, null);
         }
 
         /**
@@ -379,7 +452,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            refreshContentZoneInternal();
+            refreshContentZoneInternal(true);
         }
     }
 }
