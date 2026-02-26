@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Improved content display positioning in safe area mode
+
 ## 26.1.0
 * Extended server configuration capabilities with server-controlled listing filters:
   * Event filters (blacklist/whitelist) to control which events are recorded.
