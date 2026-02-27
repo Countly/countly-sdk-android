@@ -11,7 +11,6 @@ import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Display;
 import android.view.DisplayCutout;
-import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
@@ -77,9 +76,9 @@ class SafeAreaCalculator {
         L.d("[SafeAreaCalculator] calculateSafeAreaDimensionsR, mapped orientation dimensions (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "] Landscape: [" + landscapeWidth + "x" + landscapeHeight + "]");
 
         SafeAreaInsets portraitInsets = calculateInsetsForOrientation(
-            context, windowInsets, true, density, portraitWidth, portraitHeight, L);
+            windowInsets, true, density, portraitWidth, portraitHeight, L);
         SafeAreaInsets landscapeInsets = calculateInsetsForOrientation(
-            context, windowInsets, false, density, landscapeWidth, landscapeHeight, L);
+            windowInsets, false, density, landscapeWidth, landscapeHeight, L);
 
         SafeAreaDimensions result = new SafeAreaDimensions(
             portraitInsets.width,
@@ -144,8 +143,7 @@ class SafeAreaCalculator {
     }
 
     @TargetApi(Build.VERSION_CODES.R)
-    private static SafeAreaInsets calculateInsetsForOrientation(@NonNull Context context,
-        @NonNull WindowInsets windowInsets, boolean isPortrait, float density,
+    private static SafeAreaInsets calculateInsetsForOrientation(@NonNull WindowInsets windowInsets, boolean isPortrait, float density,
         int widthForOrientation, int heightForOrientation, @NonNull ModuleLog L) {
 
         String orientationStr = isPortrait ? "portrait" : "landscape";
@@ -159,15 +157,13 @@ class SafeAreaCalculator {
         int cutoutInset = 0;
         int navBarInset = 0;
 
-        boolean isActivity = context instanceof Activity;
-
         boolean statusBarVisible = windowInsets.isVisible(WindowInsets.Type.statusBars());
         boolean navBarVisible = windowInsets.isVisible(WindowInsets.Type.navigationBars());
         boolean cutoutVisible = windowInsets.isVisible(WindowInsets.Type.displayCutout());
 
-        L.d("[SafeAreaCalculator] calculateInsetsForOrientation [" + orientationStr + "], context type: [" + (isActivity ? "Activity" : "Non-Activity") + "], visibility - statusBar=[" + statusBarVisible + "], navBar=[" + navBarVisible + "], cutout=[" + cutoutVisible + "]");
+        L.d("[SafeAreaCalculator] calculateInsetsForOrientation [" + orientationStr + "], visibility - statusBar=[" + statusBarVisible + "], navBar=[" + navBarVisible + "], cutout=[" + cutoutVisible + "]");
 
-        if (statusBarVisible && isActivity) {
+        if (statusBarVisible) {
             Insets statusBarInsets = windowInsets.getInsets(WindowInsets.Type.statusBars());
             statusBarInset = statusBarInsets.top;
             topInset = Math.max(topInset, statusBarInset);
@@ -194,12 +190,12 @@ class SafeAreaCalculator {
 
         if (navBarVisible) {
             Insets navBarInsets = windowInsets.getInsets(WindowInsets.Type.navigationBars());
-            
+
             boolean isGestureNav = isGestureNavigation(navBarInsets, density);
             String navType = isGestureNav ? "gesture" : "button";
-            
+
             L.d("[SafeAreaCalculator] calculateInsetsForOrientation [" + orientationStr + "], nav bar type: [" + navType + "], raw insets (px) - top=[" + navBarInsets.top + "], bottom=[" + navBarInsets.bottom + "], left=[" + navBarInsets.left + "], right=[" + navBarInsets.right + "]");
-            
+
             if (isPortrait) {
                 navBarInset = navBarInsets.bottom;
                 if (navBarInset == 0) {
@@ -237,7 +233,7 @@ class SafeAreaCalculator {
         if (!isPortrait) {
             Insets navBarInsets = navBarVisible ? windowInsets.getInsets(WindowInsets.Type.navigationBars()) : Insets.NONE;
             Insets cutoutInsets = cutoutVisible ? windowInsets.getInsets(WindowInsets.Type.displayCutout()) : Insets.NONE;
-            
+
             if (navBarInsets.left > 0) {
                 leftOffset = navBarInsets.left;
                 L.d("[SafeAreaCalculator] calculateInsetsForOrientation [" + orientationStr + "], nav bar at left - leftOffset=[" + leftOffset + "] (navBar=" + navBarInsets.left + ")");
@@ -296,14 +292,14 @@ class SafeAreaCalculator {
         L.d("[SafeAreaCalculator] calculateInsetsLegacy [" + orientationStr + "], top inset (px) - using MAX(statusBar=" + statusBarInset + ", cutout=" + cutoutInset + ") = [" + topInset + "]");
 
         int navBarHeightFromResource = getNavigationBarHeight(context, isPortrait);
-        
+
         boolean navBarVisible = isNavigationBarVisible(context);
         L.d("[SafeAreaCalculator] calculateInsetsLegacy [" + orientationStr + "], nav bar visible: [" + navBarVisible + "], resource height (px): [" + navBarHeightFromResource + "]");
-        
+
         if (navBarVisible) {
             boolean isGestureNav = navBarHeightFromResource < (int) (density * 40); //  < 40dp likely gesture
             String navType = isGestureNav ? "gesture" : "button";
-            
+
             navBarInset = navBarHeightFromResource;
             if (navBarInset == 0) {
                 navBarInset = getDefaultNavBarInset(isGestureNav, density);
@@ -311,11 +307,11 @@ class SafeAreaCalculator {
             } else {
                 L.d("[SafeAreaCalculator] calculateInsetsLegacy [" + orientationStr + "], nav bar type: [" + navType + "], height (px): [" + navBarInset + "]");
             }
-            
+
             if (isPortrait) {
                 bottomInset = Math.max(bottomInset, navBarInset);
             } else {
-                bottomInset = Math.max(bottomInset, navBarInset);
+                bottomInset = Math.min(bottomInset, navBarInset);
             }
         }
 

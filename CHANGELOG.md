@@ -1,4 +1,5 @@
 ## XX.XX.XX
+* Improved content display positioning in safe area mode
 * Improved Content refresh mechanics.
 
 ## 26.1.0
