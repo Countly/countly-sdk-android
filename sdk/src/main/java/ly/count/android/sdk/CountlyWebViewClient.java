@@ -1,13 +1,9 @@
 package ly.count.android.sdk;
 
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -27,38 +23,15 @@ class CountlyWebViewClient extends WebViewClient {
     WebViewPageLoadedListener afterPageFinished;
     long pageLoadTime;
     private final AtomicBoolean webViewClosed = new AtomicBoolean(false);
-    private final AtomicBoolean pageFinishedCalled = new AtomicBoolean(false);
-    private boolean jsBridgeAdded = false;
 
     private static final Set<String> CRITICAL_RESOURCES = new HashSet<>(Arrays.asList(
-        "js", "css"
+        "js", "css", "png", "jpg", "jpeg", "webp"
     ));
-
-    private static final String JS_BRIDGE_NAME = "CountlyPageReady";
 
     public CountlyWebViewClient() {
         super();
         this.listeners = new ArrayList<>();
         this.pageLoadTime = System.currentTimeMillis();
-    }
-
-    private class PageReadyBridge {
-        @JavascriptInterface
-        public void onReady() {
-            new Handler(Looper.getMainLooper()).post(() -> notifyPageReady());
-        }
-    }
-
-    private void notifyPageReady() {
-        if (webViewClosed.compareAndSet(false, true)) {
-            pageLoadTime = System.currentTimeMillis() - pageLoadTime;
-            boolean timeOut = (pageLoadTime / 1000L) >= 60;
-            Log.d(Countly.TAG, "[CountlyWebViewClient] page ready, pageLoadTime: " + pageLoadTime + " ms");
-            if (afterPageFinished != null) {
-                afterPageFinished.onPageLoaded(timeOut);
-                afterPageFinished = null;
-            }
-        }
     }
 
     @Override
@@ -84,53 +57,36 @@ class CountlyWebViewClient extends WebViewClient {
     }
 
     @Override
-    public void onPageStarted(WebView view, String url, Bitmap favicon) {
-        super.onPageStarted(view, url, favicon);
-        Log.v(Countly.TAG, "[CountlyWebViewClient] onPageStarted, url: [" + url + "]");
-        webViewClosed.set(false);
-        pageFinishedCalled.set(false);
-        pageLoadTime = System.currentTimeMillis();
-
-        if (!jsBridgeAdded) {
-            view.addJavascriptInterface(new PageReadyBridge(), JS_BRIDGE_NAME);
-            jsBridgeAdded = true;
-        }
-    }
-
-    @Override
     public void onPageFinished(WebView view, String url) {
-        // onPageFinished fires when the main frame is loaded, but resources may still be loading.
-        // We use a JavascriptInterface bridge to get a reliable callback when the document is fully ready.
+        // This function is only called when the main frame is loaded.
+        // However, the page might still be loading resources (images, scripts, etc.).
+        // To ensure the page is fully loaded, we use JavaScript to check the document's ready state.
         Log.v(Countly.TAG, "[CountlyWebViewClient] onPageFinished, url: [" + url + "]");
-        pageFinishedCalled.set(true);
-
-        if (!jsBridgeAdded) {
-            view.addJavascriptInterface(new PageReadyBridge(), JS_BRIDGE_NAME);
-            jsBridgeAdded = true;
-        }
-
-        view.evaluateJavascript(
-            "(function() {" +
+        view.evaluateJavascript("(function() {" +
             "  if (document.readyState === 'complete') {" +
-            "    " + JS_BRIDGE_NAME + ".onReady();" +
-            "  } else {" +
-            "    window.addEventListener('load', function() {" +
-            "      " + JS_BRIDGE_NAME + ".onReady();" +
-            "    });" +
+            "    return 'READY';" +
             "  }" +
-            "})();", null);
+            "  return new Promise(function(resolve) {" +
+            "    window.addEventListener('load', function() {" +
+            "      resolve('READY');" +
+            "    });" +
+            "  });" +
+            "})();", result -> {
+            if (result.equals("\"READY\"") && webViewClosed.compareAndSet(false, true)) {
+                pageLoadTime = System.currentTimeMillis() - pageLoadTime;
+                boolean timeOut = (pageLoadTime / 1000L) >= 60;
+                Log.d(Countly.TAG, "[CountlyWebViewClient] onPageFinished, pageLoadTime: " + pageLoadTime + " ms");
+                if (afterPageFinished != null) {
+                    afterPageFinished.onPageLoaded(timeOut);
+                    afterPageFinished = null;
+                }
+            }
+        });
     }
 
     @Override
     public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-        boolean shouldAbort;
-        if (request.isForMainFrame()) {
-            shouldAbort = true;
-        } else {
-            shouldAbort = isCriticalResource(request.getUrl()) && !pageFinishedCalled.get();
-        }
-
-        if (shouldAbort && webViewClosed.compareAndSet(false, true)) {
+        if ((request.isForMainFrame() || isCriticalResource(request.getUrl())) && webViewClosed.compareAndSet(false, true)) {
             String errorString;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 errorString = error.getDescription() + " (code: " + error.getErrorCode() + ")";
@@ -148,14 +104,7 @@ class CountlyWebViewClient extends WebViewClient {
 
     @Override
     public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
-        boolean shouldAbort;
-        if (request.isForMainFrame()) {
-            shouldAbort = true;
-        } else {
-            shouldAbort = isCriticalResource(request.getUrl()) && !pageFinishedCalled.get();
-        }
-
-        if (shouldAbort && webViewClosed.compareAndSet(false, true)) {
+        if ((request.isForMainFrame() || isCriticalResource(request.getUrl())) && webViewClosed.compareAndSet(false, true)) {
             Log.v(Countly.TAG, "[CountlyWebViewClient] onReceivedHttpError, url: [" + request.getUrl() + "], errorResponseCode: [" + errorResponse.getStatusCode() + "]");
             if (afterPageFinished != null) {
                 afterPageFinished.onPageLoaded(true);
