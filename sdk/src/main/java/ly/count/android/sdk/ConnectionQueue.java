@@ -113,6 +113,7 @@ class ConnectionQueue implements RequestQueueProvider {
                         }
                     }
                 }
+                flushInternalGlobalRequestCallbackActions();
             }
         });
     }
@@ -945,6 +946,12 @@ class ConnectionQueue implements RequestQueueProvider {
             L.d("[ConnectionQueue] tick, Starting ConnectionProcessor");
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
+        } else if (rqEmpty) {
+            // only fire callback when queue is genuinely empty
+            InternalRequestCallback globalCallback = internalRequestCallbacks.get(GLOBAL_RC_CALLBACK);
+            if (globalCallback != null) {
+                globalCallback.onRQFinished();
+            }
         }
     }
 
@@ -1015,7 +1022,7 @@ class ConnectionQueue implements RequestQueueProvider {
      *
      * @param runnable The action to execute when the queue finishes
      */
-    void registerInternalGlobalRequestCallbackAction(Runnable runnable) {
+    public void registerInternalGlobalRequestCallbackAction(Runnable runnable) {
         internalGlobalRequestCallbackActions.add(runnable);
     }
 
