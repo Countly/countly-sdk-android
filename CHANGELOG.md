@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Added Content feature method `previewContent(String contentId)` (Experimental!).
+
 ## 26.1.0
 * Extended server configuration capabilities with server-controlled listing filters:
   * Event filters (blacklist/whitelist) to control which events are recorded.
