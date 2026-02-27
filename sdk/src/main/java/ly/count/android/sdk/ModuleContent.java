@@ -80,11 +80,11 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
-    void fetchContentsInternal(@NonNull String[] categories, @Nullable Runnable callbackOnFailure) {
-        L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(categories) + "]");
+    void fetchContentsInternal(@NonNull String[] categories, @Nullable Runnable callbackOnFailure, @Nullable String contentId) {
+        L.d("[ModuleContent] fetchContentsInternal, shouldFetchContents: [" + shouldFetchContents + "], categories: [" + Arrays.toString(categories) + "], contentId: [" + contentId + "]");
 
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(_cly.context_);
-        String requestData = prepareContentFetchRequest(displayMetrics, categories);
+        String requestData = prepareContentFetchRequest(displayMetrics, categories, contentId);
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
@@ -186,7 +186,7 @@ public class ModuleContent extends ModuleBase {
                         return;
                     }
 
-                    fetchContentsInternal(validCategories, callbackOnFailure);
+                    fetchContentsInternal(validCategories, callbackOnFailure, null);
                 }
             }, L);
         }
@@ -247,7 +247,7 @@ public class ModuleContent extends ModuleBase {
     }
 
     @NonNull
-    private String prepareContentFetchRequest(@NonNull DisplayMetrics displayMetrics, @NonNull String[] categories) {
+    private String prepareContentFetchRequest(@NonNull DisplayMetrics displayMetrics, @NonNull String[] categories, @Nullable String contentId) {
         Resources resources = _cly.context_.getResources();
         int currentOrientation = resources.getConfiguration().orientation;
         boolean portrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
@@ -292,7 +292,7 @@ public class ModuleContent extends ModuleBase {
         String language = Locale.getDefault().getLanguage().toLowerCase();
         String deviceType = deviceInfo.mp.getDeviceType(_cly.context_);
 
-        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language, deviceType);
+        return requestQueueProvider.prepareFetchContents(portraitWidth, portraitHeight, landscapeWidth, landscapeHeight, categories, language, deviceType, contentId);
     }
 
     boolean validateResponse(@NonNull JSONObject response) {
@@ -389,6 +389,27 @@ public class ModuleContent extends ModuleBase {
         waitForDelay = 0;
     }
 
+    void previewContentInternal(@NonNull String contentId) {
+        L.d("[ModuleContent] previewContentInternal, contentId: [" + contentId + "]");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
+            L.w("[ModuleContent] previewContentInternal, Consent is not granted, skipping");
+            return;
+        }
+
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            L.w("[ModuleContent] previewContentInternal, temporary device ID is enabled, skipping");
+            return;
+        }
+
+        if (isCurrentlyInContentZone) {
+            L.w("[ModuleContent] previewContentInternal, content is already being displayed, skipping");
+            return;
+        }
+
+        fetchContentsInternal(new String[] {}, null, contentId);
+    }
+
     void refreshContentZoneInternal(boolean callRQFlush) {
         if (!configProvider.getRefreshContentZoneEnabled()) {
             return;
@@ -439,6 +460,22 @@ public class ModuleContent extends ModuleBase {
             }
 
             exitContentZoneInternal();
+        }
+
+        /**
+         * Previews a specific content by its ID.
+         * This performs a one-time fetch for the given content
+         * without starting periodic content updates.
+         *
+         * @param contentId the ID of the content to preview
+         */
+        public void previewContent(@Nullable String contentId) {
+            if (Utils.isNullOrEmpty(contentId)) {
+                L.w("[ModuleContent] previewContent, contentId is null or empty, skipping");
+                return;
+            }
+
+            previewContentInternal(contentId);
         }
 
         /**
