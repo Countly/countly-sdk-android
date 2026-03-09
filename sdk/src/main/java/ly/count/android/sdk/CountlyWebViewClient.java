@@ -3,6 +3,8 @@ package ly.count.android.sdk;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebResourceError;
@@ -20,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 class CountlyWebViewClient extends WebViewClient {
     private final List<WebViewUrlListener> listeners;
+    private final Handler pollHandler = new Handler(Looper.getMainLooper());
     WebViewPageLoadedListener afterPageFinished;
     long pageLoadTime;
     private final AtomicBoolean webViewClosed = new AtomicBoolean(false);
@@ -56,32 +59,64 @@ class CountlyWebViewClient extends WebViewClient {
         return false;
     }
 
+    private static final long POLL_INTERVAL_MS = 100;
+    private static final long TIMEOUT_MS = 60_000;
+
+    // Checks all <link rel="stylesheet"> and <script src> elements have loaded.
+    // CSS: .sheet is non-null when ready. Cross-origin sheets may throw SecurityError — treated as loaded.
+    // JS: checks Performance API for completed resource entries matching each script's src.
+    private static final String CHECK_CSS_JS_LOADED =
+        "(function(){"
+            + "var links=document.querySelectorAll('link[rel=\"stylesheet\"]');"
+            + "for(var i=0;i<links.length;i++){"
+            + "try{if(!links[i].sheet)return 'LOADING';}catch(e){}"
+            + "}"
+            + "var scripts=document.querySelectorAll('script[src]');"
+            + "for(var i=0;i<scripts.length;i++){"
+            + "try{if(performance.getEntriesByName(scripts[i].src).length===0)return 'LOADING';}catch(e){}"
+            + "}"
+            + "return 'READY';"
+            + "})()";
+
     @Override
     public void onPageFinished(WebView view, String url) {
-        // This function is only called when the main frame is loaded.
-        // However, the page might still be loading resources (images, scripts, etc.).
-        // To ensure the page is fully loaded, we use JavaScript to check the document's ready state.
         Log.v(Countly.TAG, "[CountlyWebViewClient] onPageFinished, url: [" + url + "]");
-        view.evaluateJavascript("(function() {" +
-            "  if (document.readyState === 'complete') {" +
-            "    return 'READY';" +
-            "  }" +
-            "  return new Promise(function(resolve) {" +
-            "    window.addEventListener('load', function() {" +
-            "      resolve('READY');" +
-            "    });" +
-            "  });" +
-            "})();", result -> {
-            if (result.equals("\"READY\"") && webViewClosed.compareAndSet(false, true)) {
-                pageLoadTime = System.currentTimeMillis() - pageLoadTime;
-                boolean timeOut = (pageLoadTime / 1000L) >= 60;
-                Log.d(Countly.TAG, "[CountlyWebViewClient] onPageFinished, pageLoadTime: " + pageLoadTime + " ms");
-                if (afterPageFinished != null) {
-                    afterPageFinished.onPageLoaded(timeOut);
-                    afterPageFinished = null;
+        pollForCriticalResources(view);
+    }
+
+    private void pollForCriticalResources(WebView view) {
+        if (webViewClosed.get()) {
+            return;
+        }
+
+        view.evaluateJavascript(CHECK_CSS_JS_LOADED, result -> {
+            if (webViewClosed.get()) {
+                return;
+            }
+
+            if ("\"READY\"".equals(result)) {
+                notifyPageLoaded(false);
+            } else {
+                long elapsed = System.currentTimeMillis() - pageLoadTime;
+                if (elapsed >= TIMEOUT_MS) {
+                    Log.w(Countly.TAG, "[CountlyWebViewClient] pollForCriticalResources, timed out waiting for CSS/JS");
+                    notifyPageLoaded(true);
+                } else {
+                    pollHandler.postDelayed(() -> pollForCriticalResources(view), POLL_INTERVAL_MS);
                 }
             }
         });
+    }
+
+    private void notifyPageLoaded(boolean timedOut) {
+        if (webViewClosed.compareAndSet(false, true)) {
+            pageLoadTime = System.currentTimeMillis() - pageLoadTime;
+            Log.d(Countly.TAG, "[CountlyWebViewClient] notifyPageLoaded, pageLoadTime: " + pageLoadTime + " ms, timedOut: " + timedOut);
+            if (afterPageFinished != null) {
+                afterPageFinished.onPageLoaded(timedOut);
+                afterPageFinished = null;
+            }
+        }
     }
 
     @Override
@@ -138,6 +173,12 @@ class CountlyWebViewClient extends WebViewClient {
 
         String ext = path.substring(dot + 1).toLowerCase();
         return CRITICAL_RESOURCES.contains(ext);
+    }
+
+    void cancel() {
+        webViewClosed.set(true);
+        pollHandler.removeCallbacksAndMessages(null);
+        afterPageFinished = null;
     }
 
     public void registerWebViewUrlListener(WebViewUrlListener listener) {

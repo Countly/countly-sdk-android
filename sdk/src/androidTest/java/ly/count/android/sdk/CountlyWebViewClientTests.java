@@ -248,11 +248,11 @@ public class CountlyWebViewClientTests {
     // =====================================
 
     /**
-     * "onPageFinished" with page load exceeding 60 seconds
-     * should report timeout (failed=true)
+     * "onPageFinished" with page load exceeding 60 seconds but no pending CSS
+     * should report success (failed=false) since all resources are ready
      */
     @Test
-    public void pageLoadTimeout_over60Seconds_reportsTimeout() throws InterruptedException {
+    public void pageLoadTimeout_over60Seconds_noPendingCss_reportsSuccess() throws InterruptedException {
         WebView wv = createWebView();
         CountDownLatch latch = new CountDownLatch(1);
         client.afterPageFinished = (failed) -> {
@@ -267,7 +267,7 @@ public class CountlyWebViewClientTests {
         Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
 
         Assert.assertEquals(1, callbackResults.size());
-        Assert.assertTrue(callbackResults.get(0));
+        Assert.assertFalse(callbackResults.get(0));
     }
 
     // =====================================
@@ -282,6 +282,7 @@ public class CountlyWebViewClientTests {
     public void criticalResource_jsWithQueryParams_detected() {
         client.onReceivedHttpError(null, fakeRequest("https://example.com/app.js?v=123", false), fakeHttpErrorResponse(404));
         Assert.assertEquals(1, callbackResults.size());
+        Assert.assertTrue(callbackResults.get(0));
     }
 
     /**
