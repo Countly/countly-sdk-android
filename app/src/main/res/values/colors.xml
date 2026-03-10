@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#1976D2</color>
+    <color name="colorAccent">#FF9800</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorBackground">#F5F5F5</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorOnSurface">#212121</color>
+    <color name="textSecondary">#757575</color>
+    <color name="divider">#E0E0E0</color>
+    <color name="cardStripEvents">#4CAF50</color>
+    <color name="cardStripMonitoring">#F44336</color>
+    <color name="cardStripConfig">#2196F3</color>
+    <color name="cardStripEngagement">#FF9800</color>
+    <color name="cardStripAdvanced">#9C27B0</color>
+</resources>

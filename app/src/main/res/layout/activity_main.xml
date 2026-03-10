@@ -108,6 +108,14 @@
       />
 
       <Button
+          android:id="@+id/button_fragments"
+          android:layout_width="match_parent"
+          android:layout_height="wrap_content"
+          android:onClick="onClickButtonFragments"
+          android:text="Fragment Navigation"
+      />
+
+      <Button
           android:text="@string/others"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"

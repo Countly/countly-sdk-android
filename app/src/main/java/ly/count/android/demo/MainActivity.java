@@ -145,4 +145,8 @@ public class MainActivity extends AppCompatActivity {
     public void onClickContentZone(View v) {
         startActivity(new Intent(this, ActivityExampleContentZone.class));
     }
+
+    public void onClickButtonFragments(View v) {
+        startActivity(new Intent(this, ActivityExampleFragments.class));
+    }
 }

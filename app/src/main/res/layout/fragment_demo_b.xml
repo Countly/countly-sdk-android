@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#FFF3E0">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Fragment B"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:paddingBottom="16dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Different background color to make fragment transitions visually obvious. The overlay should remain stable."
+        android:paddingBottom="16dp" />
+
+    <Button
+        android:id="@+id/btn_action_b1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test Touch Event" />
+
+    <SeekBar
+        android:id="@+id/seekbar_b"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp" />
+
+    <CheckBox
+        android:id="@+id/checkbox_b"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test checkbox interaction" />
+
+    <Switch
+        android:id="@+id/switch_b"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test switch interaction"
+        android:paddingTop="8dp" />
+
+</LinearLayout>
