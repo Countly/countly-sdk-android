@@ -1,10 +1,7 @@
 package ly.count.android.sdk;
 
-import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry;
-import androidx.test.runner.lifecycle.Stage;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,63 +33,8 @@ public class ModuleConfigurationTests {
     private CountlyStore countlyStore;
     private Countly countly;
 
-    /**
-     * Finishes all running TransparentActivity instances and waits for them to be destroyed.
-     * This prevents crashes when halt() is called while activities are still running.
-     */
-    private void finishAllTransparentActivities() {
-        // First, finish all activities
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
-            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)) {
-                if (activity instanceof TransparentActivity) {
-                    activity.finish();
-                }
-            }
-            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.STARTED)) {
-                if (activity instanceof TransparentActivity) {
-                    activity.finish();
-                }
-            }
-            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.CREATED)) {
-                if (activity instanceof TransparentActivity) {
-                    activity.finish();
-                }
-            }
-        });
-
-        // Wait until all TransparentActivity instances are destroyed
-        long startTime = System.currentTimeMillis();
-        long timeout = 5000; // 5 second timeout
-
-        while (System.currentTimeMillis() - startTime < timeout) {
-            final boolean[] hasRunningActivity = { false };
-            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
-                for (Stage stage : new Stage[] { Stage.RESUMED, Stage.STARTED, Stage.CREATED, Stage.STOPPED, Stage.PAUSED }) {
-                    for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(stage)) {
-                        if (activity instanceof TransparentActivity) {
-                            hasRunningActivity[0] = true;
-                            return;
-                        }
-                    }
-                }
-            });
-
-            if (!hasRunningActivity[0]) {
-                return; // All activities destroyed
-            }
-
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignored) {
-            }
-        }
-    }
-
     @Before
     public void setUp() {
-        // Finish any stale TransparentActivity instances from previous tests
-        // before calling halt() to prevent NPE crashes
-        finishAllTransparentActivities();
         countlyStore = TestUtils.getCountlyStore();
         countlyStore.clear();
         Countly.sharedInstance().halt();
@@ -100,7 +42,6 @@ public class ModuleConfigurationTests {
 
     @After
     public void tearDown() {
-        finishAllTransparentActivities();
         TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
@@ -2089,22 +2030,14 @@ public class ModuleConfigurationTests {
                 Countly.sharedInstance().events().recordEvent("journey_event");
                 Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
-                Thread.sleep(2000);  // Allow time for content to be fetched and TransparentActivity to launch
+                Thread.sleep(2000);  // Allow time for content to be fetched and overlay to show
                 Assert.assertEquals(2, contentRequestCount.get());
-
-                // Note: RQ may contain session requests from activity lifecycle when TransparentActivity launches
-                // This is expected behavior - the core test is verifying content refresh is skipped
 
                 // Record another JTE - should NOT trigger content refresh since isCurrentlyInContentZone=true
                 Countly.sharedInstance().events().recordEvent("journey_event_2");
                 Thread.sleep(1000);
                 // Content request count should NOT increase since we're already in content zone, so refresh should skip
                 Assert.assertEquals(2, contentRequestCount.get());
-
-                // Finish all TransparentActivity instances before calling exitContentZone
-                // This ensures the activity lifecycle completes while SDK is still initialized
-                finishAllTransparentActivities();
-                Thread.sleep(2000); // Wait for activity lifecycle to complete
 
                 Countly.sharedInstance().contents().exitContentZone();
             } catch (InterruptedException ignored) {

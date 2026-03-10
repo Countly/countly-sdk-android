@@ -1,9 +1,9 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Handler;
@@ -18,11 +18,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-// import android.webkit.WebView;
 
 public class ModuleFeedback extends ModuleBase {
 
@@ -44,6 +42,8 @@ public class ModuleFeedback extends ModuleBase {
     ImmediateRequestGenerator iRGenerator;
 
     Feedback feedbackInterface = null;
+    private Activity currentActivity;
+    ContentOverlayView feedbackOverlay;
 
     ModuleFeedback(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -53,6 +53,32 @@ public class ModuleFeedback extends ModuleBase {
         iRGenerator = config.immediateRequestGenerator;
 
         feedbackInterface = new Feedback();
+    }
+
+    @Override
+    void onActivityStarted(Activity activity, int updatedActivityCount) {
+        if (activity == null) {
+            return;
+        }
+
+        currentActivity = activity;
+
+        // Move existing feedback overlay to the new activity
+        if (feedbackOverlay != null && !activity.isFinishing() && !activity.isDestroyed()) {
+            try {
+                feedbackOverlay.attachToActivity(activity);
+            } catch (Exception ex) {
+                L.w("[ModuleFeedback] onActivityStarted, failed to attach feedback overlay to activity", ex);
+            }
+        }
+    }
+
+    @Override
+    void onActivityStopped(int updatedActivityCount) {
+        if (updatedActivityCount == 0 && feedbackOverlay != null) {
+            L.d("[ModuleFeedback] onActivityStopped, no activities visible, detaching overlay from window");
+            feedbackOverlay.detachFromWindow();
+        }
     }
 
     public interface RetrieveFeedbackWidgets {
@@ -271,7 +297,7 @@ public class ModuleFeedback extends ModuleBase {
         L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrl + "]");
 
         if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
-            L.d("[ModuleFeedback] Will use transparent activity for displaying the widget");
+            L.d("[ModuleFeedback] Will use content overlay for displaying the widget");
             showFeedbackWidget_newActivity(context, preparedWidgetUrl, widgetInfo, devCallback);
         } else {
             iRGenerator.CreatePreflightRequestMaker().doWork(preparedWidgetUrl, null, requestQueueProvider.createConnectionProcessor(), false, true, preflightResponse -> {
@@ -338,6 +364,30 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     private void showFeedbackWidget_newActivity(@NonNull Context context, String url, CountlyFeedbackWidget widgetInfo, FeedbackCallback devCallback) {
+        Activity activity = null;
+        if (context instanceof Activity && !((Activity) context).isFinishing()) {
+            activity = (Activity) context;
+        } else if (currentActivity != null && !currentActivity.isFinishing()) {
+            activity = currentActivity;
+        }
+
+        if (activity == null) {
+            L.e("[ModuleFeedback] showFeedbackWidget_newActivity, no valid activity available to show overlay");
+            if (devCallback != null) {
+                devCallback.onFinished("No valid activity available to show feedback widget");
+            }
+            return;
+        }
+
+        // Do not show feedback widget if content overlay is currently showing
+        if (_cly.moduleContent != null && _cly.moduleContent.contentOverlay != null) {
+            L.w("[ModuleFeedback] showFeedbackWidget_newActivity, content overlay is currently showing, skipping feedback widget");
+            if (devCallback != null) {
+                devCallback.onFinished("Content overlay is currently showing");
+            }
+            return;
+        }
+
         DisplayMetrics displayMetrics = deviceInfo.mp.getDisplayMetrics(context);
         Resources resources = context.getResources();
         int currentOrientation = resources.getConfiguration().orientation;
@@ -358,7 +408,7 @@ public class ModuleFeedback extends ModuleBase {
 
         if (displayOption == WebViewDisplayOption.SAFE_AREA) {
             L.d("[ModuleFeedback] showFeedbackWidget_newActivity, calculating safe area dimensions...");
-            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, L);
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, L);
 
             portraitWidth = safeArea.portraitWidth;
             portraitHeight = safeArea.portraitHeight;
@@ -385,7 +435,6 @@ public class ModuleFeedback extends ModuleBase {
 
         L.i("[ModuleFeedback] showFeedbackWidget_newActivity, FINAL dimensions for widget (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "], Landscape: [" + landscapeWidth + "x" + landscapeHeight + "]");
 
-        Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
         TransparentActivityConfig pConfig = new TransparentActivityConfig(0, 0, portraitWidth, portraitHeight);
         TransparentActivityConfig lConfig = new TransparentActivityConfig(0, 0, landscapeWidth, landscapeHeight);
         pConfig.url = url;
@@ -396,32 +445,38 @@ public class ModuleFeedback extends ModuleBase {
         lConfig.topOffset = landscapeTopOffset;
         pConfig.leftOffset = portraitLeftOffset;
         lConfig.leftOffset = landscapeLeftOffset;
-        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, pConfig);
-        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, lConfig);
 
-        Intent intent = new Intent(context, TransparentActivity.class);
-        intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
-        intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
-        intent.putExtra(TransparentActivity.ORIENTATION, context.getResources().getConfiguration().orientation);
-        intent.putExtra(TransparentActivity.WIDGET_INFO, widgetInfo);
-
-        Long id = System.currentTimeMillis();
-        intent.putExtra(TransparentActivity.ID_CALLBACK, id);
+        ContentCallback feedbackCallback = null;
         if (devCallback != null) {
-            ContentCallback feedbackCallback = new ContentCallback() {
-                @Override public void onContentCallback(ContentStatus contentStatus, Map<String, Object> contentData) {
-                    if (contentStatus.equals(ContentStatus.CLOSED)) {
-                        devCallback.onClosed();
-                    } else {
-                        devCallback.onFinished(null);
-                    }
+            feedbackCallback = (contentStatus, contentData) -> {
+                if (contentStatus.equals(ContentStatus.CLOSED)) {
+                    devCallback.onClosed();
+                } else {
+                    devCallback.onFinished(null);
                 }
             };
-            TransparentActivity.contentCallbacks.put(id, feedbackCallback);
         }
 
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        _cly.context_.startActivity(intent);
+        // Clean up any existing feedback overlay
+        if (feedbackOverlay != null) {
+            feedbackOverlay.destroy();
+            feedbackOverlay = null;
+        }
+
+        final Activity hostActivity = activity;
+        feedbackOverlay = new ContentOverlayView(
+            hostActivity,
+            pConfig,
+            lConfig,
+            currentOrientation,
+            feedbackCallback,
+            () -> {
+                feedbackOverlay = null;
+            }
+        );
+
+        feedbackOverlay.setOnWidgetCancelRunnable(() -> reportFeedbackWidgetCancelButton(widgetInfo));
+        feedbackOverlay.attachToActivity(hostActivity);
     }
 
     void reportFeedbackWidgetCancelButton(@NonNull CountlyFeedbackWidget widgetInfo) {
@@ -757,6 +812,22 @@ public class ModuleFeedback extends ModuleBase {
     @Override
     void halt() {
         feedbackInterface = null;
+        if (feedbackOverlay != null) {
+            feedbackOverlay.destroy();
+            feedbackOverlay = null;
+        }
+        currentActivity = null;
+    }
+
+    @Override
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        L.d("[ModuleFeedback] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
+        if (consentChangeDelta.contains(Countly.CountlyFeatureNames.feedback) && !newConsent) {
+            if (feedbackOverlay != null) {
+                feedbackOverlay.destroy();
+                feedbackOverlay = null;
+            }
+        }
     }
 
     public class Feedback {
