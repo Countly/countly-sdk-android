@@ -67,4 +67,7 @@
   <string name="activity_name_feedback">Feedback examples</string>
   <string name="activity_name_content_zone">Content Zone</string>
   <string name="content_zone_device_id">Device ID</string>
+  <string name="activity_name_consent">Consent Management</string>
+  <string name="activity_name_location">Location</string>
+  <string name="activity_name_sessions">Sessions</string>
 </resources>
