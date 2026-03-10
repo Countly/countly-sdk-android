@@ -28,9 +28,18 @@ repositories {
   }
 }
 
+kotlin {
+  jvmToolchain(17)
+}
+
 android {
   compileSdk 35
   namespace 'ly.count.android.demo'
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
 
   signingConfigs {
     release {

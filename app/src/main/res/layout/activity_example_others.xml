@@ -1,131 +1,135 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipToPadding="false"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Request Queue -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/FormCard"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
->
-  <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:orientation="vertical"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center_vertical"
-                android:paddingLeft="@dimen/activity_horizontal_margin"
-                android:paddingRight="@dimen/activity_horizontal_margin"
-                android:paddingTop="32dp"
-                android:paddingBottom="32dp"
-  >
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewOther05"
-        android:text="Set location"
-    />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="Request Queue"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/button45"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewOther06"
-        android:text="Disable location"
-    />
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:onClick="onClickClearRequestQueue"
+                    android:text="Clear Request Queue"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-    <Button
-        android:id="@+id/button53"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewOther08"
-        android:text="Clear request queue"
-    />
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:onClick="onClickSendStoredRequests"
+                    android:text="Send Stored Requests" />
 
-    <Button
-        android:id="@+id/button60"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickViewOther10"
-        android:text="Do Stored Requests"
-    />
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onAddDirectRequestClick"
+                    android:text="Add Direct Request"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-    <Button
-        android:id="@+id/button70"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onAddDirectRequestClick"
-        android:text="Add direct Request"
-    />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-    <Button
-        android:id="@+id/button64"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickTestcrashFilterSample"
-        android:text="Test Crash Filter Sample"
-    />
+        <!-- Crash Filter Test -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/FormCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <Button
-        android:id="@+id/button65"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickRemoveAllConsent"
-        android:text="Remove All Consent"
-    />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-    <Button
-        android:id="@+id/button66"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickGiveAllConsent"
-        android:text="Give All Consent"
-    />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="Crash Filter Test"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/button67"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickReportDirectAttribution"
-        android:text="Report direct attribution"
-    />
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onClickTestCrashFilterSample"
+                    android:text="Test Crash Filter (secret)"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
 
-    <Button
-        android:id="@+id/button68"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickReportIndirectAttribution"
-        android:text="Report indirect attribution"
-    />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-    <Button
-        android:id="@+id/button69"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickAttributionTest"
-        android:text="Attribution test"
-    />
+        <!-- Attribution -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/FormCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-    <Button
-        android:id="@+id/button71"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickBeginSession"
-        android:text="Begin Session"
-    />
-    <Button
-        android:id="@+id/button72"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickUpdateSession"
-        android:text="Update Session"
-    />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-    <Button
-        android:id="@+id/button73"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:onClick="onClickEndSession"
-        android:text="End Session"
-    />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="12dp"
+                    android:text="Attribution"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:onClick="onClickReportDirectAttribution"
+                    android:text="Report Direct Attribution" />
 
-  </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:onClick="onClickReportIndirectAttribution"
+                    android:text="Report Indirect Attribution"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:onClick="onClickAttributionTest"
+                    android:text="Attribution Test"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+    </LinearLayout>
 </ScrollView>
