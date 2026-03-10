@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
@@ -365,6 +366,21 @@ class ContentOverlayView extends FrameLayout {
             if (result.height < 1) {
                 result.height = metrics.heightPixels;
             }
+        } else {
+            // Clamp dimensions on the copy so content doesn't exceed the safe area.
+            // This must be done here (not on the original configs) because SafeAreaCalculator
+            // can return stale WindowMetrics during orientation transitions.
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, Countly.sharedInstance().L);
+            boolean isLandscape = currentOrientation == Configuration.ORIENTATION_LANDSCAPE;
+            int safeWidth = isLandscape ? safeArea.landscapeWidth : safeArea.portraitWidth;
+            int safeHeight = isLandscape ? safeArea.landscapeHeight : safeArea.portraitHeight;
+
+            if (result.width > safeWidth) {
+                result.width = safeWidth;
+            }
+            if (result.height > safeHeight) {
+                result.height = safeHeight;
+            }
         }
 
         if (result.x < 1) {
@@ -382,12 +398,19 @@ class ContentOverlayView extends FrameLayout {
             return;
         }
 
-        // Defer the layout update to allow the system to finish updating window insets
-        // after the orientation change. Without this, SafeAreaCalculator may read stale
-        // inset values (e.g. status bar height not yet applied to the new orientation).
+        // Wait for the decor view's layout pass to complete before reading display metrics.
+        // A simple post() is not enough — on some API levels, display metrics are still stale
+        // one frame after onConfigurationChanged. OnGlobalLayoutListener fires after the
+        // system has finished the layout pass, guaranteeing metrics reflect the new orientation.
         View decor = activity.getWindow() != null ? activity.getWindow().getDecorView() : null;
         if (decor != null) {
-            decor.post(() -> applyOrientationUpdate(activity));
+            decor.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    decor.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    applyOrientationUpdate(activity);
+                }
+            });
         } else {
             applyOrientationUpdate(activity);
         }
@@ -396,6 +419,14 @@ class ContentOverlayView extends FrameLayout {
     private void applyOrientationUpdate(@NonNull Activity activity) {
         if (isClosed || !isAddedToWindow || windowManager == null || activity.isFinishing()) {
             return;
+        }
+
+        // Re-read actual orientation from activity instead of relying on cached value.
+        // ComponentCallbacks registered with Application context can deliver stale orientation
+        // during rapid rotations when activities handle configChanges="orientation|screenSize".
+        int actualOrientation = activity.getResources().getConfiguration().orientation;
+        if (actualOrientation != Configuration.ORIENTATION_UNDEFINED) {
+            currentOrientation = actualOrientation;
         }
 
         TransparentActivityConfig currentConfig = getCurrentConfig();
@@ -662,20 +693,10 @@ class ContentOverlayView extends FrameLayout {
         configLandscape.topOffset = safeArea.landscapeTopOffset;
         configLandscape.leftOffset = safeArea.landscapeLeftOffset;
 
-        // Clamp dimensions so content + offset doesn't exceed the safe area
-        // (server may have received wrong safe area dimensions calculated with app context)
-        if (configPortrait.height > safeArea.portraitHeight) {
-            configPortrait.height = safeArea.portraitHeight;
-        }
-        if (configPortrait.width > safeArea.portraitWidth) {
-            configPortrait.width = safeArea.portraitWidth;
-        }
-        if (configLandscape.height > safeArea.landscapeHeight) {
-            configLandscape.height = safeArea.landscapeHeight;
-        }
-        if (configLandscape.width > safeArea.landscapeWidth) {
-            configLandscape.width = safeArea.landscapeWidth;
-        }
+        // Note: dimension clamping is done non-destructively in setupConfig() on the copy,
+        // not here on the originals. Clamping originals is destructive because SafeAreaCalculator
+        // can return stale WindowMetrics during orientation transitions, permanently corrupting
+        // the config dimensions.
     }
 
     // --- Keyboard ---
