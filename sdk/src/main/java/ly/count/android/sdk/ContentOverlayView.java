@@ -9,12 +9,12 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
-import android.view.KeyEvent;
 import android.net.Uri;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -24,6 +24,7 @@ import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -48,6 +49,8 @@ class ContentOverlayView extends FrameLayout {
     private Activity currentHostActivity;
     private WindowManager windowManager;
     private boolean isAddedToWindow = false;
+    private boolean isContentLoaded = false;
+    private CountlyWebViewClient webViewClient;
     private int savedSystemUiVisibility = -1;
     private boolean isImmersiveModeActive = false;
     private ComponentCallbacks orientationCallback;
@@ -94,10 +97,17 @@ class ContentOverlayView extends FrameLayout {
     private void registerActivityLifecycleCallback(@NonNull Activity activity) {
         unregisterActivityLifecycleCallback();
         activityLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
-            @Override public void onActivityCreated(@NonNull Activity a, @Nullable android.os.Bundle b) {}
-            @Override public void onActivityStarted(@NonNull Activity a) {}
-            @Override public void onActivityResumed(@NonNull Activity a) {}
-            @Override public void onActivityPaused(@NonNull Activity a) {}
+            @Override public void onActivityCreated(@NonNull Activity a, @Nullable android.os.Bundle b) {
+            }
+
+            @Override public void onActivityStarted(@NonNull Activity a) {
+            }
+
+            @Override public void onActivityResumed(@NonNull Activity a) {
+            }
+
+            @Override public void onActivityPaused(@NonNull Activity a) {
+            }
 
             @Override
             public void onActivityStopped(@NonNull Activity a) {
@@ -107,7 +117,8 @@ class ContentOverlayView extends FrameLayout {
                 }
             }
 
-            @Override public void onActivitySaveInstanceState(@NonNull Activity a, @NonNull android.os.Bundle b) {}
+            @Override public void onActivitySaveInstanceState(@NonNull Activity a, @NonNull android.os.Bundle b) {
+            }
 
             @Override
             public void onActivityDestroyed(@NonNull Activity a) {
@@ -199,13 +210,19 @@ class ContentOverlayView extends FrameLayout {
             }
         }
 
+        int flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+            | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
+            | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+
+        if (!isContentLoaded) {
+            flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+        }
+
         WindowManager.LayoutParams params = new WindowManager.LayoutParams(
             config.width,
             config.height,
             WindowManager.LayoutParams.TYPE_APPLICATION,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            flags,
             PixelFormat.TRANSLUCENT
         );
         params.gravity = Gravity.TOP | Gravity.START;
@@ -321,6 +338,21 @@ class ContentOverlayView extends FrameLayout {
 
         if (orientationChanged) {
             notifyWebViewOfResize(activity);
+        }
+    }
+
+    private void enableTouchInteraction() {
+        if (!isAddedToWindow || windowManager == null) {
+            return;
+        }
+        try {
+            WindowManager.LayoutParams lp = (WindowManager.LayoutParams) getLayoutParams();
+            if (lp != null && (lp.flags & WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) != 0) {
+                lp.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
+                windowManager.updateViewLayout(this, lp);
+            }
+        } catch (Exception e) {
+            Log.w(Countly.TAG, "[ContentOverlayView] enableTouchInteraction, failed to update flags", e);
         }
     }
 
@@ -847,11 +879,20 @@ class ContentOverlayView extends FrameLayout {
     }
 
     private void cleanupWebView() {
+        if (webViewClient != null) {
+            webViewClient.cancel();
+            webViewClient = null;
+        }
         if (webView != null) {
             webView.stopLoading();
+            webView.setWebViewClient(new WebViewClient());
+            webView.loadUrl("about:blank");
             removeView(webView);
-            webView.destroy();
+            // Post destroy() to the end of the message queue so any pending
+            // Chromium async callbacks (e.g. loadingStateChanged) drain first.
+            final WebView wv = webView;
             webView = null;
+            wv.post(wv::destroy);
         }
     }
 
@@ -872,6 +913,7 @@ class ContentOverlayView extends FrameLayout {
         wv.clearHistory();
 
         CountlyWebViewClient client = new CountlyWebViewClient();
+        webViewClient = client;
         client.registerWebViewUrlListener((url, webView) -> {
             if (url.startsWith(Utils.COMM_URL)) {
                 if (url.contains("cly_x_action_event")) {
@@ -900,9 +942,11 @@ class ContentOverlayView extends FrameLayout {
                 close(new HashMap<>());
             } else {
                 Log.d(Countly.TAG, "[ContentOverlayView] page loaded successfully, making WebView visible");
+                isContentLoaded = true;
                 if (webView != null) {
                     webView.setVisibility(View.VISIBLE);
                 }
+                enableTouchInteraction();
             }
         };
 
