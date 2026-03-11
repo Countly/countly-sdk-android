@@ -541,7 +541,8 @@ public class ContentOverlayViewTests {
 
                 int expectedFlags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                     | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
-                    | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+                    | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                    | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                 Assert.assertEquals("Flags should match", expectedFlags, params.flags);
 
                 Assert.assertEquals("Gravity should be TOP|START",
