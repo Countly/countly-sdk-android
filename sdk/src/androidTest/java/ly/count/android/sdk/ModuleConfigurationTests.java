@@ -1258,7 +1258,6 @@ public class ModuleConfigurationTests {
         countlyConfig.metricProviderOverride = new MockedMetricProvider();
         Countly.sharedInstance().init(countlyConfig);
         Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
         return counts;
     }
 
@@ -2346,7 +2345,6 @@ public class ModuleConfigurationTests {
             countlyConfig.setServerURL(serverUrl);
             Countly.sharedInstance().init(countlyConfig);
             Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0;
-            Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0;
 
             Thread.sleep(1000);
 

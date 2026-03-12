@@ -1,5 +1,7 @@
 ## XX.XX.XX
 * Added Content feature method `previewContent(String contentId)` (Experimental!).
+* Improved content display positioning in safe area mode
+* Improved Content refresh mechanics.
 
 ## 26.1.0
 * Extended server configuration capabilities with server-controlled listing filters:

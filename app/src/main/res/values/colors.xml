@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Countly brand -->
+    <color name="countlyGreen">#56C467</color>
+    <color name="countlyGreenDark">#3DA64D</color>
+    <color name="countlyGreenLight">#E8F5E9</color>
+
+    <!-- Theme colors -->
+    <color name="colorPrimary">#56C467</color>
+    <color name="colorPrimaryDark">#3DA64D</color>
+    <color name="colorPrimaryVariant">#2E7D32</color>
+    <color name="colorAccent">#FFB74D</color>
+    <color name="colorSecondary">#26A69A</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorBackground">#F0F4F0</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
+    <color name="colorOnSurface">#1B2A1B</color>
+    <color name="textSecondary">#5F7060</color>
+    <color name="divider">#C8E6C9</color>
+
+    <!-- Card strip colors - vibrant palette -->
+    <color name="cardStripEvents">#56C467</color>
+    <color name="cardStripEventsData">#56C467</color>
+    <color name="cardStripMonitoring">#EF5350</color>
+    <color name="cardStripConfig">#42A5F5</color>
+    <color name="cardStripConfiguration">#42A5F5</color>
+    <color name="cardStripEngagement">#FFA726</color>
+    <color name="cardStripAdvanced">#AB47BC</color>
+
+    <!-- Gradient start/end for main header -->
+    <color name="gradientStart">#56C467</color>
+    <color name="gradientEnd">#26A69A</color>
+</resources>

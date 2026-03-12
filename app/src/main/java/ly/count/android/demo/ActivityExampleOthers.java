@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,30 +25,14 @@ public class ActivityExampleOthers extends AppCompatActivity {
         setContentView(R.layout.activity_example_others);
     }
 
-    public void onClickViewOther05(View v) {
-        //set user location
-        String countryCode = "us";
-        String city = "Höuston";
-        String latitude = "29.634933";
-        String longitude = "-95.220255";
-        String ipAddress = null;
-
-        Countly.sharedInstance().location().setLocation(countryCode, city, latitude + "," + longitude, ipAddress);
-    }
-
-    public void onClickViewOther06(View v) {
-        //disable location
-        Countly.sharedInstance().location().disableLocation();
-    }
-
-    public void onClickViewOther08(View v) {
-        //Clearing request queue
+    public void onClickClearRequestQueue(View v) {
         Countly.sharedInstance().requestQueue().flushQueues();
+        Toast.makeText(this, "Request queue cleared", Toast.LENGTH_SHORT).show();
     }
 
-    public void onClickViewOther10(View v) {
-        //Doing internally stored requests
+    public void onClickSendStoredRequests(View v) {
         Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
+        Toast.makeText(this, "Sending stored requests", Toast.LENGTH_SHORT).show();
     }
 
     public void onAddDirectRequestClick(View v) {
@@ -94,47 +79,28 @@ public class ActivityExampleOthers extends AppCompatActivity {
             Log.e("Countly", "Failed to create JSON object", e);
         }
         Countly.sharedInstance().requestQueue().addDirectRequest(requestMap);
+        Toast.makeText(this, "Direct request added", Toast.LENGTH_SHORT).show();
     }
 
-    public void onClickTestcrashFilterSample(View v) {
+    public void onClickTestCrashFilterSample(View v) {
         Countly.sharedInstance().crashes().recordUnhandledException(new Throwable("A really secret exception"));
-    }
-
-    public void onClickRemoveAllConsent(View v) {
-        Countly.sharedInstance().consent().removeConsentAll();
-    }
-
-    public void onClickGiveAllConsent(View v) {
-        Countly.sharedInstance().consent().giveConsentAll();
+        Toast.makeText(this, "Secret crash recorded (should be filtered)", Toast.LENGTH_SHORT).show();
     }
 
     public void onClickReportDirectAttribution(View v) {
         Countly.sharedInstance().attribution().recordDirectAttribution("countly", "{'cid':'campaign_id', 'cuid':'campaign_user_id'}");
-    }
-
-    String GetAdvertisingID() {
-        return "12345";//this is only a dummy value
+        Toast.makeText(this, "Direct attribution reported", Toast.LENGTH_SHORT).show();
     }
 
     public void onClickReportIndirectAttribution(View v) {
         Map<String, String> attributionValues = new ConcurrentHashMap<>();
-        attributionValues.put(AttributionIndirectKey.AdvertisingID, GetAdvertisingID());
+        attributionValues.put(AttributionIndirectKey.AdvertisingID, "12345");
         Countly.sharedInstance().attribution().recordIndirectAttribution(attributionValues);
+        Toast.makeText(this, "Indirect attribution reported", Toast.LENGTH_SHORT).show();
     }
 
     public void onClickAttributionTest(View v) {
         Countly.sharedInstance().attribution().recordDirectAttribution("_special_test", "{'test_object':'some value', 'other value':'123'}");
-    }
-
-    public void onClickBeginSession(View v) {
-        Countly.sharedInstance().sessions().beginSession();
-    }
-
-    public void onClickUpdateSession(View v) {
-        Countly.sharedInstance().sessions().updateSession();
-    }
-
-    public void onClickEndSession(View v) {
-        Countly.sharedInstance().sessions().endSession();
+        Toast.makeText(this, "Attribution test reported", Toast.LENGTH_SHORT).show();
     }
 }
