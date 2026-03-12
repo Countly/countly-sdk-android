@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 26.1.1
 * Added Content feature method `previewContent(String contentId)` (Experimental!).
 * Improved content display and refresh mechanics.
 
