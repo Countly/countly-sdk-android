@@ -1315,10 +1315,12 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
+        int rqToCheck = sc.refreshContentZone() && sc.networking() ? 1 : 9;
 
-        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), rqToCheck - 1, rqToCheck, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), rqToCheck - 1, rqToCheck, 1, 2);
+
+        Assert.assertEquals(rqToCheck, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, hc, fc, rc, cc, scc);
     }

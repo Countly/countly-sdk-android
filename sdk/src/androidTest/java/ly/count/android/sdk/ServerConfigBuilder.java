@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.util.Log;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -239,6 +240,16 @@ class ServerConfigBuilder {
     ServerConfigBuilder journeyTriggerEvents(Set<String> journeyTriggerEvents) {
         config.put(keyRJourneyTriggerEvents, journeyTriggerEvents);
         return this;
+    }
+
+    boolean refreshContentZone() {
+        Object val = config.get(keyRRefreshContentZone);
+        return val == null || (boolean) val;
+    }
+
+    boolean networking() {
+        Object val = config.get(keyRNetworking);
+        return val == null || (boolean) val;
     }
 
     ServerConfigBuilder defaults() {
