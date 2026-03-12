@@ -1,7 +1,7 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -271,10 +271,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 7, 8, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 7, 8, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -316,10 +316,11 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 7, 8, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 7, 8, 1, 2);
+        // why RQ count 1 because we flushed RQ for refreshContentZone
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -361,10 +362,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -406,10 +407,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -460,10 +461,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -1196,6 +1197,7 @@ public class ModuleConfigurationTests {
                 return null;
             }
         };
+        countlyConfig.setServerURL(TestUtils.commonURL);
         countlyConfig.metricProviderOverride = new MockedMetricProvider();
         Countly.sharedInstance().init(countlyConfig);
         Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
@@ -1247,7 +1249,26 @@ public class ModuleConfigurationTests {
 
         Thread.sleep(1000);
 
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+        // refreshContentZone flushes the RQ before entering content zone,
+        // so we need a mock server to accept those queued requests
+        try (MockWebServer server = new MockWebServer()) {
+            server.setDispatcher(new Dispatcher() {
+                @NotNull @Override public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) {
+                    return new MockResponse().setResponseCode(200)
+                        .setHeader("Content-Type", "application/json").setBody("{\"result\": \"Success\"}");
+                }
+            });
+            server.start();
+            String serverUrl = server.url("/").toString();
+            serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+            Countly.sharedInstance().moduleRequestQueue.serverURL = serverUrl;
+
+            Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+
+            Thread.sleep(1000);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void feedbackFlow_allFeatures() {
@@ -1294,10 +1315,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, hc, fc, rc, cc, scc);
     }
