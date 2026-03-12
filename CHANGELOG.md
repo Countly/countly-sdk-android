@@ -2,6 +2,7 @@
 * Improved content display and refresh mechanics.
 
 * Mitigated an issue about health checks storage in explicit storage mode.
+* Removed "TransparentActivity". Remove any references to it from your AndroidManifest.
 
 ## 26.1.0
 * Extended server configuration capabilities with server-controlled listing filters:
