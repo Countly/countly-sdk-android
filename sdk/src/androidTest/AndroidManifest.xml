@@ -13,6 +13,9 @@
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:launchMode="singleTop"
         android:exported="false"/>
+    <activity
+        android:name="ly.count.android.sdk.ContentOverlayViewTests$OverlayTestActivity"
+        android:exported="false"/>
     <uses-library android:name="android.test.runner"/>
   </application>
 

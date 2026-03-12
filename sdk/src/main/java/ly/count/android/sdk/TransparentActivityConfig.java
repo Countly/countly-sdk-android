@@ -18,4 +18,13 @@ class TransparentActivityConfig implements Serializable {
         this.width = width;
         this.height = height;
     }
+
+    TransparentActivityConfig copy() {
+        TransparentActivityConfig c = new TransparentActivityConfig(x, y, width, height);
+        c.url = url;
+        c.useSafeArea = useSafeArea;
+        c.topOffset = topOffset;
+        c.leftOffset = leftOffset;
+        return c;
+    }
 }

@@ -1,7 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
-import android.content.Intent;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.os.Handler;
@@ -10,10 +10,10 @@ import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
@@ -28,6 +28,11 @@ public class ModuleContent extends ModuleBase {
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
+
+    private Activity currentActivity;
+    ContentOverlayView contentOverlay;
+    // Buffered content when no activity is available
+    private Map<Integer, TransparentActivityConfig> pendingContentConfigs;
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -63,19 +68,40 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onActivityStarted(Activity activity, int updatedActivityCount) {
-        if (UtilsDevice.cutout == null && activity != null) {
+        if (activity == null) {
+            return;
+        }
+
+        if (UtilsDevice.cutout == null) {
             UtilsDevice.getCutout(activity);
         }
-        if (isCurrentlyInContentZone
-            && activity != null
-            && !(activity instanceof TransparentActivity)) {
+
+        currentActivity = activity;
+
+        // Move existing overlay to the new activity
+        if (contentOverlay != null && !activity.isFinishing() && !activity.isDestroyed()) {
             try {
-                Intent bringToFront = new Intent(activity, TransparentActivity.class);
-                bringToFront.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                activity.startActivity(bringToFront);
+                contentOverlay.attachToActivity(activity);
             } catch (Exception ex) {
-                L.w("[ModuleContent] onActivityStarted, failed to reorder TransparentActivity to front", ex);
+                L.w("[ModuleContent] onActivityStarted, failed to attach content overlay to activity", ex);
             }
+        }
+
+        // Show buffered content if we have a pending overlay
+        if (pendingContentConfigs != null && !activity.isFinishing() && !activity.isDestroyed()) {
+            shouldFetchContents = false;
+            showContentOverlay(activity, pendingContentConfigs);
+            pendingContentConfigs = null;
+        }
+    }
+
+    @Override
+    void onActivityStopped(int updatedActivityCount) {
+        if (updatedActivityCount == 0 && contentOverlay != null) {
+            // No activities visible — remove overlay from WindowManager to prevent WindowLeaked.
+            // The overlay is kept alive and will be re-attached in onActivityStarted.
+            L.d("[ModuleContent] onActivityStopped, no activities visible, detaching overlay from window");
+            contentOverlay.detachFromWindow();
         }
     }
 
@@ -104,23 +130,18 @@ public class ModuleContent extends ModuleBase {
                         return;
                     }
 
-                    Intent intent = new Intent(_cly.context_, TransparentActivity.class);
-                    intent.putExtra(TransparentActivity.CONFIGURATION_LANDSCAPE, placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE));
-                    intent.putExtra(TransparentActivity.CONFIGURATION_PORTRAIT, placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT));
-                    intent.putExtra(TransparentActivity.ORIENTATION, _cly.context_.getResources().getConfiguration().orientation);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
+                        isCurrentlyInContentZone = true;
+                        isCurrentlyRetrying = false;
 
-                    Long id = System.currentTimeMillis();
-                    intent.putExtra(TransparentActivity.ID_CALLBACK, id);
-                    if (globalContentCallback != null) {
-                        TransparentActivity.contentCallbacks.put(id, globalContentCallback);
-                    }
-
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    _cly.context_.startActivity(intent);
-
-                    shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
-                    isCurrentlyInContentZone = true;
-                    isCurrentlyRetrying = false;
+                        if (currentActivity != null && !currentActivity.isFinishing()) {
+                            showContentOverlay(currentActivity, placementCoordinates);
+                        } else {
+                            L.d("[ModuleContent] fetchContentsInternal, no active activity, buffering content");
+                            pendingContentConfigs = placementCoordinates;
+                        }
+                    });
                 } else {
                     L.w("[ModuleContent] fetchContentsInternal, response is not valid, skipping");
                     if (callbackOnFailure != null) {
@@ -238,11 +259,52 @@ public class ModuleContent extends ModuleBase {
         handler.post(retryRunnable);
     }
 
+    private void showContentOverlay(@NonNull Activity activity, @NonNull Map<Integer, TransparentActivityConfig> placementCoordinates) {
+        L.d("[ModuleContent] showContentOverlay, showing content overlay on [" + activity.getClass().getSimpleName() + "]");
+
+        // Do not show content if feedback widget is currently showing
+        if (_cly.moduleFeedback != null && _cly.moduleFeedback.feedbackOverlay != null) {
+            shouldFetchContents = true;
+            isCurrentlyInContentZone = false;
+            L.w("[ModuleContent] showContentOverlay, feedback widget is currently showing, skipping content");
+            return;
+        }
+
+        // Clean up any existing overlay
+        if (contentOverlay != null) {
+            contentOverlay.destroy();
+            contentOverlay = null;
+        }
+
+        TransparentActivityConfig portrait = placementCoordinates.get(Configuration.ORIENTATION_PORTRAIT);
+        TransparentActivityConfig landscape = placementCoordinates.get(Configuration.ORIENTATION_LANDSCAPE);
+
+        if (portrait == null || landscape == null) {
+            L.e("[ModuleContent] showContentOverlay, missing orientation config, portrait: [" + (portrait != null) + "], landscape: [" + (landscape != null) + "], skipping");
+            return;
+        }
+
+        int orientation = activity.getResources().getConfiguration().orientation;
+
+        contentOverlay = new ContentOverlayView(
+            activity,
+            portrait,
+            landscape,
+            orientation,
+            globalContentCallback,
+            this::notifyAfterContentIsClosed
+        );
+
+        contentOverlay.attachToActivity(activity);
+        isCurrentlyInContentZone = true;
+    }
+
     void notifyAfterContentIsClosed() {
         L.v("[ModuleContent] notifyAfterContentIsClosed, setting waitForDelay to 2 and shouldFetchContents to true");
         waitForDelay = 2; // this is indicating that we will wait 1 min after closing the content and before fetching the next one
         shouldFetchContents = true;
         isCurrentlyInContentZone = false;
+        contentOverlay = null;
     }
 
     @NonNull
@@ -264,7 +326,7 @@ public class ModuleContent extends ModuleBase {
 
         if (displayOption == WebViewDisplayOption.SAFE_AREA) {
             L.d("[ModuleContent] prepareContentFetchRequest, calculating safe area dimensions...");
-            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(_cly.context_, L);
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(getSafeAreaContext(), L);
 
             // px to dp
             portraitWidth = (int) Math.floor(safeArea.portraitWidth / displayMetrics.density);
@@ -300,7 +362,7 @@ public class ModuleContent extends ModuleBase {
 
     @NonNull
     Map<Integer, TransparentActivityConfig> parseContent(@NonNull JSONObject response, @NonNull DisplayMetrics displayMetrics) {
-        Map<Integer, TransparentActivityConfig> placementCoordinates = new ConcurrentHashMap<>();
+        Map<Integer, TransparentActivityConfig> placementCoordinates = new HashMap<>();
 
         assert response != null;
 
@@ -314,15 +376,20 @@ public class ModuleContent extends ModuleBase {
 
         if (displayOption == WebViewDisplayOption.SAFE_AREA) {
             L.d("[ModuleContent] parseContent, calculating safe area for coordinate adjustment...");
-            safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(_cly.context_, L);
+            safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(getSafeAreaContext(), L);
         }
 
-        placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT,
-            extractOrientationPlacements(coordinates, displayMetrics.density, "p", content,
-                displayOption, safeArea != null ? safeArea.portraitTopOffset : 0, safeArea != null ? safeArea.portraitLeftOffset : 0));
-        placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE,
-            extractOrientationPlacements(coordinates, displayMetrics.density, "l", content,
-                displayOption, safeArea != null ? safeArea.landscapeTopOffset : 0, safeArea != null ? safeArea.landscapeLeftOffset : 0));
+        TransparentActivityConfig portraitConfig = extractOrientationPlacements(coordinates, displayMetrics.density, "p", content,
+            displayOption, safeArea != null ? safeArea.portraitTopOffset : 0, safeArea != null ? safeArea.portraitLeftOffset : 0);
+        TransparentActivityConfig landscapeConfig = extractOrientationPlacements(coordinates, displayMetrics.density, "l", content,
+            displayOption, safeArea != null ? safeArea.landscapeTopOffset : 0, safeArea != null ? safeArea.landscapeLeftOffset : 0);
+
+        if (portraitConfig != null) {
+            placementCoordinates.put(Configuration.ORIENTATION_PORTRAIT, portraitConfig);
+        }
+        if (landscapeConfig != null) {
+            placementCoordinates.put(Configuration.ORIENTATION_LANDSCAPE, landscapeConfig);
+        }
 
         return placementCoordinates;
     }
@@ -364,6 +431,12 @@ public class ModuleContent extends ModuleBase {
         contentInterface = null;
         countlyTimer.stopTimer(L);
         countlyTimer = null;
+        if (contentOverlay != null) {
+            contentOverlay.destroy();
+            contentOverlay = null;
+        }
+        currentActivity = null;
+        pendingContentConfigs = null;
     }
 
     @Override
@@ -382,10 +455,21 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
+    @NonNull
+    private Context getSafeAreaContext() {
+        return (currentActivity != null && !currentActivity.isFinishing()) ? currentActivity : _cly.context_;
+    }
+
     private void exitContentZoneInternal() {
         shouldFetchContents = false;
         countlyTimer.stopTimer(L);
         waitForDelay = 0;
+        if (contentOverlay != null) {
+            contentOverlay.destroy();
+            contentOverlay = null;
+        }
+        isCurrentlyInContentZone = false;
+        pendingContentConfigs = null;
     }
 
     void refreshContentZoneInternal(boolean callRQFlush) {

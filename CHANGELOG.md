@@ -1,6 +1,7 @@
 ## XX.XX.XX
-* Improved content display positioning in safe area mode
-* Improved Content refresh mechanics.
+* Improved content display and refresh mechanics.
+
+* Mitigated an issue about health checks storage in explicit storage mode.
 
 ## 26.1.0
 * Extended server configuration capabilities with server-controlled listing filters:

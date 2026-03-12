@@ -274,7 +274,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 if (esHealthCheckCache != null) {
                     //check if the cached health check state matches the one in persistent memory
                     String currentHCValue = preferences_.getString(PREFERENCE_HEALTH_CHECK_STATE, "");
-                    if (!esEventQueueCache.equals(currentHCValue)) {
+                    if (!esHealthCheckCache.equals(currentHCValue)) {
                         writePerformed = true;
                         spe.putString(PREFERENCE_HEALTH_CHECK_STATE, esHealthCheckCache);
                     }
@@ -460,7 +460,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return;
         }
 
-        if (requestStr == null && requestStr.isEmpty()) {
+        if (requestStr.isEmpty()) {
             L.w("[CountlyStore] addRequest, providing null or empty request string");
             return;
         }
