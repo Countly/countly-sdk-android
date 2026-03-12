@@ -1,4 +1,5 @@
 ## XX.XX.XX
+* Added Content feature method `previewContent(String contentId)` (Experimental!).
 * Improved content display and refresh mechanics.
 
 * Mitigated an issue about health checks storage in explicit storage mode.
