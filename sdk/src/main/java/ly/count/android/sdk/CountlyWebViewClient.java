@@ -179,10 +179,6 @@ class CountlyWebViewClient extends WebViewClient {
         webViewClosed.set(true);
         pollHandler.removeCallbacksAndMessages(null);
         afterPageFinished = null;
-    }
-
-    void cancel() {
-        afterPageFinished = null;
         listeners.clear();
     }
 
