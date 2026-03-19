@@ -10,7 +10,7 @@
   * User property filters (blacklist/whitelist) to control which user properties are recorded.
   * Segmentation filters (blacklist/whitelist) to control which segmentation keys are recorded.
   * Event-specific segmentation filters (blacklist/whitelist) to control segmentation keys per event.
-  * User property cache limit to limit the number of user properties recorded per request
+  * User property cache limit to limit the number of user properties recorded per request.
 * Added support for Journey Trigger Events that trigger a content zone refresh when recorded.
 * Added a configurable user property cache limit through server configuration.
 
