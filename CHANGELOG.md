@@ -1,6 +1,7 @@
 ## 26.1.1
 * Added Content feature method `previewContent(String contentId)` (Experimental!).
 * Improved content display and refresh mechanics.
+* Added a new config option `setMetricProvider(MetricProvider)` to allow overriding default device metrics with custom values.
 
 * Mitigated an issue about health checks storage in explicit storage mode.
 
