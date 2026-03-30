@@ -41,8 +41,8 @@ public class MockedMetricProvider implements MetricProvider {
         return "G";
     }
 
-    @Override public int getTimezoneOffset() {
-        return 66;
+    @Override public String getTimezoneOffset() {
+        return "66";
     }
 
     @Override public String getLocale() {
@@ -61,8 +61,8 @@ public class MockedMetricProvider implements MetricProvider {
         return "K";
     }
 
-    @Override public long getTotalRAM() {
-        return 42;
+    @Override public String getTotalRAM() {
+        return "42";
     }
 
     @Override public String getRamCurrent(Context context) {
