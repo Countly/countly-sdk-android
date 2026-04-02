@@ -3,7 +3,6 @@ package ly.count.android.sdk;
 import android.content.Context;
 import android.util.DisplayMetrics;
 import androidx.annotation.Nullable;
-import java.util.Map;
 
 public interface MetricProvider {
     default String getOS() {
@@ -106,7 +105,7 @@ public interface MetricProvider {
         return null;
     }
 
-    default Map.Entry<String, String> getDiskSpaces(Context context) {
+    default DiskMetric getDiskSpaces(Context context) {
         return null;
     }
 }

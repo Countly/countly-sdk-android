@@ -45,7 +45,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
-import java.util.AbstractMap;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
@@ -310,8 +309,8 @@ class DeviceInfo {
             }
 
             @NonNull
-            public Map.Entry<String, String> getDiskSpaces(Context context) {
-                Map.Entry<String, String> ov = DeviceInfo.this.mpOverride.getDiskSpaces(context);
+            public DiskMetric getDiskSpaces(Context context) {
+                DiskMetric ov = DeviceInfo.this.mpOverride.getDiskSpaces(context);
                 if (ov != null) return ov;
                 long totalBytes = 0;
                 long usedBytes = 0;
@@ -352,7 +351,7 @@ class DeviceInfo {
                 long usedMb = usedBytes / 1024 / 1024;
 
                 Countly.sharedInstance().L.d("[DeviceInfo] getDiskSpaces, totalSpaceInMB:[" + totalMb + "], usedSpaceInMB:[" + usedMb + "]");
-                return new AbstractMap.SimpleEntry<>(Long.toString(totalMb), Long.toString(usedMb));
+                return new DiskMetric(Long.toString(totalMb), Long.toString(usedMb));
             }
 
             @Nullable
@@ -681,18 +680,18 @@ class DeviceInfo {
     Map<String, Object> getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
         Map<String, Object> metrics = getCommonMetrics(context, metricOverride, L);
 
-        Map.Entry<String, String> storageMb = mp.getDiskSpaces(context);
+        DiskMetric diskMetric = mp.getDiskSpaces(context);
 
         putIfNotNullAndNotEmpty(metrics, "_cpu", mp.getCpu());
         putIfNotNullAndNotEmpty(metrics, "_opengl", mp.getOpenGL(context));
         putIfNotNullAndNotEmpty(metrics, "_root", mp.isRooted());
         putIfNotNullAndNotEmpty(metrics, "_ram_total", mp.getRamTotal());
-        putIfNotNullAndNotEmpty(metrics, "_disk_total", storageMb.getKey());
+        putIfNotNullAndNotEmpty(metrics, "_disk_total", diskMetric.totalMb);
 
         if (!isNativeCrash) {
             //if is not a native crash
             putIfNotNullAndNotEmpty(metrics, "_ram_current", mp.getRamCurrent(context));
-            putIfNotNullAndNotEmpty(metrics, "_disk_current", storageMb.getValue());
+            putIfNotNullAndNotEmpty(metrics, "_disk_current", diskMetric.usedMb);
             putIfNotNullAndNotEmpty(metrics, "_bat", mp.getBatteryLevel(context));
             putIfNotNullAndNotEmpty(metrics, "_run", mp.getRunningTime());
             putIfNotNullAndNotEmpty(metrics, "_orientation", mp.getOrientation(context));

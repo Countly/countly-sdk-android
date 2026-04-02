@@ -31,7 +31,6 @@ import android.view.WindowManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -330,9 +329,9 @@ public class DeviceInfoTests {
         assertEquals("Z", deviceInfo.mp.hasHinge(TestUtils.getContext()));
         assertEquals("88", deviceInfo.mp.getRunningTime());
 
-        Map.Entry<String, String> diskSpaces = deviceInfo.mp.getDiskSpaces(TestUtils.getContext());
-        assertEquals("45", diskSpaces.getKey());
-        assertEquals("23", diskSpaces.getValue());
+        DiskMetric diskMetric = deviceInfo.mp.getDiskSpaces(TestUtils.getContext());
+        assertEquals("45", diskMetric.totalMb);
+        assertEquals("23", diskMetric.usedMb);
     }
 
     @Test
@@ -384,15 +383,15 @@ public class DeviceInfoTests {
     @Test
     public void testMetricProviderOverride_diskSpacesOverride() {
         MetricProvider diskOverride = new MetricProvider() {
-            @Override public Map.Entry<String, String> getDiskSpaces(Context context) {
-                return new AbstractMap.SimpleEntry<>("100", "50");
+            @Override public DiskMetric getDiskSpaces(Context context) {
+                return new DiskMetric("100", "50");
             }
         };
         DeviceInfo deviceInfo = new DeviceInfo(diskOverride);
 
-        Map.Entry<String, String> diskSpaces = deviceInfo.mp.getDiskSpaces(TestUtils.getContext());
-        assertEquals("100", diskSpaces.getKey());
-        assertEquals("50", diskSpaces.getValue());
+        DiskMetric diskMetric = deviceInfo.mp.getDiskSpaces(TestUtils.getContext());
+        assertEquals("100", diskMetric.totalMb);
+        assertEquals("50", diskMetric.usedMb);
 
         // other metrics should be defaults
         assertEquals("Android", deviceInfo.mp.getOS());

@@ -4,8 +4,6 @@ import android.content.Context;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.AbstractMap;
-import java.util.Map;
 
 public class MockedMetricProvider implements MetricProvider {
 
@@ -113,7 +111,7 @@ public class MockedMetricProvider implements MetricProvider {
         return new DisplayMetrics();
     }
 
-    @Override public Map.Entry<String, String> getDiskSpaces(Context context) {
-        return new AbstractMap.SimpleEntry<>("45", "23");
+    @Override public DiskMetric getDiskSpaces(Context context) {
+        return new DiskMetric("45", "23");
     }
 }
