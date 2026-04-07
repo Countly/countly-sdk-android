@@ -67,6 +67,15 @@ public class ModuleContent extends ModuleBase {
     }
 
     @Override
+    void onInitialActivitySeeded(@NonNull Activity activity) {
+        L.d("[ModuleContent] onInitialActivitySeeded, activity: [" + activity.getClass().getSimpleName() + "]");
+        currentActivity = activity;
+        if (UtilsDevice.cutout == null) {
+            UtilsDevice.getCutout(activity);
+        }
+    }
+
+    @Override
     void onActivityStarted(Activity activity, int updatedActivityCount) {
         if (activity == null) {
             return;
