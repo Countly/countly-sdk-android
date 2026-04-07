@@ -56,6 +56,12 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     @Override
+    void onInitialActivitySeeded(@NonNull Activity activity) {
+        L.d("[ModuleFeedback] onInitialActivitySeeded, activity: [" + activity.getClass().getSimpleName() + "]");
+        currentActivity = activity;
+    }
+
+    @Override
     void onActivityStarted(Activity activity, int updatedActivityCount) {
         if (activity == null) {
             return;

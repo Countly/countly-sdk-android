@@ -9,6 +9,11 @@
         android:taskAffinity=".CountlyPushActivity"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:exported="false"/>
+
+    <provider
+        android:name="ly.count.android.sdk.CountlyInitProvider"
+        android:authorities="${applicationId}.countlyInitProvider"
+        android:exported="false"/>
   </application>
 
   <permission
