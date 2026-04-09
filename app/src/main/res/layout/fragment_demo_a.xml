@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fragment A"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:paddingBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="This fragment tests overlay stability during fragment switches. Tap buttons above to switch fragments while content overlay is showing."
+            android:paddingBottom="16dp" />
+
+        <Button
+            android:id="@+id/btn_action_a1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test Button 1" />
+
+        <Button
+            android:id="@+id/btn_action_a2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Test Button 2" />
+
+        <EditText
+            android:id="@+id/edit_text_a"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tap here to test keyboard with overlay"
+            android:inputType="text" />
+
+        <ListView
+            android:id="@+id/list_a"
+            android:layout_width="match_parent"
+            android:layout_height="300dp" />
+
+    </LinearLayout>
+</ScrollView>

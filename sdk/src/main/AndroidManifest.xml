@@ -9,11 +9,11 @@
         android:taskAffinity=".CountlyPushActivity"
         android:theme="@android:style/Theme.Translucent.NoTitleBar"
         android:exported="false"/>
-    <activity android:name=".TransparentActivity"
-              android:launchMode="singleTask"
-              android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
-              android:theme="@android:style/Theme.Translucent.NoTitleBar">
-    </activity>
+
+    <provider
+        android:name="ly.count.android.sdk.CountlyInitProvider"
+        android:authorities="${applicationId}.countlyInitProvider"
+        android:exported="false"/>
   </application>
 
   <permission

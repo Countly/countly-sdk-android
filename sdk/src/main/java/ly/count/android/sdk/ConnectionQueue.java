@@ -113,6 +113,7 @@ class ConnectionQueue implements RequestQueueProvider {
                         }
                     }
                 }
+                flushInternalGlobalRequestCallbackActions();
             }
         });
     }
@@ -877,7 +878,7 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
-    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language, String deviceType) {
+    public String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language, String deviceType, @Nullable String contentId) {
 
         JSONObject json = new JSONObject();
         try {
@@ -895,7 +896,13 @@ class ConnectionQueue implements RequestQueueProvider {
             L.e("Error while preparing fetch contents request");
         }
 
-        return prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString()) + "&la=" + language + "&dt=" + deviceType;
+        String request = prepareCommonRequestData() + "&method=queue" + "&category=" + Arrays.asList(categories) + "&resolution=" + UtilsNetworking.urlEncodeString(json.toString()) + "&la=" + language + "&dt=" + deviceType;
+
+        if (contentId != null) {
+            request += "&content_id=" + UtilsNetworking.urlEncodeString(contentId) + "&preview=true";
+        }
+
+        return request;
     }
 
     @Override
@@ -945,6 +952,12 @@ class ConnectionQueue implements RequestQueueProvider {
             L.d("[ConnectionQueue] tick, Starting ConnectionProcessor");
             ensureExecutor();
             connectionProcessorFuture_ = executor_.submit(createConnectionProcessor());
+        } else if (rqEmpty) {
+            // only fire callback when queue is genuinely empty
+            InternalRequestCallback globalCallback = internalRequestCallbacks.get(GLOBAL_RC_CALLBACK);
+            if (globalCallback != null) {
+                globalCallback.onRQFinished();
+            }
         }
     }
 
@@ -1015,7 +1028,7 @@ class ConnectionQueue implements RequestQueueProvider {
      *
      * @param runnable The action to execute when the queue finishes
      */
-    void registerInternalGlobalRequestCallbackAction(Runnable runnable) {
+    public void registerInternalGlobalRequestCallbackAction(Runnable runnable) {
         internalGlobalRequestCallbackActions.add(runnable);
     }
 

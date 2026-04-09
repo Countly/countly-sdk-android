@@ -38,5 +38,6 @@ public class ActivityExampleContentZone extends AppCompatActivity {
         String newDeviceId = deviceId.isEmpty() ? UUID.randomUUID().toString() : deviceId;
 
         Countly.sharedInstance().deviceId().setID(newDeviceId);
+        Countly.sharedInstance().consent().giveConsentAll();
     }
 }

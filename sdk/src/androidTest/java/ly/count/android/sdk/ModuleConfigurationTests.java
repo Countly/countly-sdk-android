@@ -1,10 +1,7 @@
 package ly.count.android.sdk;
 
-import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry;
-import androidx.test.runner.lifecycle.Stage;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,63 +33,8 @@ public class ModuleConfigurationTests {
     private CountlyStore countlyStore;
     private Countly countly;
 
-    /**
-     * Finishes all running TransparentActivity instances and waits for them to be destroyed.
-     * This prevents crashes when halt() is called while activities are still running.
-     */
-    private void finishAllTransparentActivities() {
-        // First, finish all activities
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
-            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED)) {
-                if (activity instanceof TransparentActivity) {
-                    activity.finish();
-                }
-            }
-            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.STARTED)) {
-                if (activity instanceof TransparentActivity) {
-                    activity.finish();
-                }
-            }
-            for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.CREATED)) {
-                if (activity instanceof TransparentActivity) {
-                    activity.finish();
-                }
-            }
-        });
-
-        // Wait until all TransparentActivity instances are destroyed
-        long startTime = System.currentTimeMillis();
-        long timeout = 5000; // 5 second timeout
-
-        while (System.currentTimeMillis() - startTime < timeout) {
-            final boolean[] hasRunningActivity = { false };
-            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
-                for (Stage stage : new Stage[] { Stage.RESUMED, Stage.STARTED, Stage.CREATED, Stage.STOPPED, Stage.PAUSED }) {
-                    for (Activity activity : ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(stage)) {
-                        if (activity instanceof TransparentActivity) {
-                            hasRunningActivity[0] = true;
-                            return;
-                        }
-                    }
-                }
-            });
-
-            if (!hasRunningActivity[0]) {
-                return; // All activities destroyed
-            }
-
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignored) {
-            }
-        }
-    }
-
     @Before
     public void setUp() {
-        // Finish any stale TransparentActivity instances from previous tests
-        // before calling halt() to prevent NPE crashes
-        finishAllTransparentActivities();
         countlyStore = TestUtils.getCountlyStore();
         countlyStore.clear();
         Countly.sharedInstance().halt();
@@ -100,7 +42,6 @@ public class ModuleConfigurationTests {
 
     @After
     public void tearDown() {
-        finishAllTransparentActivities();
         TestUtils.getCountlyStore().clear();
         Countly.sharedInstance().halt();
     }
@@ -330,10 +271,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 7, 8, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 7, 8, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -375,10 +316,11 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 7, 8, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 7, 8, 1, 2);
+        // why RQ count 1 because we flushed RQ for refreshContentZone
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -420,10 +362,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -465,10 +407,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -519,10 +461,10 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 0, 1, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 0, 1, 1, 2);
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, 1, 1, 1, 2, 1);
     }
@@ -1255,10 +1197,10 @@ public class ModuleConfigurationTests {
                 return null;
             }
         };
+        countlyConfig.setServerURL(TestUtils.commonURL);
         countlyConfig.metricProviderOverride = new MockedMetricProvider();
         Countly.sharedInstance().init(countlyConfig);
         Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0; // make it zero to catch content immediate request
         return counts;
     }
 
@@ -1307,7 +1249,26 @@ public class ModuleConfigurationTests {
 
         Thread.sleep(1000);
 
-        Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+        // refreshContentZone flushes the RQ before entering content zone,
+        // so we need a mock server to accept those queued requests
+        try (MockWebServer server = new MockWebServer()) {
+            server.setDispatcher(new Dispatcher() {
+                @NotNull @Override public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) {
+                    return new MockResponse().setResponseCode(200)
+                        .setHeader("Content-Type", "application/json").setBody("{\"result\": \"Success\"}");
+                }
+            });
+            server.start();
+            String serverUrl = server.url("/").toString();
+            serverUrl = serverUrl.substring(0, serverUrl.length() - 1);
+            Countly.sharedInstance().moduleRequestQueue.serverURL = serverUrl;
+
+            Countly.sharedInstance().contents().refreshContentZone(); // will add one more content immediate request
+
+            Thread.sleep(1000);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void feedbackFlow_allFeatures() {
@@ -1354,10 +1315,12 @@ public class ModuleConfigurationTests {
         feedbackFlow_allFeatures();
         Assert.assertEquals(0, countlyStore.getEventQueueSize());
 
-        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), 8, 9, 0, 2);
-        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), 8, 9, 1, 2);
+        int rqToCheck = sc.refreshContentZone() && sc.networking() ? 1 : 9;
 
-        Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+        validateEventInRQ("[CLY]_star_rating", TestUtils.map("platform", "android", "app_version", Countly.DEFAULT_APP_VERSION, "rating", "5", "widget_id", "test", "contactMe", true, "email", "test", "comment", "test"), rqToCheck - 1, rqToCheck, 0, 2);
+        validateEventInRQ("[CLY]_nps", TestUtils.map("app_version", Countly.DEFAULT_APP_VERSION, "widget_id", "test", "closed", "1", "platform", "android"), rqToCheck - 1, rqToCheck, 1, 2);
+
+        Assert.assertEquals(rqToCheck, TestUtils.getCurrentRQ().length);
 
         validateCounts(counts, hc, fc, rc, cc, scc);
     }
@@ -2090,22 +2053,14 @@ public class ModuleConfigurationTests {
                 Countly.sharedInstance().events().recordEvent("journey_event");
                 Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
 
-                Thread.sleep(2000);  // Allow time for content to be fetched and TransparentActivity to launch
+                Thread.sleep(2000);  // Allow time for content to be fetched and overlay to show
                 Assert.assertEquals(2, contentRequestCount.get());
-
-                // Note: RQ may contain session requests from activity lifecycle when TransparentActivity launches
-                // This is expected behavior - the core test is verifying content refresh is skipped
 
                 // Record another JTE - should NOT trigger content refresh since isCurrentlyInContentZone=true
                 Countly.sharedInstance().events().recordEvent("journey_event_2");
                 Thread.sleep(1000);
                 // Content request count should NOT increase since we're already in content zone, so refresh should skip
                 Assert.assertEquals(2, contentRequestCount.get());
-
-                // Finish all TransparentActivity instances before calling exitContentZone
-                // This ensures the activity lifecycle completes while SDK is still initialized
-                finishAllTransparentActivities();
-                Thread.sleep(2000); // Wait for activity lifecycle to complete
 
                 Countly.sharedInstance().contents().exitContentZone();
             } catch (InterruptedException ignored) {
@@ -2346,7 +2301,6 @@ public class ModuleConfigurationTests {
             countlyConfig.setServerURL(serverUrl);
             Countly.sharedInstance().init(countlyConfig);
             Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0;
-            Countly.sharedInstance().moduleContent.REFRESH_CONTENT_ZONE_DELAY_MS = 0;
 
             Thread.sleep(1000);
 
