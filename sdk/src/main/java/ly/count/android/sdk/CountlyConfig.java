@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import java.util.ArrayList;
@@ -174,6 +175,8 @@ public class CountlyConfig {
     protected boolean starRatingDisableAskingForEachAppVersion = false;
 
     protected Application application = null;
+
+    protected Activity initialActivity = null;
 
     boolean disableLocation = false;
 
@@ -855,6 +858,20 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setApplication(Application application) {
         this.application = application;
+        return this;
+    }
+
+    /**
+     * Set the initial activity reference for SDK initialization.
+     * This is needed for frameworks like Flutter and React Native where the host activity
+     * is already started before the SDK registers its lifecycle callbacks.
+     * Setting this ensures that content overlays and feedback widgets can display correctly.
+     *
+     * @param activity the current foreground activity
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setInitialActivity(Activity activity) {
+        this.initialActivity = activity;
         return this;
     }
 

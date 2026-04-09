@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.1";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.2-RC1";
     /**
      * Used as request meta data on every request
      */
@@ -809,6 +809,28 @@ public class Countly {
                 L.d("[Countly] SDK detects that the app is in the foreground. Increasing the activity counter and setting the foreground state.");
                 activityCount_++;
                 config.deviceInfo.inForeground();
+            }
+
+            // Seed modules with the current activity if the app is already in the foreground.
+            // This handles frameworks (Flutter, React Native) and single-activity apps where
+            // the host activity is already started before the SDK registers its lifecycle callbacks.
+            // Priority: explicit initialActivity from config, then ContentProvider-tracked activity.
+            Activity seedActivity = null;
+            if (config.initialActivity != null && !config.initialActivity.isFinishing()) {
+                seedActivity = config.initialActivity;
+                config.initialActivity = null;
+            } else {
+                Activity holderActivity = CountlyActivityHolder.getInstance().getActivity();
+                if (holderActivity != null && !holderActivity.isFinishing()) {
+                    seedActivity = holderActivity;
+                }
+            }
+
+            if (seedActivity != null) {
+                L.d("[Countly] Seeding modules with initial activity: [" + seedActivity.getClass().getSimpleName() + "]");
+                for (ModuleBase module : modules) {
+                    module.onInitialActivitySeeded(seedActivity);
+                }
             }
 
             L.i("[Init] About to call module 'initFinished'");

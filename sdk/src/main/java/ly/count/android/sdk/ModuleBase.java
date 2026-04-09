@@ -60,6 +60,14 @@ abstract class ModuleBase {
     }
 
     /**
+     * Called during init when the app is already in the foreground and an initial activity
+     * was provided via CountlyConfig.setInitialActivity(). This only sets the activity
+     * reference without triggering counters, sessions, or view tracking.
+     */
+    void onInitialActivitySeeded(@NonNull Activity activity) {
+    }
+
+    /**
      * Called manually by a countly call from the developer
      */
     void onActivityStopped(int updatedActivityCount) {
