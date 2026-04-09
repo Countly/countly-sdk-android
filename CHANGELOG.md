@@ -1,6 +1,7 @@
 ## 26.1.2
 * Added `CountlyInitProvider` ContentProvider to register activity lifecycle callbacks before `Application.onCreate()`. This ensures the SDK captures the current activity in single-activity frameworks (Flutter, React Native) and apps with deferred initialization.
 * Added `CountlyConfig.setInitialActivity(Activity)` as an explicit way for wrapper SDKs to provide the host activity during initialization.
+* Added a new config option `setMetricProvider(MetricProvider)` to allow overriding default device metrics with custom values.
 
 ## 26.1.1
 * Added Content feature method `previewContent(String contentId)` (Experimental!).

@@ -4,8 +4,6 @@ import android.content.Context;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.AbstractMap;
-import java.util.Map;
 
 public class MockedMetricProvider implements MetricProvider {
 
@@ -41,8 +39,8 @@ public class MockedMetricProvider implements MetricProvider {
         return "G";
     }
 
-    @Override public int getTimezoneOffset() {
-        return 66;
+    @Override public String getTimezoneOffset() {
+        return "66";
     }
 
     @Override public String getLocale() {
@@ -61,8 +59,8 @@ public class MockedMetricProvider implements MetricProvider {
         return "K";
     }
 
-    @Override public long getTotalRAM() {
-        return 42;
+    @Override public String getTotalRAM() {
+        return "42";
     }
 
     @Override public String getRamCurrent(Context context) {
@@ -113,7 +111,7 @@ public class MockedMetricProvider implements MetricProvider {
         return new DisplayMetrics();
     }
 
-    @Override public Map.Entry<String, String> getDiskSpaces(Context context) {
-        return new AbstractMap.SimpleEntry<>("45", "23");
+    @Override public DiskMetric getDiskSpaces(Context context) {
+        return new DiskMetric("45", "23");
     }
 }

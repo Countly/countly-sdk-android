@@ -2,61 +2,110 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import android.util.DisplayMetrics;
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.Map;
 
-interface MetricProvider {
-    String getOS();
+public interface MetricProvider {
+    default String getOS() {
+        return null;
+    }
 
-    String getOSVersion();
+    default String getOSVersion() {
+        return null;
+    }
 
-    String getDevice();
+    default String getDevice() {
+        return null;
+    }
 
-    String getManufacturer();
+    default String getManufacturer() {
+        return null;
+    }
 
-    String getResolution(final Context context);
+    default String getResolution(final Context context) {
+        return null;
+    }
 
-    String getDensity(final Context context);
+    default String getDensity(final Context context) {
+        return null;
+    }
 
-    String getCarrier(final Context context);
+    default String getCarrier(final Context context) {
+        return null;
+    }
 
-    int getTimezoneOffset();
+    default String getTimezoneOffset() {
+        return null;
+    }
 
-    String getLocale();
+    default String getLocale() {
+        return null;
+    }
 
-    @NonNull
-    String getAppVersion(final Context context);
+    default String getAppVersion(final Context context) {
+        return null;
+    }
 
-    String getStore(final Context context);
+    default String getStore(final Context context) {
+        return null;
+    }
 
-    String getDeviceType(final Context context);
+    default String getDeviceType(final Context context) {
+        return null;
+    }
 
-    long getTotalRAM();
+    default String getTotalRAM() {
+        return null;
+    }
 
-    String getRamCurrent(Context context);
+    default String getRamCurrent(Context context) {
+        return null;
+    }
 
-    String getRamTotal();
+    default String getRamTotal() {
+        return null;
+    }
 
-    String getCpu();
+    default String getCpu() {
+        return null;
+    }
 
-    String getOpenGL(Context context);
+    default String getOpenGL(Context context) {
+        return null;
+    }
 
-    @Nullable String getBatteryLevel(Context context);
+    @Nullable default String getBatteryLevel(Context context) {
+        return null;
+    }
 
-    @Nullable String getOrientation(Context context);
+    @Nullable default String getOrientation(Context context) {
+        return null;
+    }
 
-    String isRooted();
+    default String isRooted() {
+        return null;
+    }
 
-    @Nullable String isOnline(Context context);
+    @Nullable default String isOnline(Context context) {
+        return null;
+    }
 
-    String isMuted(Context context);
+    default String isMuted(Context context) {
+        return null;
+    }
 
-    String hasHinge(Context context);
+    default String hasHinge(Context context) {
+        return null;
+    }
 
-    String getRunningTime();
+    default String getRunningTime() {
+        return null;
+    }
 
-    DisplayMetrics getDisplayMetrics(Context context);
+    default DisplayMetrics getDisplayMetrics(Context context) {
+        return null;
+    }
 
-    Map.Entry<String, String> getDiskSpaces(Context context);
+    default DiskMetric getDiskSpaces(Context context) {
+        return null;
+    }
 }

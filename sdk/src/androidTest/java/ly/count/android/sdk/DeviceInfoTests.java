@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -294,6 +295,141 @@ public class DeviceInfoTests {
         String calculatedMetrics = URLDecoder.decode(regularDeviceInfo.getMetrics(TestUtils.getContext(), metricOverride, new ModuleLog()), "UTF-8");
         final JSONObject calculatedJSON = new JSONObject(calculatedMetrics);
         TestUtils.bothJSONObjEqual(json, calculatedJSON);
+    }
+
+    // MetricProvider override tests
+
+    @Test
+    public void testMetricProviderOverride_fullOverride() {
+        MockedMetricProvider override = new MockedMetricProvider();
+        DeviceInfo deviceInfo = new DeviceInfo(override);
+
+        assertEquals("A", deviceInfo.mp.getOS());
+        assertEquals("B", deviceInfo.mp.getOSVersion());
+        assertEquals("C", deviceInfo.mp.getDevice());
+        assertEquals("D", deviceInfo.mp.getManufacturer());
+        assertEquals("E", deviceInfo.mp.getResolution(TestUtils.getContext()));
+        assertEquals("F", deviceInfo.mp.getDensity(TestUtils.getContext()));
+        assertEquals("G", deviceInfo.mp.getCarrier(TestUtils.getContext()));
+        assertEquals("66", deviceInfo.mp.getTimezoneOffset());
+        assertEquals("H", deviceInfo.mp.getLocale());
+        assertEquals(Countly.DEFAULT_APP_VERSION, deviceInfo.mp.getAppVersion(TestUtils.getContext()));
+        assertEquals("J", deviceInfo.mp.getStore(TestUtils.getContext()));
+        assertEquals("K", deviceInfo.mp.getDeviceType(TestUtils.getContext()));
+        assertEquals("42", deviceInfo.mp.getTotalRAM());
+        assertEquals("12", deviceInfo.mp.getRamCurrent(TestUtils.getContext()));
+        assertEquals("48", deviceInfo.mp.getRamTotal());
+        assertEquals("N", deviceInfo.mp.getCpu());
+        assertEquals("O", deviceInfo.mp.getOpenGL(TestUtils.getContext()));
+        assertEquals("6", deviceInfo.mp.getBatteryLevel(TestUtils.getContext()));
+        assertEquals("S", deviceInfo.mp.getOrientation(TestUtils.getContext()));
+        assertEquals("T", deviceInfo.mp.isRooted());
+        assertEquals("U", deviceInfo.mp.isOnline(TestUtils.getContext()));
+        assertEquals("V", deviceInfo.mp.isMuted(TestUtils.getContext()));
+        assertEquals("Z", deviceInfo.mp.hasHinge(TestUtils.getContext()));
+        assertEquals("88", deviceInfo.mp.getRunningTime());
+
+        DiskMetric diskMetric = deviceInfo.mp.getDiskSpaces(TestUtils.getContext());
+        assertEquals("45", diskMetric.totalMb);
+        assertEquals("23", diskMetric.usedMb);
+    }
+
+    @Test
+    public void testMetricProviderOverride_partialOverride() {
+        MetricProvider partial = new MetricProvider() {
+            @Override public String getOS() { return "CustomOS"; }
+            @Override public String getDevice() { return "CustomDevice"; }
+        };
+        DeviceInfo deviceInfo = new DeviceInfo(partial);
+
+        // overridden values
+        assertEquals("CustomOS", deviceInfo.mp.getOS());
+        assertEquals("CustomDevice", deviceInfo.mp.getDevice());
+
+        // non-overridden values should fall back to SDK defaults
+        assertEquals(android.os.Build.VERSION.RELEASE, deviceInfo.mp.getOSVersion());
+        assertEquals(android.os.Build.MODEL, regularDeviceInfo.mp.getDevice());
+        assertEquals(android.os.Build.MANUFACTURER, deviceInfo.mp.getManufacturer());
+        assertNotNull(deviceInfo.mp.getLocale());
+        assertNotNull(deviceInfo.mp.getTimezoneOffset());
+        assertNotNull(deviceInfo.mp.getAppVersion(TestUtils.getContext()));
+    }
+
+    @Test
+    public void testMetricProviderOverride_nullOverride() {
+        DeviceInfo deviceInfo = new DeviceInfo(null);
+
+        // all values should be SDK defaults, no crash
+        assertEquals("Android", deviceInfo.mp.getOS());
+        assertEquals(android.os.Build.VERSION.RELEASE, deviceInfo.mp.getOSVersion());
+        assertEquals(android.os.Build.MODEL, deviceInfo.mp.getDevice());
+        assertEquals(android.os.Build.MANUFACTURER, deviceInfo.mp.getManufacturer());
+        assertNotNull(deviceInfo.mp.getLocale());
+        assertNotNull(deviceInfo.mp.getTimezoneOffset());
+    }
+
+    @Test
+    public void testMetricProviderOverride_emptyOverride() {
+        MetricProvider emptyOverride = new MetricProvider() {};
+        DeviceInfo deviceInfo = new DeviceInfo(emptyOverride);
+
+        // empty override should behave same as null override
+        assertEquals("Android", deviceInfo.mp.getOS());
+        assertEquals(android.os.Build.VERSION.RELEASE, deviceInfo.mp.getOSVersion());
+        assertEquals(android.os.Build.MODEL, deviceInfo.mp.getDevice());
+        assertNotNull(deviceInfo.mp.getLocale());
+    }
+
+    @Test
+    public void testMetricProviderOverride_diskSpacesOverride() {
+        MetricProvider diskOverride = new MetricProvider() {
+            @Override public DiskMetric getDiskSpaces(Context context) {
+                return new DiskMetric("100", "50");
+            }
+        };
+        DeviceInfo deviceInfo = new DeviceInfo(diskOverride);
+
+        DiskMetric diskMetric = deviceInfo.mp.getDiskSpaces(TestUtils.getContext());
+        assertEquals("100", diskMetric.totalMb);
+        assertEquals("50", diskMetric.usedMb);
+
+        // other metrics should be defaults
+        assertEquals("Android", deviceInfo.mp.getOS());
+    }
+
+    @Test
+    public void testMetricProviderOverride_timezoneAndRamOverride() {
+        MetricProvider override = new MetricProvider() {
+            @Override public String getTimezoneOffset() { return "120"; }
+            @Override public String getTotalRAM() { return "8192"; }
+            @Override public String getRamTotal() { return "8192"; }
+            @Override public String getRamCurrent(Context context) { return "4096"; }
+        };
+        DeviceInfo deviceInfo = new DeviceInfo(override);
+
+        assertEquals("120", deviceInfo.mp.getTimezoneOffset());
+        assertEquals("8192", deviceInfo.mp.getTotalRAM());
+        assertEquals("8192", deviceInfo.mp.getRamTotal());
+        assertEquals("4096", deviceInfo.mp.getRamCurrent(TestUtils.getContext()));
+    }
+
+    @Test
+    public void testMetricProviderOverride_metricsJson() throws UnsupportedEncodingException, JSONException {
+        MetricProvider partial = new MetricProvider() {
+            @Override public String getOS() { return "CustomOS"; }
+            @Override public String getDevice() { return "CustomDevice"; }
+            @Override public String getManufacturer() { return "CustomMfg"; }
+        };
+        DeviceInfo deviceInfo = new DeviceInfo(partial);
+
+        String calculatedMetrics = URLDecoder.decode(deviceInfo.getMetrics(TestUtils.getContext(), null, new ModuleLog()), "UTF-8");
+        JSONObject json = new JSONObject(calculatedMetrics);
+
+        assertEquals("CustomOS", json.getString("_os"));
+        assertEquals("CustomDevice", json.getString("_device"));
+        assertEquals("CustomMfg", json.getString("_manufacturer"));
+        // non-overridden should still be present with defaults
+        assertEquals(android.os.Build.VERSION.RELEASE, json.getString("_os_version"));
     }
 
     @Test

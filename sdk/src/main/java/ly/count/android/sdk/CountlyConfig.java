@@ -380,6 +380,19 @@ public class CountlyConfig {
     }
 
     /**
+     * Set a custom metric provider to override default device metrics.
+     * Only the methods you override will replace the SDK defaults.
+     * Methods that return null will fall back to the SDK's built-in values.
+     *
+     * @param metricProvider Your custom MetricProvider implementation
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setMetricProvider(MetricProvider metricProvider) {
+        this.metricProviderOverride = metricProvider;
+        return this;
+    }
+
+    /**
      * Call to enable uncaught crash reporting
      *
      * @return Returns the same config object for convenient linking
