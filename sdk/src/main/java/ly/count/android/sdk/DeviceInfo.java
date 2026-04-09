@@ -101,9 +101,19 @@ class DeviceInfo {
                 return Build.MANUFACTURER;
             }
 
+            /**
+             * Returns the non-scaled pixel resolution of the current default display being used by the
+             * WindowManager in the specified context.
+             *
+             * @param context context to use to retrieve the current WindowManager
+             * @return a string in the format "WxH", or the empty string "" if resolution cannot be determined
+             */
             @NonNull
             @Override
             public String getResolution(@NonNull final Context context) {
+                // user reported NPE in this method; that means either getSystemService or getDefaultDisplay
+                // were returning null, even though the documentation doesn't say they should do so; so now
+                // we catch Throwable and return empty string if that happens
                 String ov = DeviceInfo.this.mpOverride.getResolution(context);
                 if (ov != null) return ov;
                 String resolution = "";
@@ -204,6 +214,11 @@ class DeviceInfo {
                 return locale.getLanguage() + "_" + locale.getCountry();
             }
 
+            /**
+             * Returns the application version string stored in the specified
+             * context's package info versionName field, or "1.0" if versionName
+             * is not present.
+             */
             @NonNull
             @Override
             public String getAppVersion(@NonNull final Context context) {
@@ -221,6 +236,9 @@ class DeviceInfo {
                 return result;
             }
 
+            /**
+             * Returns the package name of the app that installed this app
+             */
             @NonNull
             @Override
             public String getStore(@NonNull final Context context) {
@@ -239,6 +257,11 @@ class DeviceInfo {
                 return result;
             }
 
+            /**
+             * Returns what kind of device this is. The potential values are:
+             * ["console", "mobile", "tablet", "smarttv", "wearable", "embedded", "desktop"]
+             * Currently the Android SDK differentiates between ["mobile", "tablet", "smarttv"]
+             */
             @NonNull
             @Override
             public String getDeviceType(@NonNull final Context context) {
@@ -260,6 +283,10 @@ class DeviceInfo {
                 return Long.toString(getTotalRAMInternal());
             }
 
+            
+            /**
+             * Returns the current device RAM amount.
+             */
             @NonNull
             @Override
             public String getRamCurrent(Context context) {
@@ -271,6 +298,9 @@ class DeviceInfo {
                 return Long.toString(getTotalRAMInternal() - (mi.availMem / 1_048_576L));
             }
 
+            /**
+             * Returns the total device RAM amount.
+             */
             @NonNull
             @Override
             public String getRamTotal() {
@@ -296,11 +326,12 @@ class DeviceInfo {
                 FeatureInfo[] featureInfos = packageManager.getSystemAvailableFeatures();
                 if (featureInfos != null && featureInfos.length > 0) {
                     for (FeatureInfo featureInfo : featureInfos) {
+                        // Null feature name means this feature is the open gl es version feature.
                         if (featureInfo.name == null) {
                             if (featureInfo.reqGlEsVersion != FeatureInfo.GL_ES_VERSION_UNDEFINED) {
                                 return Integer.toString((featureInfo.reqGlEsVersion & 0xffff0000) >> 16);
                             } else {
-                                return "1";
+                                return "1"; // Lack of property means OpenGL ES version 1
                             }
                         }
                     }
@@ -369,6 +400,7 @@ class DeviceInfo {
                     if (batteryIntent != null) {
                         int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                         int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                        // Error checking that probably isn't needed but I added just in case.
                         if (level > -1 && scale > 0) {
                             return Float.toString(((float) level / (float) scale) * 100.0f);
                         }
