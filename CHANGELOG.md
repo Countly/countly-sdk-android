@@ -172,6 +172,8 @@
   * During an internal timer tick
   * Upon flushing the event queue
  
+* Updated the internal request mechanism. Downgrading from this version is not recommended.
+
 * Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
   * String, Integer, int, Boolean, bool, Float, float, Double, double, Long, long
   * Keep in mind that float array will be converted to the double array by the JSONArray
