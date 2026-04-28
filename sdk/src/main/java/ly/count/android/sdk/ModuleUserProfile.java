@@ -337,7 +337,7 @@ public class ModuleUserProfile extends ModuleBase {
         applyUserPropertyCacheLimit(sourceMap);
         isSynced = false;
         if (storageProvider.getEventQueueSize() > 0) {
-            saveInternal();
+            _cly.moduleRequestQueue.sendEventsIfNeeded(true);
         }
     }
 
