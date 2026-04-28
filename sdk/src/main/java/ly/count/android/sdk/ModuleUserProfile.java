@@ -254,9 +254,7 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             customMods.put(truncatedKey, ob);
-            applyUserPropertyCacheLimit(customMods);
-
-            isSynced = false;
+            onUserPropertiesChanged(customMods);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -332,9 +330,15 @@ public class ModuleUserProfile extends ModuleBase {
         }
 
         custom.putAll(dataCustomFields);
-        applyUserPropertyCacheLimit(custom);
+        onUserPropertiesChanged(custom);
+    }
 
+    private void onUserPropertiesChanged(Map<String, ?> sourceMap) {
+        applyUserPropertyCacheLimit(sourceMap);
         isSynced = false;
+        if (storageProvider.getEventQueueSize() > 0) {
+            _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+        }
     }
 
     private void applyUserPropertyCacheLimit(Map<String, ?> map) {
