@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -693,5 +694,91 @@ public class ModuleFeedbackTests {
         segmentation.put("platform", "android");
         segmentation.put("app_version", "1.0");
         segmentation.put("widget_id", widgetId);
+    }
+
+    private Activity getCurrentActivity(ModuleFeedback module) throws Exception {
+        java.lang.reflect.Field field = ModuleFeedback.class.getDeclaredField("currentActivity");
+        field.setAccessible(true);
+        return (Activity) field.get(module);
+    }
+
+    // ======== Activity reference / leak prevention tests (issue #556) ========
+
+    /**
+     * onActivityDestroyed must null out currentActivity when the destroyed activity
+     * is the one currently tracked. This is the core leak fix.
+     */
+    @Test
+    public void onActivityDestroyed_clearsCurrentActivity_whenIdentityMatches() throws Exception {
+        ModuleFeedback mf = mCountly.moduleFeedback;
+
+        Activity act = mock(Activity.class);
+        mf.onActivityStarted(act, 1);
+        Assert.assertSame(act, getCurrentActivity(mf));
+
+        mf.onActivityDestroyed(act);
+        Assert.assertNull(getCurrentActivity(mf));
+    }
+
+    /**
+     * Destroying an activity other than the currently tracked one must NOT clear the field.
+     */
+    @Test
+    public void onActivityDestroyed_doesNotClear_whenDifferentActivity() throws Exception {
+        ModuleFeedback mf = mCountly.moduleFeedback;
+
+        Activity tracked = mock(Activity.class);
+        Activity unrelated = mock(Activity.class);
+        mf.onActivityStarted(tracked, 1);
+
+        mf.onActivityDestroyed(unrelated);
+        Assert.assertSame(tracked, getCurrentActivity(mf));
+    }
+
+    /**
+     * Rotation race regression: when onActivityStarted for the new activity fires before
+     * onActivityDestroyed for the old one, destroying the old activity must not wipe out
+     * the new tracked activity.
+     */
+    @Test
+    public void onActivityDestroyed_doesNotClearNewerActivity_afterRotationRace() throws Exception {
+        ModuleFeedback mf = mCountly.moduleFeedback;
+
+        Activity oldAct = mock(Activity.class);
+        Activity newAct = mock(Activity.class);
+
+        mf.onActivityStarted(oldAct, 1);
+        mf.onActivityStarted(newAct, 2);
+        Assert.assertSame(newAct, getCurrentActivity(mf));
+
+        mf.onActivityDestroyed(oldAct);
+        Assert.assertSame(newAct, getCurrentActivity(mf));
+    }
+
+    /**
+     * onActivityDestroyed must not throw when no activity has been tracked yet.
+     */
+    @Test
+    public void onActivityDestroyed_isSafe_whenNoActivityTracked() throws Exception {
+        ModuleFeedback mf = mCountly.moduleFeedback;
+
+        Activity stray = mock(Activity.class);
+        mf.onActivityDestroyed(stray);
+        Assert.assertNull(getCurrentActivity(mf));
+    }
+
+    /**
+     * The seeded activity path (onInitialActivitySeeded) must also be cleared on destroy.
+     */
+    @Test
+    public void onActivityDestroyed_clearsSeededActivity() throws Exception {
+        ModuleFeedback mf = mCountly.moduleFeedback;
+
+        Activity seeded = mock(Activity.class);
+        mf.onInitialActivitySeeded(seeded);
+        Assert.assertSame(seeded, getCurrentActivity(mf));
+
+        mf.onActivityDestroyed(seeded);
+        Assert.assertNull(getCurrentActivity(mf));
     }
 }
