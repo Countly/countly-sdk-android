@@ -73,6 +73,14 @@ abstract class ModuleBase {
     void onActivityStopped(int updatedActivityCount) {
     }
 
+    /**
+     * Called when an Activity is destroyed. Modules that hold Activity references must
+     * clear them here (using identity comparison) to prevent leaking destroyed activities
+     * through the Countly singleton.
+     */
+    void onActivityDestroyed(@NonNull Activity activity) {
+    }
+
     //void callbackOnActivityCreated(Activity activity) {
     //}
     //
