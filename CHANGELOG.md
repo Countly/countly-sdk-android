@@ -1,6 +1,8 @@
 ## XX.XX.XX
 * Improved user properties auto-save conditions to flush event queue with every user property call.
 
+* Mitigated StrictMode `IncorrectContextUseViolation` warnings logged when the SDK retrieved device display metrics and constructed the content overlay view from a non-UI context.
+
 ## 26.1.2
 * Added `CountlyInitProvider` ContentProvider to register activity lifecycle callbacks before `Application.onCreate()`. This ensures the SDK captures the current activity in single-activity frameworks (Flutter, React Native) and apps with deferred initialization.
 * Added `CountlyConfig.setInitialActivity(Activity)` as an explicit way for wrapper SDKs to provide the host activity during initialization.
