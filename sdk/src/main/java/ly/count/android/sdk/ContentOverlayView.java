@@ -56,16 +56,36 @@ class ContentOverlayView extends FrameLayout {
     private ComponentCallbacks orientationCallback;
     private Application.ActivityLifecycleCallbacks activityLifecycleCallbacks;
 
+    // Returns a Context suitable for constructing the overlay's Views without retaining
+    // a strong Java reference to the constructing Activity:
+    //   - Pre-API 31: Application context (current behavior; no StrictMode UI-context check exists).
+    //   - API 31+: createConfigurationContext from the Activity. The returned ContextImpl has
+    //     mIsUiContext=true (inherited from Activity), satisfying detectIncorrectContextUse,
+    //     but holds no Java reference back to the Activity — only an IBinder activity token,
+    //     which does not pin the Activity for GC.
+    @NonNull
+    private static Context resolveOverlayContext(@NonNull Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            try {
+                return activity.createConfigurationContext(activity.getResources().getConfiguration());
+            } catch (Throwable ignored) {
+                // Fall back to Application context if config-context creation fails.
+            }
+        }
+        return activity.getApplicationContext();
+    }
+
     @SuppressLint("SetJavaScriptEnabled") ContentOverlayView(@NonNull Activity activity,
         @NonNull TransparentActivityConfig portrait,
         @NonNull TransparentActivityConfig landscape,
         int orientation,
         @Nullable ContentCallback callback,
         @NonNull Runnable onClose) {
-        // Use Application context so View.mContext does not pin the constructing activity for
-        // the overlay's lifetime. The overlay is designed to outlive activity transitions;
-        // window attachment uses currentHostActivity (dynamically updated in attachToActivity).
-        super(activity.getApplicationContext());
+        // View.mContext must not pin the constructing activity (overlay outlives activity
+        // transitions; window attachment uses currentHostActivity). On API 31+ we additionally
+        // need a UI context to satisfy StrictMode#detectIncorrectContextUse — see
+        // resolveOverlayContext above.
+        super(resolveOverlayContext(activity));
 
         this.configPortrait = portrait;
         this.configLandscape = landscape;
@@ -923,9 +943,10 @@ class ContentOverlayView extends FrameLayout {
 
     @SuppressLint("SetJavaScriptEnabled")
     private WebView createWebView(@NonNull Activity activity, @NonNull TransparentActivityConfig config) {
-        // Application context: WebView's mContext must not retain the constructing activity, since the overlay
-        // (and its WebView) outlives activity transitions. Activity-specific operations route through currentHostActivity.
-        WebView wv = new CountlyWebView(activity.getApplicationContext());
+        // WebView's mContext must not retain the constructing activity, since the overlay
+        // (and its WebView) outlives activity transitions. Activity-specific operations route
+        // through currentHostActivity. See resolveOverlayContext for the API 31+ UI-context handling.
+        WebView wv = new CountlyWebView(resolveOverlayContext(activity));
         wv.setVisibility(View.INVISIBLE);
         LayoutParams webLayoutParams = new LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);

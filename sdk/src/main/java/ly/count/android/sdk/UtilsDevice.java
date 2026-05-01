@@ -26,7 +26,7 @@ class UtilsDevice {
 
     @NonNull
     static DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
-        final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        final WindowManager wm = obtainWindowManager(context);
         final DisplayMetrics metrics = new DisplayMetrics();
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
@@ -35,6 +35,31 @@ class UtilsDevice {
             applyLegacyMetrics(context, wm, metrics);
         }
         return metrics;
+    }
+
+    // On API 31+, getSystemService(WINDOW_SERVICE) from a non-UI context trips
+    // StrictMode#detectIncorrectContextUse. Prefer a UI context when one is
+    // available (held foreground Activity, then createWindowContext fallback)
+    // and only resolve WindowManager from it.
+    @NonNull
+    private static WindowManager obtainWindowManager(@NonNull Context context) {
+        if (context instanceof Activity) {
+            return (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Activity held = CountlyActivityHolder.getInstance().getActivity();
+            if (held != null) {
+                return (WindowManager) held.getSystemService(Context.WINDOW_SERVICE);
+            }
+            try {
+                Context uiContext = context.createWindowContext(
+                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null);
+                return (WindowManager) uiContext.getSystemService(Context.WINDOW_SERVICE);
+            } catch (Throwable ignored) {
+                // Fall through to original context if window context creation is rejected.
+            }
+        }
+        return (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
     }
 
     @TargetApi(Build.VERSION_CODES.R)
