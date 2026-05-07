@@ -5,6 +5,7 @@
 * Mitigated StrictMode `IncorrectContextUseViolation` warnings logged when the SDK retrieved device display metrics and constructed the content overlay view from a non-UI context.
 * Mitigated an issue where content overlays and feedback widgets prevented keyboard input on the underlying activity's text fields while displayed.
 * Mitigated a memory retention issue where content overlays and feedback widgets could be briefly held in memory after closing, surfacing under repeated open/close cycles.
+* Mitigated a memory leak where content overlays and feedback widgets remained referenced through the application's lifecycle-callback list when the host activity finished without the overlay being explicitly closed.
 
 ## 26.1.2
 * Added `CountlyInitProvider` ContentProvider to register activity lifecycle callbacks before `Application.onCreate()`. This ensures the SDK captures the current activity in single-activity frameworks (Flutter, React Native) and apps with deferred initialization.

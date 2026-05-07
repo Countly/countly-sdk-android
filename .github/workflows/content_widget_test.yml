@@ -1,0 +1,246 @@
+name: Content & Feedback Widget Test
+
+# Manual trigger only — content widget test depends on a live Countly server's
+# widget fixtures, runs ~12 minutes per sweep, and is not safe to gate every
+# PR on. Run on demand against a specific PR (optional) and the comment will
+# be posted to that PR with the per-variant verdict.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to comment results on (leave blank to only upload artifacts)"
+        required: false
+        type: string
+      device_serial:
+        description: "ADB device serial (default: localhost:5555 for the docker emulator)"
+        required: false
+        default: "localhost:5555"
+        type: string
+
+env:
+  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+  JAVA_V: 17
+  JAVA_DIST: corretto
+
+permissions:
+  pull-requests: write   # for posting the result comment via `gh pr comment`
+  contents: read
+  checks: write
+
+jobs:
+  content-widget-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    name: Content & Feedback Widget Test
+    steps:
+      # ------------------------------------------------------------------
+      # Emulator setup — same Docker-based pattern as the SDK unit tests
+      # workflow (build_and_test_sdk.yml). The image bundles a pre-booted
+      # AVD, which is much faster than `reactivecircus/android-emulator-
+      # runner` for one-off CI use because there's no AVD creation step.
+      # ------------------------------------------------------------------
+      - name: Install Docker to the Runner
+        run: sudo apt-get install -y containerd.io
+
+      - name: Pull Emulator from the Repo
+        run: docker pull "$EMULATOR_REPO"
+
+      - name: Checkout SDK code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_V }}
+          distribution: ${{ env.JAVA_DIST }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2.0.10
+
+      - name: Start ADB Server
+        run: adb start-server
+
+      - name: Run Android Emulator Container
+        run: |
+          docker run -d \
+            -e "ADBKEY=$(cat ~/.android/adbkey)" \
+            --device /dev/kvm \
+            --publish 5555:5555/tcp \
+            "$EMULATOR_REPO"
+
+      # ------------------------------------------------------------------
+      # `inputs.device_serial` flows in via env: so shell quoting is safe
+      # against malicious user-supplied serial values. Same pattern below
+      # for `inputs.pr_number`.
+      # ------------------------------------------------------------------
+      - name: Connect to the Emulator
+        env:
+          DEVICE_SERIAL: ${{ inputs.device_serial }}
+        run: |
+          adb connect "$DEVICE_SERIAL"
+          adb wait-for-device
+          # Block until boot is fully done — the docker image's AVD finishes
+          # booting a few seconds after `adb connect` succeeds, and
+          # uiautomator dumps fail noisily before that.
+          for i in $(seq 1 30); do
+            BOOTED=$(adb -s "$DEVICE_SERIAL" shell getprop sys.boot_completed | tr -d '\r')
+            if [ "$BOOTED" = "1" ]; then
+              echo "Boot completed after ${i}0s"; break
+            fi
+            sleep 10
+          done
+
+      - name: Set AAPT2 for android 35
+        run: |
+          echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" \
+            | tee -a "$GITHUB_WORKSPACE/gradle.properties"
+
+      # ------------------------------------------------------------------
+      # Demo install — App.java's `setWebContentsDebuggingEnabled(true)`
+      # gates on `BuildConfig.DEBUG`, so the test runner's CDP attach only
+      # works against a debug build. installDebug pushes that to the device.
+      #
+      # COUNTLY_SERVER_URL / COUNTLY_APP_KEY come from repository secrets
+      # (`Settings → Secrets and variables → Actions`). The build's
+      # `buildConfigField` declaration picks them up via System.getenv.
+      # If a secret is missing, the gradle build falls back to the hard-
+      # coded default in app/build.gradle — sufficient for smoke tests
+      # but won't reach a private staging server.
+      # ------------------------------------------------------------------
+      - name: Build & install the demo app
+        env:
+          COUNTLY_SERVER_URL: ${{ secrets.COUNTLY_SERVER_URL }}
+          COUNTLY_APP_KEY: ${{ secrets.COUNTLY_APP_KEY }}
+        run: ./gradlew :app:installDebug
+
+      # ------------------------------------------------------------------
+      # Run the sweep. The runner is stdlib-only Python — no pip install
+      # needed. Output goes to .github/scripts/test_output/<run-id>/.
+      # ------------------------------------------------------------------
+      - name: Run content & feedback test sweep
+        id: sweep
+        # Continue past sweep FAILs so the artifact upload + PR comment
+        # still run. The "Reflect sweep outcome" step at the bottom
+        # re-asserts the exit code to mark the workflow red on failure.
+        continue-on-error: true
+        env:
+          DEVICE_SERIAL: ${{ inputs.device_serial }}
+        run: |
+          python3 .github/scripts/content_test_runner.py --device "$DEVICE_SERIAL"
+
+      # ------------------------------------------------------------------
+      # Locate the output dir of the run we just executed. The runner
+      # creates one timestamped subdir per invocation; pick the most recent.
+      # ------------------------------------------------------------------
+      - name: Locate run directory
+        id: run-dir
+        if: always()
+        run: |
+          LATEST=$(ls -t .github/scripts/test_output/ 2>/dev/null | head -1)
+          if [ -z "$LATEST" ]; then
+            echo "No run directory found — sweep didn't produce output"
+            echo "run_dir=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "run_dir=.github/scripts/test_output/$LATEST" >> "$GITHUB_OUTPUT"
+          echo "Run dir: .github/scripts/test_output/$LATEST"
+
+      - name: Upload sweep artifacts
+        if: always() && steps.run-dir.outputs.run_dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-widget-sweep
+          path: ${{ steps.run-dir.outputs.run_dir }}/
+          retention-days: 14
+
+      # ------------------------------------------------------------------
+      # Post a results comment to the PR if a number was provided.
+      #
+      # `inputs.pr_number` is passed via env: rather than direct ${{ ... }}
+      # interpolation in the run script, so a malicious value can't break
+      # out of shell quoting (workflow injection guidance).
+      #
+      # Comment body strategy: take the runner's auto-generated summary.md
+      # (which already has a per-variant verdict table) and prepend a
+      # status header + link back to this workflow run. The artifact
+      # upload is the source of truth for full per-variant
+      # verdict.json + logcat.txt + recording.mp4.
+      # ------------------------------------------------------------------
+      - name: Post results comment to PR
+        if: always() && inputs.pr_number != '' && steps.run-dir.outputs.run_dir != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          SERVER_URL: ${{ github.server_url }}
+          RUN_DIR: ${{ steps.run-dir.outputs.run_dir }}
+        run: |
+          SUMMARY="$RUN_DIR/summary.md"
+          RUN_URL="$SERVER_URL/$REPO/actions/runs/$RUN_ID"
+
+          if [ ! -f "$SUMMARY" ]; then
+            cat > /tmp/pr-comment.md <<MARKDOWN
+          ## ⚠️ Content & Feedback Widget Test — sweep crashed
+
+          The sweep didn't produce a summary.md. See the workflow run logs
+          and artifacts for diagnostics.
+
+          [📊 Workflow run]($RUN_URL)
+          MARKDOWN
+          else
+            # Count totals across all per-variant verdict.json for the headline.
+            TOTALS=$(python3 - "$RUN_DIR" <<'PY'
+          import json, sys, glob, os
+          run_dir = sys.argv[1]
+          P = F = W = S = 0
+          for p in sorted(glob.glob(os.path.join(run_dir, "*", "verdict.json"))):
+              v = json.load(open(p))
+              for c in v["checklist"].values():
+                  s = c["status"]
+                  if   s == "PASS": P += 1
+                  elif s == "FAIL": F += 1
+                  elif s == "WARN": W += 1
+                  elif s == "SKIP": S += 1
+          icon = "✅" if F == 0 else "❌"
+          print(f"{icon} **Total: {P} PASS / {F} FAIL / {W} WARN / {S} SKIP**")
+          PY
+          )
+            # `tail -n +2` strips the leading H1 from summary.md so the
+            # comment opens with our own header. Heredoc keeps embedded
+            # backticks/markdown intact.
+            SUMMARY_BODY=$(tail -n +2 "$SUMMARY")
+            cat > /tmp/pr-comment.md <<MARKDOWN
+          ## Content & Feedback Widget Test — Run #$RUN_ID
+
+          $TOTALS
+
+          $SUMMARY_BODY
+
+          ---
+          [📊 Workflow run]($RUN_URL) · [📁 Artifacts]($RUN_URL#artifacts)
+
+          *Per-variant verdict.json + logcat.txt + recording.mp4 in the artifact bundle.*
+          MARKDOWN
+          fi
+
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file /tmp/pr-comment.md
+
+      # ------------------------------------------------------------------
+      # The runner intentionally exits 0 even with test FAILs (the PR
+      # comment + artifact upload are the source of truth for verdict).
+      # This step only flips the workflow red when the runner actually
+      # CRASHED — Python exception, emulator died, etc. — which is a real
+      # CI signal that something needs investigation. Test-checklist FAILs
+      # remain visible via the PR comment without blocking the workflow.
+      # ------------------------------------------------------------------
+      - name: Reflect runner crashes (not test FAILs)
+        if: always()
+        env:
+          SWEEP_OUTCOME: ${{ steps.sweep.outcome }}
+        run: |
+          if [ "$SWEEP_OUTCOME" != "success" ]; then
+            echo "Sweep runner crashed (outcome: $SWEEP_OUTCOME) — see logs"
+            exit 1
+          fi
+          echo "Sweep runner completed cleanly. Test verdicts in PR comment / artifacts."
