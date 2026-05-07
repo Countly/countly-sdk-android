@@ -20,8 +20,11 @@ on:
 env:
   # API 30+ required: API 28 can't render the SDK's content overlay WebView
   # reliably (CDP attach + Vue widget framework gestures behave differently
-  # below API 30). Image tag follows `<api>-playstore-x64:<image-version>`.
-  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/30-playstore-x64:30.1.2
+  # below API 30). Google's registry only ships API 30 as the `google` variant
+  # (Google APIs, no Play Store) — there's no `30-playstore-x64`. The demo
+  # APK is side-loaded via `installDebug`, so Play Store isn't needed.
+  # See: https://github.com/google/android-emulator-container-scripts/blob/master/REGISTRY.MD
+  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/30-google-x64:30.1.2
   JAVA_V: 17
   JAVA_DIST: corretto
 
