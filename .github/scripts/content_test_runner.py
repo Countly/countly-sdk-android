@@ -390,35 +390,45 @@ _chrome_installed_cache: Optional[bool] = None
 
 
 def chrome_installed() -> bool:
-    """Returns True if any Chrome package (per CHROME_PACKAGE_HINTS) is
-    installed on the device. Cached after the first probe — the package set
-    doesn't change during a sweep.
+    """Returns True if Chrome (any of CHROME_PACKAGE_HINTS) would actually
+    handle an ACTION_VIEW for an https URL on this device. Cached after
+    the first probe — the resolver answer doesn't change during a sweep.
 
-    Why this exists: the API 30 emulator image used in CI
-    (`30-google-x64`) ships Google Play Services but not Chrome. On such
-    images the SDK still dispatches `Intent.ACTION_VIEW` correctly, but no
-    app handles the intent, so any "did Chrome foreground?" check fails for
-    a reason that isn't actionable for the SDK. Callers use this to flip
-    those FAILs to SKIPs and keep the verdict honest about what the image
-    can actually verify.
+    Why probe via `cmd package resolve-activity` instead of `pm list
+    packages`: some emulator images (notably `*-google-x64`) ship Chrome
+    pre-installed as part of GMS but leave it disabled or with no default
+    intent association. In that state Chrome's package shows up in `pm
+    list packages`, but `Intent.ACTION_VIEW` for https either fails
+    silently or routes through the chooser — so Chrome never foregrounds
+    and the runner's `is_chrome_on_top()` check fails for a reason that
+    isn't actionable on the SDK side. The resolver tells us the activity
+    Android would actually dispatch to, which is the real prerequisite
+    for these tests.
+
+    On probe failure (adb hiccup, command not supported on an exotic
+    image), default to True so a transient issue doesn't silently flip
+    real FAILs into SKIPs on a healthy device.
     """
     global _chrome_installed_cache
     if _chrome_installed_cache is not None:
         return _chrome_installed_cache
     try:
-        out = shell("pm list packages")
-    except Exception:
-        # Treat probe failure as "unknown → assume installed" so we don't
-        # silently SKIP on a real device with a transient adb hiccup.
-        # The caller's existing FAIL path still surfaces the real outcome.
+        out = shell(
+            "cmd package resolve-activity --brief "
+            "-a android.intent.action.VIEW -d https://example.com"
+        )
+    except Exception as e:
+        print(f"[chrome_installed] probe failed: {e!r} — assuming installed")
         _chrome_installed_cache = True
         return True
-    installed = {
-        line[len("package:"):].strip()
-        for line in out.splitlines()
-        if line.startswith("package:")
-    }
-    _chrome_installed_cache = any(pkg in installed for pkg in CHROME_PACKAGE_HINTS)
+    # `--brief` prints `<package>/<activity>` on its own line, or
+    # `No activity found` when nothing handles the intent.
+    matched = next((pkg for pkg in CHROME_PACKAGE_HINTS if pkg in out), None)
+    _chrome_installed_cache = matched is not None
+    # Always log — first chrome check in any sweep should make it clear
+    # whether downstream chrome-routing checks will SKIP or run.
+    print(f"[chrome_installed] resolve-activity output: {out.strip()[:140]!r}; "
+          f"chrome match: {matched} → installed={_chrome_installed_cache}")
     return _chrome_installed_cache
 
 
@@ -1167,22 +1177,37 @@ def run_lifecycle_scenario(verdict: dict, baseline_close_count: int,
         return wait_for_log("content_close", 5.0) is not None
 
     def _try_blind_tap_close():
-        """Tap the typical close-button position. The Vue card footer puts
-        Close as the second button on the right. For `half_modal_top` the
-        card occupies the top half so the footer Y is mid-screen; for
-        modal / fullscreen / `half_modal_bottom` the footer sits near the
-        screen bottom. Coordinates are educated guesses — the test still
-        verifies the tap worked by waiting for `content_close`.
+        """Tap candidate close-button positions. The Vue card footer puts
+        Close as the second button on the right; the exact pixel location
+        varies with card padding, button size, and where the card sits
+        relative to the screen. Rather than betting on one position, try a
+        small set of common ones — first match wins.
+
+        Per-variant Y candidates:
+          - `half_modal_top`: card occupies top half, so Y is around
+            mid-screen (with a few candidates to handle different paddings).
+          - others (modal / fullscreen / half_modal_bottom): card extends
+            to near the screen bottom, footer is in the lower band.
+
+        Per-variant X candidates: most layouts put Close on the right
+        (`sw*3/4`). A few survey-v2-style cards center the button row, so
+        also try the right-of-center position.
         """
         sw, sh = screen_size()
         if "half_modal_top" in label:
-            close_y = sh // 2 - 100   # bottom edge of top-half card
+            y_candidates = [sh // 2 - 80, sh // 2 - 150, sh // 2 - 30]
         else:
-            close_y = sh - 150        # near screen bottom
-        close_x = sw * 3 // 4         # right side of footer
-        vlog(f"[{label}] lifecycle close blind tap at ({close_x},{close_y})")
-        tap(close_x, close_y)
-        return wait_for_log("content_close", 5.0) is not None
+            y_candidates = [sh - 120, sh - 200, sh - 80, sh * 7 // 10]
+        x_candidates = [sw * 3 // 4, sw // 2 + sw // 6, sw - 100]
+        for cx in x_candidates:
+            for cy in y_candidates:
+                vlog(f"[{label}] lifecycle close blind tap at ({cx},{cy})")
+                tap(cx, cy)
+                # Short wait per tap so we don't burn 5s × 12 candidates.
+                # The log is committed within ~1s of a successful close.
+                if wait_for_log("content_close", 1.5) is not None:
+                    return True
+        return False
 
     def _try_back_press_close():
         key("KEYCODE_BACK")
