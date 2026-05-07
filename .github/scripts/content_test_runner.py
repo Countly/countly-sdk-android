@@ -361,11 +361,22 @@ def screen_size() -> tuple[int, int]:
 
 def top_activity() -> str:
     """Returns a string containing the foregrounded activity reference.
-    Pre-API 28 uses `mResumedActivity=...`, API 28+ uses `topResumedActivity=...`,
-    and various Android forks use both. Grep both patterns.
+
+    Three label variants observed across Android builds:
+      - Pre-API 28: `mResumedActivity=...`
+      - API 28+ AOSP: `topResumedActivity=...`
+      - API 30 google-variant emulator (CI image): `ResumedActivity: ...`
+        (no `m` prefix, colon separator)
+
+    Some Android forks emit a mix. Match all six combinations
+    (`m`/`top`/bare prefix × `=`/`:` separator) so a tighter dumpsys schema
+    on one image doesn't silently break top-activity detection.
     """
+    # Anchor to start-of-line (with optional indent) so `mLastResumedActivity`
+    # or any longer label that happens to embed "ResumedActivity" can't match.
     out = shell(
-        "dumpsys activity activities | grep -E 'mResumedActivity=|topResumedActivity='"
+        "dumpsys activity activities | "
+        "grep -E '^[[:space:]]*(m|top)?ResumedActivity[=:]'"
     )
     return out.strip()
 
