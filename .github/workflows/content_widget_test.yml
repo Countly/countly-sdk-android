@@ -18,7 +18,10 @@ on:
     types: [opened, synchronize, reopened, edited]
 
 env:
-  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
+  # API 30+ required: API 28 can't render the SDK's content overlay WebView
+  # reliably (CDP attach + Vue widget framework gestures behave differently
+  # below API 30). Image tag follows `<api>-playstore-x64:<image-version>`.
+  EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/30-playstore-x64:30.1.2
   JAVA_V: 17
   JAVA_DIST: corretto
 
@@ -157,6 +160,40 @@ jobs:
           name: content-widget-sweep
           path: ${{ steps.run-dir.outputs.run_dir }}/
           retention-days: 14
+
+      # ------------------------------------------------------------------
+      # Convert each variant's verdict.json into a JUnit testsuite so the
+      # publish-unit-test-result-action can render per-test detail as a PR
+      # check — same UX the SDK unit tests already use in build_and_test_sdk.
+      #
+      # One <testcase> per checklist key, plus synthetic
+      # `no_fatal_exceptions` / `no_strict_mode_violations` cases that
+      # surface the runner's variant-level signals (which live outside the
+      # checklist). Runner errors[] go to <system-err> so they're visible
+      # in the suite detail without inflating the failure count.
+      # ------------------------------------------------------------------
+      - name: Convert verdicts to JUnit XML
+        if: always() && steps.run-dir.outputs.run_dir != ''
+        env:
+          RUN_DIR: ${{ steps.run-dir.outputs.run_dir }}
+        run: |
+          python3 .github/scripts/verdict_to_junit.py \
+            "$RUN_DIR" "$RUN_DIR/junit.xml"
+
+      # ------------------------------------------------------------------
+      # Publish per-test results to the PR. Same action used by
+      # build_and_test_sdk.yml, so the UI is consistent with SDK unit tests.
+      # The check shows a per-suite (per-variant) tally and lets reviewers
+      # click into a failing testcase to see the failure message — pulled
+      # from verdict.json's `detail` field via the converter.
+      # ------------------------------------------------------------------
+      - name: Publish content/feedback test results to PR
+        if: always() && steps.run-dir.outputs.run_dir != ''
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          check_name: "Content & Feedback Widget Results :rocket:"
+          comment_title: "Content & Feedback Widget Results :rocket:"
+          files: ${{ steps.run-dir.outputs.run_dir }}/junit.xml
 
       # ------------------------------------------------------------------
       # Post a results comment to the PR.

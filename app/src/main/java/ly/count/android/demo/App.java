@@ -36,15 +36,9 @@ import ly.count.android.sdk.messaging.CountlyPush;
 import static ly.count.android.sdk.messaging.CountlyPush.COUNTLY_BROADCAST_PERMISSION_POSTFIX;
 
 public class App extends Application {
-    /**
-     * Server URL and app key are injected at build time via `buildConfigField`
-     * declarations in `app/build.gradle`. Resolution order is env var →
-     * Gradle property → hard-coded fallback. CI passes these via env vars
-     * (`COUNTLY_SERVER_URL`, `COUNTLY_APP_KEY`); local dev builds get the
-     * fallback automatically — no extra config needed.
-     */
-    private final static String COUNTLY_SERVER_URL = BuildConfig.COUNTLY_SERVER_URL;
-    private final static String COUNTLY_APP_KEY = BuildConfig.COUNTLY_APP_KEY;
+
+    private static String COUNTLY_SERVER_URL = "https://your.server.ly";
+    private static String COUNTLY_APP_KEY = "YOUR_APP_KEY";
     private final static String DEFAULT_URL = "https://your.server.ly";
     private final static String DEFAULT_APP_KEY = "YOUR_APP_KEY";
 
@@ -62,6 +56,15 @@ public class App extends Application {
         if (BuildConfig.DEBUG) {
             WebView.setWebContentsDebuggingEnabled(true);
         }
+
+        COUNTLY_SERVER_URL =
+            DEFAULT_URL.equals(BuildConfig.COUNTLY_SERVER_URL)
+                ? DEFAULT_URL
+                : BuildConfig.COUNTLY_SERVER_URL;
+        COUNTLY_APP_KEY =
+            DEFAULT_APP_KEY.equals(BuildConfig.COUNTLY_APP_KEY)
+                ? DEFAULT_APP_KEY
+                : BuildConfig.COUNTLY_APP_KEY;
 
         if (DEFAULT_URL.equals(COUNTLY_SERVER_URL) || DEFAULT_APP_KEY.equals(COUNTLY_APP_KEY)) {
             Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");

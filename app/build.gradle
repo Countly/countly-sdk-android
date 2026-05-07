@@ -66,14 +66,8 @@ android {
     versionName "1.0"
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
-    // Server URL + app key are injected at build time. Resolution order:
-    //   1. Environment variable (CI / shell)         — `COUNTLY_SERVER_URL`, `COUNTLY_APP_KEY`
-    //   2. Gradle property (~/.gradle/gradle.properties or -P flag) — same names
-    //   3. Hard-coded fallback (local dev convenience; safe to commit)
-    // The fallback is what unforked local builds use, so devs don't need
-    // any extra config to run the demo. CI overrides via env.
     buildConfigField "String", "COUNTLY_SERVER_URL",
-      "\"${System.getenv('COUNTLY_SERVER_URL') ?: project.findProperty('countlyServerUrl') ?: 'YOUR_SERVER_URL'}\""
+      "\"${System.getenv('COUNTLY_SERVER_URL') ?: project.findProperty('countlyServerUrl') ?: 'https://your.server.ly'}\""
     buildConfigField "String", "COUNTLY_APP_KEY",
       "\"${System.getenv('COUNTLY_APP_KEY') ?: project.findProperty('countlyAppKey') ?: 'YOUR_APP_KEY'}\""
   }
