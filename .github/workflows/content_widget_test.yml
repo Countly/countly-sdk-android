@@ -199,7 +199,7 @@ jobs:
           files: ${{ steps.run-dir.outputs.run_dir }}/junit.xml
 
       # ------------------------------------------------------------------
-      # Post a results comment to the PR.
+      # Post or update the results comment on the PR.
       #
       # All user-controlled values flow via `env:`, never via direct
       # `${{ ... }}` interpolation in the run script — that's the workflow-
@@ -207,13 +207,20 @@ jobs:
       # use in the comment body) is also a potential injection vector if
       # echoed into shell; we don't echo it here so it stays safe.
       #
+      # Comment-reuse strategy: every body starts with a hidden HTML
+      # marker. On each run we list the PR's comments, look for one
+      # carrying the marker, and PATCH that comment if found — otherwise
+      # create a new one. Net effect: a single living comment that always
+      # reflects the latest run, instead of a long thread of stale results.
+      # The marker stays invisible in the rendered PR.
+      #
       # Comment body strategy: take the runner's auto-generated summary.md
       # (which already has a per-variant verdict table) and prepend a
       # status header + link back to this workflow run. The artifact upload
       # is the source of truth for full per-variant verdict.json +
       # logcat.txt + recording.mp4.
       # ------------------------------------------------------------------
-      - name: Post results comment to PR
+      - name: Post or update results comment on PR
         if: always() && steps.run-dir.outputs.run_dir != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -226,8 +233,13 @@ jobs:
           SUMMARY="$RUN_DIR/summary.md"
           RUN_URL="$SERVER_URL/$REPO/actions/runs/$RUN_ID"
 
+          # Hidden marker that identifies our comment across runs. Kept on
+          # its own line so a `contains()` check matches reliably.
+          MARKER="<!-- countly-content-widget-test-result -->"
+
           if [ ! -f "$SUMMARY" ]; then
             cat > /tmp/pr-comment.md <<MARKDOWN
+          $MARKER
           ## ⚠️ Content & Feedback Widget Test — sweep crashed
 
           The sweep didn't produce a summary.md. See the workflow run logs
@@ -258,6 +270,7 @@ jobs:
             # backticks/markdown intact.
             SUMMARY_BODY=$(tail -n +2 "$SUMMARY")
             cat > /tmp/pr-comment.md <<MARKDOWN
+          $MARKER
           ## Content & Feedback Widget Test — Run #$RUN_ID
 
           $TOTALS
@@ -271,7 +284,31 @@ jobs:
           MARKDOWN
           fi
 
-          gh pr comment "$PR_NUMBER" --repo "$REPO" --body-file /tmp/pr-comment.md
+          # Find an existing marker-tagged comment. Paginate so we don't
+          # miss it on long PR threads. `head -n1` guards against any past
+          # accidental duplicate (we update the oldest one and leave any
+          # stragglers — they'll age out on the next manual cleanup).
+          EXISTING_ID=$(gh api --paginate \
+            "repos/$REPO/issues/$PR_NUMBER/comments" \
+            --jq ".[] | select(.body | contains(\"$MARKER\")) | .id" \
+            | head -n1)
+
+          # Build the JSON payload via Python so embedded backticks /
+          # markdown / newlines in the body are escaped correctly. Shell
+          # heredoc + jq would also work but Python's json module is the
+          # least error-prone here.
+          python3 -c "import json; print(json.dumps({'body': open('/tmp/pr-comment.md').read()}))" \
+            > /tmp/pr-comment.json
+
+          if [ -n "$EXISTING_ID" ]; then
+            echo "Updating existing comment $EXISTING_ID"
+            gh api -X PATCH "repos/$REPO/issues/comments/$EXISTING_ID" \
+              --input /tmp/pr-comment.json --silent
+          else
+            echo "Creating new comment"
+            gh api "repos/$REPO/issues/$PR_NUMBER/comments" \
+              --input /tmp/pr-comment.json --silent
+          fi
 
       # ------------------------------------------------------------------
       # The runner intentionally exits 0 even with test FAILs (the PR
