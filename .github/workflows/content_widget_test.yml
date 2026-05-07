@@ -1,21 +1,21 @@
 name: Content & Feedback Widget Test
 
-# Manual trigger only — content widget test depends on a live Countly server's
-# widget fixtures, runs ~12 minutes per sweep, and is not safe to gate every
-# PR on. Run on demand against a specific PR (optional) and the comment will
-# be posted to that PR with the per-variant verdict.
+# Trigger: PRs targeting `staging` or `master` only. Each event fires the
+# job-level gate which additionally requires the PR title to contain
+# "content" (case-insensitive). The combined effect: integration runs land
+# on the canonical merge paths without polluting unrelated PRs.
+#
+# `edited` is included so renaming a PR from "auth fix" to "content auth
+# fix" picks up the gate on the next webhook delivery. PRs from forks run
+# the workflow but cannot post the result comment (GitHub demotes
+# `GITHUB_TOKEN` to read-only for fork PRs); artifacts still upload, which
+# is enough for fork-PR review.
 on:
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: "PR number to comment results on (leave blank to only upload artifacts)"
-        required: false
-        type: string
-      device_serial:
-        description: "ADB device serial (default: localhost:5555 for the docker emulator)"
-        required: false
-        default: "localhost:5555"
-        type: string
+  pull_request:
+    branches:
+      - master
+      - staging
+    types: [opened, synchronize, reopened, edited]
 
 env:
   EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
@@ -29,6 +29,10 @@ permissions:
 
 jobs:
   content-widget-test:
+    # Job-level gate: only run if the PR title contains "content".
+    # `contains()` in GH Actions expressions is case-insensitive, so
+    # "Content widget fix" and "content overlay tweak" both trigger.
+    if: contains(github.event.pull_request.title, 'content')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     name: Content & Feedback Widget Test
@@ -69,13 +73,14 @@ jobs:
             "$EMULATOR_REPO"
 
       # ------------------------------------------------------------------
-      # `inputs.device_serial` flows in via env: so shell quoting is safe
-      # against malicious user-supplied serial values. Same pattern below
-      # for `inputs.pr_number`.
+      # The docker emulator publishes ADB on `localhost:5555` (the
+      # `--publish 5555:5555` flag in "Run Android Emulator Container"
+      # above). That's the device serial used by every adb call below
+      # and by the test runner via `--device`.
       # ------------------------------------------------------------------
       - name: Connect to the Emulator
         env:
-          DEVICE_SERIAL: ${{ inputs.device_serial }}
+          DEVICE_SERIAL: localhost:5555
         run: |
           adb connect "$DEVICE_SERIAL"
           adb wait-for-device
@@ -124,7 +129,7 @@ jobs:
         # re-asserts the exit code to mark the workflow red on failure.
         continue-on-error: true
         env:
-          DEVICE_SERIAL: ${{ inputs.device_serial }}
+          DEVICE_SERIAL: localhost:5555
         run: |
           python3 .github/scripts/content_test_runner.py --device "$DEVICE_SERIAL"
 
@@ -154,23 +159,25 @@ jobs:
           retention-days: 14
 
       # ------------------------------------------------------------------
-      # Post a results comment to the PR if a number was provided.
+      # Post a results comment to the PR.
       #
-      # `inputs.pr_number` is passed via env: rather than direct ${{ ... }}
-      # interpolation in the run script, so a malicious value can't break
-      # out of shell quoting (workflow injection guidance).
+      # All user-controlled values flow via `env:`, never via direct
+      # `${{ ... }}` interpolation in the run script — that's the workflow-
+      # injection-safe pattern. The PR title (which we gated on but don't
+      # use in the comment body) is also a potential injection vector if
+      # echoed into shell; we don't echo it here so it stays safe.
       #
       # Comment body strategy: take the runner's auto-generated summary.md
       # (which already has a per-variant verdict table) and prepend a
-      # status header + link back to this workflow run. The artifact
-      # upload is the source of truth for full per-variant
-      # verdict.json + logcat.txt + recording.mp4.
+      # status header + link back to this workflow run. The artifact upload
+      # is the source of truth for full per-variant verdict.json +
+      # logcat.txt + recording.mp4.
       # ------------------------------------------------------------------
       - name: Post results comment to PR
-        if: always() && inputs.pr_number != '' && steps.run-dir.outputs.run_dir != ''
+        if: always() && steps.run-dir.outputs.run_dir != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           SERVER_URL: ${{ github.server_url }}
