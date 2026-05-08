@@ -390,45 +390,59 @@ _chrome_installed_cache: Optional[bool] = None
 
 
 def chrome_installed() -> bool:
-    """Returns True if Chrome (any of CHROME_PACKAGE_HINTS) would actually
-    handle an ACTION_VIEW for an https URL on this device. Cached after
-    the first probe — the resolver answer doesn't change during a sweep.
+    """Whether Chrome will *actually foreground* on this device when an
+    `Intent.ACTION_VIEW` for an https URL is fired. Not "is Chrome's
+    package on the device" — some emulator images (notably
+    `30-google-x64`) ship Chrome pre-installed as part of GMS but leave
+    it disabled / unconfigured, so static probes (`pm list packages`,
+    `cmd package resolve-activity`) return Chrome's package while the
+    actual `startActivity` silently no-ops. The only reliable signal is
+    to fire the intent and observe whether `is_chrome_on_top()` flips.
 
-    Why probe via `cmd package resolve-activity` instead of `pm list
-    packages`: some emulator images (notably `*-google-x64`) ship Chrome
-    pre-installed as part of GMS but leave it disabled or with no default
-    intent association. In that state Chrome's package shows up in `pm
-    list packages`, but `Intent.ACTION_VIEW` for https either fails
-    silently or routes through the chooser — so Chrome never foregrounds
-    and the runner's `is_chrome_on_top()` check fails for a reason that
-    isn't actionable on the SDK side. The resolver tells us the activity
-    Android would actually dispatch to, which is the real prerequisite
-    for these tests.
+    Probes once per sweep (cached) since the device's package state
+    doesn't change mid-sweep. Adds ~3 seconds on the first call:
+      1. force_stop any existing Chrome instance so we observe a fresh
+         foreground transition (not a stale "still on top from before");
+      2. fire `am start -W` for ACTION_VIEW + a harmless https URL;
+      3. wait briefly for the dispatcher to settle;
+      4. check `is_chrome_on_top()`;
+      5. send HOME so we leave a clean foreground for the actual tests.
 
-    On probe failure (adb hiccup, command not supported on an exotic
-    image), default to True so a transient issue doesn't silently flip
-    real FAILs into SKIPs on a healthy device.
+    Probe failure (adb hiccup, etc.) defaults to True so a transient
+    glitch doesn't silently flip real FAILs into SKIPs on a healthy
+    device.
     """
     global _chrome_installed_cache
     if _chrome_installed_cache is not None:
         return _chrome_installed_cache
     try:
-        out = shell(
-            "cmd package resolve-activity --brief "
-            "-a android.intent.action.VIEW -d https://example.com"
+        # Fresh-state precondition: kill any chrome instance still up
+        # from a previous test run, so the foreground check below
+        # actually measures THIS am-start.
+        for pkg in CHROME_PACKAGE_HINTS:
+            shell(f"am force-stop {pkg}")
+        am_out = shell(
+            "am start -W -a android.intent.action.VIEW -d https://example.com"
         )
     except Exception as e:
         print(f"[chrome_installed] probe failed: {e!r} — assuming installed")
         _chrome_installed_cache = True
         return True
-    # `--brief` prints `<package>/<activity>` on its own line, or
-    # `No activity found` when nothing handles the intent.
-    matched = next((pkg for pkg in CHROME_PACKAGE_HINTS if pkg in out), None)
-    _chrome_installed_cache = matched is not None
-    # Always log — first chrome check in any sweep should make it clear
-    # whether downstream chrome-routing checks will SKIP or run.
-    print(f"[chrome_installed] resolve-activity output: {out.strip()[:140]!r}; "
-          f"chrome match: {matched} → installed={_chrome_installed_cache}")
+    time.sleep(2.5)  # let the activity manager settle on a winner
+    on_top = is_chrome_on_top()
+    top_seen = top_activity().strip()[:140]
+    # Leave the device on the launcher so the first real test starts
+    # from a known state — no stray Chrome window in the background.
+    try:
+        shell("input keyevent KEYCODE_HOME")
+        time.sleep(0.8)
+    except Exception:
+        pass
+    _chrome_installed_cache = on_top
+    print(f"[chrome_installed] am start output (head): "
+          f"{am_out.strip().splitlines()[0] if am_out.strip() else '(empty)'!r}")
+    print(f"[chrome_installed] top after probe: {top_seen!r}")
+    print(f"[chrome_installed] chrome on top: {on_top} → installed={on_top}")
     return _chrome_installed_cache
 
 
@@ -2498,6 +2512,16 @@ def main() -> int:
     # Always emit a summary on exit — even if a test crashes the runner mid-sweep,
     # whatever results were collected before the crash should still be reportable.
     try:
+        # Probe Chrome availability ONCE at sweep start. Calling it here (before
+        # any test starts) means the probe's foreground churn (am start +
+        # KEYCODE_HOME cleanup) doesn't disrupt a running test. The result is
+        # cached in `_chrome_installed_cache` and reused by every chrome-routing
+        # check via `_record_chrome_check`. See `chrome_installed()` docstring
+        # for why a static `pm list packages` probe is unreliable on the
+        # `30-google-x64` CI image.
+        print(f"[+] Probing Chrome availability...")
+        chrome_installed()
+
         if not args.no_content:
             # One-time: cold launch + nav to ContentZone + cache button coords.
             # The 6 variants reuse this layout — saves 5 cold launches and 5
