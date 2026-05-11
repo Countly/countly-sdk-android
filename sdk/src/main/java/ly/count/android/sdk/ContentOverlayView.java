@@ -139,27 +139,27 @@ class ContentOverlayView extends FrameLayout {
      * is true memory growth:
      *
      * 1. System-singleton reattachment retention: when the same overlay is shown across
-     *    multiple activity transitions (View.mWindowAttachCount grows), various Android
-     *    system singletons hold a reference to the currently-attached ViewRootImpl. The
-     *    two retainers we've observed are InputMethodManager#mCurRootView (set when the
-     *    user types into the WebView) and WindowManagerGlobal#mRoots (the process-wide
-     *    list of attached ViewRootImpls, always populated for any attached window).
-     *    LeakCanary may report the overlay as "leaking" while its own analyzer also
-     *    reports the View is currently attached — that combination is the heuristic
-     *    false-positive signal (one overlay reused, not N overlays leaked). Both
-     *    references are released by the framework when the overlay's window is detached
-     *    or rebound to another window.
+     * multiple activity transitions (View.mWindowAttachCount grows), various Android
+     * system singletons hold a reference to the currently-attached ViewRootImpl. The
+     * two retainers we've observed are InputMethodManager#mCurRootView (set when the
+     * user types into the WebView) and WindowManagerGlobal#mRoots (the process-wide
+     * list of attached ViewRootImpls, always populated for any attached window).
+     * LeakCanary may report the overlay as "leaking" while its own analyzer also
+     * reports the View is currently attached — that combination is the heuristic
+     * false-positive signal (one overlay reused, not N overlays leaked). Both
+     * references are released by the framework when the overlay's window is detached
+     * or rebound to another window.
      *
      * 2. ModuleContent.contentOverlay retention while backgrounded: when no activities
-     *    are visible, ModuleContent.onActivityStopped(count=0) calls detachFromWindow on
-     *    the overlay (to avoid WindowLeaked) but intentionally keeps the contentOverlay
-     *    field non-null so the same instance can be re-attached when the user returns.
-     *    LeakCanary sees a detached View still strongly referenced through the Countly
-     *    singleton and reports a "leak". This is bounded (single field, one overlay
-     *    instance) and released the next time ModuleContent replaces or clears the cached
-     *    overlay reference. Not a growing-over-time leak — intentional caching for the
-     *    user-returns-to-same-content UX. Process kill (SIGKILL) reclaims it along with
-     *    everything else, so persistence-on-kill is a non-concern.
+     * are visible, ModuleContent.onActivityStopped(count=0) calls detachFromWindow on
+     * the overlay (to avoid WindowLeaked) but intentionally keeps the contentOverlay
+     * field non-null so the same instance can be re-attached when the user returns.
+     * LeakCanary sees a detached View still strongly referenced through the Countly
+     * singleton and reports a "leak". This is bounded (single field, one overlay
+     * instance) and released the next time ModuleContent replaces or clears the cached
+     * overlay reference. Not a growing-over-time leak — intentional caching for the
+     * user-returns-to-same-content UX. Process kill (SIGKILL) reclaims it along with
+     * everything else, so persistence-on-kill is a non-concern.
      */
     private static final class OverlayLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
         private final WeakReference<ContentOverlayView> overlayRef;

@@ -539,9 +539,19 @@ public class ContentOverlayViewTests {
                 Assert.assertEquals("Type should be TYPE_APPLICATION",
                     WindowManager.LayoutParams.TYPE_APPLICATION, params.type);
 
+                // Expected base flags match the production set in createWindowParams:
+                //   FLAG_NOT_FOCUSABLE + FLAG_WATCH_OUTSIDE_TOUCH let the host
+                //   activity keep IME focus while still receiving outside-touch
+                //   events the overlay routes back via dispatchTouchEvent.
+                // FLAG_NOT_TOUCHABLE is added only while content is still loading
+                // (gates touches until the WebView is visible). The test
+                // constructs the overlay with about:blank and never waits for
+                // afterPageFinished, so isContentLoaded stays false here.
                 int expectedFlags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                     | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
                     | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                    | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                    | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
                     | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
                 Assert.assertEquals("Flags should match", expectedFlags, params.flags);
 
@@ -794,12 +804,21 @@ public class ContentOverlayViewTests {
     // ===================== Memory leak prevention (issue #556) =====================
 
     /**
-     * Structural invariant: the overlay's View.mContext must be the Application, not the
-     * constructing activity. This is what allows the overlay to outlive activity transitions
-     * without leaking the activity it was first opened in.
+     * Structural invariant: the overlay's View.mContext must not pin the
+     * constructing Activity. The overlay outlives activity transitions, and
+     * View.mContext can never be swapped after construction — if it's the
+     * Activity, that Activity stays GC-pinned for the overlay's full lifetime.
      *
-     * Regression guard: if anyone changes the constructor's super(...) call back to the
-     * activity, this test will fail and surface the leak before users do.
+     * The exact context type is API-dependent (see ContentOverlayView#resolveOverlayContext):
+     *   - Pre-API 31: Application context.
+     *   - API 31+: createConfigurationContext from the Activity — a ContextImpl
+     *     wrapper that holds an IBinder token, not the Activity instance, so
+     *     GC isn't blocked. Required for StrictMode#detectIncorrectContextUse.
+     *
+     * In both cases, getApplicationContext() resolves to the same Application.
+     * The test asserts both that the context is NOT the Activity and that it
+     * routes back to the right Application — which is the actual leak-avoidance
+     * contract independent of API level.
      */
     @Test
     public void constructor_usesApplicationContext_notActivity() {
@@ -811,15 +830,19 @@ public class ContentOverlayViewTests {
                     + "that Activity for the lifetime of the overlay.",
                 activity, overlay.getContext());
             Assert.assertSame(
-                "ContentOverlayView.mContext must be the Application context.",
-                activity.getApplicationContext(), overlay.getContext());
+                "ContentOverlayView.mContext must resolve to the same Application as the "
+                    + "constructing Activity (Application directly on <API 31, "
+                    + "ConfigurationContext-of-Activity on API 31+).",
+                activity.getApplicationContext(),
+                overlay.getContext().getApplicationContext());
         });
     }
 
     /**
-     * Same invariant for the embedded WebView. Even with the wrapper View using App context,
-     * a WebView constructed with Activity context would still pin the constructing activity
-     * via its own mContext.
+     * Same invariant for the embedded WebView. Even with the wrapper View not
+     * pinning the Activity, a WebView constructed with the Activity directly
+     * would still pin it via its own mContext. See
+     * constructor_usesApplicationContext_notActivity for the API-level rationale.
      */
     @Test
     public void webView_usesApplicationContext_notActivity() {
@@ -830,8 +853,10 @@ public class ContentOverlayViewTests {
                 "ContentOverlayView's WebView.mContext must not be the constructing Activity.",
                 activity, overlay.webView.getContext());
             Assert.assertSame(
-                "ContentOverlayView's WebView.mContext must be the Application context.",
-                activity.getApplicationContext(), overlay.webView.getContext());
+                "ContentOverlayView's WebView.mContext must resolve to the same Application "
+                    + "as the constructing Activity.",
+                activity.getApplicationContext(),
+                overlay.webView.getContext().getApplicationContext());
         });
     }
 }
