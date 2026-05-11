@@ -1,5 +1,6 @@
 ## XX.XX.XX
 * Added gradle configuration cache support to upload symbols plugin.
+* Improved user properties auto-save conditions to flush event queue with every user property call.
 
 ## 26.1.2
 * Added `CountlyInitProvider` ContentProvider to register activity lifecycle callbacks before `Application.onCreate()`. This ensures the SDK captures the current activity in single-activity frameworks (Flutter, React Native) and apps with deferred initialization.
@@ -175,6 +176,8 @@
   * During an internal timer tick
   * Upon flushing the event queue
  
+* Updated the internal request mechanism. Downgrading from this version is not recommended.
+
 * Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
   * String, Integer, int, Boolean, bool, Float, float, Double, double, Long, long
   * Keep in mind that float array will be converted to the double array by the JSONArray
