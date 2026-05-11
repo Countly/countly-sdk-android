@@ -2,6 +2,7 @@
 * Added gradle configuration cache support to upload symbols plugin.
 * Improved user properties auto-save conditions to flush event queue with every user property call.
 
+* Mitigated StrictMode `IncorrectContextUseViolation` warnings logged when the SDK retrieved device display metrics and constructed the content overlay view from a non-UI context.
 * Mitigated an issue where content overlays and feedback widgets prevented keyboard input on the underlying activity's text fields while displayed.
 * Mitigated a memory retention issue where content overlays and feedback widgets could be briefly held in memory after closing, surfacing under repeated open/close cycles.
 * Mitigated a memory leak where the content overlay retained the activity it was first opened in across subsequent activity transitions.
