@@ -790,4 +790,48 @@ public class ContentOverlayViewTests {
             Assert.assertFalse(overlay.contentUrlAction(url, overlay.webView));
         });
     }
+
+    // ===================== Memory leak prevention (issue #556) =====================
+
+    /**
+     * Structural invariant: the overlay's View.mContext must be the Application, not the
+     * constructing activity. This is what allows the overlay to outlive activity transitions
+     * without leaking the activity it was first opened in.
+     *
+     * Regression guard: if anyone changes the constructor's super(...) call back to the
+     * activity, this test will fail and surface the leak before users do.
+     */
+    @Test
+    public void constructor_usesApplicationContext_notActivity() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            Assert.assertNotSame(
+                "ContentOverlayView.mContext must not be the constructing Activity — "
+                    + "View.mContext can never be swapped, so binding it to an Activity leaks "
+                    + "that Activity for the lifetime of the overlay.",
+                activity, overlay.getContext());
+            Assert.assertSame(
+                "ContentOverlayView.mContext must be the Application context.",
+                activity.getApplicationContext(), overlay.getContext());
+        });
+    }
+
+    /**
+     * Same invariant for the embedded WebView. Even with the wrapper View using App context,
+     * a WebView constructed with Activity context would still pin the constructing activity
+     * via its own mContext.
+     */
+    @Test
+    public void webView_usesApplicationContext_notActivity() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            Assert.assertNotNull("WebView should be created during construction", overlay.webView);
+            Assert.assertNotSame(
+                "ContentOverlayView's WebView.mContext must not be the constructing Activity.",
+                activity, overlay.webView.getContext());
+            Assert.assertSame(
+                "ContentOverlayView's WebView.mContext must be the Application context.",
+                activity.getApplicationContext(), overlay.webView.getContext());
+        });
+    }
 }

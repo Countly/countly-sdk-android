@@ -783,9 +783,9 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
                         }
-                        //for (ModuleBase module : modules) {
-                        //    module.callbackOnActivityDestroyed(activity);
-                        //}
+                        for (ModuleBase module : modules) {
+                            module.onActivityDestroyed(activity);
+                        }
                     }
                 });
 
