@@ -29,6 +29,7 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -60,10 +61,12 @@ class ContentOverlayView extends FrameLayout {
     // Returns a Context suitable for constructing the overlay's Views without retaining
     // a strong Java reference to the constructing Activity:
     //   - Pre-API 31: Application context (current behavior; no StrictMode UI-context check exists).
-    //   - API 31+: createConfigurationContext from the Activity. The returned ContextImpl has
-    //     mIsUiContext=true (inherited from Activity), satisfying detectIncorrectContextUse,
-    //     but holds no Java reference back to the Activity — only an IBinder activity token,
-    //     which does not pin the Activity for GC.
+    //   - API 31+: createConfigurationContext from the Activity. The returned ContextImpl is a
+    //     lightweight wrapper that does not strongly retain the Activity instance — only an
+    //     IBinder activity token, which does not pin the Activity for GC.
+    // Note: createConfigurationContext does not produce a UI context per Android's mIsUiContext
+    // contract; the StrictMode#detectIncorrectContextUse fix for getSystemService(WINDOW_SERVICE)
+    // lives in UtilsDevice.obtainWindowManager (which uses createWindowContext as a fallback).
     @NonNull
     private static Context resolveOverlayContext(@NonNull Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -120,51 +123,112 @@ class ContentOverlayView extends FrameLayout {
 
     private void registerActivityLifecycleCallback(@NonNull Activity activity) {
         unregisterActivityLifecycleCallback();
-        activityLifecycleCallbacks = new Application.ActivityLifecycleCallbacks() {
-            @Override public void onActivityCreated(@NonNull Activity a, @Nullable android.os.Bundle b) {
-            }
-
-            @Override public void onActivityStarted(@NonNull Activity a) {
-            }
-
-            @Override public void onActivityResumed(@NonNull Activity a) {
-            }
-
-            @Override public void onActivityPaused(@NonNull Activity a) {
-            }
-
-            @Override
-            public void onActivityStopped(@NonNull Activity a) {
-                if (a == currentHostActivity && isAddedToWindow && a.isFinishing()) {
-                    Log.d(Countly.TAG, "[ContentOverlayView] onActivityStopped, host activity is finishing, removing from window");
-                    removeFromWindow();
-                }
-            }
-
-            @Override public void onActivitySaveInstanceState(@NonNull Activity a, @NonNull android.os.Bundle b) {
-            }
-
-            @Override
-            public void onActivityDestroyed(@NonNull Activity a) {
-                if (a == currentHostActivity) {
-                    if (isAddedToWindow) {
-                        Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, host activity destroyed, removing from window");
-                        removeFromWindow();
-                    }
-                    // Drop the strong reference to the destroyed activity so it can be GC'd.
-                    // The overlay is reattached via ModuleContent.onActivityStarted, which calls attachToActivity()
-                    // and re-sets currentHostActivity for the next host.
-                    currentHostActivity = null;
-                }
-            }
-        };
+        activityLifecycleCallbacks = new OverlayLifecycleCallbacks(this);
         activity.getApplication().registerActivityLifecycleCallbacks(activityLifecycleCallbacks);
+    }
+
+    /**
+     * Static class to avoid implicit this$0 reference to the outer ContentOverlayView.
+     * Anonymous-inner-class callbacks registered with Application#mActivityLifecycleCallbacks
+     * leak the outer instance for the entire process lifetime if any future code path drops
+     * the overlay without invoking destroy()/close(). The WeakReference + self-cleanup pattern
+     * lets the overlay be GC'd as soon as nothing else holds a strong ref to it; the dormant
+     * callback then removes itself from the Application's list on its next invocation.
+     *
+     * NOTE on two separate, non-fixable LeakCanary reports — both architectural, neither
+     * is true memory growth:
+     *
+     * 1. System-singleton reattachment retention: when the same overlay is shown across
+     * multiple activity transitions (View.mWindowAttachCount grows), various Android
+     * system singletons hold a reference to the currently-attached ViewRootImpl. The
+     * two retainers we've observed are InputMethodManager#mCurRootView (set when the
+     * user types into the WebView) and WindowManagerGlobal#mRoots (the process-wide
+     * list of attached ViewRootImpls, always populated for any attached window).
+     * LeakCanary may report the overlay as "leaking" while its own analyzer also
+     * reports the View is currently attached — that combination is the heuristic
+     * false-positive signal (one overlay reused, not N overlays leaked). Both
+     * references are released by the framework when the overlay's window is detached
+     * or rebound to another window.
+     *
+     * 2. ModuleContent.contentOverlay retention while backgrounded: when no activities
+     * are visible, ModuleContent.onActivityStopped(count=0) calls detachFromWindow on
+     * the overlay (to avoid WindowLeaked) but intentionally keeps the contentOverlay
+     * field non-null so the same instance can be re-attached when the user returns.
+     * LeakCanary sees a detached View still strongly referenced through the Countly
+     * singleton and reports a "leak". This is bounded (single field, one overlay
+     * instance) and released the next time ModuleContent replaces or clears the cached
+     * overlay reference. Not a growing-over-time leak — intentional caching for the
+     * user-returns-to-same-content UX. Process kill (SIGKILL) reclaims it along with
+     * everything else, so persistence-on-kill is a non-concern.
+     */
+    private static final class OverlayLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
+        private final WeakReference<ContentOverlayView> overlayRef;
+
+        OverlayLifecycleCallbacks(@NonNull ContentOverlayView overlay) {
+            this.overlayRef = new WeakReference<>(overlay);
+        }
+
+        /** Returns the overlay if still alive; otherwise self-unregisters and returns null. */
+        @Nullable
+        private ContentOverlayView resolveOrCleanup(@NonNull Activity a) {
+            ContentOverlayView overlay = overlayRef.get();
+            if (overlay == null) {
+                try {
+                    a.getApplication().unregisterActivityLifecycleCallbacks(this);
+                } catch (Exception ignored) {
+                    // Application may already be tearing down; safe to ignore.
+                }
+            }
+            return overlay;
+        }
+
+        @Override public void onActivityCreated(@NonNull Activity a, @Nullable android.os.Bundle b) {
+        }
+
+        @Override public void onActivityStarted(@NonNull Activity a) {
+            // Probe in start callbacks too so dead callbacks don't linger across activity navigations.
+            resolveOrCleanup(a);
+        }
+
+        @Override public void onActivityResumed(@NonNull Activity a) {
+        }
+
+        @Override public void onActivityPaused(@NonNull Activity a) {
+        }
+
+        @Override
+        public void onActivityStopped(@NonNull Activity a) {
+            ContentOverlayView overlay = resolveOrCleanup(a);
+            if (overlay == null) return;
+            if (a == overlay.currentHostActivity && overlay.isAddedToWindow && a.isFinishing()) {
+                Log.d(Countly.TAG, "[ContentOverlayView] onActivityStopped, host activity is finishing, removing from window");
+                overlay.removeFromWindow();
+            }
+        }
+
+        @Override public void onActivitySaveInstanceState(@NonNull Activity a, @NonNull android.os.Bundle b) {
+        }
+
+        @Override
+        public void onActivityDestroyed(@NonNull Activity a) {
+            ContentOverlayView overlay = resolveOrCleanup(a);
+            if (overlay == null) return;
+            if (a == overlay.currentHostActivity) {
+                if (overlay.isAddedToWindow) {
+                    Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, host activity destroyed, removing from window");
+                    overlay.removeFromWindow();
+                }
+                // Drop the strong reference to the destroyed activity so it can be GC'd.
+                // The overlay is reattached via ModuleContent.onActivityStarted, which calls attachToActivity()
+                // and re-sets currentHostActivity for the next host.
+                overlay.currentHostActivity = null;
+            }
+        }
     }
 
     private void unregisterActivityLifecycleCallback() {
         if (activityLifecycleCallbacks != null) {
             try {
-                getContext().getApplicationContext();
                 ((Application) getContext().getApplicationContext())
                     .unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks);
             } catch (Exception e) {
@@ -175,27 +239,54 @@ class ContentOverlayView extends FrameLayout {
     }
 
     private void registerOrientationCallback(@NonNull Context context) {
-        orientationCallback = new ComponentCallbacks() {
-            @Override
-            public void onConfigurationChanged(@NonNull Configuration newConfig) {
-                if (isClosed || currentOrientation == newConfig.orientation) {
-                    return;
-                }
-                Log.d(Countly.TAG, "[ContentOverlayView] onConfigurationChanged, orientation changed from [" + currentOrientation + "] to [" + newConfig.orientation + "]");
-                currentOrientation = newConfig.orientation;
+        Context appContext = context.getApplicationContext();
+        orientationCallback = new OverlayComponentCallbacks(this, appContext);
+        appContext.registerComponentCallbacks(orientationCallback);
+    }
 
-                Activity activity = currentHostActivity;
-                if (activity != null && !activity.isFinishing()) {
-                    handleOrientationChange(activity);
-                }
-            }
+    /**
+     * Static class to avoid implicit this$0 reference to the outer ContentOverlayView.
+     * Same leak-avoidance pattern as OverlayLifecycleCallbacks — see that class for details.
+     */
+    private static final class OverlayComponentCallbacks implements ComponentCallbacks {
+        private final WeakReference<ContentOverlayView> overlayRef;
+        private final WeakReference<Context> appContextRef;
 
-            @Override
-            public void onLowMemory() {
-                // no-op
+        OverlayComponentCallbacks(@NonNull ContentOverlayView overlay, @NonNull Context appContext) {
+            this.overlayRef = new WeakReference<>(overlay);
+            this.appContextRef = new WeakReference<>(appContext);
+        }
+
+        @Override
+        public void onConfigurationChanged(@NonNull Configuration newConfig) {
+            ContentOverlayView overlay = overlayRef.get();
+            if (overlay == null) {
+                Context appContext = appContextRef.get();
+                if (appContext != null) {
+                    try {
+                        appContext.unregisterComponentCallbacks(this);
+                    } catch (Exception ignored) {
+                        // App may be tearing down; safe to ignore.
+                    }
+                }
+                return;
             }
-        };
-        context.getApplicationContext().registerComponentCallbacks(orientationCallback);
+            if (overlay.isClosed || overlay.currentOrientation == newConfig.orientation) {
+                return;
+            }
+            Log.d(Countly.TAG, "[ContentOverlayView] onConfigurationChanged, orientation changed from [" + overlay.currentOrientation + "] to [" + newConfig.orientation + "]");
+            overlay.currentOrientation = newConfig.orientation;
+
+            Activity activity = overlay.currentHostActivity;
+            if (activity != null && !activity.isFinishing()) {
+                overlay.handleOrientationChange(activity);
+            }
+        }
+
+        @Override
+        public void onLowMemory() {
+            // no-op
+        }
     }
 
     private void unregisterOrientationCallback() {
@@ -445,20 +536,21 @@ class ContentOverlayView extends FrameLayout {
             // Expedite any pending scrollbar-fade Runnables: scrolling inside the WebView
             // schedules a ScrollabilityCache fade Runnable on the main MessageQueue. If
             // the View is detached before that Runnable fires, the pending Message keeps
-            // ViewRootImpl alive (and through it, this overlay) for ~550ms — visible as
-            // a transient leak under repeated show/close cycles. Calling awakenScrollBars(0)
-            // re-schedules the existing fade with zero delay, so the Message drains on the
-            // next message-loop iteration (~16ms) and the View becomes GC-eligible promptly.
-            // No-op if mScrollCache wasn't created (no scrolling occurred).
-            try {
-                // CountlyWebView#expediteScrollbarFade exposes protected View#awakenScrollBars(int)
-                // (only callable through inheritance, hence the wrapper on the subclass).
-                if (webView instanceof CountlyWebView) {
+            // ViewRootImpl alive (and through it, this overlay) for the platform's
+            // scrollbar-fade window — visible as a transient leak under repeated show/close
+            // cycles. Calling awakenScrollBars(0) re-schedules the existing fade with zero
+            // delay, so the Message drains on the next message-loop iteration and the View
+            // becomes GC-eligible promptly. No-op if mScrollCache wasn't created (no scrolling
+            // occurred). Only the WebView can have a scroll cache here — the FrameLayout
+            // itself is non-scrollable.
+            if (webView instanceof CountlyWebView) {
+                try {
                     ((CountlyWebView) webView).expediteScrollbarFade();
+                } catch (Exception e) {
+                    // Best-effort drain; if this ever throws, leave a breadcrumb so a future
+                    // regression doesn't silently re-introduce the transient ViewRoot retention.
+                    Log.w(Countly.TAG, "[ContentOverlayView] removeFromWindow, scrollbar fade expedite failed", e);
                 }
-                awakenScrollBars(0);
-            } catch (Exception ignored) {
-                // Public API, but defensive against any edge-case throws during teardown.
             }
 
             try {

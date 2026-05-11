@@ -43,6 +43,15 @@ public class CountlyStoreExplicitModeTests {
 
     @Before
     public void setUp() {
+        // Reset the shared Countly singleton — without this, init() state from a prior
+        // test class in the suite leaks into our new Countly() instances and dirties the
+        // event/request caches before the "this should perform no write" assertions can
+        // measure them. The other suites (ContentOverlayViewTests,
+        // ModuleConfigurationTests, ...) do the same halt+clear in setUp; this test class
+        // was the odd one out and produced ordering-dependent flakes.
+        Countly.sharedInstance().halt();
+        TestUtils.getCountlyStore().clear();
+
         Countly.sharedInstance().setLoggingEnabled(true);
         store = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class), false);
         sp = store;

@@ -2,10 +2,11 @@
 * Added gradle configuration cache support to upload symbols plugin.
 * Improved user properties auto-save conditions to flush event queue with every user property call.
 
-* Mitigated StrictMode `IncorrectContextUseViolation` warnings logged when the SDK retrieved device display metrics and constructed the content overlay view from a non-UI context.
-* Mitigated an issue where content overlays and feedback widgets prevented keyboard input on the underlying activity's text fields while displayed.
-* Mitigated a memory retention issue where content overlays and feedback widgets could be briefly held in memory after closing, surfacing under repeated open/close cycles.
-* Mitigated a memory leak where the content overlay retained the activity it was first opened in across subsequent activity transitions.
+* Mitigated `IncorrectContextUseViolation` StrictMode warnings from non-UI context use in display metrics and content overlay construction.
+* Mitigated an issue where content overlays and feedback widgets blocked keyboard input on the host activity.
+* Mitigated a memory retention issue where content overlays and feedback widgets were briefly held after closing.
+* Mitigated a memory leak where the content overlay retained its initial host activity across activity transitions.
+* Mitigated a memory leak where content overlays and feedback widgets remained referenced via lifecycle callbacks when the host activity finished.
 
 ## 26.1.2
 * Added `CountlyInitProvider` ContentProvider to register activity lifecycle callbacks before `Application.onCreate()`. This ensures the SDK captures the current activity in single-activity frameworks (Flutter, React Native) and apps with deferred initialization.
