@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +11,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static org.mockito.Mockito.mock;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleContentTests {
@@ -66,6 +69,12 @@ public class ModuleContentTests {
         java.lang.reflect.Field field = ModuleContent.class.getDeclaredField("isCurrentlyInContentZone");
         field.setAccessible(true);
         field.set(module, value);
+    }
+
+    private Activity getCurrentActivity(ModuleContent module) throws Exception {
+        java.lang.reflect.Field field = ModuleContent.class.getDeclaredField("currentActivity");
+        field.setAccessible(true);
+        return (Activity) field.get(module);
     }
 
     // ======== previewContent public API tests ========
@@ -157,5 +166,93 @@ public class ModuleContentTests {
         valid.put("geo", new JSONObject());
         valid.put("html", "<html></html>");
         Assert.assertTrue(mc.validateResponse(valid));
+    }
+
+    // ======== Activity reference / leak prevention tests (issue #556) ========
+
+    /**
+     * onActivityDestroyed must null out currentActivity when the destroyed activity
+     * is the one currently tracked. This is the core leak fix.
+     */
+    @Test
+    public void onActivityDestroyed_clearsCurrentActivity_whenIdentityMatches() throws Exception {
+        Countly countly = initWithConsent(true);
+        ModuleContent mc = countly.moduleContent;
+
+        Activity act = mock(Activity.class);
+        mc.onActivityStarted(act, 1);
+        Assert.assertSame(act, getCurrentActivity(mc));
+
+        mc.onActivityDestroyed(act);
+        Assert.assertNull(getCurrentActivity(mc));
+    }
+
+    /**
+     * Destroying an activity other than the currently tracked one must NOT clear the field.
+     * This protects against losing the active activity reference when an old, already-replaced
+     * activity is finally destroyed.
+     */
+    @Test
+    public void onActivityDestroyed_doesNotClear_whenDifferentActivity() throws Exception {
+        Countly countly = initWithConsent(true);
+        ModuleContent mc = countly.moduleContent;
+
+        Activity tracked = mock(Activity.class);
+        Activity unrelated = mock(Activity.class);
+        mc.onActivityStarted(tracked, 1);
+
+        mc.onActivityDestroyed(unrelated);
+        Assert.assertSame(tracked, getCurrentActivity(mc));
+    }
+
+    /**
+     * Rotation race regression: when onActivityStarted for the new activity fires before
+     * onActivityDestroyed for the old one, destroying the old activity must not wipe out
+     * the new tracked activity.
+     */
+    @Test
+    public void onActivityDestroyed_doesNotClearNewerActivity_afterRotationRace() throws Exception {
+        Countly countly = initWithConsent(true);
+        ModuleContent mc = countly.moduleContent;
+
+        Activity oldAct = mock(Activity.class);
+        Activity newAct = mock(Activity.class);
+
+        mc.onActivityStarted(oldAct, 1);
+        mc.onActivityStarted(newAct, 2);
+        Assert.assertSame(newAct, getCurrentActivity(mc));
+
+        // Old activity is finally destroyed after the new one has already taken over.
+        mc.onActivityDestroyed(oldAct);
+        Assert.assertSame(newAct, getCurrentActivity(mc));
+    }
+
+    /**
+     * onActivityDestroyed must not throw when no activity has been tracked yet.
+     */
+    @Test
+    public void onActivityDestroyed_isSafe_whenNoActivityTracked() throws Exception {
+        Countly countly = initWithConsent(true);
+        ModuleContent mc = countly.moduleContent;
+
+        Activity stray = mock(Activity.class);
+        mc.onActivityDestroyed(stray);
+        Assert.assertNull(getCurrentActivity(mc));
+    }
+
+    /**
+     * The seeded activity path (onInitialActivitySeeded) must also be cleared on destroy.
+     */
+    @Test
+    public void onActivityDestroyed_clearsSeededActivity() throws Exception {
+        Countly countly = initWithConsent(true);
+        ModuleContent mc = countly.moduleContent;
+
+        Activity seeded = mock(Activity.class);
+        mc.onInitialActivitySeeded(seeded);
+        Assert.assertSame(seeded, getCurrentActivity(mc));
+
+        mc.onActivityDestroyed(seeded);
+        Assert.assertNull(getCurrentActivity(mc));
     }
 }

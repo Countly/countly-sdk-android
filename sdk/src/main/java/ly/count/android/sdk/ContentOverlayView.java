@@ -15,6 +15,7 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -145,9 +146,15 @@ class ContentOverlayView extends FrameLayout {
 
             @Override
             public void onActivityDestroyed(@NonNull Activity a) {
-                if (a == currentHostActivity && isAddedToWindow) {
-                    Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, host activity destroyed, removing from window");
-                    removeFromWindow();
+                if (a == currentHostActivity) {
+                    if (isAddedToWindow) {
+                        Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, host activity destroyed, removing from window");
+                        removeFromWindow();
+                    }
+                    // Drop the strong reference to the destroyed activity so it can be GC'd.
+                    // The overlay is reattached via ModuleContent.onActivityStarted, which calls attachToActivity()
+                    // and re-sets currentHostActivity for the next host.
+                    currentHostActivity = null;
                 }
             }
         };
@@ -210,6 +217,50 @@ class ContentOverlayView extends FrameLayout {
         return super.dispatchKeyEvent(event);
     }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        // Dynamically transfer IME focus between the overlay and the host activity:
+        //   - ACTION_OUTSIDE (delivered because of FLAG_WATCH_OUTSIDE_TOUCH): user
+        //     touched outside the overlay's bounds; the touch already passed through
+        //     to the activity via FLAG_NOT_TOUCH_MODAL, but we additionally restore
+        //     FLAG_NOT_FOCUSABLE so the activity's EditText can claim IME focus.
+        //   - ACTION_DOWN (touch inside the overlay's bounds): clear FLAG_NOT_FOCUSABLE
+        //     so the WebView's form fields can bring up the keyboard.
+        // Consumes nothing; existing touch handling (WebView, etc.) continues normally.
+        if (ev.getAction() == MotionEvent.ACTION_OUTSIDE) {
+            setWindowFocusable(false);
+            return true;
+        }
+        if (ev.getAction() == MotionEvent.ACTION_DOWN) {
+            setWindowFocusable(true);
+        }
+        return super.dispatchTouchEvent(ev);
+    }
+
+    private void setWindowFocusable(boolean focusable) {
+        if (!isAddedToWindow || windowManager == null) {
+            return;
+        }
+        try {
+            WindowManager.LayoutParams lp = (WindowManager.LayoutParams) getLayoutParams();
+            if (lp == null) {
+                return;
+            }
+            boolean alreadyFocusable = (lp.flags & WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE) == 0;
+            if (alreadyFocusable == focusable) {
+                return;
+            }
+            if (focusable) {
+                lp.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            } else {
+                lp.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            }
+            windowManager.updateViewLayout(this, lp);
+        } catch (Exception e) {
+            Log.w(Countly.TAG, "[ContentOverlayView] setWindowFocusable, failed to update flags", e);
+        }
+    }
+
     private TransparentActivityConfig getCurrentConfig() {
         if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
             return configLandscape;
@@ -233,9 +284,19 @@ class ContentOverlayView extends FrameLayout {
             }
         }
 
+        // FLAG_NOT_FOCUSABLE: overlay does NOT grab IME focus by default, so the
+        //   underlying Activity's EditText can receive keyboard input even while the
+        //   overlay is shown. Toggled off in dispatchTouchEvent on inside touches so
+        //   the WebView's <input>/<textarea> can still bring up the keyboard.
+        // FLAG_WATCH_OUTSIDE_TOUCH: deliver an ACTION_OUTSIDE event to the overlay
+        //   when the user touches outside its bounds, so we can return focus to the
+        //   non-focusable state. The actual touch still passes through to the host
+        //   activity via FLAG_NOT_TOUCH_MODAL.
         int flags = WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
             | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
-            | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+            | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+            | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH;
 
         if (!isContentLoaded) {
             flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE;
@@ -381,6 +442,25 @@ class ContentOverlayView extends FrameLayout {
 
     private void removeFromWindow() {
         if (isAddedToWindow && windowManager != null) {
+            // Expedite any pending scrollbar-fade Runnables: scrolling inside the WebView
+            // schedules a ScrollabilityCache fade Runnable on the main MessageQueue. If
+            // the View is detached before that Runnable fires, the pending Message keeps
+            // ViewRootImpl alive (and through it, this overlay) for ~550ms — visible as
+            // a transient leak under repeated show/close cycles. Calling awakenScrollBars(0)
+            // re-schedules the existing fade with zero delay, so the Message drains on the
+            // next message-loop iteration (~16ms) and the View becomes GC-eligible promptly.
+            // No-op if mScrollCache wasn't created (no scrolling occurred).
+            try {
+                // CountlyWebView#expediteScrollbarFade exposes protected View#awakenScrollBars(int)
+                // (only callable through inheritance, hence the wrapper on the subclass).
+                if (webView instanceof CountlyWebView) {
+                    ((CountlyWebView) webView).expediteScrollbarFade();
+                }
+                awakenScrollBars(0);
+            } catch (Exception ignored) {
+                // Public API, but defensive against any edge-case throws during teardown.
+            }
+
             try {
                 // Use removeViewImmediate for synchronous removal to prevent WindowLeaked.
                 // WindowManager.removeView() is async (posts MSG_DIE), so the view may still
@@ -644,6 +724,20 @@ class ContentOverlayView extends FrameLayout {
         }
     }
 
+    private void startActivityFromOverlay(@NonNull Intent intent) {
+        // Prefer the current host activity so the launched intent stays in the same task.
+        // Fall back to Application context with NEW_TASK (mContext is App since the overlay
+        // outlives activities), which is the only legal way to start an activity from a
+        // non-activity context.
+        Activity host = currentHostActivity;
+        if (host != null && !host.isFinishing() && !host.isDestroyed()) {
+            host.startActivity(intent);
+        } else {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+        }
+    }
+
     private boolean linkAction(Map<String, Object> query, WebView view) {
         Log.i(Countly.TAG, "[ContentOverlayView] linkAction, link action detected");
         if (!query.containsKey("link")) {
@@ -655,7 +749,7 @@ class ContentOverlayView extends FrameLayout {
         }
 
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
-        view.getContext().startActivity(intent);
+        startActivityFromOverlay(intent);
         return true;
     }
 
@@ -951,8 +1045,7 @@ class ContentOverlayView extends FrameLayout {
 
             if (url.endsWith("cly_x_int=1")) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                getContext().startActivity(intent);
+                startActivityFromOverlay(intent);
                 return true;
             }
 
