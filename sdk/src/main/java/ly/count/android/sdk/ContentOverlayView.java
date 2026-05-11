@@ -63,7 +63,10 @@ class ContentOverlayView extends FrameLayout {
         int orientation,
         @Nullable ContentCallback callback,
         @NonNull Runnable onClose) {
-        super(activity);
+        // Use Application context so View.mContext does not pin the constructing activity for
+        // the overlay's lifetime. The overlay is designed to outlive activity transitions;
+        // window attachment uses currentHostActivity (dynamically updated in attachToActivity).
+        super(activity.getApplicationContext());
 
         this.configPortrait = portrait;
         this.configLandscape = landscape;
@@ -123,9 +126,15 @@ class ContentOverlayView extends FrameLayout {
 
             @Override
             public void onActivityDestroyed(@NonNull Activity a) {
-                if (a == currentHostActivity && isAddedToWindow) {
-                    Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, host activity destroyed, removing from window");
-                    removeFromWindow();
+                if (a == currentHostActivity) {
+                    if (isAddedToWindow) {
+                        Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, host activity destroyed, removing from window");
+                        removeFromWindow();
+                    }
+                    // Drop the strong reference to the destroyed activity so it can be GC'd.
+                    // The overlay is reattached via ModuleContent.onActivityStarted, which calls attachToActivity()
+                    // and re-sets currentHostActivity for the next host.
+                    currentHostActivity = null;
                 }
             }
         };
@@ -695,6 +704,20 @@ class ContentOverlayView extends FrameLayout {
         }
     }
 
+    private void startActivityFromOverlay(@NonNull Intent intent) {
+        // Prefer the current host activity so the launched intent stays in the same task.
+        // Fall back to Application context with NEW_TASK (mContext is App since the overlay
+        // outlives activities), which is the only legal way to start an activity from a
+        // non-activity context.
+        Activity host = currentHostActivity;
+        if (host != null && !host.isFinishing() && !host.isDestroyed()) {
+            host.startActivity(intent);
+        } else {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+        }
+    }
+
     private boolean linkAction(Map<String, Object> query, WebView view) {
         Log.i(Countly.TAG, "[ContentOverlayView] linkAction, link action detected");
         if (!query.containsKey("link")) {
@@ -706,7 +729,7 @@ class ContentOverlayView extends FrameLayout {
         }
 
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
-        view.getContext().startActivity(intent);
+        startActivityFromOverlay(intent);
         return true;
     }
 
@@ -974,7 +997,9 @@ class ContentOverlayView extends FrameLayout {
 
     @SuppressLint("SetJavaScriptEnabled")
     private WebView createWebView(@NonNull Activity activity, @NonNull TransparentActivityConfig config) {
-        WebView wv = new CountlyWebView(activity);
+        // Application context: WebView's mContext must not retain the constructing activity, since the overlay
+        // (and its WebView) outlives activity transitions. Activity-specific operations route through currentHostActivity.
+        WebView wv = new CountlyWebView(activity.getApplicationContext());
         wv.setVisibility(View.INVISIBLE);
         LayoutParams webLayoutParams = new LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -999,8 +1024,7 @@ class ContentOverlayView extends FrameLayout {
 
             if (url.endsWith("cly_x_int=1")) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                getContext().startActivity(intent);
+                startActivityFromOverlay(intent);
                 return true;
             }
 
