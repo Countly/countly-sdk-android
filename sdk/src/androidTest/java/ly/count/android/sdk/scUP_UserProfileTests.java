@@ -53,7 +53,8 @@ public class scUP_UserProfileTests {
         countly.events().recordEvent("test_event3");
 
         countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(3); // no request is generated on the way, not 2 anymore because of orientation event
+        // UPDATE: setProperty will trigger saving events
+        TestUtils.assertRQSize(4); // no request is generated on the way, not 2 anymore because of orientation event
 
         countly.sessions().endSession();
         // begin_session + first user property request + 3 events + user property request with light_mode + end_session
@@ -84,7 +85,7 @@ public class scUP_UserProfileTests {
         countly.events().recordEvent("test_event3");
 
         countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(1); // no request is generated on the way
+        TestUtils.assertRQSize(2); // no request is generated on the way + UPDATE: user properties will trigger saving events
 
         Thread.sleep(3000);
 
@@ -112,7 +113,8 @@ public class scUP_UserProfileTests {
         countly.events().recordEvent("test_event3");
 
         countly.userProfile().setProperty("theme", "light_mode");
-        TestUtils.assertRQSize(1); // no request is generated on the way
+        // UPDATE: this will trigger saving events
+        TestUtils.assertRQSize(2); // no request is generated on the way
 
         countly.deviceId().changeWithoutMerge("new_device_id"); // this will begin a new session
 
@@ -287,12 +289,12 @@ public class scUP_UserProfileTests {
 
         countly.events().recordEvent("A");
         countly.events().recordEvent("B");
-        sendSameData(countly);
-        countly.events().recordEvent("C");
-        sendSameData(countly);
-        countly.events().recordEvent("D");
-        sendSameData(countly);
-        countly.events().recordEvent("E");
+        sendSameData(countly); // UPDATE: this will trigger A&B
+        countly.events().recordEvent("C"); // remaining UP
+        sendSameData(countly); // UPDATE: this will trigger C
+        countly.events().recordEvent("D"); // remaining UP
+        sendSameData(countly); // UPDATE: this will trigger D
+        countly.events().recordEvent("E"); // remaining UP
 
         TestUtils.assertRQSize(6);
 
@@ -402,10 +404,10 @@ public class scUP_UserProfileTests {
         countly.sessions().beginSession();
         countly.events().recordEvent("A");
         countly.events().recordEvent("B");
-        sendSameData(countly);
+        sendSameData(countly); // UPDATE: this will trigger A&B
         countly.sessions().endSession();
         countly.events().recordEvent("C");
-        sendUserData(countly);
+        sendUserData(countly); // UPDATE: this will trigger C
         countly.sessions().endSession();
         countly.deviceId().changeWithMerge("merge_id");
         sendSameData(countly);
@@ -424,9 +426,9 @@ public class scUP_UserProfileTests {
 
         ModuleSessionsTests.validateSessionEndRequest(3, null, TestUtils.commonDeviceId);
 
-        TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 4);
+        ModuleEventsTests.validateEventInRQ("C", 4, 0, 1);
 
-        ModuleEventsTests.validateEventInRQ("merge_id", "C", 5, 0, 1);
+        TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 5);
 
         validateUserDataRequest(6, 8, "4", "merge_id");
 
@@ -477,9 +479,10 @@ public class scUP_UserProfileTests {
         ModuleUserProfileTests.validateUserProfileRequest(3, 9, TestUtils.map(), TestUtils.map("a12345", "4"));
 
         ModuleSessionsTests.validateSessionEndRequest(4, null, TestUtils.commonDeviceId);
-        TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 5);
 
-        ModuleEventsTests.validateEventInRQ("merge_id", "C", 6, 0, 1);
+        ModuleEventsTests.validateEventInRQ("C", 5, 0, 1);
+
+        TestUtils.validateRequest("merge_id", TestUtils.map("old_device_id", TestUtils.commonDeviceId), 6);
 
         validateUserDataRequest(7, 9, "4", "merge_id");
 

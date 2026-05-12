@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.2";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.3";
     /**
      * Used as request meta data on every request
      */
@@ -783,9 +783,9 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
                         }
-                        //for (ModuleBase module : modules) {
-                        //    module.callbackOnActivityDestroyed(activity);
-                        //}
+                        for (ModuleBase module : modules) {
+                            module.onActivityDestroyed(activity);
+                        }
                     }
                 });
 

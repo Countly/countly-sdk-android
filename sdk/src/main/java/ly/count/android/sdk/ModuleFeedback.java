@@ -87,6 +87,18 @@ public class ModuleFeedback extends ModuleBase {
         }
     }
 
+    @Override
+    void onActivityDestroyed(@NonNull Activity activity) {
+        // Identity check guards against clearing a newer activity when the destroy callback
+        // for an older activity arrives after onActivityStarted of the next one (rotation race).
+        if (currentActivity == activity) {
+            currentActivity = null;
+        }
+        // The overlay itself is intentionally kept alive across activity transitions.
+        // Its View context is the Application (not the constructing activity), so destroyed
+        // activities are not retained through the overlay. See ContentOverlayView constructor.
+    }
+
     public interface RetrieveFeedbackWidgets {
         void onFinished(List<CountlyFeedbackWidget> retrievedWidgets, String error);
     }

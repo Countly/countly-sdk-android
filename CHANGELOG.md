@@ -1,3 +1,13 @@
+## 26.1.3
+* Added gradle configuration cache support to upload symbols plugin.
+* Improved user properties auto-save conditions to flush event queue with every user property call.
+
+* Mitigated `IncorrectContextUseViolation` StrictMode warnings from non-UI context use in display metrics and content overlay construction.
+* Mitigated an issue where content overlays and feedback widgets blocked keyboard input on the host activity.
+* Mitigated a memory retention issue where content overlays and feedback widgets were briefly held after closing.
+* Mitigated a memory leak where the content overlay retained its initial host activity across activity transitions.
+* Mitigated a memory leak where content overlays and feedback widgets remained referenced via lifecycle callbacks when the host activity finished.
+
 ## 26.1.2
 * Added `CountlyInitProvider` ContentProvider to register activity lifecycle callbacks before `Application.onCreate()`. This ensures the SDK captures the current activity in single-activity frameworks (Flutter, React Native) and apps with deferred initialization.
 * Added `CountlyConfig.setInitialActivity(Activity)` as an explicit way for wrapper SDKs to provide the host activity during initialization.
@@ -172,6 +182,8 @@
   * During an internal timer tick
   * Upon flushing the event queue
  
+* Updated the internal request mechanism. Downgrading from this version is not recommended.
+
 * Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
   * String, Integer, int, Boolean, bool, Float, float, Double, double, Long, long
   * Keep in mind that float array will be converted to the double array by the JSONArray

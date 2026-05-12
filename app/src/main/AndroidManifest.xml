@@ -99,12 +99,14 @@
     <activity
         android:name=".ActivityExampleFeedback"
         android:label="@string/activity_name_feedback"
-        android:configChanges="orientation|screenSize"/>
+        android:configChanges="orientation|screenSize"
+        android:exported="true"/>
 
     <activity
         android:name=".ActivityExampleContentZone"
         android:label="@string/activity_name_content_zone"
-        android:configChanges="orientation|screenSize"/>
+        android:configChanges="orientation|screenSize"
+        android:exported="true"/>
 
     <activity
         android:name=".ActivityExampleFragments"
