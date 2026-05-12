@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 26.1.3
 * Added gradle configuration cache support to upload symbols plugin.
 * Improved user properties auto-save conditions to flush event queue with every user property call.
 
