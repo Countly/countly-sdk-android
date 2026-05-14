@@ -58,8 +58,12 @@ public class App extends Application {
         }
 
         if (DEFAULT_URL.equals(COUNTLY_SERVER_URL) || DEFAULT_APP_KEY.equals(COUNTLY_APP_KEY)) {
-            Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
-            return;
+            COUNTLY_SERVER_URL = BuildConfig.COUNTLY_SERVER_URL;
+            COUNTLY_APP_KEY = BuildConfig.COUNTLY_APP_KEY;
+            if (DEFAULT_URL.equals(COUNTLY_SERVER_URL) || DEFAULT_APP_KEY.equals(COUNTLY_APP_KEY)) {
+                Log.e("CountlyDemo", "Please provide correct COUNTLY_SERVER_URL and COUNTLY_APP_KEY");
+                return;
+            }
         }
 
         if (false) {
