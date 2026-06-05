@@ -802,6 +802,33 @@ public class ModuleCrashTests {
     }
 
     /**
+     * A native crash dump is a single-line base64 string. When a global crash filter is set,
+     * the SDK must NOT apply the per-line stack trace length limit (maxStackTraceLineLength) to it,
+     * otherwise the whole dump is truncated to 'maxStackTraceLineLength' characters and corrupted.
+     * Regression test: the queued "_error" must equal the full, untruncated base64 dump.
+     */
+    @Test
+    public void recordException_globalCrashFilter_nativeCrash_notTruncatedByLineLength() throws JSONException {
+        TestUtils.getCountlyStore().clear();
+        String finalPath = TestUtils.getContext().getCacheDir().getAbsolutePath() + File.separator + "Countly" + File.separator + "CrashDumps";
+
+        // payload whose base64 length far exceeds the default maxStackTraceLineLength (200)
+        char[] payload = new char[400];
+        Arrays.fill(payload, 'a');
+        String longDump = new String(payload);
+        createFile(finalPath, File.separator + "dumpLong.dmp", longDump);
+
+        CountlyConfig cConfig = TestUtils.createBaseConfig();
+        cConfig.metricProviderOverride = mmp;
+        cConfig.crashes.setGlobalCrashFilterCallback(crash -> false); // keep the crash, do not modify it
+
+        new Countly().init(cConfig);
+
+        Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
+        validateCrash(extractNativeCrash(longDump), "", true, true, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
+    }
+
+    /**
      * Validate that deprecated crash filter, filters out all native crash dumps
      * Validate RQ is empty after initialization of the SDK
      */
