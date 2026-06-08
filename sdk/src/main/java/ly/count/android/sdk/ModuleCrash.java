@@ -123,7 +123,7 @@ public class ModuleCrash extends ModuleBase {
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         CrashData crashData = prepareCrashData(dumpString, false, true, null);
-        if (!crashFilterCheck(crashData)) {
+        if (!crashFilterCheck(crashData, true)) {
             sendCrashReportToQueue(crashData, true);
         }
     }
@@ -209,7 +209,7 @@ public class ModuleCrash extends ModuleBase {
 
                     String stackTrace = prepareStackTrace(e);
                     CrashData crashData = prepareCrashData(stackTrace, false, false, null);
-                    if (!crashFilterCheck(crashData)) {
+                    if (!crashFilterCheck(crashData, false)) {
                         sendCrashReportToQueue(crashData, false);
                     }
                 }
@@ -230,9 +230,10 @@ public class ModuleCrash extends ModuleBase {
      * If it does, the crash should be ignored
      *
      * @param crashData CrashData object to check
+     * @param isNativeCrash whether the crash is a native crash dump (base64 string, not a Java stack trace)
      * @return true if a match was found
      */
-    boolean crashFilterCheck(@NonNull CrashData crashData) {
+    boolean crashFilterCheck(@NonNull CrashData crashData, final boolean isNativeCrash) {
         assert crashData != null;
 
         L.d("[ModuleCrash] Calling crashFilterCheck");
@@ -254,8 +255,12 @@ public class ModuleCrash extends ModuleBase {
 
         UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(crashData.getBreadcrumbs(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
-        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
-        crashData.setStackTrace(truncatedStackTrace);
+        // Stack trace line limits must not be applied to native crashes: the "stack trace" of a
+        // native crash is a single-line base64 dump, so per-line truncation would corrupt the dump.
+        if (!isNativeCrash) {
+            String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
+            crashData.setStackTrace(truncatedStackTrace);
+        }
         UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation(), L);
         UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics(), L);
 
@@ -318,7 +323,7 @@ public class ModuleCrash extends ModuleBase {
         String exceptionString = prepareStackTrace(exception);
 
         CrashData crashData = prepareCrashData(exceptionString, itIsHandled, false, customSegmentation);
-        if (crashFilterCheck(crashData)) {
+        if (crashFilterCheck(crashData, false)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
             sendCrashReportToQueue(crashData, false);

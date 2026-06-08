@@ -1,3 +1,6 @@
+## X.X.X
+* Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
+
 ## 26.1.3
 * Added gradle configuration cache support to upload symbols plugin.
 * Improved user properties auto-save conditions to flush event queue with every user property call.
