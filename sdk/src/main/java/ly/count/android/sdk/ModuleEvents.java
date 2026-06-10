@@ -199,8 +199,12 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         segmentation.put(PREVIOUS_VIEW_NAME_KEY, pvn);
                     }
 
+                    // apply journey trigger views here, mirroring the journey trigger events behavior
+                    Object viewName = segmentation.get("name");
+                    boolean triggerRefreshContentZone = viewName != null && configProvider.getJourneyTriggerViews().contains(viewName);
+
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    _cly.moduleRequestQueue.sendEventsIfNeeded(triggerRefreshContentZone, triggerRefreshContentZone);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:

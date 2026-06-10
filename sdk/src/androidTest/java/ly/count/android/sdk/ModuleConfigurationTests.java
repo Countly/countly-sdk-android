@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -654,7 +655,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void configurationParameterCount() {
-        int configParameterCount = 41; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, and journey trigger events
+        int configParameterCount = 45; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, journey trigger events, automatic session/view/crash tracking flags, and journey trigger views
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
             if (field.getName().startsWith("keyR")) {
@@ -1149,7 +1150,8 @@ public class ModuleConfigurationTests {
             .userPropertyFilterList(new HashSet<>(), false)
             .segmentationFilterList(new HashSet<>(), false)
             .eventSegmentationFilterMap(new ConcurrentHashMap<>(), false)
-            .journeyTriggerEvents(new HashSet<>());
+            .journeyTriggerEvents(new HashSet<>())
+            .journeyTriggerViews(new HashSet<>());
 
         String serverConfig = builder.build();
         CountlyConfig countlyConfig = TestUtils.createBaseConfig().setLoggingEnabled(false);
@@ -2912,5 +2914,267 @@ public class ModuleConfigurationTests {
 
         Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
         validateEventInRQ("event2", TestUtils.map("key_a", "value"), 1, 2, 0, 1);
+    }
+
+    // ================ Automatic tracking flags (ast / avt / acr) ================
+
+    /**
+     * Tests that the automatic tracking SBS flags are parsed from the server config and exposed
+     * through the configuration provider getters with non-default values.
+     */
+    @Test
+    public void automaticTrackingFlags_parsedAndExposed() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .automaticSessionTracking(false)
+                .automaticViewTracking(true)
+                .automaticCrashReporting(true)
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        ModuleConfiguration mc = Countly.sharedInstance().moduleConfiguration;
+        Assert.assertFalse(mc.getAutomaticSessionTrackingEnabled());
+        Assert.assertTrue(mc.getAutomaticViewTrackingEnabled());
+        Assert.assertTrue(mc.getAutomaticCrashReportingEnabled());
+    }
+
+    /**
+     * Tests the lowest-precedence layer: when the server is silent on the automatic tracking flags,
+     * the resolved values fall back to the developer config. createBaseConfig uses automatic sessions,
+     * enables crash reporting, and does not enable automatic view tracking, so the resolved flags are
+     * ast=true, avt=false, acr=true.
+     */
+    @Test
+    public void automaticTrackingFlags_silentServer_fallsBackToLocalConfig() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        // server config that does not carry ast/avt/acr at all
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().tracking(true).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        ModuleConfiguration mc = Countly.sharedInstance().moduleConfiguration;
+        Assert.assertTrue(mc.getAutomaticSessionTrackingEnabled());   // manual session control not enabled
+        Assert.assertFalse(mc.getAutomaticViewTrackingEnabled());     // automatic view tracking not enabled locally
+        Assert.assertTrue(mc.getAutomaticCrashReportingEnabled());    // createBaseConfig enables crash reporting
+    }
+
+    /**
+     * Tests that the server can disable automatic view tracking the developer enabled locally:
+     * a lifecycle activity start records no view.
+     */
+    @Test
+    public void automaticViewTracking_disabledByServer_noAutoView() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig()
+            .enableManualSessionControl()
+            .enableAutomaticViewTracking();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().automaticViewTracking(false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getAutomaticViewTrackingEnabled());
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        Countly.sharedInstance().moduleViews.onActivityStarted(Mockito.mock(Activity.class), 1);
+
+        // server disabled automatic view tracking -> the activity view is not recorded
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * Tests the precedence "Server SBS > Developer config" for views: the developer does NOT enable
+     * automatic view tracking, but the server sends avt=true, so the SDK records the activity view.
+     */
+    @Test
+    public void automaticViewTracking_serverForceEnablesAutoView() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().automaticViewTracking(true).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getAutomaticViewTrackingEnabled());
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        Countly.sharedInstance().moduleViews.onActivityStarted(Mockito.mock(Activity.class), 1);
+
+        // server forced automatic view tracking on even though the developer never enabled it
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+    }
+
+    /**
+     * Tests the precedence "Server SBS > Developer config" for sessions: the developer enables manual
+     * session control, but the server sends ast=true. The SDK resolves to automatic session tracking -
+     * the manual session API is ignored and the lifecycle starts a session.
+     */
+    @Test
+    public void automaticSessionTracking_serverOverridesManualSessionControl() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().automaticSessionTracking(true).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // server precedence: automatic session tracking is active despite the local manual session control
+        Assert.assertTrue(Countly.sharedInstance().moduleSessions.automaticSessionTrackingEnabled());
+
+        // the manual session API is ignored while automatic tracking is active
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+        Countly.sharedInstance().sessions().beginSession();
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+
+        // the automatic lifecycle path starts a session
+        Countly.sharedInstance().onStartInternal(Mockito.mock(Activity.class));
+        Assert.assertTrue(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+    }
+
+    /**
+     * Tests that the server can disable automatic session tracking the developer relied on:
+     * with ast=false the lifecycle does not start a session.
+     */
+    @Test
+    public void automaticSessionTracking_serverDisablesAutomaticSessions() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().automaticSessionTracking(false).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.automaticSessionTrackingEnabled());
+
+        Countly.sharedInstance().onStartInternal(Mockito.mock(Activity.class));
+
+        // server disabled automatic session tracking -> the lifecycle does not begin a session
+        Assert.assertFalse(Countly.sharedInstance().moduleSessions.sessionIsRunning());
+    }
+
+    /**
+     * Tests the precedence "Server SBS > Developer config" for crash: the developer did NOT enable
+     * unhandled crash reporting, but the server sends acr=true, so the SDK installs the uncaught
+     * exception handler reactively through the SBS config-change action.
+     */
+    @Test
+    public void automaticCrashReporting_serverEnables_installsHandler() throws JSONException {
+        // developer does NOT enable unhandled crash reporting
+        CountlyConfig countlyConfig = new CountlyConfig(TestUtils.getContext(), TestUtils.commonAppKey, TestUtils.commonURL)
+            .setDeviceId(TestUtils.commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().automaticCrashReporting(true).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        // server enabled automatic crash reporting -> the handler is installed even though the dev did not opt in
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getAutomaticCrashReportingEnabled());
+        Assert.assertTrue(Countly.sharedInstance().moduleCrash.unhandledCrashHandlerInstalled);
+    }
+
+    /**
+     * Tests that when the developer did not enable crash reporting and the server is silent, the SDK
+     * does NOT install its uncaught exception handler, so it never wraps the global handler for apps
+     * that did not ask for crash reporting (avoids interfering with other crash tools).
+     */
+    @Test
+    public void automaticCrashReporting_devDisabledServerSilent_noHandler() throws JSONException {
+        CountlyConfig countlyConfig = new CountlyConfig(TestUtils.getContext(), TestUtils.commonAppKey, TestUtils.commonURL)
+            .setDeviceId(TestUtils.commonDeviceId)
+            .setLoggingEnabled(true)
+            .enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().tracking(true).build() // no acr
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertFalse(Countly.sharedInstance().moduleConfiguration.getAutomaticCrashReportingEnabled());
+        Assert.assertFalse(Countly.sharedInstance().moduleCrash.unhandledCrashHandlerInstalled);
+    }
+
+    // ================ Journey Trigger Views (jtv) ================
+
+    /**
+     * Tests that journey trigger views are parsed from the server config and exposed by the getter.
+     */
+    @Test
+    public void journeyTriggerViews_configuredCorrectly() throws JSONException {
+        Set<String> triggerViews = new HashSet<>();
+        triggerViews.add("home_view");
+        triggerViews.add("checkout_view");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults().journeyTriggerViews(triggerViews).build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Set<String> stored = Countly.sharedInstance().moduleConfiguration.getJourneyTriggerViews();
+        Assert.assertEquals(2, stored.size());
+        Assert.assertTrue(stored.contains("home_view"));
+        Assert.assertTrue(stored.contains("checkout_view"));
+    }
+
+    /**
+     * Tests that recording a view whose name is in the journey trigger views set force-flushes the
+     * event queue and registers the content-zone refresh callback (callback_id present), while a
+     * non-trigger view stays queued.
+     */
+    @Test
+    public void journeyTriggerViews_matchingViewForcesFlushAndRegistersCallback() throws JSONException {
+        Set<String> triggerViews = new HashSet<>();
+        triggerViews.add("jtv_view");
+
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .journeyTriggerViews(triggerViews)
+                .eventQueueSize(100) // high threshold so only the trigger forces a flush
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+
+        // a non-trigger view stays in the event queue
+        Countly.sharedInstance().views().startView("regular_view");
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+
+        // a trigger view force-flushes the whole event queue and registers a refresh callback
+        Countly.sharedInstance().views().startView("jtv_view");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+
+        Map<String, String>[] rq = TestUtils.getCurrentRQ();
+        Assert.assertEquals(1, rq.length);
+        Assert.assertTrue(rq[0].containsKey("callback_id"));
+        String events = rq[0].get("events");
+        Assert.assertNotNull(events);
+        Assert.assertTrue(events.contains("regular_view"));
+        Assert.assertTrue(events.contains("jtv_view"));
+    }
+
+    /**
+     * Tests that with an empty journey trigger views set, recording any view does not force a flush
+     * and the view stays queued.
+     */
+    @Test
+    public void journeyTriggerViews_emptySet_noForcedFlush() throws JSONException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig().enableManualSessionControl();
+        countlyConfig.immediateRequestGenerator = createIRGForSpecificResponse(
+            new ServerConfigBuilder().defaults()
+                .journeyTriggerViews(new HashSet<>())
+                .eventQueueSize(100)
+                .build()
+        );
+        Countly.sharedInstance().init(countlyConfig);
+
+        Assert.assertTrue(Countly.sharedInstance().moduleConfiguration.getJourneyTriggerViews().isEmpty());
+
+        Countly.sharedInstance().views().startView("any_view");
+        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
     }
 }

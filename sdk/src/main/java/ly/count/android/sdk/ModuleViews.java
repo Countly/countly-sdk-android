@@ -545,7 +545,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     @Override
     void onActivityStopped(int updatedActivityCount) {
-        if (autoViewTracker) {
+        if (configProvider.getAutomaticViewTrackingEnabled()) {
             //main purpose of this is handling transitions when the app is getting closed/minimised
             //for cases when going from one view to another we would report the duration there
             if (updatedActivityCount <= 0) {
@@ -554,7 +554,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        if (updatedActivityCount <= 0 && (autoViewTracker || restartManualViews)) {
+        if (updatedActivityCount <= 0 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
             //if we go to the background, stop all running views
             stopRunningViewsAndSend();
         }
@@ -562,8 +562,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     @Override
     void onActivityStarted(Activity activity, int updatedActivityCount) {
-        //automatic view tracking
-        if (autoViewTracker) {
+        //automatic view tracking, resolved through the SBS precedence chain (server can override the local setting)
+        if (configProvider.getAutomaticViewTrackingEnabled()) {
             if (!isActivityInExceptionList(activity)) {
                 String usedActivityName = "NULL ACTIVITY";
 
@@ -589,7 +589,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        if (updatedActivityCount == 1 && (autoViewTracker || restartManualViews)) {
+        if (updatedActivityCount == 1 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
             startStoppedViews();
         }
     }
