@@ -46,6 +46,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRConsentRequired = "cr";
     final static String keyRDropOldRequestTime = "dort";
     final static String keyRCrashReporting = "crt";
+    final static String keyRAutomaticSessionTracking = "ast";
+    final static String keyRAutomaticViewTracking = "avt";
+    final static String keyRAutomaticCrashReporting = "acr";
     final static String keyRServerConfigUpdateInterval = "scui";
     final static String keyRBackoffMechanism = "bom";
     final static String keyRBOMAcceptedTimeout = "bom_at";
@@ -62,6 +65,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRSegmentationWhitelist = "sw";
     final static String keyREventSegmentationWhitelist = "esw"; // json
     final static String keyRJourneyTriggerEvents = "jte";
+    final static String keyRJourneyTriggerViews = "jtv";
 
     // FLAGS
     boolean currentVTracking = true;
@@ -71,6 +75,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     boolean currentVCustomEventTracking = true;
     boolean currentVContentZone = false;
     boolean currentVCrashReporting = true;
+    // automatic tracking flags are seeded from the local config in the constructor and then overridden by the SBS layers; they are the single source of truth for whether automatic session/view/crash tracking is active
+    boolean currentVAutomaticSessionTracking = true;
+    boolean currentVAutomaticViewTracking = false;
+    boolean currentVAutomaticCrashReporting = false;
     boolean currentVLocationTracking = true;
     boolean currentVRefreshContentZone = true;
     boolean currentVBackoffMechanism = true;
@@ -88,6 +96,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     FilterList<Set<String>> currentVSegmentationFilterList = new FilterList<>(new HashSet<>(), false);
     FilterList<Map<String, Set<String>>> currentVEventSegmentationFilterList = new FilterList<>(new ConcurrentHashMap<>(), false);
     Set<String> currentVJourneyTriggerEvents = new HashSet<>();
+    Set<String> currentVJourneyTriggerViews = new HashSet<>();
 
     // SERVER CONFIGURATION PARAMS
     Integer serverConfigUpdateInterval; // in hours
@@ -107,6 +116,13 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         serverConfigRequestsDisabled = config.sdkBehaviorSettingsRequestsDisabled;
 
         config.countlyStore.setConfigurationProvider(this);
+
+        //seed the automatic tracking flags from the local config: it is the lowest-precedence layer.
+        //the SBS layers (provided -> stored -> server) override these in updateConfigVariables, giving the precedence
+        //server SBS > stored SBS > provided SBS > developer config
+        currentVAutomaticSessionTracking = !config.manualSessionControlEnabled;
+        currentVAutomaticViewTracking = config.enableAutomaticViewTracking;
+        currentVAutomaticCrashReporting = config.crashes.enableUnhandledCrashReporting;
 
         //load the previously saved configuration
         loadConfigFromStorage(config.sdkBehaviorSettings);
@@ -220,6 +236,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVTracking = extractValue(keyRTracking, sb, currentVTracking, currentVTracking);
         currentVSessionTracking = extractValue(keyRSessionTracking, sb, currentVSessionTracking, currentVSessionTracking);
         currentVCrashReporting = extractValue(keyRCrashReporting, sb, currentVCrashReporting, currentVCrashReporting);
+        currentVAutomaticSessionTracking = extractValue(keyRAutomaticSessionTracking, sb, currentVAutomaticSessionTracking, currentVAutomaticSessionTracking);
+        currentVAutomaticViewTracking = extractValue(keyRAutomaticViewTracking, sb, currentVAutomaticViewTracking, currentVAutomaticViewTracking);
+        currentVAutomaticCrashReporting = extractValue(keyRAutomaticCrashReporting, sb, currentVAutomaticCrashReporting, currentVAutomaticCrashReporting);
         currentVViewTracking = extractValue(keyRViewTracking, sb, currentVViewTracking, currentVViewTracking);
         currentVCustomEventTracking = extractValue(keyRCustomEventTracking, sb, currentVCustomEventTracking, currentVCustomEventTracking);
         currentVLocationTracking = extractValue(keyRLocationTracking, sb, currentVLocationTracking, currentVLocationTracking);
@@ -262,7 +281,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             "User Property Filter List: " + currentVUserPropertyFilterList.filterList + ", isWhitelist: " + currentVUserPropertyFilterList.isWhitelist + "\n" +
             "Segmentation Filter List: " + currentVSegmentationFilterList.filterList + ", isWhitelist: " + currentVSegmentationFilterList.isWhitelist + "\n" +
             "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist + "\n" +
-            "Journey Trigger Events: " + currentVJourneyTriggerEvents);
+            "Journey Trigger Events: " + currentVJourneyTriggerEvents + "\n" +
+            "Journey Trigger Views: " + currentVJourneyTriggerViews);
         JSONArray eventBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventBlacklist);
         JSONArray eventWhitelistJSARR = latestRetrievedConfiguration.optJSONArray(keyREventWhitelist);
         JSONArray userPropertyBlacklistJSARR = latestRetrievedConfiguration.optJSONArray(keyRUserPropertyBlacklist);
@@ -272,6 +292,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         JSONObject eventSegmentationBlacklistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationBlacklist);
         JSONObject eventSegmentationWhitelistJSOBJ = latestRetrievedConfiguration.optJSONObject(keyREventSegmentationWhitelist);
         JSONArray journeyTriggerEventsJSARR = latestRetrievedConfiguration.optJSONArray(keyRJourneyTriggerEvents);
+        JSONArray journeyTriggerViewsJSARR = latestRetrievedConfiguration.optJSONArray(keyRJourneyTriggerViews);
 
         if (eventBlacklistJSARR != null) {
             extractFilterSetFromJSONArray(eventBlacklistJSARR, currentVEventFilterList.filterList);
@@ -329,12 +350,17 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             extractFilterSetFromJSONArray(journeyTriggerEventsJSARR, currentVJourneyTriggerEvents);
         }
 
+        if (journeyTriggerViewsJSARR != null) {
+            extractFilterSetFromJSONArray(journeyTriggerViewsJSARR, currentVJourneyTriggerViews);
+        }
+
         L.d("[ModuleConfiguration] updateListingFilters, current listing filters after updating: \n" +
             "Event Filter List: " + currentVEventFilterList.filterList + ", isWhitelist: " + currentVEventFilterList.isWhitelist + "\n" +
             "User Property Filter List: " + currentVUserPropertyFilterList.filterList + ", isWhitelist: " + currentVUserPropertyFilterList.isWhitelist + "\n" +
             "Segmentation Filter List: " + currentVSegmentationFilterList.filterList + ", isWhitelist: " + currentVSegmentationFilterList.isWhitelist + "\n" +
             "Event Segmentation Filter List: " + currentVEventSegmentationFilterList.filterList + ", isWhitelist: " + currentVEventSegmentationFilterList.isWhitelist + "\n" +
-            "Journey Trigger Events: " + currentVJourneyTriggerEvents);
+            "Journey Trigger Events: " + currentVJourneyTriggerEvents + "\n" +
+            "Journey Trigger Views: " + currentVJourneyTriggerViews);
     }
 
     private void extractFilterSetFromJSONArray(@Nullable JSONArray jsonArray, @NonNull Set<String> targetSet) {
@@ -389,6 +415,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 case keyRTracking:
                 case keyRSessionTracking:
                 case keyRCrashReporting:
+                case keyRAutomaticSessionTracking:
+                case keyRAutomaticViewTracking:
+                case keyRAutomaticCrashReporting:
                 case keyRViewTracking:
                 case keyRCustomEventTracking:
                 case keyRLocationTracking:
@@ -441,6 +470,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 case keyRSegmentationWhitelist:
                 case keyRUserPropertyWhitelist:
                 case keyRJourneyTriggerEvents:
+                case keyRJourneyTriggerViews:
                     isValid = value instanceof JSONArray;
                     break;
                 case keyREventSegmentationBlacklist:
@@ -634,6 +664,18 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return currentVCrashReporting;
     }
 
+    @Override public boolean getAutomaticSessionTrackingEnabled() {
+        return currentVAutomaticSessionTracking;
+    }
+
+    @Override public boolean getAutomaticViewTrackingEnabled() {
+        return currentVAutomaticViewTracking;
+    }
+
+    @Override public boolean getAutomaticCrashReportingEnabled() {
+        return currentVAutomaticCrashReporting;
+    }
+
     @Override public boolean getLocationTrackingEnabled() {
         return currentVLocationTracking;
     }
@@ -688,5 +730,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public Set<String> getJourneyTriggerEvents() {
         return currentVJourneyTriggerEvents;
+    }
+
+    @Override public Set<String> getJourneyTriggerViews() {
+        return currentVJourneyTriggerViews;
     }
 }

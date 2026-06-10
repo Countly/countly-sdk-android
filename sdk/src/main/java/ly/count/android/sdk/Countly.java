@@ -1016,9 +1016,9 @@ public class Countly {
                 moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
             }
             //if we open the first activity
-            //and we are not using manual session control,
+            //and automatic session tracking is active (resolved through the SBS precedence chain),
             //begin a session
-            if (moduleSessions != null && !moduleSessions.manualSessionControlEnabled) {
+            if (moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
                 moduleSessions.beginSessionInternal();
             }
         }
@@ -1041,8 +1041,8 @@ public class Countly {
         }
 
         --activityCount_;
-        if (activityCount_ == 0 && moduleSessions != null && !moduleSessions.manualSessionControlEnabled) {
-            // if we don't use manual session control
+        if (activityCount_ == 0 && moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
+            // if automatic session tracking is active
             // Called when final Activity is stopped.
             // Sends an end session event to the server, also sends any unsent custom events.
             moduleSessions.endSessionInternal();
@@ -1127,10 +1127,10 @@ public class Countly {
 
         if (isInitialized()) {
             final boolean appIsInForeground = activityCount_ > 0;
-            if (appIsInForeground && !moduleSessions.manualSessionControlEnabled) {
+            if (appIsInForeground && moduleSessions.automaticSessionTrackingEnabled()) {
                 //if we have automatic session control and we are in the foreground, record an update
                 moduleSessions.updateSessionInternal();
-            } else if (moduleSessions.manualSessionControlEnabled && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
+            } else if (!moduleSessions.automaticSessionTrackingEnabled() && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
                 // if we are in manual session control mode with hybrid sessions enabled (SDK takes care of update requests) and there is a session running,
                 // let's create the update request
                 moduleSessions.updateSessionInternal();
