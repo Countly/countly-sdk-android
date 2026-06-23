@@ -2,6 +2,7 @@
 * Added support for SDK behavior settings that control the SDK's automatic session tracking, automatic view tracking, automatic crash reporting, and Journey Trigger Views.
 
 * Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
+* Mitigated an issue where the rating feedback popup request could be sent while in temporary device ID mode, creating a `CLYTemporaryDeviceID` user on the server.
 
 ## 26.1.3
 * Added gradle configuration cache support to upload symbols plugin.
