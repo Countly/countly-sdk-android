@@ -293,6 +293,11 @@ public class ModuleContent extends ModuleBase {
     private void showContentOverlay(@NonNull Activity activity, @NonNull Map<Integer, TransparentActivityConfig> placementCoordinates) {
         L.d("[ModuleContent] showContentOverlay, showing content overlay on [" + activity.getClass().getSimpleName() + "]");
 
+        if (!webViewEnabled) {
+            L.w("[ModuleContent] showContentOverlay, WebView is disabled via configuration, skipping");
+            return;
+        }
+
         // Do not show content if feedback widget is currently showing
         if (_cly.moduleFeedback != null && _cly.moduleFeedback.feedbackOverlay != null) {
             shouldFetchContents = true;
