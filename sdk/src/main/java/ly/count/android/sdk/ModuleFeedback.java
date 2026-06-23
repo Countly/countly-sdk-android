@@ -248,6 +248,14 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
+        if (!_cly.config_.webViewEnabled) {
+            L.w("[ModuleFeedback] presentFeedbackWidgetInternal, WebView is disabled via configuration, skipping");
+            if (devCallback != null) {
+                devCallback.onFinished("WebView is disabled via configuration");
+            }
+            return;
+        }
+
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             if (devCallback != null) {
                 devCallback.onFinished("Consent is not granted");
