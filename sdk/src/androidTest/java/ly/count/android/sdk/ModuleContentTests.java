@@ -113,7 +113,7 @@ public class ModuleContentTests {
     }
 
     /**
-     * The global setWebViewEnabled(false) switch should disable the content feature,
+     * The global disableWebView() switch should disable the content feature,
      * even when content consent is granted.
      */
     @Test
@@ -121,7 +121,7 @@ public class ModuleContentTests {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.setRequiresConsent(true);
         config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.content });
-        config.setWebViewEnabled(false);
+        config.disableWebView();
         config.disableHealthCheck();
         config.immediateRequestGenerator = createCapturingIRGenerator();
 

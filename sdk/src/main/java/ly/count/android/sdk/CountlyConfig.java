@@ -1111,15 +1111,14 @@ public class CountlyConfig {
     }
 
     /**
-     * Enable or disable all WebView-based UI in the SDK. When disabled, no WebView is ever
-     * created or shown for any feature. This covers the Content feature overlay, Feedback
-     * Widgets (surveys, NPS, and rating widgets), and the rating popup. Enabled by default.
+     * Disable all WebView-based UI in the SDK. When called, no WebView is ever created or shown
+     * for any feature. This covers the Content feature overlay, Feedback Widgets (surveys, NPS,
+     * and rating widgets), and the rating popup. WebView UI is enabled by default.
      *
-     * @param enabled false to disable all WebView triggers in the SDK
      * @return Returns the same config object for convenient linking
      */
-    public synchronized CountlyConfig setWebViewEnabled(boolean enabled) {
-        this.webViewEnabled = enabled;
+    public synchronized CountlyConfig disableWebView() {
+        this.webViewEnabled = false;
         return this;
     }
 

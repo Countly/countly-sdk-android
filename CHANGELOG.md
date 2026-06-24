@@ -1,6 +1,6 @@
 ## X.X.X
 * Added support for SDK behavior settings that control the SDK's automatic session tracking, automatic view tracking, automatic crash reporting, and Journey Trigger Views.
-* Added a new configuration option "setWebViewEnabled(boolean)" to enable or disable all WebView-based UI in the SDK, including the content overlay, feedback widgets, and the rating popup.
+* Added a new configuration option "disableWebView()" to disable all WebView-based UI in the SDK, including the content overlay, feedback widgets, and the rating popup.
 
 * Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
 
