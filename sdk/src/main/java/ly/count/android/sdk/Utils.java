@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import android.app.UiModeManager;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
@@ -156,6 +157,22 @@ public class Utils {
     @androidx.annotation.ChecksSdkIntAtLeast(parameter = 0)
     public static boolean API(int version) {
         return Build.VERSION.SDK_INT >= version;
+    }
+
+    /**
+     * Determine whether the host app is built as a debuggable build.
+     * A non-debuggable build is what a production/release flavor produces.
+     *
+     * @param context any context belonging to the host app
+     * @return true if the app is flagged debuggable, false if it is a production build
+     * or the debuggable state can not be determined
+     */
+    public static boolean isAppInDebuggableMode(@NonNull Context context) {
+        try {
+            return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /**
