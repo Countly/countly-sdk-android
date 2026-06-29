@@ -8,6 +8,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -576,6 +577,12 @@ public class CountlyPush {
                                     return;
                                 }
 
+                                Set<String> allowedDialogSchemes = countlyConfigPush != null ? countlyConfigPush.allowedIntentSchemes : null;
+                                if (!Utils.isExternalSchemeAllowed(msg.link().getScheme(), allowedDialogSchemes)) {
+                                    Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Blocked dialog link with disallowed scheme: [" + msg.link().getScheme() + "]");
+                                    return;
+                                }
+
                                 try {
                                     Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
                                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -620,17 +627,31 @@ public class CountlyPush {
                     dialog.dismiss();
 
                     boolean isPositiveButtonPressed = (which == DialogInterface.BUTTON_POSITIVE);
-                    if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link().toString(), context)) {
+                    Uri buttonLink = msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link();
+                    if (countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(buttonLink == null ? null : buttonLink.toString(), context)) {
                         Countly.sharedInstance().L.d("[CountlyPush, dialog button onClick] Link handled by custom URL handler, skipping default link opening.");
                         return;
                     }
 
                     try {
                         msg.recordAction(context, isPositiveButtonPressed ? 2 : 1);
-                        Intent intent = new Intent(Intent.ACTION_VIEW, msg.buttons().get(isPositiveButtonPressed ? 1 : 0).link());
-                        Bundle bundle = new Bundle();
-                        bundle.putParcelable(EXTRA_MESSAGE, msg);
-                        intent.putExtra(EXTRA_MESSAGE, bundle);
+
+                        Set<String> allowedDialogSchemes = countlyConfigPush != null ? countlyConfigPush.allowedIntentSchemes : null;
+                        if (!Utils.isExternalSchemeAllowed(buttonLink == null ? null : buttonLink.getScheme(), allowedDialogSchemes)) {
+                            Countly.sharedInstance().L.w("[CountlyPush, dialog button onClick] Blocked dialog button link with disallowed scheme: [" + (buttonLink == null ? null : buttonLink.getScheme()) + "]");
+                            return;
+                        }
+
+                        Intent intent = new Intent(Intent.ACTION_VIEW, buttonLink);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        // Only forward the push payload when the link resolves to our own app, so the
+                        // message data is not leaked to an external app that happens to handle the link.
+                        ComponentName linkTarget = intent.resolveActivity(context.getPackageManager());
+                        if (linkTarget != null && context.getPackageName().equals(linkTarget.getPackageName())) {
+                            Bundle bundle = new Bundle();
+                            bundle.putParcelable(EXTRA_MESSAGE, msg);
+                            intent.putExtra(EXTRA_MESSAGE, bundle);
+                        }
                         intent.putExtra(EXTRA_ACTION_INDEX, isPositiveButtonPressed ? 2 : 1);
                         context.startActivity(intent);
                     } catch (Exception ex) {

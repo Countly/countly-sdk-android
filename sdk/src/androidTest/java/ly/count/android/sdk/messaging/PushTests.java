@@ -89,8 +89,9 @@ public class PushTests {
     }
 
     /**
-     * The own package is always allowed, but the class must still be listed exactly: an
-     * own-package class that is not in the class allow-list is not trusted.
+     * The own package is always allowed for the package check, but the class must still be listed
+     * exactly: an own-package class that is not in the class allow-list is not trusted (the
+     * integrator must opt each target class in manually).
      */
     @Test
     public void isComponentTrusted_ownPackageButUnlistedClass_notTrusted() {
@@ -137,7 +138,7 @@ public class PushTests {
 
     /**
      * Null allow-lists must not crash; with no class list nothing is trusted (a class match is
-     * always required), and a foreign package stays untrusted.
+     * always required, even for the own package), and a foreign package stays untrusted.
      */
     @Test
     public void isComponentTrusted_nullAllowLists_noCrash() {
@@ -252,7 +253,7 @@ public class PushTests {
         Assert.assertNotNull(CountlyPushActivity.validatePushIntent(ctx(), act, null, ctx().getPackageName()));
     }
 
-    /** R5 default-true: missing flag -> checks run -> own-package target with no allow-list is rejected. */
+    /** R5 default-true: missing flag -> checks run -> own-package target with no class allow-list is rejected (the class must be opted in manually). */
     @Test
     public void validatePushIntent_defaultChecksNoAllowList_returnsNull() {
         Intent act = activityIntentWith(ownTargetInner()); // no ADDITIONAL_INTENT_REDIRECTION_CHECKS extra

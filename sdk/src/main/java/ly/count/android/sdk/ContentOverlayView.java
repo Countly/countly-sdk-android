@@ -1148,20 +1148,11 @@ class ContentOverlayView extends FrameLayout {
         settings.setJavaScriptEnabled(true); // required for interactive content
         settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
-        // Security hardening (defense-in-depth). The overlay only ever loads server-issued
-        // HTTPS content, so disabling local file/content access closes the local-file
-        // exfiltration vector without affecting legitimate content. Navigation and
-        // sub-resource scheme restrictions are enforced in CountlyWebViewClient.
-        settings.setAllowFileAccess(false); // default true on API <= 29
-        settings.setAllowContentAccess(false); // OWASP MASTG-BEST-0013
-        settings.setAllowFileAccessFromFileURLs(false);
-        settings.setAllowUniversalAccessFromFileURLs(false);
-        settings.setGeolocationEnabled(false);
-        settings.setJavaScriptCanOpenWindowsAutomatically(false);
-        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            settings.setSafeBrowsingEnabled(true);
-        }
+        // Security hardening (defense-in-depth). The overlay only ever loads server-issued HTTPS
+        // content, so disabling local file/content access closes the local-file exfiltration vector
+        // without affecting legitimate content. Sub-resource scheme restrictions are enforced in
+        // CountlyWebViewClient. Shared with the feedback/ratings WebViews via Utils.
+        Utils.applyWebViewSecurityDefaults(settings);
 
         wv.clearCache(true);
         wv.clearHistory();

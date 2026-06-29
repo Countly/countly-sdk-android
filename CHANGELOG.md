@@ -1,17 +1,17 @@
 ## X.X.X
+* ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.
+
 * Added support for SDK behavior settings that control the SDK's automatic session tracking, automatic view tracking, automatic crash reporting, and Journey Trigger Views.
 * Added a new push configuration option "enableAdditionalIntentRedirectionChecks()" to enable stricter validation of the notification intent's target package and class.
 * Added a new content configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes content and feedback widget links may open.
 * Added a new push configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes notification links may open.
-* Improved the security of the content feature web view, disabled local file/content access, disallowed mixed content, enabled Safe Browsing, blocked non-HTTP(S) sub-resources, and blocked content links with dangerous schemes (file, content, javascript, jar, data).
+* Improved the security of the content, feedback widget, and rating widget web views, disabled local file/content access, disallowed mixed content, enabled Safe Browsing, blocked sub-resources with dangerous schemes (file, content, javascript, jar, data) while always allowing https, and blocked links with dangerous schemes.
 * Improved the security of push notification click handling, null-safe and stricter package/class validation, reduced intent flags, no longer forwarding the payload to external apps, and blocking notification links with dangerous schemes (file, content, javascript, jar, data) by default.
 * Added a new config option "disableSDKLoggingInProduction()" that keeps the SDK's console logging disabled in production (non-debuggable) builds, even when logging is enabled.
 
 * Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
 * Mitigated an issue where the rating feedback popup request could be sent while in temporary device ID mode, creating a `CLYTemporaryDeviceID` user on the server.
 * Mitigated an issue where the content zone did not resume after exiting temporary device ID mode even when it was enabled by the server configuration.
-
-* Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks", replaced with "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()". The static field is now a no-op.
 
 ## 26.1.3
 * Added gradle configuration cache support to upload symbols plugin.

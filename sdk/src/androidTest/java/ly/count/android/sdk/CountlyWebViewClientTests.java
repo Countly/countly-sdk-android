@@ -356,15 +356,25 @@ public class CountlyWebViewClientTests {
     }
 
     /**
-     * With a configured scheme allow-list, sub-resources follow allow-list mode: only listed schemes
-     * load (the default denylist is omitted), everything else is blocked.
+     * With a configured scheme allow-list, sub-resources follow allow-list mode: listed schemes load
+     * and everything else is blocked, EXCEPT https which always loads because it serves the content
+     * itself (so an outbound-link allow-list does not break the page's own https assets). Plain http
+     * is NOT auto-allowed — it must be listed explicitly, so the integrator decides whether to permit it.
      */
     @Test
     public void shouldInterceptRequest_allowlistMode() {
-        CountlyWebViewClient allowlisted = new CountlyWebViewClient(new HashSet<>(Arrays.asList("https")));
+        CountlyWebViewClient allowlisted = new CountlyWebViewClient(new HashSet<>(Arrays.asList("myapp")));
+        // https always loads regardless of the allow-list
         Assert.assertNull(allowlisted.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png", false)));
-        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("http://example.com/a.png", false)));   // not listed
-        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("market://details?id=x", false)));      // not listed
-        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("file:///etc/hosts", false)));          // not listed
+        // a listed non-web scheme loads
+        Assert.assertNull(allowlisted.shouldInterceptRequest(null, fakeRequest("myapp://x", false)));
+        // http is not auto-allowed: blocked unless explicitly listed
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("http://example.com/a.png", false)));
+        // other unlisted non-web schemes are blocked
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("market://details?id=x", false)));
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("file:///etc/hosts", false)));
+        // http loads when explicitly listed
+        CountlyWebViewClient httpAllowed = new CountlyWebViewClient(new HashSet<>(Arrays.asList("http")));
+        Assert.assertNull(httpAllowed.shouldInterceptRequest(null, fakeRequest("http://example.com/a.png", false)));
     }
 }

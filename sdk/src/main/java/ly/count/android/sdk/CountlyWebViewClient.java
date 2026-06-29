@@ -12,7 +12,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import java.io.ByteArrayInputStream;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,12 +70,14 @@ class CountlyWebViewClient extends WebViewClient {
     @Override
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         String scheme = request.getUrl().getScheme();
-        // Sub-resources (images, frames, scripts) follow the shared scheme policy: with no allow-list
-        // the dangerous local/script schemes (file, content, javascript, jar, data) are blocked; when
-        // an allow-list is configured, only those schemes load (the default denylist is omitted).
-        if (!Utils.isExternalSchemeAllowed(scheme, allowedSchemes)) {
+        // Sub-resources (images, frames, scripts) follow the shared scheme policy, except https
+        // always loads because it serves the content itself: with no allow-list the dangerous
+        // local/script schemes (file, content, javascript, jar, data) are blocked; when an allow-list
+        // is configured, only those schemes (plus https) load. This keeps an outbound-link allow-list
+        // from accidentally blocking the page's own https assets, while http stays integrator-decided.
+        if (!Utils.isWebContentSchemeAllowed(scheme, allowedSchemes)) {
             Log.v(Countly.TAG, "[CountlyWebViewClient] shouldInterceptRequest, blocked sub-resource with disallowed scheme: [" + request.getUrl() + "]");
-            return new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
+            return Utils.blankWebResourceResponse();
         }
         return null;
     }

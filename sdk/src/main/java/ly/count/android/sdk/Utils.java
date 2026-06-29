@@ -6,9 +6,12 @@ import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,6 +60,72 @@ public class Utils {
         }
         return !DANGEROUS_INTENT_SCHEMES.contains(normalized);
     }
+
+    /**
+     * Whether a WebView sub-resource (image, script, stylesheet, frame) with this scheme may load.
+     * "https" always loads because it is how the content itself is served, so an outbound-link
+     * allow-list (which may list only a custom deep-link scheme such as "myapp") does not
+     * accidentally block the page's own https assets. Every other scheme — including plain "http" —
+     * follows the shared link policy, so the dangerous local/script schemes stay blocked and the
+     * integrator decides whether to permit http (allowed by the default denylist, opt-in when an
+     * allow-list is configured).
+     */
+    public static boolean isWebContentSchemeAllowed(String scheme, Set<String> allowedSchemes) {
+        if (scheme != null && "https".equals(scheme.toLowerCase(Locale.ROOT))) {
+            return true;
+        }
+        return isExternalSchemeAllowed(scheme, allowedSchemes);
+    }
+
+    /**
+     * Builds a lower-cased, null-safe {@link Set} of intent schemes from a user-provided list. Null
+     * elements and a null list are tolerated (yielding an empty set). Shared by the content and push
+     * config setters so their normalization stays identical.
+     */
+    @NonNull
+    public static Set<String> normalizeSchemeSet(@Nullable List<String> schemes) {
+        Set<String> normalized = new HashSet<>();
+        if (schemes != null) {
+            for (String scheme : schemes) {
+                if (scheme != null) {
+                    normalized.add(scheme.toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        return normalized;
+    }
+
+    /**
+     * Applies the SDK's WebView security hardening (defense-in-depth) to the given settings. The
+     * SDK only ever loads server-issued HTTPS content in its WebViews, so disabling local
+     * file/content access closes the local-file exfiltration vector without affecting legitimate
+     * content. Call this from every WebView creation site so the policy lives in one place.
+     */
+    public static void applyWebViewSecurityDefaults(@Nullable WebSettings settings) {
+        if (settings == null) {
+            return;
+        }
+        settings.setAllowFileAccess(false); // default true on API <= 29
+        settings.setAllowContentAccess(false); // OWASP MASTG-BEST-0013
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setGeolocationEnabled(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            settings.setSafeBrowsingEnabled(true);
+        }
+    }
+
+    /**
+     * An empty {@code text/plain} response used to neutralize a blocked WebView sub-resource. A
+     * fresh instance is returned per call because the backing stream is stateful.
+     */
+    @NonNull
+    public static WebResourceResponse blankWebResourceResponse() {
+        return new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
+    }
+
     private static final ExecutorService bg = Executors.newSingleThreadExecutor();
 
     public static Future<?> runInBackground(Runnable runnable) {

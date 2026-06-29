@@ -31,11 +31,13 @@ public class CountlyPushActivity extends Activity {
 
     /**
      * Validates that the intent's target component may be launched. Both the package and the class
-     * must match an allow-list entry exactly: the package must equal the app's own package or one
-     * of {@code allowedPackageNames}, and the class must equal one of {@code allowedClassNames}.
-     * Matching is exact (no prefix/suffix matching), so allow-list entries must be fully-qualified,
-     * e.g. "com.example.app.MainActivity". A null component (implicit intent that cannot be
-     * validated) is not trusted, and null allow-lists are treated as empty.
+     * must be allow-listed: the package must equal the app's own package or one of
+     * {@code allowedPackageNames}, and the class must equal one of {@code allowedClassNames}. The
+     * class must be listed explicitly even when it is in the app's own package, so the integrator
+     * opts each launchable target in by its fully-qualified class name (via
+     * setAllowedIntentClassNames). Matching is exact (no prefix/suffix matching), e.g.
+     * "com.example.app.MainActivity". A null component (implicit intent that cannot be validated) is
+     * not trusted, and null allow-lists are treated as empty.
      */
     static boolean isComponentTrusted(ComponentName component, ArrayList<String> allowedPackageNames, ArrayList<String> allowedClassNames, String ownPackageName) {
         if (component == null) {
@@ -46,15 +48,14 @@ public class CountlyPushActivity extends Activity {
         String intentPackageName = component.getPackageName();
         String intentClassName = component.getClassName();
 
-        ArrayList<String> packages = allowedPackageNames == null ? new ArrayList<String>() : new ArrayList<>(allowedPackageNames);
-        ArrayList<String> classes = allowedClassNames == null ? new ArrayList<String>() : new ArrayList<>(allowedClassNames);
-        packages.add(ownPackageName);
-
-        boolean trustedPackage = false;
-        for (String packageName : packages) {
-            if (packageName != null && intentPackageName.equals(packageName)) {
-                trustedPackage = true;
-                break;
+        // The package must be the app's own package or an explicitly allow-listed one.
+        boolean trustedPackage = ownPackageName != null && ownPackageName.equals(intentPackageName);
+        if (!trustedPackage && allowedPackageNames != null) {
+            for (String packageName : allowedPackageNames) {
+                if (packageName != null && intentPackageName.equals(packageName)) {
+                    trustedPackage = true;
+                    break;
+                }
             }
         }
 
@@ -62,9 +63,12 @@ public class CountlyPushActivity extends Activity {
             return false;
         }
 
-        for (String className : classes) {
-            if (className != null && intentClassName.equals(className)) {
-                return true;
+        // The class must be explicitly allow-listed, even for an own-package target.
+        if (allowedClassNames != null) {
+            for (String className : allowedClassNames) {
+                if (className != null && intentClassName.equals(className)) {
+                    return true;
+                }
             }
         }
 
@@ -223,14 +227,19 @@ public class CountlyPushActivity extends Activity {
             }
         } else {
             try {
-                if (CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(message.buttons().get(index - 1).link().toString(), context)) {
+                Uri buttonLink = message.buttons().get(index - 1).link();
+                if (buttonLink == null) {
+                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Notification button link is null, nothing to open");
+                    return;
+                }
+
+                if (CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(buttonLink.toString(), context)) {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Link handled by custom URL handler, skipping default link opening.");
                     return;
                 }
 
-                Uri buttonLink = message.buttons().get(index - 1).link();
                 if (!isLinkSchemeAllowed(buttonLink, allowedLinkSchemes)) {
-                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Blocked notification button link with disallowed scheme: [" + (buttonLink == null ? null : buttonLink.getScheme()) + "]");
+                    Countly.sharedInstance().L.w("[CountlyPush, CountlyPushActivity] Blocked notification button link with disallowed scheme: [" + buttonLink.getScheme() + "]");
                     return;
                 }
 

@@ -530,6 +530,8 @@ public class ModuleRatings extends ModuleBase {
                                 webView.clearHistory();
                                 webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                                 webView.getSettings().setJavaScriptEnabled(true);
+                                Utils.applyWebViewSecurityDefaults(webView.getSettings());
+                                webView.setWebViewClient(new FeedbackDialogWebViewClient());
                                 webView.loadUrl(ratingWidgetUrl);
 
                                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);
@@ -589,7 +591,14 @@ public class ModuleRatings extends ModuleBase {
 
             // Filter out outgoing calls
             if (url.endsWith("cly_x_int=1")) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                Uri link = Uri.parse(url);
+                // Apply the shared scheme policy (default denylist) so dangerous schemes such as
+                // file/content/javascript are not dispatched to ACTION_VIEW from server content.
+                if (!Utils.isExternalSchemeAllowed(link.getScheme(), null)) {
+                    Countly.sharedInstance().L.w("[FeedbackDialogWebViewClient] Blocked link with disallowed scheme: [" + link.getScheme() + "]");
+                    return true;
+                }
+                Intent intent = new Intent(Intent.ACTION_VIEW, link);
                 view.getContext().startActivity(intent);
                 return true;
             }
@@ -598,13 +607,22 @@ public class ModuleRatings extends ModuleBase {
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            // Countly.sharedInstance().L.i("attempting to load resource: " + url);
-            return null;
+            return interceptScheme(Uri.parse(url));
         }
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            // Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
+            return interceptScheme(request.getUrl());
+        }
+
+        // Blocks dangerous local/script sub-resource schemes (file/content/javascript/jar/data),
+        // mirroring CountlyWebViewClient. http/https (the content itself) always load.
+        private WebResourceResponse interceptScheme(Uri uri) {
+            String scheme = uri == null ? null : uri.getScheme();
+            if (!Utils.isWebContentSchemeAllowed(scheme, null)) {
+                Countly.sharedInstance().L.v("[FeedbackDialogWebViewClient] Blocked sub-resource with disallowed scheme: [" + uri + "]");
+                return Utils.blankWebResourceResponse();
+            }
             return null;
         }
     }

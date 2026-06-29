@@ -2,7 +2,6 @@ package ly.count.android.sdk;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 
 public class ConfigContent {
@@ -48,14 +47,7 @@ public class ConfigContent {
      * @return config content to chain calls
      */
     public synchronized ConfigContent setAllowedIntentSchemes(List<String> allowedIntentSchemes) {
-        this.allowedIntentSchemes = new HashSet<>();
-        if (allowedIntentSchemes != null) {
-            for (String scheme : allowedIntentSchemes) {
-                if (scheme != null) {
-                    this.allowedIntentSchemes.add(scheme.toLowerCase(Locale.ROOT));
-                }
-            }
-        }
+        this.allowedIntentSchemes = Utils.normalizeSchemeSet(allowedIntentSchemes);
         return this;
     }
 }

@@ -4,9 +4,9 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.Utils;
 
 public class CountlyConfigPush {
     Application application;
@@ -70,6 +70,10 @@ public class CountlyConfigPush {
      * intent's target component must match the allowed package and class names exactly (see
      * {@link #setAllowedIntentClassNames(List)} and {@link #setAllowedIntentPackageNames(List)})
      * before the notification action is dispatched. Disabled by default.
+     * <p>
+     * The target class must be allow-listed explicitly even when it is in the app's own package, so
+     * when this is enabled you must add each launchable target class via
+     * {@link #setAllowedIntentClassNames(List)} (otherwise matching notification clicks are rejected).
      *
      * @return Returns the same push config object for convenient linking
      */
@@ -88,14 +92,7 @@ public class CountlyConfigPush {
      * @return Returns the same push config object for convenient linking
      */
     public synchronized CountlyConfigPush setAllowedIntentSchemes(List<String> allowedIntentSchemes) {
-        this.allowedIntentSchemes = new HashSet<>();
-        if (allowedIntentSchemes != null) {
-            for (String scheme : allowedIntentSchemes) {
-                if (scheme != null) {
-                    this.allowedIntentSchemes.add(scheme.toLowerCase(Locale.ROOT));
-                }
-            }
-        }
+        this.allowedIntentSchemes = Utils.normalizeSchemeSet(allowedIntentSchemes);
         return this;
     }
 

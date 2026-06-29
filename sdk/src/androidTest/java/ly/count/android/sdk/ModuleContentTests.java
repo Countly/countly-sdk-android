@@ -313,4 +313,44 @@ public class ModuleContentTests {
         mCountly.deviceId().changeWithoutMerge("real_user_after_temp");
         Assert.assertTrue(readShouldFetchContents(mCountly.moduleContent));
     }
+
+    @Test
+    public void contentZone_doesNotResumeAfterExplicitExit() throws Exception {
+        final String serverConfigWithEcz = new ServerConfigBuilder().contentZone(true).build();
+
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.disableHealthCheck();
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if ("/o/sdk".equals(customEndpoint)) {
+                        try {
+                            callback.callback(new JSONObject(serverConfigWithEcz));
+                        } catch (JSONException e) {
+                            callback.callback(null);
+                        }
+                    } else {
+                        callback.callback(null);
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(null);
+            }
+        };
+
+        mCountly = new Countly().init(config);
+
+        // ecz=true armed the content zone at init
+        Assert.assertTrue(readShouldFetchContents(mCountly.moduleContent));
+
+        // the developer explicitly exits the content zone
+        mCountly.contents().exitContentZone();
+        Assert.assertFalse(readShouldFetchContents(mCountly.moduleContent));
+
+        // a device ID change must NOT silently resume a zone the developer turned off
+        mCountly.deviceId().changeWithoutMerge("real_user_after_exit");
+        Assert.assertFalse(readShouldFetchContents(mCountly.moduleContent));
+    }
 }
