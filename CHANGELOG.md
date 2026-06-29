@@ -5,6 +5,7 @@
 * Added a new push configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes notification links may open.
 * Improved the security of the content feature web view, disabled local file/content access, disallowed mixed content, enabled Safe Browsing, blocked non-HTTP(S) sub-resources, and blocked content links with dangerous schemes (file, content, javascript, jar, data).
 * Improved the security of push notification click handling, null-safe and stricter package/class validation, reduced intent flags, no longer forwarding the payload to external apps, and blocking notification links with dangerous schemes (file, content, javascript, jar, data) by default.
+* Added a new config option "disableSDKLoggingInProduction()" that keeps the SDK's console logging disabled in production (non-debuggable) builds, even when logging is enabled.
 
 * Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
 * Mitigated an issue where the rating feedback popup request could be sent while in temporary device ID mode, creating a `CLYTemporaryDeviceID` user on the server.
