@@ -313,7 +313,8 @@ public class ModuleContent extends ModuleBase {
             landscape,
             orientation,
             globalContentCallback,
-            this::notifyAfterContentIsClosed
+            this::notifyAfterContentIsClosed,
+            _cly.config_.content.allowedIntentSchemes
         );
 
         contentOverlay.attachToActivity(activity);
@@ -473,6 +474,14 @@ public class ModuleContent extends ModuleBase {
         L.d("[ModuleContent] deviceIdChanged, withoutMerge: [" + withoutMerge + "]");
         if (withoutMerge) {
             exitContentZoneInternal();
+            // Re-arm the content zone if the (already known) server config enables it. The server
+            // config re-fetch triggered by a device ID change only notifies when a value actually
+            // changes, so a re-fetch returning the same content-zone value would otherwise leave
+            // the zone torn down. This makes the zone resume across a temporary-device-ID toggle.
+            if (configProvider.getContentZoneEnabled()) {
+                L.d("[ModuleContent] deviceIdChanged, content zone is enabled, re-entering after device ID change");
+                enterContentZoneInternal(null, 0, null);
+            }
         }
     }
 

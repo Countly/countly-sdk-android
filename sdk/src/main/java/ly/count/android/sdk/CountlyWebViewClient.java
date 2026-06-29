@@ -12,6 +12,7 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import java.io.ByteArrayInputStream;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,10 +32,18 @@ class CountlyWebViewClient extends WebViewClient {
         "js", "css", "png", "jpg", "jpeg", "webp"
     ));
 
+    // Scheme policy for sub-resources: empty/null -> default denylist; non-empty -> allow-list mode.
+    private final Set<String> allowedSchemes;
+
     public CountlyWebViewClient() {
+        this(null);
+    }
+
+    public CountlyWebViewClient(Set<String> allowedSchemes) {
         super();
         this.listeners = new ArrayList<>();
         this.pageLoadTime = System.currentTimeMillis();
+        this.allowedSchemes = allowedSchemes;
     }
 
     @Override
@@ -57,6 +66,19 @@ class CountlyWebViewClient extends WebViewClient {
         }
 
         return false;
+    }
+
+    @Override
+    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        String scheme = request.getUrl().getScheme();
+        // Sub-resources (images, frames, scripts) follow the shared scheme policy: with no allow-list
+        // the dangerous local/script schemes (file, content, javascript, jar, data) are blocked; when
+        // an allow-list is configured, only those schemes load (the default denylist is omitted).
+        if (!Utils.isExternalSchemeAllowed(scheme, allowedSchemes)) {
+            Log.v(Countly.TAG, "[CountlyWebViewClient] shouldInterceptRequest, blocked sub-resource with disallowed scheme: [" + request.getUrl() + "]");
+            return new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
+        }
+        return null;
     }
 
     private static final long POLL_INTERVAL_MS = 100;

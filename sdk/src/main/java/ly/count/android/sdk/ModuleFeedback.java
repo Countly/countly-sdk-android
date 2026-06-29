@@ -490,7 +490,8 @@ public class ModuleFeedback extends ModuleBase {
             feedbackCallback,
             () -> {
                 feedbackOverlay = null;
-            }
+            },
+            _cly.config_.content.allowedIntentSchemes
         );
 
         feedbackOverlay.setOnWidgetCancelRunnable(() -> reportFeedbackWidgetCancelButton(widgetInfo));

@@ -57,6 +57,8 @@ public class CountlyPush {
     public static final String COUNTLY_BROADCAST_PERMISSION_POSTFIX = ".CountlyPush.BROADCAST_PERMISSION";
     public static final String ALLOWED_PACKAGE_NAMES = "allowed_package_names";
     public static final String ALLOWED_CLASS_NAMES = "allowed_class_names";
+    static final String ADDITIONAL_INTENT_REDIRECTION_CHECKS = "additional_intent_redirection_checks";
+    static final String ALLOWED_INTENT_SCHEMES = "allowed_intent_schemes";
 
     private static Application.ActivityLifecycleCallbacks callbacks = null;
     private static Activity activity = null;
@@ -75,6 +77,11 @@ public class CountlyPush {
      */
     static int MEDIA_DOWNLOAD_ATTEMPTS = 3;
 
+    /**
+     * @deprecated No longer used. Setting this field has no effect. Enable the additional intent
+     * redirection checks through {@link CountlyConfigPush#enableAdditionalIntentRedirectionChecks()} instead.
+     */
+    @Deprecated
     public static boolean useAdditionalIntentRedirectionChecks = false;
 
     static boolean initFinished = false;
@@ -372,14 +379,20 @@ public class CountlyPush {
 
         Set<String> allowedIntentClassNames;
         Set<String> allowedIntentPackageNames;
+        Set<String> allowedIntentSchemes;
+        boolean useAdditionalIntentRedirectionChecks;
 
         if (!initFinished) {
             Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
             allowedIntentClassNames = new HashSet<>();
             allowedIntentPackageNames = new HashSet<>();
+            allowedIntentSchemes = new HashSet<>();
+            useAdditionalIntentRedirectionChecks = false;
         } else {
             allowedIntentClassNames = CountlyPush.countlyConfigPush.allowedIntentClassNames;
             allowedIntentPackageNames = CountlyPush.countlyConfigPush.allowedIntentPackageNames;
+            allowedIntentSchemes = CountlyPush.countlyConfigPush.allowedIntentSchemes;
+            useAdditionalIntentRedirectionChecks = CountlyPush.countlyConfigPush.useAdditionalIntentRedirectionChecks;
         }
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
@@ -389,7 +402,7 @@ public class CountlyPush {
             return Boolean.FALSE;
         }
 
-        Intent pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, 0, allowedIntentClassNames, allowedIntentPackageNames);
+        Intent pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, 0, allowedIntentClassNames, allowedIntentPackageNames, useAdditionalIntentRedirectionChecks, allowedIntentSchemes);
 
         final Notification.Builder builder = (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? new Notification.Builder(context.getApplicationContext(), CHANNEL_ID) : new Notification.Builder(context.getApplicationContext()))
             .setAutoCancel(true)
@@ -416,7 +429,7 @@ public class CountlyPush {
         for (int i = 0; i < msg.buttons().size(); i++) {
             Button button = msg.buttons().get(i);
 
-            pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, i + 1, allowedIntentClassNames, allowedIntentPackageNames);
+            pushActivityIntent = createPushActivityIntent(context, msg, notificationIntent, i + 1, allowedIntentClassNames, allowedIntentPackageNames, useAdditionalIntentRedirectionChecks, allowedIntentSchemes);
             builder.addAction(button.icon(), button.title(), PendingIntent.getActivity(context, msg.hashCode() + i + 1, pushActivityIntent, Build.VERSION.SDK_INT >= 23 ? PendingIntent.FLAG_IMMUTABLE : 0));
         }
 
@@ -448,13 +461,17 @@ public class CountlyPush {
         return Boolean.TRUE;
     }
 
-    private static Intent createPushActivityIntent(@NonNull final Context context, @NonNull final Message msg, @Nullable final Intent notificationIntent, int index, @NonNull Set<String> allowedIntentClassNames, @NonNull Set<String> allowedIntentPackageNames) {
+    private static Intent createPushActivityIntent(@NonNull final Context context, @NonNull final Message msg, @Nullable final Intent notificationIntent, int index, @NonNull Set<String> allowedIntentClassNames, @NonNull Set<String> allowedIntentPackageNames, boolean useAdditionalIntentRedirectionChecks, @NonNull Set<String> allowedIntentSchemes) {
         Intent pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());
         pushActivityIntent.putExtra(EXTRA_INTENT, actionIntent(context, notificationIntent, msg, index));
         pushActivityIntent.putStringArrayListExtra(ALLOWED_CLASS_NAMES, new ArrayList<>(allowedIntentClassNames));
         pushActivityIntent.putStringArrayListExtra(ALLOWED_PACKAGE_NAMES, new ArrayList<>(allowedIntentPackageNames));
+        pushActivityIntent.putStringArrayListExtra(ALLOWED_INTENT_SCHEMES, new ArrayList<>(allowedIntentSchemes));
+        // Carried on the SDK-built intent so the activity does not read it from static state. The
+        // activity defaults to true (fail-secure) when this extra is absent.
+        pushActivityIntent.putExtra(ADDITIONAL_INTENT_REDIRECTION_CHECKS, useAdditionalIntentRedirectionChecks);
         return pushActivityIntent;
     }
 

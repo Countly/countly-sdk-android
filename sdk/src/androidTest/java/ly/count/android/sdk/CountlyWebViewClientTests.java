@@ -9,7 +9,9 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -314,5 +316,55 @@ public class CountlyWebViewClientTests {
         client.onReceivedHttpError(null, fakeRequest("https://example.com/photo.png", false), fakeHttpErrorResponse(404));
         Assert.assertEquals(1, callbackResults.size());
         Assert.assertTrue(callbackResults.get(0));
+    }
+
+    // =====================================
+    // shouldInterceptRequest - sub-resource scheme blocking
+    // =====================================
+
+    /**
+     * "shouldInterceptRequest" with http(s) sub-resources should return null so they load normally.
+     */
+    @Test
+    public void shouldInterceptRequest_httpAndHttps_allowed() {
+        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("https://example.com/photo.png", false)));
+        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("http://example.com/app.js", false)));
+        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("HTTPS://EXAMPLE.COM/x.css", true)));
+    }
+
+    /**
+     * "shouldInterceptRequest" must block every non-http(s) scheme an attacker could use to read
+     * local data or run script from a content sub-resource (img/iframe/script/xhr): file://,
+     * content://, javascript:, data:, jar:file://, plus a file:// pointing at app-private storage.
+     */
+    @Test
+    public void shouldInterceptRequest_nonWebSchemes_blocked() {
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("file:///data/data/ly.count.android.sdk/shared_prefs/secret.xml", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("file:///etc/hosts", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://com.app.provider/private", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://media/external/images/media/1", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("javascript:alert(document.cookie)", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:text/html,<script>alert(1)</script>", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("jar:file:///data/app/x.apk!/a.html", false)));
+        // also blocked for a main-frame request, not just sub-resources
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("file:///data/data/ly.count.android.sdk/databases/countly.db", true)));
+    }
+
+    private void assertBlocked(WebResourceResponse response) {
+        Assert.assertNotNull(response);
+        Assert.assertNotNull(response.getData());
+    }
+
+    /**
+     * With a configured scheme allow-list, sub-resources follow allow-list mode: only listed schemes
+     * load (the default denylist is omitted), everything else is blocked.
+     */
+    @Test
+    public void shouldInterceptRequest_allowlistMode() {
+        CountlyWebViewClient allowlisted = new CountlyWebViewClient(new HashSet<>(Arrays.asList("https")));
+        Assert.assertNull(allowlisted.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png", false)));
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("http://example.com/a.png", false)));   // not listed
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("market://details?id=x", false)));      // not listed
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("file:///etc/hosts", false)));          // not listed
     }
 }

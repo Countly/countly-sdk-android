@@ -13,9 +13,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +32,30 @@ public class Utils {
      * This is a communication url between web views and the SDK
      */
     protected static final String COMM_URL = "https://countly_action_event";
+
+    /**
+     * Schemes that are never dispatched to ACTION_VIEW from server-controlled content, because they
+     * can read local data or run script. Used as the default denylist when no scheme allow-list is set.
+     */
+    private static final Set<String> DANGEROUS_INTENT_SCHEMES = new HashSet<>(Arrays.asList("file", "content", "javascript", "jar", "data"));
+
+    /**
+     * Scheme policy for externally-dispatched links (content overlay links, push notification links).
+     * When {@code allowedSchemes} is non-empty, only those schemes are permitted (allow-list mode).
+     * Otherwise any scheme except the known-dangerous ones is permitted (deep links such as
+     * "myapp", "market", "tel", "mailto" stay allowed). A null scheme is never permitted.
+     * {@code allowedSchemes} entries are expected to be lower-case; the scheme is matched case-insensitively.
+     */
+    public static boolean isExternalSchemeAllowed(String scheme, Set<String> allowedSchemes) {
+        if (scheme == null) {
+            return false;
+        }
+        String normalized = scheme.toLowerCase(Locale.ROOT);
+        if (allowedSchemes != null && !allowedSchemes.isEmpty()) {
+            return allowedSchemes.contains(normalized);
+        }
+        return !DANGEROUS_INTENT_SCHEMES.contains(normalized);
+    }
     private static final ExecutorService bg = Executors.newSingleThreadExecutor();
 
     public static Future<?> runInBackground(Runnable runnable) {
