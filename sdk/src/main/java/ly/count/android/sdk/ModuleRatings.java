@@ -465,6 +465,14 @@ public class ModuleRatings extends ModuleBase {
             return;
         }
 
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            L.e("[ModuleRatings] feedback popup can't be shown when in temporary device ID mode");
+            if (devCallback != null) {
+                devCallback.callback("[ModuleRatings] feedback popup can't be shown when in temporary device ID mode");
+            }
+            return;
+        }
+
         //check the device type
         final boolean deviceIsPhone;
         final boolean deviceIsTablet;

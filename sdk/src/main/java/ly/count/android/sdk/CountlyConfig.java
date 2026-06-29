@@ -111,6 +111,8 @@ public class CountlyConfig {
 
     protected boolean loggingEnabled = false;
 
+    protected boolean disableSDKLoggingInProduction = false;
+
     protected boolean enableAutomaticViewTracking = false;
 
     protected boolean autoTrackingUseShortName = false;
@@ -377,6 +379,20 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setLoggingEnabled(boolean enabled) {
         this.loggingEnabled = enabled;
+        return this;
+    }
+
+    /**
+     * Call this if you want the SDK to keep its console (logcat) logging disabled
+     * when the host app is built as a production (non-debuggable) build, even if
+     * logging was enabled through {@link #setLoggingEnabled(boolean)} or through the
+     * runtime call {@link Countly#setLoggingEnabled(boolean)}.
+     * A production build is detected as one that is not flagged debuggable in its
+     * application info. This only affects console output. A log listener provided
+     * through {@link #setLogListener(ModuleLog.LogCallback)} keeps receiving logs.
+     */
+    public synchronized CountlyConfig disableSDKLoggingInProduction() {
+        this.disableSDKLoggingInProduction = true;
         return this;
     }
 
