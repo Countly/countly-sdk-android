@@ -3,9 +3,12 @@ package ly.count.android.sdk;
 import android.os.Build;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -230,5 +233,72 @@ public class UtilsTests {
         params.put("aaa", "bbb");
         params.put("ccc", "ddd");
         Assert.assertEquals("aaa=bbb&ccc=ddd", Utils.combineParamsIntoRequest(params));
+    }
+
+    // ===== Scheme policy (shared chokepoint for content / feedback / push link + sub-resource security) =====
+
+    /** Default (no allow-list) mode: dangerous local/script schemes are denied, everything else allowed. */
+    @Test
+    public void isExternalSchemeAllowed_defaultDenylist() {
+        // allowed (not dangerous)
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("https", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("http", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("myapp", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("market", new HashSet<>()));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("tel", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("mailto", null));
+        // denied (dangerous), case-insensitive
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("file", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("content", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("javascript", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("jar", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("data", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("FILE", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("JavaScript", null));
+        // null scheme is never allowed
+        Assert.assertFalse(Utils.isExternalSchemeAllowed(null, null));
+    }
+
+    /** Allow-list mode: only listed schemes pass (case-insensitive), the default denylist is omitted. */
+    @Test
+    public void isExternalSchemeAllowed_allowlistMode() {
+        Set<String> allow = new HashSet<>(Arrays.asList("https", "myapp"));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("https", allow));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("HTTPS", allow));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("myapp", allow));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("http", allow));   // not listed
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("market", allow)); // not listed
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("file", allow));   // not listed
+        // an explicit allow-list can even opt a normally-dangerous scheme back in
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("content", new HashSet<>(Arrays.asList("content"))));
+    }
+
+    /** Sub-resource policy: https always loads (serves the content); other schemes follow the link policy. */
+    @Test
+    public void isWebContentSchemeAllowed_httpsAlwaysAllowed_httpOptIn() {
+        // https always allowed, even in allow-list mode that omits it
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("https", null));
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("HTTPS", new HashSet<>(Arrays.asList("myapp"))));
+        // http: allowed in default denylist mode, but NOT auto-allowed in allow-list mode (opt-in)
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("http", null));
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("http", new HashSet<>(Arrays.asList("myapp"))));
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("http", new HashSet<>(Arrays.asList("http"))));
+        // dangerous schemes still blocked
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("file", null));
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("javascript", null));
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("content", null));
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed(null, null));
+    }
+
+    /** normalizeSchemeSet lower-cases, tolerates nulls, and never returns null. */
+    @Test
+    public void normalizeSchemeSet_nullSafeLowercased() {
+        Assert.assertTrue(Utils.normalizeSchemeSet(null).isEmpty());
+        Set<String> out = Utils.normalizeSchemeSet(Arrays.asList("HTTPS", "MyApp", null, "tel"));
+        Assert.assertEquals(3, out.size());
+        Assert.assertTrue(out.contains("https"));
+        Assert.assertTrue(out.contains("myapp"));
+        Assert.assertTrue(out.contains("tel"));
+        Assert.assertFalse(out.contains("HTTPS"));
     }
 }
