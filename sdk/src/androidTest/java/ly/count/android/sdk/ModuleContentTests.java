@@ -113,6 +113,28 @@ public class ModuleContentTests {
     }
 
     /**
+     * The global disableWebView() switch should disable the content feature,
+     * even when content consent is granted.
+     */
+    @Test
+    public void previewContent_webViewDisabledByConfig() {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.setRequiresConsent(true);
+        config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.content });
+        config.disableWebView();
+        config.disableHealthCheck();
+        config.immediateRequestGenerator = createCapturingIRGenerator();
+
+        mCountly = new Countly();
+        mCountly.init(config);
+        mCountly.moduleContent.countlyTimer = null;
+        capturedRequests.clear();
+
+        mCountly.contents().previewContent("test_content_123");
+        Assert.assertEquals(0, capturedRequests.size());
+    }
+
+    /**
      * Without content consent, no request should be made
      */
     @Test
