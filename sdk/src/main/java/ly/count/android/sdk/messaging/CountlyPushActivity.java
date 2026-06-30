@@ -85,6 +85,19 @@ public class CountlyPushActivity extends Activity {
     }
 
     /**
+     * Whether the integrator's custom URL handler consumed the link. Null-safe against an
+     * un-initialized push config: {@code CountlyPush.countlyConfigPush} can be null when the
+     * activity runs in a fresh process (e.g. the notification is tapped after the app process was
+     * killed and push was not re-initialized), so this must not dereference it blindly. Returns
+     * false (handler did not consume the link) when there is no config or no handler.
+     */
+    static boolean linkHandledByCustomHandler(String url, Context context) {
+        return CountlyPush.countlyConfigPush != null
+            && CountlyPush.countlyConfigPush.notificationButtonURLHandler != null
+            && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(url, context);
+    }
+
+    /**
      * Validates the push activity intent and returns the inner intent that is safe to act on, or
      * null if the push must be rejected. Encapsulates the redirection guards so they are testable:
      * a missing inner intent, URI-grant flags (stripped on API 26+, rejected below), an untrusted
@@ -197,7 +210,7 @@ public class CountlyPushActivity extends Activity {
                 if (message.link() != null) {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given link. Push body. [" + message.link() + "]");
 
-                    if (CountlyPush.countlyConfigPush != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(message.link().toString(), context)) {
+                    if (linkHandledByCustomHandler(message.link().toString(), context)) {
                         Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Link handled by custom URL handler, skipping default link opening.");
                         return;
                     }
@@ -233,7 +246,7 @@ public class CountlyPushActivity extends Activity {
                     return;
                 }
 
-                if (CountlyPush.countlyConfigPush != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(buttonLink.toString(), context)) {
+                if (linkHandledByCustomHandler(buttonLink.toString(), context)) {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Link handled by custom URL handler, skipping default link opening.");
                     return;
                 }
