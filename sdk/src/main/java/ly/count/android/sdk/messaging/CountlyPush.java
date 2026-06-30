@@ -577,7 +577,7 @@ public class CountlyPush {
                                     return;
                                 }
 
-                                Set<String> allowedDialogSchemes = countlyConfigPush != null ? countlyConfigPush.allowedIntentSchemes : null;
+                                Set<String> allowedDialogSchemes = countlyConfigPush.allowedIntentSchemes;
                                 if (!Utils.isExternalSchemeAllowed(msg.link().getScheme(), allowedDialogSchemes)) {
                                     Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Blocked dialog link with disallowed scheme: [" + msg.link().getScheme() + "]");
                                     return;
@@ -636,7 +636,7 @@ public class CountlyPush {
                     try {
                         msg.recordAction(context, isPositiveButtonPressed ? 2 : 1);
 
-                        Set<String> allowedDialogSchemes = countlyConfigPush != null ? countlyConfigPush.allowedIntentSchemes : null;
+                        Set<String> allowedDialogSchemes = countlyConfigPush.allowedIntentSchemes;
                         if (!Utils.isExternalSchemeAllowed(buttonLink == null ? null : buttonLink.getScheme(), allowedDialogSchemes)) {
                             Countly.sharedInstance().L.w("[CountlyPush, dialog button onClick] Blocked dialog button link with disallowed scheme: [" + (buttonLink == null ? null : buttonLink.getScheme()) + "]");
                             return;

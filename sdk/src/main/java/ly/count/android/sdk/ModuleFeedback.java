@@ -359,7 +359,7 @@ public class ModuleFeedback extends ModuleBase {
         webView.clearHistory();
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         Utils.applyWebViewSecurityDefaults(webView.getSettings());
-        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient();
+        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes);
         webView.setWebViewClient(webViewClient);
         webView.loadUrl(url);
         webView.requestFocus();
