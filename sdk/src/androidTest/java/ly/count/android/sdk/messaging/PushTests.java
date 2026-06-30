@@ -190,6 +190,88 @@ public class PushTests {
         Assert.assertTrue(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("content://x"), new HashSet<>(Arrays.asList("content"))));
     }
 
+    // ---- linkHandledByCustomHandler: null-safety against an un-initialized push config ----
+
+    /**
+     * Regression: tapping a push link must not NPE when CountlyPush has not been initialized in this
+     * process (countlyConfigPush == null) — e.g. the notification is tapped after the app process
+     * was killed. The handler check must return false (not crash), so the scheme guard then runs.
+     */
+    @Test
+    public void linkHandledByCustomHandler_nullConfig_noCrashReturnsFalse() {
+        CountlyConfigPush saved = CountlyPush.countlyConfigPush;
+        try {
+            CountlyPush.countlyConfigPush = null;
+            Assert.assertFalse(CountlyPushActivity.linkHandledByCustomHandler("https://x.com", ctx()));
+            Assert.assertFalse(CountlyPushActivity.linkHandledByCustomHandler("file:///etc/hosts", ctx()));
+        } finally {
+            CountlyPush.countlyConfigPush = saved;
+        }
+    }
+
+    /** With a config but no handler set, the link is not consumed (and no crash). */
+    @Test
+    public void linkHandledByCustomHandler_configWithoutHandler_returnsFalse() {
+        CountlyConfigPush saved = CountlyPush.countlyConfigPush;
+        try {
+            CountlyPush.countlyConfigPush = new CountlyConfigPush((android.app.Application) ctx().getApplicationContext());
+            Assert.assertFalse(CountlyPushActivity.linkHandledByCustomHandler("https://x.com", ctx()));
+        } finally {
+            CountlyPush.countlyConfigPush = saved;
+        }
+    }
+
+    /** A handler that claims the link returns true; one that declines returns false. */
+    @Test
+    public void linkHandledByCustomHandler_handlerDecision_isHonored() {
+        CountlyConfigPush saved = CountlyPush.countlyConfigPush;
+        try {
+            CountlyPush.countlyConfigPush = new CountlyConfigPush((android.app.Application) ctx().getApplicationContext())
+                .setNotificationButtonURLHandler((url, context) -> true);
+            Assert.assertTrue(CountlyPushActivity.linkHandledByCustomHandler("https://x.com", ctx()));
+
+            CountlyPush.countlyConfigPush = new CountlyConfigPush((android.app.Application) ctx().getApplicationContext())
+                .setNotificationButtonURLHandler((url, context) -> false);
+            Assert.assertFalse(CountlyPushActivity.linkHandledByCustomHandler("https://x.com", ctx()));
+        } finally {
+            CountlyPush.countlyConfigPush = saved;
+        }
+    }
+
+    // ---- config -> intent-extra wiring: enableAdditionalIntentRedirectionChecks() / setAllowedIntentSchemes() reach the guards ----
+
+    /**
+     * Pins the customer-facing wiring: the values createPushActivityIntent is given (sourced from
+     * CountlyConfigPush at display time) must land on the built intent under the exact extra keys the
+     * activity reads, and feed the guards. A key rename or value flip here would silently disable a
+     * configured protection while every direct-arg guard test still passed.
+     */
+    @Test
+    public void createPushActivityIntent_writesConfigExtras_consumedByGuards() {
+        Map<String, String> data = new HashMap<>();
+        data.put("c.i", "wiring_test");
+        data.put("message", "m");
+        CountlyPush.Message msg = CountlyPush.decodeMessage(data);
+
+        // Explicit inner intent (the SDK test app has no launcher, so getLaunchIntentForPackage is null).
+        Intent built = CountlyPush.createPushActivityIntent(ctx(), msg, ownTargetInner(), 0,
+            new HashSet<>(Arrays.asList("com.example.app.MainActivity")),
+            new HashSet<>(Arrays.asList("com.example.app")),
+            true,
+            new HashSet<>(Arrays.asList("https")));
+
+        // enableAdditionalIntentRedirectionChecks() -> ADDITIONAL_INTENT_REDIRECTION_CHECKS=true on the intent
+        Assert.assertTrue(built.getBooleanExtra(CountlyPush.ADDITIONAL_INTENT_REDIRECTION_CHECKS, false));
+        Assert.assertTrue(built.getStringArrayListExtra(CountlyPush.ALLOWED_CLASS_NAMES).contains("com.example.app.MainActivity"));
+        Assert.assertTrue(built.getStringArrayListExtra(CountlyPush.ALLOWED_PACKAGE_NAMES).contains("com.example.app"));
+        Assert.assertNotNull(built.getParcelableExtra(CountlyPush.EXTRA_INTENT));
+
+        // setAllowedIntentSchemes(["https"]) -> the scheme allow-list reaches isLinkSchemeAllowed as an allow-list
+        Set<String> schemes = new HashSet<>(built.getStringArrayListExtra(CountlyPush.ALLOWED_INTENT_SCHEMES));
+        Assert.assertTrue(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("https://x"), schemes));
+        Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("countly://x"), schemes));
+    }
+
     // ---- validatePushIntent: the performPushAction guards (R1-R5) ----
 
     private Context ctx() {

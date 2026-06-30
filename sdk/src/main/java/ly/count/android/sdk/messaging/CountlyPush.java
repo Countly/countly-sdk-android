@@ -462,7 +462,8 @@ public class CountlyPush {
         return Boolean.TRUE;
     }
 
-    private static Intent createPushActivityIntent(@NonNull final Context context, @NonNull final Message msg, @Nullable final Intent notificationIntent, int index, @NonNull Set<String> allowedIntentClassNames, @NonNull Set<String> allowedIntentPackageNames, boolean useAdditionalIntentRedirectionChecks, @NonNull Set<String> allowedIntentSchemes) {
+    // package-private (not private) so the config -> intent-extra wiring is unit-testable.
+    static Intent createPushActivityIntent(@NonNull final Context context, @NonNull final Message msg, @Nullable final Intent notificationIntent, int index, @NonNull Set<String> allowedIntentClassNames, @NonNull Set<String> allowedIntentPackageNames, boolean useAdditionalIntentRedirectionChecks, @NonNull Set<String> allowedIntentSchemes) {
         Intent pushActivityIntent = new Intent(context.getApplicationContext(), CountlyPushActivity.class)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         pushActivityIntent.setPackage(context.getApplicationContext().getPackageName());

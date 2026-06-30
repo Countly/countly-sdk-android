@@ -127,6 +127,11 @@ public class CountlyPushActivity extends Activity {
             }
         }
 
+        // Caller-package check. On the normal push tap this fires via PendingIntent.getActivity, so
+        // getCallingActivity() is null (the system, not a startActivityForResult caller) and this
+        // guard is skipped — that path is safe because a PendingIntent is unforgeable and the target
+        // is still constrained by the own-package resolveActivity check below. The check only adds
+        // protection if some app does startActivityForResult into this activity directly.
         if (callingActivity != null) {
             String callingPackage = callingActivity.getPackageName();
             if (!packageNameCurrent.equals(callingPackage)) {
