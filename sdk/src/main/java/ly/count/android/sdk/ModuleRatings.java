@@ -450,6 +450,14 @@ public class ModuleRatings extends ModuleBase {
             return;
         }
 
+        if (!_cly.config_.webViewEnabled) {
+            L.w("[ModuleRatings] showFeedbackPopupInternal, WebView is disabled via configuration, skipping");
+            if (devCallback != null) {
+                devCallback.callback("WebView is disabled via configuration");
+            }
+            return;
+        }
+
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
             if (devCallback != null) {
                 devCallback.callback("Consent is not granted");

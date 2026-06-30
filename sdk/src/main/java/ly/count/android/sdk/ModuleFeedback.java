@@ -248,6 +248,14 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
+        if (!_cly.config_.webViewEnabled) {
+            L.w("[ModuleFeedback] presentFeedbackWidgetInternal, WebView is disabled via configuration, skipping");
+            if (devCallback != null) {
+                devCallback.onFinished("WebView is disabled via configuration");
+            }
+            return;
+        }
+
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
             if (devCallback != null) {
                 devCallback.onFinished("Consent is not granted");
@@ -353,6 +361,10 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, String closeButtonText, FeedbackCallback devCallback, String url) {
+        if (!_cly.config_.webViewEnabled) {
+            L.w("[ModuleFeedback] showFeedbackWidget, WebView is disabled via configuration, skipping");
+            return;
+        }
         ModuleRatings.RatingDialogWebView webView = new ModuleRatings.RatingDialogWebView(context);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.clearCache(true);
@@ -382,6 +394,14 @@ public class ModuleFeedback extends ModuleBase {
     }
 
     private void showFeedbackWidget_newActivity(@NonNull Context context, String url, CountlyFeedbackWidget widgetInfo, FeedbackCallback devCallback) {
+        if (!_cly.config_.webViewEnabled) {
+            L.w("[ModuleFeedback] showFeedbackWidget_newActivity, WebView is disabled via configuration, skipping");
+            if (devCallback != null) {
+                devCallback.onFinished("WebView is disabled via configuration");
+            }
+            return;
+        }
+
         Activity activity = null;
         if (context instanceof Activity && !((Activity) context).isFinishing()) {
             activity = (Activity) context;

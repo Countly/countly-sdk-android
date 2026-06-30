@@ -25,6 +25,7 @@ public class ModuleContent extends ModuleBase {
     private boolean isCurrentlyInContentZone = false;
     private boolean isCurrentlyRetrying = false;
     private int zoneTimerInterval;
+    private final boolean webViewEnabled;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
@@ -42,7 +43,11 @@ public class ModuleContent extends ModuleBase {
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
         zoneTimerInterval = config.content.zoneTimerInterval;
+        webViewEnabled = config.webViewEnabled;
         globalContentCallback = config.content.globalContentCallback;
+        if (!webViewEnabled) {
+            L.i("[ModuleContent] WebView is disabled via configuration, content overlay will not be shown");
+        }
     }
 
     @Override
@@ -179,6 +184,11 @@ public class ModuleContent extends ModuleBase {
     }
 
     private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS, @Nullable Runnable callbackOnFailure) {
+        if (!webViewEnabled) {
+            L.d("[ModuleContent] enterContentZoneInternal, WebView is disabled via configuration, skipping");
+            return;
+        }
+
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
             return;
@@ -282,6 +292,11 @@ public class ModuleContent extends ModuleBase {
 
     private void showContentOverlay(@NonNull Activity activity, @NonNull Map<Integer, TransparentActivityConfig> placementCoordinates) {
         L.d("[ModuleContent] showContentOverlay, showing content overlay on [" + activity.getClass().getSimpleName() + "]");
+
+        if (!webViewEnabled) {
+            L.w("[ModuleContent] showContentOverlay, WebView is disabled via configuration, skipping");
+            return;
+        }
 
         // Do not show content if feedback widget is currently showing
         if (_cly.moduleFeedback != null && _cly.moduleFeedback.feedbackOverlay != null) {
@@ -495,6 +510,11 @@ public class ModuleContent extends ModuleBase {
 
     void previewContentInternal(@NonNull String contentId) {
         L.d("[ModuleContent] previewContentInternal, contentId: [" + contentId + "]");
+
+        if (!webViewEnabled) {
+            L.d("[ModuleContent] previewContentInternal, WebView is disabled via configuration, skipping");
+            return;
+        }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] previewContentInternal, Consent is not granted, skipping");

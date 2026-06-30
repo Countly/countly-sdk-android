@@ -214,6 +214,7 @@ public class CountlyConfig {
     // If set to true, immediate requests will use serial AsyncTask executor instead of the thread pool
     boolean useSerialExecutor = false;
     WebViewDisplayOption webViewDisplayOption = WebViewDisplayOption.IMMERSIVE;
+    boolean webViewEnabled = true;
 
     // If set to true, request queue cleaner will remove all overflow at once instead of gradually (loop limited) removing
     boolean disableGradualRequestCleaner = false;
@@ -1122,6 +1123,18 @@ public class CountlyConfig {
         if (displayOption != null) {
             this.webViewDisplayOption = displayOption;
         }
+        return this;
+    }
+
+    /**
+     * Disable all WebView-based UI in the SDK. When called, no WebView is ever created or shown
+     * for any feature. This covers the Content feature overlay, Feedback Widgets (surveys, NPS,
+     * and rating widgets), and the rating popup. WebView UI is enabled by default.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableWebView() {
+        this.webViewEnabled = false;
         return this;
     }
 
