@@ -197,7 +197,7 @@ public class CountlyPushActivity extends Activity {
                 if (message.link() != null) {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given link. Push body. [" + message.link() + "]");
 
-                    if (CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(message.link().toString(), context)) {
+                    if (CountlyPush.countlyConfigPush != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(message.link().toString(), context)) {
                         Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Link handled by custom URL handler, skipping default link opening.");
                         return;
                     }
@@ -233,7 +233,7 @@ public class CountlyPushActivity extends Activity {
                     return;
                 }
 
-                if (CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(buttonLink.toString(), context)) {
+                if (CountlyPush.countlyConfigPush != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler != null && CountlyPush.countlyConfigPush.notificationButtonURLHandler.onClick(buttonLink.toString(), context)) {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Link handled by custom URL handler, skipping default link opening.");
                     return;
                 }
