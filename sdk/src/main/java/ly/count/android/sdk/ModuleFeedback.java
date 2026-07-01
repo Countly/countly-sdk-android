@@ -370,7 +370,8 @@ public class ModuleFeedback extends ModuleBase {
         webView.clearCache(true);
         webView.clearHistory();
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
-        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient();
+        Utils.applyWebViewSecurityDefaults(webView.getSettings());
+        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes);
         webView.setWebViewClient(webViewClient);
         webView.loadUrl(url);
         webView.requestFocus();
@@ -510,7 +511,8 @@ public class ModuleFeedback extends ModuleBase {
             feedbackCallback,
             () -> {
                 feedbackOverlay = null;
-            }
+            },
+            _cly.config_.content.allowedIntentSchemes
         );
 
         feedbackOverlay.setOnWidgetCancelRunnable(() -> reportFeedbackWidgetCancelButton(widgetInfo));

@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -538,6 +539,8 @@ public class ModuleRatings extends ModuleBase {
                                 webView.clearHistory();
                                 webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                                 webView.getSettings().setJavaScriptEnabled(true);
+                                Utils.applyWebViewSecurityDefaults(webView.getSettings());
+                                webView.setWebViewClient(new FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes));
                                 webView.loadUrl(ratingWidgetUrl);
 
                                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);
@@ -584,6 +587,17 @@ public class ModuleRatings extends ModuleBase {
     static class FeedbackDialogWebViewClient extends WebViewClient {
 
         WebViewUrlListener listener;
+        // Scheme policy for outbound links / sub-resources, shared with the content overlay. Empty or
+        // null -> default denylist; non-empty -> allow-list mode (sourced from config.content).
+        private final Set<String> allowedSchemes;
+
+        FeedbackDialogWebViewClient() {
+            this(null);
+        }
+
+        FeedbackDialogWebViewClient(Set<String> allowedSchemes) {
+            this.allowedSchemes = allowedSchemes;
+        }
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -597,7 +611,15 @@ public class ModuleRatings extends ModuleBase {
 
             // Filter out outgoing calls
             if (url.endsWith("cly_x_int=1")) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                Uri link = Uri.parse(url);
+                // Apply the shared scheme policy so dangerous schemes such as file/content/javascript
+                // are not dispatched to ACTION_VIEW from server content, honoring any configured
+                // allow-list the same way the content overlay does.
+                if (!Utils.isExternalSchemeAllowed(link.getScheme(), allowedSchemes)) {
+                    Countly.sharedInstance().L.w("[FeedbackDialogWebViewClient] Blocked link with disallowed scheme: [" + link.getScheme() + "]");
+                    return true;
+                }
+                Intent intent = new Intent(Intent.ACTION_VIEW, link);
                 view.getContext().startActivity(intent);
                 return true;
             }
@@ -606,13 +628,23 @@ public class ModuleRatings extends ModuleBase {
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            // Countly.sharedInstance().L.i("attempting to load resource: " + url);
-            return null;
+            return interceptScheme(url == null ? null : Uri.parse(url));
         }
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            // Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
+            return interceptScheme(request.getUrl());
+        }
+
+        // Blocks dangerous local/script sub-resource schemes (file/content/javascript/jar/data),
+        // mirroring CountlyWebViewClient. https (the content itself) always loads; other schemes
+        // follow the configured allow-list / default denylist.
+        private WebResourceResponse interceptScheme(Uri uri) {
+            String scheme = uri == null ? null : uri.getScheme();
+            if (!Utils.isWebContentSchemeAllowed(scheme, allowedSchemes)) {
+                Countly.sharedInstance().L.v("[FeedbackDialogWebViewClient] Blocked sub-resource with disallowed scheme: [" + uri + "]");
+                return Utils.blankWebResourceResponse();
+            }
             return null;
         }
     }

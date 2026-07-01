@@ -328,7 +328,8 @@ public class ModuleContent extends ModuleBase {
             landscape,
             orientation,
             globalContentCallback,
-            this::notifyAfterContentIsClosed
+            this::notifyAfterContentIsClosed,
+            _cly.config_.content.allowedIntentSchemes
         );
 
         contentOverlay.attachToActivity(activity);
@@ -488,6 +489,20 @@ public class ModuleContent extends ModuleBase {
         L.d("[ModuleContent] deviceIdChanged, withoutMerge: [" + withoutMerge + "]");
         if (withoutMerge) {
             exitContentZoneInternal();
+        }
+    }
+
+    /**
+     * Resumes the content zone after exiting temporary device ID mode. Called only from the
+     * temporary-ID-exit path (not from a generic device ID change), so a plain changeWithoutMerge
+     * does not silently re-arm a zone the developer turned off. The server config re-fetch on
+     * exiting temporary mode only notifies modules when a value changes, so an unchanged (still
+     * enabled) content-zone value would otherwise leave the zone torn down here.
+     */
+    void resumeContentZoneAfterTemporaryIdExit() {
+        if (configProvider.getContentZoneEnabled()) {
+            L.d("[ModuleContent] resumeContentZoneAfterTemporaryIdExit, content zone is enabled, re-entering");
+            enterContentZoneInternal(null, 0, null);
         }
     }
 

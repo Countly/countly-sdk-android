@@ -31,10 +31,18 @@ class CountlyWebViewClient extends WebViewClient {
         "js", "css", "png", "jpg", "jpeg", "webp"
     ));
 
+    // Scheme policy for sub-resources: empty/null -> default denylist; non-empty -> allow-list mode.
+    private final Set<String> allowedSchemes;
+
     public CountlyWebViewClient() {
+        this(null);
+    }
+
+    public CountlyWebViewClient(Set<String> allowedSchemes) {
         super();
         this.listeners = new ArrayList<>();
         this.pageLoadTime = System.currentTimeMillis();
+        this.allowedSchemes = allowedSchemes;
     }
 
     @Override
@@ -57,6 +65,23 @@ class CountlyWebViewClient extends WebViewClient {
         }
 
         return false;
+    }
+
+    @Override
+    public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+        Uri url = request == null ? null : request.getUrl();
+        String scheme = url == null ? null : url.getScheme();
+        // Sub-resources (images, frames, scripts) follow the shared scheme policy, except https which
+        // always loads because it serves the content itself: with no allow-list the dangerous
+        // local/script schemes (file, content, javascript, jar) are blocked while inline data/blob
+        // assets load; when an allow-list is configured, only those schemes (plus https) load. This
+        // keeps an outbound-link allow-list from blocking the page's own https assets, while http and
+        // data/blob stay integrator-decided. A null scheme (e.g. a malformed request) is blocked, fail-secure.
+        if (!Utils.isWebContentSchemeAllowed(scheme, allowedSchemes)) {
+            Log.v(Countly.TAG, "[CountlyWebViewClient] shouldInterceptRequest, blocked sub-resource with disallowed scheme: [" + url + "]");
+            return Utils.blankWebResourceResponse();
+        }
+        return null;
     }
 
     private static final long POLL_INTERVAL_MS = 100;
