@@ -39,9 +39,12 @@ public class Utils {
 
     /**
      * Schemes that are never dispatched to ACTION_VIEW from server-controlled content, because they
-     * can read local data or run script. Used as the default denylist when no scheme allow-list is set.
+     * can read local data or run script. Used as the default denylist when no scheme allow-list is
+     * set. "data" and "blob" are intentionally NOT here — they are inline / runtime-generated assets
+     * (images, fonts, CSS) widgets legitimately embed and cannot read app-local data, so they load
+     * in the default mode and, like any other scheme, follow an allow-list when one is configured.
      */
-    private static final Set<String> DANGEROUS_INTENT_SCHEMES = new HashSet<>(Arrays.asList("file", "content", "javascript", "jar", "data"));
+    private static final Set<String> DANGEROUS_INTENT_SCHEMES = new HashSet<>(Arrays.asList("file", "content", "javascript", "jar"));
 
     /**
      * Scheme policy for externally-dispatched links (content overlay links, push notification links).
@@ -65,10 +68,10 @@ public class Utils {
      * Whether a WebView sub-resource (image, script, stylesheet, frame) with this scheme may load.
      * "https" always loads because it is how the content itself is served, so an outbound-link
      * allow-list (which may list only a custom deep-link scheme such as "myapp") does not
-     * accidentally block the page's own https assets. Every other scheme — including plain "http" —
-     * follows the shared link policy, so the dangerous local/script schemes stay blocked and the
-     * integrator decides whether to permit http (allowed by the default denylist, opt-in when an
-     * allow-list is configured).
+     * accidentally block the page's own https assets. Every other scheme — including plain "http",
+     * "data" and "blob" — follows the shared link policy: the dangerous local/script schemes stay
+     * blocked, inline data/blob assets load in the default mode, and an allow-list (when configured)
+     * governs everything except https.
      */
     public static boolean isWebContentSchemeAllowed(String scheme, Set<String> allowedSchemes) {
         if (scheme != null && "https".equals(scheme.toLowerCase(Locale.ROOT))) {

@@ -227,13 +227,7 @@ public class CountlyPushActivity extends Activity {
 
                     Intent i = new Intent(Intent.ACTION_VIEW, message.link());
                     i.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY | Intent.FLAG_ACTIVITY_NEW_TASK);
-                    // Only forward the push payload when the link resolves to our own app, so the
-                    // message data is not leaked to an external app that happens to handle the link.
-                    ComponentName linkTarget = i.resolveActivity(context.getPackageManager());
-                    if (linkTarget != null && packageNameCurrent.equals(linkTarget.getPackageName())) {
-                        i.putExtra(EXTRA_MESSAGE, bundle);
-                        i.putExtra(EXTRA_ACTION_INDEX, index);
-                    }
+                    CountlyPush.forwardPayloadIfOwnApp(context, i, bundle, index);
                     context.startActivity(i);
                 } else {
                     Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity without a link. Push body");
@@ -264,13 +258,7 @@ public class CountlyPushActivity extends Activity {
                 Countly.sharedInstance().L.d("[CountlyPush, CountlyPushActivity] Starting activity with given button link. [" + (index - 1) + "] [" + buttonLink + "]");
                 Intent i = new Intent(Intent.ACTION_VIEW, buttonLink);
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                // Only forward the push payload when the link resolves to our own app, so the
-                // message data is not leaked to an external app that happens to handle the link.
-                ComponentName linkTarget = i.resolveActivity(context.getPackageManager());
-                if (linkTarget != null && packageNameCurrent.equals(linkTarget.getPackageName())) {
-                    i.putExtra(EXTRA_MESSAGE, bundle);
-                    i.putExtra(EXTRA_ACTION_INDEX, index);
-                }
+                CountlyPush.forwardPayloadIfOwnApp(context, i, bundle, index);
                 context.startActivity(i);
             } catch (Exception ex) {
                 Countly.sharedInstance().L.e("[CountlyPush, displayDialog] Encountered issue while clicking on notification button [" + ex.toString() + "]");

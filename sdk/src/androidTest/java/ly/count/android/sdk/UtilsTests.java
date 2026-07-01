@@ -247,12 +247,14 @@ public class UtilsTests {
         Assert.assertTrue(Utils.isExternalSchemeAllowed("market", new HashSet<>()));
         Assert.assertTrue(Utils.isExternalSchemeAllowed("tel", null));
         Assert.assertTrue(Utils.isExternalSchemeAllowed("mailto", null));
+        // data/blob are inline assets, not local-data/script -> not in the denylist, allowed by default
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("data", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("blob", null));
         // denied (dangerous), case-insensitive
         Assert.assertFalse(Utils.isExternalSchemeAllowed("file", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("content", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("javascript", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("jar", null));
-        Assert.assertFalse(Utils.isExternalSchemeAllowed("data", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("FILE", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("JavaScript", null));
         // null scheme is never allowed
@@ -283,6 +285,13 @@ public class UtilsTests {
         Assert.assertTrue(Utils.isWebContentSchemeAllowed("http", null));
         Assert.assertFalse(Utils.isWebContentSchemeAllowed("http", new HashSet<>(Arrays.asList("myapp"))));
         Assert.assertTrue(Utils.isWebContentSchemeAllowed("http", new HashSet<>(Arrays.asList("http"))));
+        // data/blob are inline / runtime-generated assets -> allowed as sub-resources in default
+        // mode, but (unlike https) governed by the allow-list when one is configured
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("data", null));
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("blob", null));
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("DATA", new HashSet<>(Arrays.asList("myapp"))));
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("blob", new HashSet<>(Arrays.asList("myapp"))));
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("data", new HashSet<>(Arrays.asList("data"))));
         // dangerous schemes still blocked
         Assert.assertFalse(Utils.isWebContentSchemeAllowed("file", null));
         Assert.assertFalse(Utils.isWebContentSchemeAllowed("javascript", null));

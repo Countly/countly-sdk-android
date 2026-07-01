@@ -477,6 +477,20 @@ public class CountlyPush {
         return pushActivityIntent;
     }
 
+    /**
+     * Attaches the push payload extras ({@link #EXTRA_MESSAGE} / {@link #EXTRA_ACTION_INDEX}) to an
+     * outgoing ACTION_VIEW intent only when the link resolves to our own app, so the message data is
+     * not leaked to an external app that happens to handle the link. Shared by the push-activity link
+     * paths and the dialog button path so the leak-prevention logic lives in one place.
+     */
+    static void forwardPayloadIfOwnApp(@NonNull Context context, @NonNull Intent intent, @NonNull Bundle messageBundle, int actionIndex) {
+        ComponentName linkTarget = intent.resolveActivity(context.getPackageManager());
+        if (linkTarget != null && context.getPackageName().equals(linkTarget.getPackageName())) {
+            intent.putExtra(EXTRA_MESSAGE, messageBundle);
+            intent.putExtra(EXTRA_ACTION_INDEX, actionIndex);
+        }
+    }
+
     private static Intent actionIntent(Context context, Intent notificationIntent, Message message, int index) {
         Intent intent;
         if (notificationIntent == null) {
@@ -573,19 +587,25 @@ public class CountlyPush {
                                 msg.recordAction(activity, 0);
                                 dialog.dismiss();
 
-                                if (countlyConfigPush != null && countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(msg.link().toString(), activity)) {
+                                Uri link = msg.link();
+                                if (link == null) {
+                                    Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Dialog link is null, nothing to open");
+                                    return;
+                                }
+
+                                if (countlyConfigPush != null && countlyConfigPush.notificationButtonURLHandler != null && countlyConfigPush.notificationButtonURLHandler.onClick(link.toString(), activity)) {
                                     Countly.sharedInstance().L.d("[CountlyPush, displayDialog] Link handled by custom URL handler, skipping default link opening.");
                                     return;
                                 }
 
                                 Set<String> allowedDialogSchemes = countlyConfigPush != null ? countlyConfigPush.allowedIntentSchemes : null;
-                                if (!Utils.isExternalSchemeAllowed(msg.link().getScheme(), allowedDialogSchemes)) {
-                                    Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Blocked dialog link with disallowed scheme: [" + msg.link().getScheme() + "]");
+                                if (!Utils.isExternalSchemeAllowed(link.getScheme(), allowedDialogSchemes)) {
+                                    Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Blocked dialog link with disallowed scheme: [" + link.getScheme() + "]");
                                     return;
                                 }
 
                                 try {
-                                    Intent i = new Intent(Intent.ACTION_VIEW, msg.link());
+                                    Intent i = new Intent(Intent.ACTION_VIEW, link);
                                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                     i.putExtra(EXTRA_ACTION_INDEX, 0);// put zero because non 'button' action
                                     activity.startActivity(i);
@@ -645,15 +665,9 @@ public class CountlyPush {
 
                         Intent intent = new Intent(Intent.ACTION_VIEW, buttonLink);
                         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        // Only forward the push payload when the link resolves to our own app, so the
-                        // message data is not leaked to an external app that happens to handle the link.
-                        ComponentName linkTarget = intent.resolveActivity(context.getPackageManager());
-                        if (linkTarget != null && context.getPackageName().equals(linkTarget.getPackageName())) {
-                            Bundle bundle = new Bundle();
-                            bundle.putParcelable(EXTRA_MESSAGE, msg);
-                            intent.putExtra(EXTRA_MESSAGE, bundle);
-                        }
-                        intent.putExtra(EXTRA_ACTION_INDEX, isPositiveButtonPressed ? 2 : 1);
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable(EXTRA_MESSAGE, msg);
+                        forwardPayloadIfOwnApp(context, intent, bundle, isPositiveButtonPressed ? 2 : 1);
                         context.startActivity(intent);
                     } catch (Exception ex) {
                         Countly.sharedInstance().L.e("[CountlyPush, dialog button onClick] Encountered issue while clicking on button #[" + which + "] [" + ex + "]");

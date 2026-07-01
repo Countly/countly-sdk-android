@@ -7,8 +7,8 @@
 * Added a new push configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes notification links may open.
 * Added a new configuration option "disableWebView()" to disable all WebView-based UI in the SDK, including the content overlay, feedback widgets, and the rating popup.
 * Added a new config option "disableSDKLoggingInProduction()" that keeps the SDK's console logging disabled in production (non-debuggable) builds, even when logging is enabled.
-* Improved the security of the content, feedback widget, and rating widget web views, disabled local file/content access, disallowed mixed content, enabled Safe Browsing, blocked sub-resources with dangerous schemes (file, content, javascript, jar, data) while always allowing https, and blocked links with dangerous schemes.
-* Improved the security of push notification click handling, null-safe and stricter package/class validation, reduced intent flags, no longer forwarding the payload to external apps, and blocking notification links with dangerous schemes (file, content, javascript, jar, data) by default.
+* Improved the security of the content, feedback widget, and rating widget web views, disabled local file/content access, disallowed mixed content, enabled Safe Browsing, blocked sub-resources with dangerous schemes (file, content, javascript, jar) while always allowing https, and blocked links with dangerous schemes.
+* Improved the security of push notification click handling, null-safe and stricter package/class validation, reduced intent flags, no longer forwarding the payload to external apps, and blocking notification links with dangerous schemes (file, content, javascript, jar) by default.
 
 * Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
 * Mitigated an issue where the rating feedback popup request could be sent while in temporary device ID mode, creating a `CLYTemporaryDeviceID` user on the server.

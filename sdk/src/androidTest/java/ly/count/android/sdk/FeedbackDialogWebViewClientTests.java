@@ -64,7 +64,9 @@ public class FeedbackDialogWebViewClientTests {
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://com.app.provider/private")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("javascript:alert(document.cookie)")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("jar:file:///x.apk!/a.html")));
-        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:text/html,<script>1</script>")));
+        // data:/blob: are inline / runtime-generated assets widgets embed -> load normally
+        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=")));
+        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("blob:https://example.com/uuid")));
     }
 
     /** With a configured allow-list, https still loads but http and other unlisted schemes are blocked. */

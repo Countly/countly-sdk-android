@@ -333,9 +333,11 @@ public class CountlyWebViewClientTests {
     }
 
     /**
-     * "shouldInterceptRequest" must block every non-http(s) scheme an attacker could use to read
-     * local data or run script from a content sub-resource (img/iframe/script/xhr): file://,
-     * content://, javascript:, data:, jar:file://, plus a file:// pointing at app-private storage.
+     * "shouldInterceptRequest" must block every local-data / script scheme an attacker could use to
+     * read local data or run script from a content sub-resource (img/iframe/script/xhr): file://,
+     * content://, javascript:, jar:file://, plus a file:// pointing at app-private storage. "data:"
+     * and "blob:" are NOT blocked here — they are inline / runtime-generated assets widgets embed
+     * (covered by shouldInterceptRequest_inlineAssetSchemes_allowed).
      */
     @Test
     public void shouldInterceptRequest_nonWebSchemes_blocked() {
@@ -344,10 +346,28 @@ public class CountlyWebViewClientTests {
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://com.app.provider/private", false)));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://media/external/images/media/1", false)));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("javascript:alert(document.cookie)", false)));
-        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:text/html,<script>alert(1)</script>", false)));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("jar:file:///data/app/x.apk!/a.html", false)));
         // also blocked for a main-frame request, not just sub-resources
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("file:///data/data/ly.count.android.sdk/databases/countly.db", true)));
+    }
+
+    /**
+     * "data:" and "blob:" sub-resources (inline images/fonts/CSS and runtime-generated assets that
+     * widgets legitimately embed) load in the default (no allow-list) mode, but like any other
+     * non-https scheme they are blocked in allow-list mode unless the integrator lists them.
+     */
+    @Test
+    public void shouldInterceptRequest_inlineAssetSchemes_defaultAllowedAllowlistGoverned() {
+        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=", false)));
+        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("blob:https://example.com/uuid", false)));
+        // allow-list mode governs data/blob (not force-allowed): blocked unless listed
+        CountlyWebViewClient allowlisted = new CountlyWebViewClient(new HashSet<>(Arrays.asList("myapp")));
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=", false)));
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("blob:https://example.com/uuid", false)));
+        // https still always loads, and an explicitly listed inline scheme loads
+        Assert.assertNull(allowlisted.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png", false)));
+        CountlyWebViewClient dataAllowed = new CountlyWebViewClient(new HashSet<>(Arrays.asList("data")));
+        Assert.assertNull(dataAllowed.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=", false)));
     }
 
     private void assertBlocked(WebResourceResponse response) {

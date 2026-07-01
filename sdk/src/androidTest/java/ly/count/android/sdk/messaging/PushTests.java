@@ -168,7 +168,6 @@ public class PushTests {
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("content://app.provider/secret"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("javascript:alert(1)"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("jar:file:///x.apk!/a.html"), null));
-        Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("data:text/html,<script>1</script>"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("FILE:///x"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(null, null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("/no/scheme/path"), null));
