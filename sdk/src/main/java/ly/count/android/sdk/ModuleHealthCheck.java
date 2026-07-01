@@ -37,8 +37,8 @@ class ModuleHealthCheck extends ModuleBase {
     @Override
     void onActivityStopped(int updatedActivityCount) {
         if (hCounter != null) {
-        hCounter.saveState();
-    }
+            hCounter.saveState();
+        }
     }
 
     void sendHealthCheck() {
