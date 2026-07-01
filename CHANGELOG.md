@@ -5,6 +5,7 @@
 
 * Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
 * Mitigated an issue where the rating feedback popup request could be sent while in temporary device ID mode, creating a `CLYTemporaryDeviceID` user on the server.
+* Mitigated an issue while sending health checks after SDK is halted.
 
 ## 26.1.3
 * Added gradle configuration cache support to upload symbols plugin.
