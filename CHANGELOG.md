@@ -1,4 +1,4 @@
-## X.X.X
+## 26.1.4
 * ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.
 
 * Added support for SDK behavior settings that control the SDK's automatic session tracking, automatic view tracking, automatic crash reporting, and Journey Trigger Views.
