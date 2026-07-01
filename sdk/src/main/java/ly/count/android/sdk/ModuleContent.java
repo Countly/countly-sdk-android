@@ -25,6 +25,7 @@ public class ModuleContent extends ModuleBase {
     private boolean isCurrentlyInContentZone = false;
     private boolean isCurrentlyRetrying = false;
     private int zoneTimerInterval;
+    private final boolean webViewEnabled;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
@@ -42,7 +43,11 @@ public class ModuleContent extends ModuleBase {
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
         zoneTimerInterval = config.content.zoneTimerInterval;
+        webViewEnabled = config.webViewEnabled;
         globalContentCallback = config.content.globalContentCallback;
+        if (!webViewEnabled) {
+            L.i("[ModuleContent] WebView is disabled via configuration, content overlay will not be shown");
+        }
     }
 
     @Override
@@ -179,6 +184,11 @@ public class ModuleContent extends ModuleBase {
     }
 
     private void enterContentZoneInternal(@Nullable String[] categories, final int initialDelayMS, @Nullable Runnable callbackOnFailure) {
+        if (!webViewEnabled) {
+            L.d("[ModuleContent] enterContentZoneInternal, WebView is disabled via configuration, skipping");
+            return;
+        }
+
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] enterContentZoneInternal, Consent is not granted, skipping");
             return;
@@ -283,6 +293,11 @@ public class ModuleContent extends ModuleBase {
     private void showContentOverlay(@NonNull Activity activity, @NonNull Map<Integer, TransparentActivityConfig> placementCoordinates) {
         L.d("[ModuleContent] showContentOverlay, showing content overlay on [" + activity.getClass().getSimpleName() + "]");
 
+        if (!webViewEnabled) {
+            L.w("[ModuleContent] showContentOverlay, WebView is disabled via configuration, skipping");
+            return;
+        }
+
         // Do not show content if feedback widget is currently showing
         if (_cly.moduleFeedback != null && _cly.moduleFeedback.feedbackOverlay != null) {
             shouldFetchContents = true;
@@ -313,7 +328,8 @@ public class ModuleContent extends ModuleBase {
             landscape,
             orientation,
             globalContentCallback,
-            this::notifyAfterContentIsClosed
+            this::notifyAfterContentIsClosed,
+            _cly.config_.content.allowedIntentSchemes
         );
 
         contentOverlay.attachToActivity(activity);
@@ -476,6 +492,20 @@ public class ModuleContent extends ModuleBase {
         }
     }
 
+    /**
+     * Resumes the content zone after exiting temporary device ID mode. Called only from the
+     * temporary-ID-exit path (not from a generic device ID change), so a plain changeWithoutMerge
+     * does not silently re-arm a zone the developer turned off. The server config re-fetch on
+     * exiting temporary mode only notifies modules when a value changes, so an unchanged (still
+     * enabled) content-zone value would otherwise leave the zone torn down here.
+     */
+    void resumeContentZoneAfterTemporaryIdExit() {
+        if (configProvider.getContentZoneEnabled()) {
+            L.d("[ModuleContent] resumeContentZoneAfterTemporaryIdExit, content zone is enabled, re-entering");
+            enterContentZoneInternal(null, 0, null);
+        }
+    }
+
     @NonNull
     private Context getSafeAreaContext() {
         return (currentActivity != null && !currentActivity.isFinishing()) ? currentActivity : _cly.context_;
@@ -495,6 +525,11 @@ public class ModuleContent extends ModuleBase {
 
     void previewContentInternal(@NonNull String contentId) {
         L.d("[ModuleContent] previewContentInternal, contentId: [" + contentId + "]");
+
+        if (!webViewEnabled) {
+            L.d("[ModuleContent] previewContentInternal, WebView is disabled via configuration, skipping");
+            return;
+        }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.content)) {
             L.w("[ModuleContent] previewContentInternal, Consent is not granted, skipping");

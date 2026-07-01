@@ -83,6 +83,14 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         // trigger fetching if the temp id given on init
         _cly.moduleConfiguration.fetchConfigFromServer(_cly.config_);
 
+        // Resume the content zone now that a real device ID is set again. The config re-fetch above
+        // only notifies modules when a value changes, so an unchanged (still enabled) content-zone
+        // value would otherwise leave the zone torn down after exiting temporary mode. This runs only
+        // here (not on a generic device ID change), so a plain changeWithoutMerge does not re-arm it.
+        if (_cly.moduleContent != null) {
+            _cly.moduleContent.resumeContentZoneAfterTemporaryIdExit();
+        }
+
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);
 
@@ -135,8 +143,8 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //update remote config_ values after id change if automatic update is enabled
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
-        if (!_cly.moduleSessions.manualSessionControlEnabled) {
-            //if manual session control is not enabled, end the current session
+        if (_cly.moduleSessions.automaticSessionTrackingEnabled()) {
+            //if automatic session tracking is active, end the current session
             _cly.moduleSessions.endSessionInternal(); // this will check consent
         }
 

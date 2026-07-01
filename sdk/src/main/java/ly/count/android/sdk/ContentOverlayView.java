@@ -31,8 +31,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +47,7 @@ class ContentOverlayView extends FrameLayout {
     TransparentActivityConfig configLandscape;
     int currentOrientation;
     private ContentCallback contentCallback;
+    private final Set<String> allowedLinkSchemes;
     private Runnable onCloseRunnable;
     private Runnable onWidgetCancelRunnable;
     private boolean isClosed = false;
@@ -84,7 +87,8 @@ class ContentOverlayView extends FrameLayout {
         @NonNull TransparentActivityConfig landscape,
         int orientation,
         @Nullable ContentCallback callback,
-        @NonNull Runnable onClose) {
+        @NonNull Runnable onClose,
+        @Nullable Set<String> allowedLinkSchemes) {
         // View.mContext must not pin the constructing activity (overlay outlives activity
         // transitions; window attachment uses currentHostActivity). On API 31+ we additionally
         // need a UI context to satisfy StrictMode#detectIncorrectContextUse — see
@@ -97,6 +101,8 @@ class ContentOverlayView extends FrameLayout {
         this.contentCallback = callback;
         this.onCloseRunnable = onClose;
         this.currentHostActivity = activity;
+        // Defensive copy so a later config change cannot retroactively alter this overlay's policy.
+        this.allowedLinkSchemes = allowedLinkSchemes == null ? null : new HashSet<>(allowedLinkSchemes);
 
         setBackgroundColor(Color.TRANSPARENT);
         setClickable(false);
@@ -830,6 +836,25 @@ class ContentOverlayView extends FrameLayout {
         }
     }
 
+    // Dispatches an ACTION_VIEW intent for a URL originating from web content, gated by the shared
+    // scheme policy: with no allow-list the dangerous schemes (file/content/javascript/jar/data) are
+    // blocked while http(s) and deep links are allowed; with an allow-list configured, only those
+    // schemes pass. Component/selector and flags are cleared so the intent cannot be redirected to a
+    // specific (possibly internal) target.
+    private void startSafeExternalIntent(@NonNull String url) {
+        Uri uri = Uri.parse(url);
+        String scheme = uri.getScheme();
+        if (!Utils.isExternalSchemeAllowed(scheme, allowedLinkSchemes)) {
+            Log.w(Countly.TAG, "[ContentOverlayView] startSafeExternalIntent, blocked link with disallowed scheme: [" + scheme + "]");
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        intent.setComponent(null);
+        intent.setSelector(null);
+        intent.setFlags(0);
+        startActivityFromOverlay(intent);
+    }
+
     private boolean linkAction(Map<String, Object> query, WebView view) {
         Log.i(Countly.TAG, "[ContentOverlayView] linkAction, link action detected");
         if (!query.containsKey("link")) {
@@ -840,8 +865,7 @@ class ContentOverlayView extends FrameLayout {
             return false;
         }
 
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
-        startActivityFromOverlay(intent);
+        startSafeExternalIntent(link.toString());
         return true;
     }
 
@@ -1119,12 +1143,21 @@ class ContentOverlayView extends FrameLayout {
         wv.setLayoutParams(webLayoutParams);
 
         wv.setBackgroundColor(Color.TRANSPARENT);
-        wv.getSettings().setJavaScriptEnabled(true);
-        wv.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+        WebSettings settings = wv.getSettings();
+        settings.setJavaScriptEnabled(true); // required for interactive content
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+        // Security hardening (defense-in-depth). The overlay only ever loads server-issued HTTPS
+        // content, so disabling local file/content access closes the local-file exfiltration vector
+        // without affecting legitimate content. Sub-resource scheme restrictions are enforced in
+        // CountlyWebViewClient. Shared with the feedback/ratings WebViews via Utils.
+        Utils.applyWebViewSecurityDefaults(settings);
+
         wv.clearCache(true);
         wv.clearHistory();
 
-        CountlyWebViewClient client = new CountlyWebViewClient();
+        CountlyWebViewClient client = new CountlyWebViewClient(allowedLinkSchemes);
         webViewClient = client;
         client.registerWebViewUrlListener((url, webView) -> {
             if (url.startsWith(Utils.COMM_URL)) {
@@ -1136,8 +1169,7 @@ class ContentOverlayView extends FrameLayout {
             }
 
             if (url.endsWith("cly_x_int=1")) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivityFromOverlay(intent);
+                startSafeExternalIntent(url);
                 return true;
             }
 

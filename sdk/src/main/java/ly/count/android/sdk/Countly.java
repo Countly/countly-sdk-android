@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.3";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.4";
     /**
      * Used as request meta data on every request
      */
@@ -157,6 +157,9 @@ public class Countly {
     //d - regular SDK internals
     //v - spammy SDK internals
     private boolean enableLogging_;
+    // when true, console logging is kept off because the host app is a production build
+    // and the SDK was configured to disable logging in production
+    private boolean loggingForcedOffForProduction = false;
     Context context_;
 
     //Internal modules for functionality grouping
@@ -275,6 +278,9 @@ public class Countly {
         if (config == null) {
             throw new IllegalArgumentException("Can't init SDK with 'null' config");
         }
+
+        //determine whether console logging must stay off for production builds before any logging call
+        loggingForcedOffForProduction = shouldForceLoggingOffForProduction(config);
 
         //enable logging
         if (config.loggingEnabled) {
@@ -983,6 +989,7 @@ public class Countly {
         moduleContent = null;
 
         // Reset configuration values that may have been changed during runtime
+        loggingForcedOffForProduction = false;
         EVENT_QUEUE_SIZE_THRESHOLD = 100;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
@@ -1016,9 +1023,9 @@ public class Countly {
                 moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
             }
             //if we open the first activity
-            //and we are not using manual session control,
+            //and automatic session tracking is active (resolved through the SBS precedence chain),
             //begin a session
-            if (moduleSessions != null && !moduleSessions.manualSessionControlEnabled) {
+            if (moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
                 moduleSessions.beginSessionInternal();
             }
         }
@@ -1041,8 +1048,8 @@ public class Countly {
         }
 
         --activityCount_;
-        if (activityCount_ == 0 && moduleSessions != null && !moduleSessions.manualSessionControlEnabled) {
-            // if we don't use manual session control
+        if (activityCount_ == 0 && moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
+            // if automatic session tracking is active
             // Called when final Activity is stopped.
             // Sends an end session event to the server, also sends any unsent custom events.
             moduleSessions.endSessionInternal();
@@ -1127,10 +1134,10 @@ public class Countly {
 
         if (isInitialized()) {
             final boolean appIsInForeground = activityCount_ > 0;
-            if (appIsInForeground && !moduleSessions.manualSessionControlEnabled) {
+            if (appIsInForeground && moduleSessions.automaticSessionTrackingEnabled()) {
                 //if we have automatic session control and we are in the foreground, record an update
                 moduleSessions.updateSessionInternal();
-            } else if (moduleSessions.manualSessionControlEnabled && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
+            } else if (!moduleSessions.automaticSessionTrackingEnabled() && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
                 // if we are in manual session control mode with hybrid sessions enabled (SDK takes care of update requests) and there is a session running,
                 // let's create the update request
                 moduleSessions.updateSessionInternal();
@@ -1180,8 +1187,34 @@ public class Countly {
     }
 
     public void setLoggingEnabled(final boolean enableLogging) {
+        if (enableLogging && loggingForcedOffForProduction) {
+            //logging is suppressed for production builds, keep console output off
+            enableLogging_ = false;
+            return;
+        }
         enableLogging_ = enableLogging;
         L.d("Enabling logging");
+    }
+
+    /**
+     * Decide whether the SDK must keep console logging off because the host app is a
+     * production (non-debuggable) build and logging-in-production was disabled in config.
+     *
+     * @param config the provided init configuration
+     * @return true if console logging must be forced off
+     */
+    private boolean shouldForceLoggingOffForProduction(@NonNull CountlyConfig config) {
+        if (!config.disableSDKLoggingInProduction) {
+            return false;
+        }
+
+        Context context = config.context != null ? config.context : config.application;
+        if (context == null) {
+            //without a context we can not tell the build type, so do not force anything off
+            return false;
+        }
+
+        return !Utils.isAppInDebuggableMode(context);
     }
 
     /**

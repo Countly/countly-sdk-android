@@ -877,6 +877,18 @@ public class InternalRequestCallbackTests {
                 return true;
             }
 
+            @Override public boolean getAutomaticSessionTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getAutomaticViewTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getAutomaticCrashReportingEnabled() {
+                return true;
+            }
+
             @Override public boolean getLocationTrackingEnabled() {
                 return true;
             }
@@ -930,6 +942,10 @@ public class InternalRequestCallbackTests {
             }
 
             @Override public Set<String> getJourneyTriggerEvents() {
+                return Collections.emptySet();
+            }
+
+            @Override public Set<String> getJourneyTriggerViews() {
                 return Collections.emptySet();
             }
         };

@@ -11,6 +11,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 
+import static ly.count.android.sdk.ModuleConfiguration.keyRAutomaticCrashReporting;
+import static ly.count.android.sdk.ModuleConfiguration.keyRAutomaticSessionTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRAutomaticViewTracking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRConfig;
 import static ly.count.android.sdk.ModuleConfiguration.keyRConsentRequired;
 import static ly.count.android.sdk.ModuleConfiguration.keyRContentZoneInterval;
@@ -24,6 +27,7 @@ import static ly.count.android.sdk.ModuleConfiguration.keyREventSegmentationBlac
 import static ly.count.android.sdk.ModuleConfiguration.keyREventSegmentationWhitelist;
 import static ly.count.android.sdk.ModuleConfiguration.keyREventWhitelist;
 import static ly.count.android.sdk.ModuleConfiguration.keyRJourneyTriggerEvents;
+import static ly.count.android.sdk.ModuleConfiguration.keyRJourneyTriggerViews;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitBreadcrumb;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitKeyLength;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitSegValues;
@@ -96,6 +100,21 @@ class ServerConfigBuilder {
 
     ServerConfigBuilder customEventTracking(boolean enabled) {
         config.put(keyRCustomEventTracking, enabled);
+        return this;
+    }
+
+    ServerConfigBuilder automaticSessionTracking(boolean enabled) {
+        config.put(keyRAutomaticSessionTracking, enabled);
+        return this;
+    }
+
+    ServerConfigBuilder automaticViewTracking(boolean enabled) {
+        config.put(keyRAutomaticViewTracking, enabled);
+        return this;
+    }
+
+    ServerConfigBuilder automaticCrashReporting(boolean enabled) {
+        config.put(keyRAutomaticCrashReporting, enabled);
         return this;
     }
 
@@ -242,6 +261,11 @@ class ServerConfigBuilder {
         return this;
     }
 
+    ServerConfigBuilder journeyTriggerViews(Set<String> journeyTriggerViews) {
+        config.put(keyRJourneyTriggerViews, journeyTriggerViews);
+        return this;
+    }
+
     boolean refreshContentZone() {
         Object val = config.get(keyRRefreshContentZone);
         return val == null || (boolean) val;
@@ -288,6 +312,7 @@ class ServerConfigBuilder {
         segmentationFilterList(new HashSet<>(), false);
         eventSegmentationFilterMap(new ConcurrentHashMap<>(), false);
         journeyTriggerEvents(new HashSet<>());
+        journeyTriggerViews(new HashSet<>());
 
         return this;
     }
@@ -381,5 +406,8 @@ class ServerConfigBuilder {
 
         Set<String> journeyTriggerEvents = (Set<String>) config.get(keyRJourneyTriggerEvents);
         Assert.assertEquals(Objects.requireNonNull(journeyTriggerEvents).toString(), countly.moduleConfiguration.getJourneyTriggerEvents().toString());
+
+        Set<String> journeyTriggerViews = (Set<String>) config.get(keyRJourneyTriggerViews);
+        Assert.assertEquals(Objects.requireNonNull(journeyTriggerViews).toString(), countly.moduleConfiguration.getJourneyTriggerViews().toString());
     }
 } 

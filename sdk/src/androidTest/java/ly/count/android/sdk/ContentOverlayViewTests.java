@@ -102,7 +102,8 @@ public class ContentOverlayViewTests {
             activity.getResources().getConfiguration().orientation,
             callback,
             onClose != null ? onClose : () -> {
-            }
+            },
+            null
         );
     }
 
@@ -505,7 +506,7 @@ public class ContentOverlayViewTests {
             overlay = new ContentOverlayView(
                 activity, portrait, landscape,
                 Configuration.ORIENTATION_PORTRAIT, null, () -> {
-            });
+            }, null);
 
             // Note: setupConfig may modify width/height if < 1, but ours are > 0
             Assert.assertEquals(10, (int) overlay.configPortrait.x);
