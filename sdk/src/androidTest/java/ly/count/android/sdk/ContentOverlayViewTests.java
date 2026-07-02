@@ -653,6 +653,106 @@ public class ContentOverlayViewTests {
         });
     }
 
+    /**
+     * A link fragment ("#...") is preserved verbatim.
+     */
+    @Test
+    public void splitQuery_linkWithFragment_preserved() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/path?a=b#section";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A link containing more than one "?" is preserved verbatim (the "?" characters after the first
+     * are part of the link value, not new query separators).
+     */
+    @Test
+    public void splitQuery_linkWithRepeatedQuestionMark_preserved() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/p?a=b?c=d";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * All three of link, event and close in one URL are each separated correctly, with the link
+     * (carrying its own query params) kept intact.
+     */
+    @Test
+    public void splitQuery_linkEventAndClose_allSeparated() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://x.com/p?a=b&c=d";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link
+                    + "&event=[{\"key\":\"e\"}]&close=1";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertEquals("1", q.get("close"));
+                Assert.assertTrue(q.get("event") instanceof org.json.JSONArray);
+                Assert.assertEquals("e", ((org.json.JSONArray) q.get("event")).getJSONObject(0).getString("key"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A "close" whose value is not "0"/"1" (e.g. "close=2") fails validation, so it is treated as
+     * ordinary link text and absorbed into the link rather than parsed as the close flag.
+     */
+    @Test
+    public void splitQuery_invalidCloseValue_staysInLink() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://x.com/p?a=b&close=2";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertFalse(q.containsKey("close"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Documents the fallback: a schemeless link fails link validation (no URI scheme), so the whole
+     * query falls back to the plain '&' split, which truncates a multi-param link. The server always
+     * prepends "https://", so this is an edge case; the test pins the current behavior.
+     */
+    @Test
+    public void splitQuery_schemelessLink_fallbackTruncates() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=example.com/p?a=b&c=d";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals("example.com/p?a=b", q.get("link"));
+                Assert.assertEquals("d", q.get("c"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
     // ===================== Close & Destroy Lifecycle =====================
 
     /**

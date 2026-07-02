@@ -125,6 +125,25 @@ public class CountlyWebViewClientTests {
     }
 
     /**
+     * Characterization: the whole-URL decode uses URLDecoder, which decodes a literal '+' to a space
+     * (form-encoding semantics). A link carrying a '+' therefore arrives with a space. This differs
+     * from iOS (stringByRemovingPercentEncoding leaves '+' untouched); pinned here to catch changes.
+     */
+    @Test
+    public void shouldOverrideUrlLoading_plusInQuery_decodedToSpace() {
+        final String[] received = new String[1];
+        client.registerWebViewUrlListener((url, view) -> {
+            received[0] = url;
+            return true;
+        });
+
+        String raw = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=https://x.com/search?q=a+b";
+        String expected = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=https://x.com/search?q=a b";
+        Assert.assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest(raw, true)));
+        Assert.assertEquals(expected, received[0]);
+    }
+
+    /**
      * A malformed percent-escape (possible inside an unencoded link) must not drop the action: the
      * listener still receives the URL (raw fallback) rather than the call returning false silently.
      */
