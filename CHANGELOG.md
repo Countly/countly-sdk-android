@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Added support for reporting the app's current theme (light or dark) when presenting feedback widgets, rating widgets, and content, so they are displayed in matching conditions.
+
 ## 26.1.4
 * ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.
 

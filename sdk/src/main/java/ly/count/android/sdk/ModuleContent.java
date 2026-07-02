@@ -404,6 +404,9 @@ public class ModuleContent extends ModuleBase {
         assert response != null;
 
         String content = response.optString("html");
+        if (!content.isEmpty()) {
+            content = UtilsDevice.appendThemeParam(content, _cly.context_);
+        }
         JSONObject coordinates = response.optJSONObject("geo");
 
         assert coordinates != null;

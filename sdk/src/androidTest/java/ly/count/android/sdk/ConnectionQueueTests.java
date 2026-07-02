@@ -526,4 +526,19 @@ public class ConnectionQueueTests {
             }
         }
     }
+
+    /**
+     * The theme ("th") parameter is reported on the URLs loaded into the WebView (feedback/rating
+     * widget and content URLs), not on the feedback-list or content-fetch data requests. These
+     * requests must therefore never carry "th" regardless of the device theme. The actual "th"
+     * append logic is validated in UtilsDeviceTests, its wiring into content in ModuleContentTests.
+     */
+    @Test
+    public void testThemeParam_notOnFeedbackListNorFetchContents() {
+        final String feedbackRequest = connQ.prepareFeedbackListRequest();
+        final String contentRequest = connQ.prepareFetchContents(100, 200, 200, 100, new String[] {}, "en", "mobile", null);
+
+        Assert.assertFalse(feedbackRequest.contains("th="));
+        Assert.assertFalse(contentRequest.contains("th="));
+    }
 }
