@@ -52,8 +52,9 @@ class CountlyWebViewClient extends WebViewClient {
         try {
             url = URLDecoder.decode(url, "UTF-8");
         } catch (Exception e) {
-            Log.e(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, Failed to decode url", e);
-            return false;
+            // A malformed percent-escape (possible inside an unencoded link) must not drop the whole
+            // action: fall back to the raw URL so the listener can still handle it.
+            Log.w(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, failed to decode url, using raw", e);
         }
 
         Log.d(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, urlDecoded: [" + url + "]");

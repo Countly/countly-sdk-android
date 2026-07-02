@@ -121,6 +121,13 @@ public class ContentOverlayViewTests {
         return (WindowManager.LayoutParams) method.invoke(overlay, activity, config);
     }
 
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> invokeSplitQuery(String url) throws Exception {
+        Method method = ContentOverlayView.class.getDeclaredMethod("splitQuery", String.class);
+        method.setAccessible(true);
+        return (Map<String, Object>) method.invoke(overlay, url);
+    }
+
     /**
      * Launches the test activity, runs the given action on the main thread,
      * and stores the scenario for cleanup.
@@ -367,6 +374,282 @@ public class ContentOverlayViewTests {
         withActivity(activity -> {
             overlay = createOverlay(activity);
             Assert.assertFalse(overlay.widgetUrlAction(null, null));
+        });
+    }
+
+    // ===================== link parsing — query param preservation =====================
+
+    /**
+     * A link with a single query param is preserved intact (the raw, unencoded form the server
+     * sends). Regression guard: previously the naive '&' split truncated it at the first '&'.
+     */
+    @Test
+    public void splitQuery_linkWithSingleQueryParam_preserved() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/path?foo=bar";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertEquals("link", q.get("action"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A link whose own query string has MULTIPLE '&'-separated params keeps all of them. This is
+     * the core fix: everything after "link=" is captured verbatim instead of being split on '&'.
+     */
+    @Test
+    public void splitQuery_linkWithMultipleQueryParams_preserved() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/path?foo=bar&baz=qux&n=42";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                // The link's own params must NOT leak in as separate top-level entries.
+                Assert.assertFalse(q.containsKey("baz"));
+                Assert.assertFalse(q.containsKey("n"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A deeplink with query params (custom scheme) is preserved intact.
+     */
+    @Test
+    public void splitQuery_deeplinkWithQueryParams_preserved() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "myapp://open?screen=home&id=42&ref=push";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * "event" appearing AFTER the link is separated out: the reserved marker is validated as JSON,
+     * so it is peeled from the tail while the link (with its own query params) stays intact.
+     */
+    @Test
+    public void splitQuery_eventAfterLink_separatedFromLink() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://x.com/p?a=b&c=d";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link
+                    + "&event=[{\"key\":\"e\",\"sg\":{\"x\":\"y\"}}]";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertTrue(q.get("event") instanceof org.json.JSONArray);
+                Assert.assertEquals("e", ((org.json.JSONArray) q.get("event")).getJSONObject(0).getString("key"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A "&event=" that appears inside the link but does NOT validate as JSON is treated as ordinary
+     * link text (not a real param) and stays part of the link.
+     */
+    @Test
+    public void splitQuery_invalidReservedMarkerInLink_staysInLink() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://x.com/p?a=b&event=notjson";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertFalse(q.containsKey("event"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A decoded "event" JSON whose segmentation value literally contains "&close=1" is parsed whole:
+     * the inner "&close=" fails close validation, so it is absorbed into the JSON value rather than
+     * being mistaken for a real close param.
+     */
+    @Test
+    public void splitQuery_eventJsonContainingReservedText_parsedWhole() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event"
+                    + "&event=[{\"key\":\"k\",\"sg\":{\"u\":\"a&close=1\"}}]";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertTrue(q.get("event") instanceof org.json.JSONArray);
+                Assert.assertEquals("a&close=1",
+                    ((org.json.JSONArray) q.get("event")).getJSONObject(0).getJSONObject("sg").getString("u"));
+                Assert.assertFalse(q.containsKey("close"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A link with no query params still works (no "link=" trailing content edge case).
+     */
+    @Test
+    public void splitQuery_linkWithoutQueryParams_preserved() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/landing";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Non-regression: an "event" JSON value (already decoded by the WebView client) is parsed into a
+     * JSONArray. The event does not co-occur with a link, so the whole query splits cleanly.
+     */
+    @Test
+    public void splitQuery_eventValue_parsed() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event"
+                    + "&event=[{\"key\":\"test_key\",\"sg\":{\"color\":\"blue\"}}]";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertTrue(q.get("event") instanceof org.json.JSONArray);
+                org.json.JSONArray arr = (org.json.JSONArray) q.get("event");
+                Assert.assertEquals("test_key", arr.getJSONObject(0).getString("key"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * When a "close" flag is appended after a link (with the link carrying its own query params),
+     * the link is preserved intact AND the trailing close flag is peeled off and parsed separately
+     * rather than being swallowed into the link value.
+     */
+    @Test
+    public void splitQuery_linkWithTrailingClose_separatesLinkAndClose() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/path?foo=bar&baz=qux";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link + "&close=1";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertEquals("1", q.get("close"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * "close" may also precede the link. In that case it stays in the head and is parsed normally,
+     * while the link (with its own query params) is still captured intact.
+     */
+    @Test
+    public void splitQuery_closeBeforeLink_separatesLinkAndClose() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/path?foo=bar&baz=qux";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&close=1&link=" + link;
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertEquals("1", q.get("close"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * Documented reserved-name limitation: because "close" is a reserved param, a link that itself
+     * ends with "&close=1" (a valid close value) has that segment consumed as the close flag. The
+     * link keeps everything up to it. Integrators are told these param names are reserved.
+     */
+    @Test
+    public void splitQuery_linkEndingInReservedClose_consumedAsFlag() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=https://x.com?a=b&c=d&close=1&close=1";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals("https://x.com?a=b&c=d", q.get("link"));
+                Assert.assertEquals("1", q.get("close"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * A trailing "close=0" after a link is also peeled off (link kept open).
+     */
+    @Test
+    public void splitQuery_linkWithTrailingCloseZero_separatesLinkAndClose() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String link = "https://example.com/path?a=1&b=2";
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=" + link + "&close=0";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals(link, q.get("link"));
+                Assert.assertEquals("0", q.get("close"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /**
+     * End-to-end: a link action with query params AND a trailing close is recognized (returns true),
+     * dispatches the external intent, and closes the overlay.
+     */
+    @Test
+    public void contentUrlAction_linkWithQueryParamsAndClose_closesOverlay() {
+        AtomicBoolean closeCalled = new AtomicBoolean(false);
+        withActivity(activity -> {
+            overlay = createOverlay(activity, null, () -> closeCalled.set(true));
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link"
+                + "&link=https://example.com/path?foo=bar&baz=qux&close=1";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+        });
+        Assert.assertTrue("overlay should close when close=1 trails the link", closeCalled.get());
+    }
+
+    /**
+     * End-to-end: a link action with query params (no close) is recognized and handled (returns
+     * true), and does not throw while dispatching the external intent.
+     */
+    @Test
+    public void contentUrlAction_linkWithQueryParams_returnsTrue() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link"
+                + "&link=https://example.com/path?foo=bar&baz=qux";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
         });
     }
 

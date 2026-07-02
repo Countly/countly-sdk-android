@@ -103,6 +103,45 @@ public class CountlyWebViewClientTests {
     }
 
     // =====================================
+    // shouldOverrideUrlLoading - URL decoding + listener delivery
+    // =====================================
+
+    /**
+     * The URL is percent-decoded once before being handed to listeners, so encoded delimiters in
+     * an "event" JSON value (e.g. "%26" -> "&", "%5B" -> "[") arrive in plain form for parsing.
+     */
+    @Test
+    public void shouldOverrideUrlLoading_decodesUrlForListener() {
+        final String[] received = new String[1];
+        client.registerWebViewUrlListener((url, view) -> {
+            received[0] = url;
+            return true;
+        });
+
+        String encoded = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=%5B%7B%22k%22%3A%22a%26b%22%7D%5D";
+        String decoded = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=[{\"k\":\"a&b\"}]";
+        Assert.assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest(encoded, true)));
+        Assert.assertEquals("listener must receive the decoded URL", decoded, received[0]);
+    }
+
+    /**
+     * A malformed percent-escape (possible inside an unencoded link) must not drop the action: the
+     * listener still receives the URL (raw fallback) rather than the call returning false silently.
+     */
+    @Test
+    public void shouldOverrideUrlLoading_malformedEscape_fallsBackToRaw() {
+        final String[] received = new String[1];
+        client.registerWebViewUrlListener((url, view) -> {
+            received[0] = url;
+            return true;
+        });
+
+        String raw = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=https://x.com?d=50%off";
+        Assert.assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest(raw, true)));
+        Assert.assertNotNull("listener must still be invoked on malformed escape", received[0]);
+    }
+
+    // =====================================
     // onReceivedHttpError - abort logic
     // =====================================
 

@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Improved link handling for content and feedback widgets, so links that carry their own query parameters, such as deep links, are parsed correctly.
+
 ## 26.1.4
 * ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.
 
