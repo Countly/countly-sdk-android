@@ -89,6 +89,12 @@ public class ContentOverlayViewTests {
 
     private ContentOverlayView createOverlay(Activity activity,
         @Nullable ContentCallback callback, @Nullable Runnable onClose) {
+        return createOverlay(activity, callback, onClose, null);
+    }
+
+    private ContentOverlayView createOverlay(Activity activity,
+        @Nullable ContentCallback callback, @Nullable Runnable onClose,
+        @Nullable ContentUrlHandler contentUrlHandler) {
         TransparentActivityConfig portrait = new TransparentActivityConfig(0, 0, 300, 500);
         portrait.url = "about:blank";
         portrait.useSafeArea = false;
@@ -103,7 +109,8 @@ public class ContentOverlayViewTests {
             callback,
             onClose != null ? onClose : () -> {
             },
-            null
+            null,
+            contentUrlHandler
         );
     }
 
@@ -133,6 +140,34 @@ public class ContentOverlayViewTests {
     @FunctionalInterface
     interface ActivityAction {
         void run(Activity activity);
+    }
+
+    // ===================== contentUrlHandler =====================
+
+    /**
+     * When a content URL handler is set and returns true, startSafeExternalIntent hands the URL to
+     * it and short-circuits before dispatching an ACTION_VIEW intent (so the app can route its own
+     * deep link).
+     */
+    @Test
+    public void startSafeExternalIntent_contentUrlHandler_takesOverAndSkipsIntent() {
+        withActivity(activity -> {
+            final String[] captured = { null };
+            ContentUrlHandler handler = url -> {
+                captured[0] = url;
+                return true; // app handled it -> SDK must not dispatch an intent
+            };
+            overlay = createOverlay(activity, null, null, handler);
+            try {
+                Method m = ContentOverlayView.class.getDeclaredMethod("startSafeExternalIntent", String.class);
+                m.setAccessible(true);
+                m.invoke(overlay, "myapp://deeplink/screen?id=42");
+            } catch (Exception e) {
+                Assert.fail("startSafeExternalIntent invoke failed: " + e);
+            }
+            // Handler received the URL; returning true short-circuits before the ACTION_VIEW intent.
+            Assert.assertEquals("myapp://deeplink/screen?id=42", captured[0]);
+        });
     }
 
     // ===================== contentUrlAction — URL Parsing & Routing =====================
@@ -506,7 +541,7 @@ public class ContentOverlayViewTests {
             overlay = new ContentOverlayView(
                 activity, portrait, landscape,
                 Configuration.ORIENTATION_PORTRAIT, null, () -> {
-            }, null);
+            }, null, null);
 
             // Note: setupConfig may modify width/height if < 1, but ours are > 0
             Assert.assertEquals(10, (int) overlay.configPortrait.x);
