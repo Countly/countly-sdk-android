@@ -48,6 +48,7 @@ class ContentOverlayView extends FrameLayout {
     int currentOrientation;
     private ContentCallback contentCallback;
     private final Set<String> allowedLinkSchemes;
+    private final ContentUrlHandler contentUrlHandler;
     private Runnable onCloseRunnable;
     private Runnable onWidgetCancelRunnable;
     private boolean isClosed = false;
@@ -88,7 +89,8 @@ class ContentOverlayView extends FrameLayout {
         int orientation,
         @Nullable ContentCallback callback,
         @NonNull Runnable onClose,
-        @Nullable Set<String> allowedLinkSchemes) {
+        @Nullable Set<String> allowedLinkSchemes,
+        @Nullable ContentUrlHandler contentUrlHandler) {
         // View.mContext must not pin the constructing activity (overlay outlives activity
         // transitions; window attachment uses currentHostActivity). On API 31+ we additionally
         // need a UI context to satisfy StrictMode#detectIncorrectContextUse — see
@@ -103,6 +105,7 @@ class ContentOverlayView extends FrameLayout {
         this.currentHostActivity = activity;
         // Defensive copy so a later config change cannot retroactively alter this overlay's policy.
         this.allowedLinkSchemes = allowedLinkSchemes == null ? null : new HashSet<>(allowedLinkSchemes);
+        this.contentUrlHandler = contentUrlHandler;
 
         setBackgroundColor(Color.TRANSPARENT);
         setClickable(false);
@@ -842,6 +845,20 @@ class ContentOverlayView extends FrameLayout {
     // schemes pass. Component/selector and flags are cleared so the intent cannot be redirected to a
     // specific (possibly internal) target.
     private void startSafeExternalIntent(@NonNull String url) {
+        // Give the app's content URL handler first refusal (e.g. to route its own deep link). If it
+        // reports it handled the URL, the SDK does not dispatch an intent. A handler exception is
+        // caught so it can never break link handling; on false/absent handler the SDK opens as usual.
+        if (contentUrlHandler != null) {
+            try {
+                if (contentUrlHandler.onContentUrl(url)) {
+                    Log.d(Countly.TAG, "[ContentOverlayView] startSafeExternalIntent, url handled by content URL handler: [" + url + "]");
+                    return;
+                }
+            } catch (Throwable t) {
+                Log.e(Countly.TAG, "[ContentOverlayView] startSafeExternalIntent, content URL handler threw", t);
+            }
+        }
+
         Uri uri = Uri.parse(url);
         String scheme = uri.getScheme();
         if (!Utils.isExternalSchemeAllowed(scheme, allowedLinkSchemes)) {

@@ -329,7 +329,8 @@ public class ModuleContent extends ModuleBase {
             orientation,
             globalContentCallback,
             this::notifyAfterContentIsClosed,
-            _cly.config_.content.allowedIntentSchemes
+            _cly.config_.content.allowedIntentSchemes,
+            _cly.config_.content.contentUrlHandler
         );
 
         contentOverlay.attachToActivity(activity);

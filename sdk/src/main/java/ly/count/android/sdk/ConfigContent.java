@@ -9,6 +9,7 @@ public class ConfigContent {
     int zoneTimerInterval = 30;
     ContentCallback globalContentCallback = null;
     Set<String> allowedIntentSchemes = new HashSet<>();
+    ContentUrlHandler contentUrlHandler = null;
 
     /**
      * Set the interval for the automatic content update calls
@@ -48,6 +49,22 @@ public class ConfigContent {
      */
     public synchronized ConfigContent setAllowedIntentSchemes(List<String> allowedIntentSchemes) {
         this.allowedIntentSchemes = Utils.normalizeSchemeSet(allowedIntentSchemes);
+        return this;
+    }
+
+    /**
+     * Set a handler that is called when a link is opened from the content (or feedback) web view,
+     * letting the app take over instead of the SDK opening the link via an ACTION_VIEW intent. This
+     * is how an app routes its own deep links (custom scheme or https) to the correct screen. The
+     * handler receives the URL and returns true if it handled it; returning false (or not setting a
+     * handler) makes the SDK open the URL as before.
+     *
+     * @param contentUrlHandler handler invoked for links opened from the content web view
+     * @return config content to chain calls
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     */
+    public synchronized ConfigContent setContentUrlHandler(ContentUrlHandler contentUrlHandler) {
+        this.contentUrlHandler = contentUrlHandler;
         return this;
     }
 }
