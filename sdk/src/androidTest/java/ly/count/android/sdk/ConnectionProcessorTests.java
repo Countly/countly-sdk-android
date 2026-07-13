@@ -35,6 +35,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +45,8 @@ import org.mockito.Mockito;
 import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -290,6 +294,71 @@ public class ConnectionProcessorTests {
         assertNull(urlConnection.getRequestProperty(""));
         assertEquals("", urlConnection.getRequestProperty("5"));
         assertNull(urlConnection.getRequestProperty("33"));
+    }
+
+    /**
+     * A custom SSL socket factory is applied to an https server request, even when no
+     * certificate/public-key pinning is configured. This is the key behavior the old pin-gated
+     * code lacked: the factory used to be applied only when the pinning statics were set.
+     */
+    @Test
+    public void urlConnectionForServerRequest_appliesCustomSSLSocketFactoryOnHttps() throws IOException {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("https://secureserver", mockStore, mockDeviceId, configurationProviderFake, rip, customFactory, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final URLConnection urlConnection = cp.urlConnectionForServerRequest("eventData", null);
+
+        assertTrue(urlConnection instanceof HttpsURLConnection);
+        assertSame(customFactory, ((HttpsURLConnection) urlConnection).getSSLSocketFactory());
+        assertEquals(30_000, urlConnection.getConnectTimeout());
+        assertFalse(urlConnection.getDoOutput());
+    }
+
+    /**
+     * The custom SSL socket factory is also applied to the preflight (HEAD) request path.
+     */
+    @Test
+    public void urlConnectionForPreflightRequest_appliesCustomSSLSocketFactory() throws IOException {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("https://secureserver", mockStore, mockDeviceId, configurationProviderFake, rip, customFactory, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final HttpURLConnection conn = (HttpURLConnection) cp.urlConnectionForPreflightRequest("https://secureserver/o/sdk?method=fetch");
+
+        assertTrue(conn instanceof HttpsURLConnection);
+        assertSame(customFactory, ((HttpsURLConnection) conn).getSSLSocketFactory());
+        assertEquals("HEAD", conn.getRequestMethod());
+    }
+
+    /**
+     * A plain http server URL has no TLS layer, so the custom factory cannot be applied. The
+     * request must still be built without throwing.
+     */
+    @Test
+    public void urlConnectionForServerRequest_customFactoryNotAppliedOnHttp() throws IOException {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, customFactory, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final URLConnection urlConnection = cp.urlConnectionForServerRequest("eventData", null);
+
+        assertFalse(urlConnection instanceof HttpsURLConnection);
+        assertEquals("http", urlConnection.getURL().getProtocol());
+    }
+
+    /**
+     * With no custom factory (and no pinning), an https request falls back to the platform default
+     * socket factory, never to a Countly-injected one.
+     */
+    @Test
+    public void urlConnectionForServerRequest_noFactoryUsesPlatformDefaultOnHttps() throws IOException {
+        SSLSocketFactory unusedFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("https://secureserver", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final URLConnection urlConnection = cp.urlConnectionForServerRequest("eventData", null);
+
+        assertTrue(urlConnection instanceof HttpsURLConnection);
+        SSLSocketFactory used = ((HttpsURLConnection) urlConnection).getSSLSocketFactory();
+        assertNotNull(used);
+        assertNotSame(unusedFactory, used);
     }
 
     @Test

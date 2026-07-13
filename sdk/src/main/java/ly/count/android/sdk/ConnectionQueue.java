@@ -37,6 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -57,7 +58,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private Context context_;
     private Future<?> connectionProcessorFuture_;
     private DeviceIdProvider deviceIdProvider_;
-    private SSLContext sslContext_;
+    private SSLSocketFactory sslSocketFactory_;
     private final ScheduledExecutorService backoffScheduler_ = Executors.newSingleThreadScheduledExecutor();
     private final AtomicBoolean backoff_ = new AtomicBoolean(false);
 
@@ -118,17 +119,30 @@ class ConnectionQueue implements RequestQueueProvider {
         });
     }
 
-    void setupSSLContext() {
-        if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
-            sslContext_ = null;
-        } else {
-            try {
-                TrustManager[] tm = { new CertificateTrustManager(Countly.publicKeyPinCertificates, Countly.certificatePinCertificates) };
-                sslContext_ = SSLContext.getInstance("TLS");
-                sslContext_.init(null, tm, null);
-            } catch (Throwable e) {
-                throw new IllegalStateException(e);
+    void setupSSLSocketFactory(SSLSocketFactory customSSLSocketFactory) {
+        // A customer-provided SSL socket factory (for example a FIPS-validated provider) takes
+        // precedence over the built-in pinning trust manager. The two cannot be combined here, so
+        // when both are set the custom factory wins and pinning is expected to be baked into it.
+        if (customSSLSocketFactory != null) {
+            sslSocketFactory_ = customSSLSocketFactory;
+            if (Countly.publicKeyPinCertificates != null || Countly.certificatePinCertificates != null) {
+                L.w("[ConnectionQueue] A custom SSL socket factory is set, the built-in certificate/public key pinning trust manager will not be applied");
             }
+            return;
+        }
+
+        if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
+            sslSocketFactory_ = null;
+            return;
+        }
+
+        try {
+            TrustManager[] tm = { new CertificateTrustManager(Countly.publicKeyPinCertificates, Countly.certificatePinCertificates) };
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, tm, null);
+            sslSocketFactory_ = sslContext.getSocketFactory();
+        } catch (Throwable e) {
+            throw new IllegalStateException(e);
         }
     }
 
@@ -963,7 +977,7 @@ class ConnectionQueue implements RequestQueueProvider {
 
     public ConnectionProcessor createConnectionProcessor() {
 
-        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslContext_, requestHeaderCustomValues, L, healthTracker, new Runnable() {
+        ConnectionProcessor cp = new ConnectionProcessor(baseInfoProvider.getServerURL(), storageProvider, deviceIdProvider_, configProvider, requestInfoProvider, sslSocketFactory_, requestHeaderCustomValues, L, healthTracker, new Runnable() {
             @Override
             public void run() {
                 L.d("[ConnectionQueue] createConnectionProcessor:run, backed off, countdown started for " + configProvider.getBOMDuration() + " seconds");

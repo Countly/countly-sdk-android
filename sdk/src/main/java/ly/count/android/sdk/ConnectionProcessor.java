@@ -37,7 +37,7 @@ import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -59,7 +59,7 @@ public class ConnectionProcessor implements Runnable {
 
     final RequestInfoProvider requestInfoProvider_;
     private final String serverURL_;
-    private final SSLContext sslContext_;
+    private final SSLSocketFactory sslSocketFactory_;
 
     private final Map<String, String> requestHeaderCustomValues_;
     private final Runnable backoffCallback_;
@@ -76,13 +76,13 @@ public class ConnectionProcessor implements Runnable {
     }
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
-        final RequestInfoProvider requestInfoProvider, final SSLContext sslContext, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
+        final RequestInfoProvider requestInfoProvider, final SSLSocketFactory sslSocketFactory, final Map<String, String> requestHeaderCustomValues, ModuleLog logModule,
         HealthTracker healthTracker, Runnable backoffCallback, final Map<String, InternalRequestCallback> internalRequestCallbacks) {
         serverURL_ = serverURL;
         storageProvider_ = storageProvider;
         deviceIdProvider_ = deviceIdProvider;
         configProvider_ = configProvider;
-        sslContext_ = sslContext;
+        sslSocketFactory_ = sslSocketFactory;
         requestHeaderCustomValues_ = requestHeaderCustomValues;
         requestInfoProvider_ = requestInfoProvider;
         backoffCallback_ = backoffCallback;
@@ -130,13 +130,13 @@ public class ConnectionProcessor implements Runnable {
             pccTsOpenURLConnection = UtilsTime.getNanoTime();
         }
 
-        if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
-            conn = (HttpURLConnection) url.openConnection();
-        } else {
-            HttpsURLConnection c = (HttpsURLConnection) url.openConnection();
-            c.setSSLSocketFactory(sslContext_.getSocketFactory());
-            conn = c;
+        final URLConnection urlConnection = url.openConnection();
+        // Apply the resolved SSL socket factory (a custom/FIPS factory or the pinning factory) to
+        // every HTTPS connection. A plain HTTP connection is left untouched.
+        if (sslSocketFactory_ != null && urlConnection instanceof HttpsURLConnection) {
+            ((HttpsURLConnection) urlConnection).setSSLSocketFactory(sslSocketFactory_);
         }
+        conn = (HttpURLConnection) urlConnection;
 
         if (pcc != null) {
             long openUrlConnectionTime = UtilsTime.getNanoTime() - pccTsOpenURLConnection;
@@ -250,8 +250,8 @@ public class ConnectionProcessor implements Runnable {
         long tOpen = pcc != null ? UtilsTime.getNanoTime() : 0;
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-        if (conn instanceof HttpsURLConnection && (Countly.publicKeyPinCertificates != null || Countly.certificatePinCertificates != null)) {
-            ((HttpsURLConnection) conn).setSSLSocketFactory(sslContext_.getSocketFactory());
+        if (sslSocketFactory_ != null && conn instanceof HttpsURLConnection) {
+            ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory_);
         }
 
         if (pcc != null) {

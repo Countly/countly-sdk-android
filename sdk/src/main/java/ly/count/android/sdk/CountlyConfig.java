@@ -6,6 +6,7 @@ import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.net.ssl.SSLSocketFactory;
 
 public class CountlyConfig {
 
@@ -162,6 +163,8 @@ public class CountlyConfig {
     protected String[] publicKeyPinningCertificates = null;
 
     protected String[] certificatePinningCertificates = null;
+
+    protected SSLSocketFactory customSSLSocketFactory = null;
 
     protected Integer sessionUpdateTimerDelay = null;
 
@@ -727,6 +730,36 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableCertificatePinning(String[] certificates) {
         certificatePinningCertificates = certificates;
+        return this;
+    }
+
+    /**
+     * Provide a custom SSLSocketFactory that Countly uses for all of its HTTPS requests
+     * (session, event, remote-config, feedback/rating/content availability, health-check and
+     * preflight requests).
+     * <p>
+     * Use this to route Countly's network traffic through your own TLS provider — for example a
+     * FIPS 140-3 validated cryptographic module — or to enforce a specific TLS protocol version
+     * or cipher suite. Protocol and cipher-suite restrictions must be applied inside the supplied
+     * factory (for example by wrapping it and calling {@code setEnabledProtocols} /
+     * {@code setEnabledCipherSuites} on each created socket, or through {@code SSLParameters});
+     * Countly applies the factory as it is.
+     * <p>
+     * Notes:
+     * <ul>
+     *   <li>Applies only to "https://" server URLs. It has no effect on a plain "http://" server URL.</li>
+     *   <li>Takes precedence over {@link #enablePublicKeyPinning(String[])} and
+     *   {@link #enableCertificatePinning(String[])}. When both are provided, this factory is used and
+     *   the built-in pinning trust manager is not applied; add pinning to your own factory if you need it.</li>
+     *   <li>Does not apply to WebView-rendered content, feedback and rating widgets (the Android WebView
+     *   uses its own network stack) nor to push notification image downloads.</li>
+     * </ul>
+     *
+     * @param sslSocketFactory the factory to use; a null value leaves the default behavior unchanged
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setCustomSSLSocketFactory(SSLSocketFactory sslSocketFactory) {
+        customSSLSocketFactory = sslSocketFactory;
         return this;
     }
 
