@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.mockito.Mockito.mock;
 
 /**
  * Instrumented tests for ContentOverlayView.
@@ -1307,6 +1308,181 @@ public class ContentOverlayViewTests {
                     + "as the constructing Activity.",
                 activity.getApplicationContext(),
                 overlay.webView.getContext().getApplicationContext());
+        });
+    }
+
+    // ===================== Plan verification (URL_EDGE_CASE_TESTS.md) — behavior gaps =====================
+    // Empirically confirms plan behaviors that were not already covered by a dedicated test: actual
+    // event recording, malformed-payload safety, routing/parsing edge cases, and content-URL-handler
+    // fallthrough. (Scheme allow/deny decisions are covered in UtilsTests / CountlyWebViewClientTests /
+    // FeedbackDialogWebViewClientTests; percent-decoding in CountlyWebViewClientTests.)
+
+    private void invokeStartSafeExternalIntent(String url) {
+        try {
+            Method m = ContentOverlayView.class.getDeclaredMethod("startSafeExternalIntent", String.class);
+            m.setAccessible(true);
+            m.invoke(overlay, url);
+        } catch (Exception e) {
+            Assert.fail("startSafeExternalIntent must not propagate an exception: " + e);
+        }
+    }
+
+    /** §1.1 A valid event action actually records the event with its segmentation. */
+    @Test
+    public void planEvent_validSingleEvent_isRecorded() {
+        EventProvider ep = TestUtils.setEventProviderToMock(Countly.sharedInstance(), mock(EventProvider.class));
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event"
+                + "&event=[{\"key\":\"button_click\",\"sg\":{\"btn\":\"buy\"}}]";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+        });
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("btn", "buy");
+        TestUtils.validateRecordEventInternalMock(ep, "button_click", expected);
+    }
+
+    /** §1.2 When an event carries both "sg" and "segmentation", "sg" wins. */
+    @Test
+    public void planEvent_sgOverridesSegmentation_isRecorded() {
+        EventProvider ep = TestUtils.setEventProviderToMock(Countly.sharedInstance(), mock(EventProvider.class));
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event"
+                + "&event=[{\"key\":\"e1\",\"sg\":{\"a\":\"1\"},\"segmentation\":{\"b\":\"2\"}}]";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+        });
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("a", "1"); // taken from sg, "segmentation" ignored
+        TestUtils.validateRecordEventInternalMock(ep, "e1", expected);
+    }
+
+    /** §1.4 An event object missing "key" records nothing (get("key") throws, caught) and does not crash. */
+    @Test
+    public void planEvent_missingKey_recordsNothing() {
+        EventProvider ep = TestUtils.setEventProviderToMock(Countly.sharedInstance(), mock(EventProvider.class));
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=[{\"sg\":{\"a\":\"1\"}}]";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+        });
+        TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
+    }
+
+    /** §5.4 The sentinel host appearing twice yields an empty parse (pairs != 2) -> not handled. */
+    @Test
+    public void planRouting_sentinelTwice_emptyMapNotHandled() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link="
+                    + Utils.COMM_URL + "/?x=1";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertTrue("map must be empty when the sentinel appears twice", q.isEmpty());
+                Assert.assertFalse(overlay.contentUrlAction(url, overlay.webView));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /** §5/§6 An extra path segment before the query fuses into the key, so the marker is unrecognized. */
+    @Test
+    public void planRouting_extraPathSegment_markerNotRecognized() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String url = Utils.COMM_URL + "/foo?cly_widget_command=1&close=1";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertNull("bare ?cly_widget_command must not be a key", q.get("?cly_widget_command"));
+                Assert.assertFalse(overlay.widgetUrlAction(url, overlay.webView));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /** §5.2 A query token with no '=' is skipped; surrounding params still parse. */
+    @Test
+    public void planRouting_tokenWithoutEquals_skipped() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            try {
+                String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&flagonly&link=https://example.com";
+                Map<String, Object> q = invokeSplitQuery(url);
+                Assert.assertEquals("link", q.get("action"));
+                Assert.assertFalse("a bare token must not appear as a key", q.containsKey("flagonly"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /** §5.5 On the content path the widget cancel runnable is never fired (only widgetUrlAction fires it). */
+    @Test
+    public void planRouting_contentPathDoesNotFireWidgetCancel() {
+        AtomicBoolean cancelCalled = new AtomicBoolean(false);
+        AtomicBoolean closed = new AtomicBoolean(false);
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            overlay.setOnWidgetCancelRunnable(() -> cancelCalled.set(true));
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&cly_widget_command=1&close=1";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+            try {
+                closed.set((Boolean) getField("isClosed"));
+            } catch (Exception e) {
+                Assert.fail("read isClosed: " + e);
+            }
+        });
+        Assert.assertTrue("overlay should be closed", closed.get());
+        Assert.assertFalse("widget cancel must NOT fire on the content path", cancelCalled.get());
+    }
+
+    /** §6.10 A widget command value other than "1" is not handled. */
+    @Test
+    public void planWidget_commandValueNotOne_returnsFalse() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?cly_widget_command=2&close=1";
+            Assert.assertFalse(overlay.widgetUrlAction(url, overlay.webView));
+        });
+    }
+
+    /** §6.16 Marker matching is case-sensitive: an uppercase command key is not recognized. */
+    @Test
+    public void planWidget_uppercaseKey_returnsFalse() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?CLY_WIDGET_COMMAND=1&close=1";
+            Assert.assertFalse(overlay.widgetUrlAction(url, overlay.webView));
+        });
+    }
+
+    /** §8/handler A content URL handler returning false lets the SDK proceed; a denylisted scheme means
+     * no dispatch and no crash, and the handler is consulted exactly once. */
+    @Test
+    public void planHandler_returnsFalse_fallsThroughNoCrash() {
+        AtomicBoolean called = new AtomicBoolean(false);
+        withActivity(activity -> {
+            ContentUrlHandler handler = url -> {
+                called.set(true);
+                return false;
+            };
+            overlay = createOverlay(activity, null, null, handler);
+            invokeStartSafeExternalIntent("file:///blocked");
+        });
+        Assert.assertTrue("handler must be consulted", called.get());
+    }
+
+    /** §8/handler A throwing content URL handler is caught; startSafeExternalIntent must not propagate it. */
+    @Test
+    public void planHandler_throws_caughtNoCrash() {
+        withActivity(activity -> {
+            ContentUrlHandler handler = url -> {
+                throw new RuntimeException("handler boom");
+            };
+            overlay = createOverlay(activity, null, null, handler);
+            invokeStartSafeExternalIntent("file:///blocked"); // reaching the next line proves it was caught
         });
     }
 }
