@@ -220,6 +220,37 @@ public class ContentOverlayViewTests {
     }
 
     /**
+     * Malformed "event" JSON must not crash. When the payload fails to validate, splitQuery stores
+     * it as a raw String (not a JSONArray) and still routes action=event to eventAction. eventAction
+     * must guard the cast instead of letting a ClassCastException propagate out of
+     * shouldOverrideUrlLoading. The URL is still a consumed countly action URL (returns true) and
+     * simply records nothing. Regression test for the unguarded (JSONArray) cast.
+     */
+    @Test
+    public void contentUrlAction_malformedEventJson_doesNotThrow() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            // Truncated JSON array: new JSONArray(...) throws, so "event" is not stored as a JSONArray.
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=[{\"key\":\"oops\"";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+        });
+    }
+
+    /**
+     * Same guard with reversed param order: a valid action=event verb paired with a malformed event
+     * payload that appears before it. The event value lands in splitQuery's fallback prefix as a
+     * String, so eventAction must not cast-crash.
+     */
+    @Test
+    public void contentUrlAction_malformedEventJson_reversedOrder_doesNotThrow() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&event=[oops&action=event";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+        });
+    }
+
+    /**
      * resize_me action parses JSON and updates portrait/landscape configs.
      */
     @Test

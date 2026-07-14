@@ -782,12 +782,12 @@ class ContentOverlayView extends FrameLayout {
 
     private void eventAction(Map<String, Object> query) {
         Log.i(Countly.TAG, "[ContentOverlayView] eventAction, event action detected");
-        if (query.containsKey("event")) {
-            JSONArray event = (JSONArray) query.get("event");
-            if (event == null) {
-                Log.w(Countly.TAG, "[ContentOverlayView] eventAction, event is null");
-                return;
-            }
+        // splitQuery only stores "event" as a JSONArray when its JSON validates; a malformed payload
+        // from web content falls back to a raw String, so guard the cast (as resizeMeAction guards
+        // resize_me) to keep a ClassCastException from propagating out of shouldOverrideUrlLoading.
+        Object eventObj = query.get("event");
+        if (eventObj instanceof JSONArray) {
+            JSONArray event = (JSONArray) eventObj;
             for (int i = 0; i < event.length(); i++) {
                 try {
                     JSONObject eventJson = event.getJSONObject(i);
