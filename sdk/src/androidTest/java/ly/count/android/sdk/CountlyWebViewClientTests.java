@@ -103,6 +103,62 @@ public class CountlyWebViewClientTests {
     }
 
     // =====================================
+    // shouldOverrideUrlLoading - URL decoding + listener delivery
+    // =====================================
+
+    /**
+     * The URL is percent-decoded once before being handed to listeners, so encoded delimiters in
+     * an "event" JSON value (e.g. "%26" -> "&", "%5B" -> "[") arrive in plain form for parsing.
+     */
+    @Test
+    public void shouldOverrideUrlLoading_decodesUrlForListener() {
+        final String[] received = new String[1];
+        client.registerWebViewUrlListener((url, view) -> {
+            received[0] = url;
+            return true;
+        });
+
+        String encoded = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=%5B%7B%22k%22%3A%22a%26b%22%7D%5D";
+        String decoded = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=[{\"k\":\"a&b\"}]";
+        Assert.assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest(encoded, true)));
+        Assert.assertEquals("listener must receive the decoded URL", decoded, received[0]);
+    }
+
+    /**
+     * A literal '+' in a link is preserved (Uri.decode does not apply form '+'->space semantics), so
+     * deeplinks like "tel:+1..." and base64 query values are not corrupted. Matches iOS.
+     */
+    @Test
+    public void shouldOverrideUrlLoading_plusInQuery_preserved() {
+        final String[] received = new String[1];
+        client.registerWebViewUrlListener((url, view) -> {
+            received[0] = url;
+            return true;
+        });
+
+        String raw = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=https://x.com/search?q=a+b";
+        Assert.assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest(raw, true)));
+        Assert.assertEquals(raw, received[0]);
+    }
+
+    /**
+     * A malformed percent-escape (possible inside an unencoded link) must not drop the action: the
+     * URL is decoded leniently and the listener is still invoked rather than the call returning false.
+     */
+    @Test
+    public void shouldOverrideUrlLoading_malformedEscape_stillHandled() {
+        final String[] received = new String[1];
+        client.registerWebViewUrlListener((url, view) -> {
+            received[0] = url;
+            return true;
+        });
+
+        String raw = Utils.COMM_URL + "/?cly_x_action_event=1&action=link&link=https://x.com?d=50%off";
+        Assert.assertTrue(client.shouldOverrideUrlLoading(null, fakeRequest(raw, true)));
+        Assert.assertNotNull("listener must still be invoked on malformed escape", received[0]);
+    }
+
+    // =====================================
     // onReceivedHttpError - abort logic
     // =====================================
 
