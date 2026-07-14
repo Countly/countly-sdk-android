@@ -12,7 +12,6 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -49,11 +48,14 @@ class CountlyWebViewClient extends WebViewClient {
     public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
         String url = request.getUrl().toString();
         Log.v(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, url: [" + url + "]");
-        try {
-            url = URLDecoder.decode(url, "UTF-8");
-        } catch (Exception e) {
-            Log.e(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, Failed to decode url", e);
-            return false;
+
+        // Percent-decode with Uri.decode, NOT URLDecoder: URLDecoder applies form semantics and turns
+        // a literal '+' into a space, which corrupts links and deeplinks (e.g. "tel:+1..." or a base64
+        // query value). Uri.decode decodes %XX, leaves '+' intact, and is lenient on a malformed
+        // escape (so the action is not dropped) - matching the iOS behavior.
+        String decoded = Uri.decode(url);
+        if (decoded != null) {
+            url = decoded;
         }
 
         Log.d(Countly.TAG, "[CountlyWebViewClient] shouldOverrideUrlLoading, urlDecoded: [" + url + "]");
