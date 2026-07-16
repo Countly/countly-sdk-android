@@ -1,10 +1,15 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URLConnection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,6 +31,45 @@ public class ConnectionQueueIntegrationTests {
 
     private final String appKey = "testAppKey123";
     private final String serverUrl = "https://test.server.com";
+
+    // A valid X.509 certificate (Sectigo, *.count.ly) used only to exercise the pinning code path;
+    // CertificateFactory parses it regardless of expiry, so the pinning SSLContext can be built.
+    private static final String PINNING_CERT =
+        "MIIGnjCCBYagAwIBAgIRAN73cVA7Y1nD+S8rToAqBpQwDQYJKoZIhvcNAQELBQAwgY8xCzAJ"
+            + "BgNVBAYTAkdCMRswGQYDVQQIExJHcmVhdGVyIE1hbmNoZXN0ZXIxEDAOBgNVBAcTB1"
+            + "NhbGZvcmQxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDE3MDUGA1UEAxMuU2VjdGln"
+            + "byBSU0EgRG9tYWluIFZhbGlkYXRpb24gU2VjdXJlIFNlcnZlciBDQTAeFw0yMDA2MD"
+            + "EwMDAwMDBaFw0yMjA5MDMwMDAwMDBaMBUxEzARBgNVBAMMCiouY291bnQubHkwggEi"
+            + "MA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCl9zmATVRwrGRtRQJcmBmA+zc/ZL"
+            + "io3YfkwXO2w8u9lnw60J4JpPNn9OnGcxdM+sqbXKU3jTdjY4j3yaA6NlWibq2jU2x6"
+            + "HT2sS+I5gFFE/6tO53WqjoMk48i3FkyoJDittwtQrVaRGcP8RjJH0pfXaP+JLrLAgg"
+            + "HuW3tCFqYzkWi3uLGVjQbSIRNiXsM3FI0UMEa/x1I3U4hLjMjH28KagZbZLWnHOvks"
+            + "AvGLg3xQkS+GSQ+6ARZ2/bGh5O9q4hCCCk0/PpwAXmrOnWtwrNuwHcCDOvuB22JxLd"
+            + "t8jQDYrjwtJIvq4Yut8FQPv/75SKoETWWHyxe0x5NsB34UwA/BAgMBAAGjggNsMIID"
+            + "aDAfBgNVHSMEGDAWgBSNjF7EVK2K4Xfpm/mbBeG4AY1h4TAdBgNVHQ4EFgQU8uf/ND"
+            + "Rt8cu+AwARVIGXPMfxGbQwDgYDVR0PAQH/BAQDAgWgMAwGA1UdEwEB/wQCMAAwHQYD"
+            + "VR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMEkGA1UdIARCMEAwNAYLKwYBBAGyMQ"
+            + "ECAgcwJTAjBggrBgEFBQcCARYXaHR0cHM6Ly9zZWN0aWdvLmNvbS9DUFMwCAYGZ4EM"
+            + "AQIBMIGEBggrBgEFBQcBAQR4MHYwTwYIKwYBBQUHMAKGQ2h0dHA6Ly9jcnQuc2VjdG"
+            + "lnby5jb20vU2VjdGlnb1JTQURvbWFpblZhbGlkYXRpb25TZWN1cmVTZXJ2ZXJDQS5j"
+            + "cnQwIwYIKwYBBQUHMAGGF2h0dHA6Ly9vY3NwLnNlY3RpZ28uY29tMB8GA1UdEQQYMB"
+            + "aCCiouY291bnQubHmCCGNvdW50Lmx5MIIB9AYKKwYBBAHWeQIEAgSCAeQEggHgAd4A"
+            + "dQBGpVXrdfqRIDC1oolp9PN9ESxBdL79SbiFq/L8cP5tRwAAAXJwTJ0kAAAEAwBGME"
+            + "QCIEErTN/aGJ8LV9brGklKeGAXMg1EN/FUxXDu13kNfXhcAiBrKMYe+W4flPyuLNm5"
+            + "jp6FJwtUTZPNpZ+TmM40dRdwjQB0AN+lXqtogk8fbK3uuF9OPlrqzaISpGpejjsSwC"
+            + "BEXCpzAAABcnBMncsAAAQDAEUwQwIfEYSpsSDtKpmj9ZmRWsx73G622N74v09JDjzP"
+            + "bkg9RQIgUelIqSwqu69JanH7losrqTTsjwNv+3QJBNJ6GxJKkh0AdgBvU3asMfAxGd"
+            + "iZAKRRFf93FRwR2QLBACkGjbIImjfZEwAAAXJwTJ0YAAAEAwBHMEUCIQCMBaaQAoua"
+            + "97R+z2zONMUq1XsDP5aoAiutZG4XxuQ6wAIgW1p6XS3az4CCqjwbDKxL9qEnw8fWd+"
+            + "yLx2skviSsTS0AdwApeb7wnjk5IfBWc59jpXflvld9nGAK+PlNXSZcJV3HhAAAAXJw"
+            + "TJ1PAAAEAwBIMEYCIQDg1YFbJPPKDIyrFZJ9rtrUklkh2k/wpgwjDuIp7tPtOgIhAL"
+            + "dZl9s/qISsFm2E64ruYbdE4HKR1ZJ0zbIXOZcds7XXMA0GCSqGSIb3DQEBCwUAA4IB"
+            + "AQB2Ar1h2X/S4qsVlw0gEbXO//6Rj8mTB4BFW6c5r84n0vTwvA78h003eX00y0ymxO"
+            + "i5hkqB8gd1IUSWP1R1ijYtBVPdFi+SsMjUsB5NKquQNlWpo0GlFjRlcXnDC6R6toN2"
+            + "QixJb47VM40Vmn2g0ZuMGfy1XoQKvIyRosT92jGm1YcF+nLEHBDr+89apZ8sUpFfWo"
+            + "AnCom+8sBGwje6zP10eBbprHyzM8snvdwo/QNLAzLcvVNKP+Sr4H7HKzec3g1+THI0"
+            + "M72TzoguJcOZQEI6Pd+FIP5Xad53rq4jCtRGwYrsieH49a3orBnkkJvUKni+mtkxMb"
+            + "PTJ7eeMmX9g/0h";
 
     @Before
     public void setUp() {
@@ -300,6 +344,93 @@ public class ConnectionQueueIntegrationTests {
             commonRequest.contains("sdk_name=" + customSdkName));
         Assert.assertTrue("Should contain custom SDK version",
             commonRequest.contains("sdk_version=" + customSdkVersion));
+    }
+
+    // ==========================================
+    // Integration Tests - Custom SSL socket factory
+    // ==========================================
+
+    /**
+     * Integration test: a custom SSLSocketFactory set on CountlyConfig is resolved by
+     * ConnectionQueue and applied to both the server request and the preflight request that every
+     * ConnectionProcessor produces.
+     */
+    @Test
+    public void integration_customSSLSocketFactory_appliedToServerAndPreflightRequests() throws Exception {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), appKey, serverUrl)
+            .setCustomSSLSocketFactory(customFactory);
+        Countly.sharedInstance().init(config);
+        ConnectionQueue cq = Countly.sharedInstance().connectionQueue_;
+
+        URLConnection serverConn = cq.createConnectionProcessor().urlConnectionForServerRequest("app_key=" + appKey, null);
+        HttpURLConnection preflightConn = (HttpURLConnection) cq.createConnectionProcessor().urlConnectionForPreflightRequest(serverUrl + "/o/sdk?method=fetch");
+
+        Assert.assertTrue(serverConn instanceof HttpsURLConnection);
+        Assert.assertSame(customFactory, ((HttpsURLConnection) serverConn).getSSLSocketFactory());
+        Assert.assertTrue(preflightConn instanceof HttpsURLConnection);
+        Assert.assertSame(customFactory, ((HttpsURLConnection) preflightConn).getSSLSocketFactory());
+    }
+
+    /**
+     * Integration test: when both a custom SSLSocketFactory and public-key pinning are configured,
+     * the custom factory wins and the pinning certificates are never parsed (so intentionally
+     * invalid pinning certs do not break initialization).
+     */
+    @Test
+    public void integration_customSSLSocketFactory_takesPrecedenceOverPinning() throws Exception {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        try {
+            CountlyConfig config = new CountlyConfig(TestUtils.getContext(), appKey, serverUrl)
+                .enablePublicKeyPinning(new String[] { "not-a-real-certificate" })
+                .setCustomSSLSocketFactory(customFactory);
+            Countly.sharedInstance().init(config);
+            ConnectionQueue cq = Countly.sharedInstance().connectionQueue_;
+
+            URLConnection serverConn = cq.createConnectionProcessor().urlConnectionForServerRequest("app_key=" + appKey, null);
+
+            Assert.assertTrue(serverConn instanceof HttpsURLConnection);
+            Assert.assertSame("custom factory must win over pinning", customFactory, ((HttpsURLConnection) serverConn).getSSLSocketFactory());
+        } finally {
+            Countly.publicKeyPinCertificates = null;
+        }
+    }
+
+    /**
+     * Integration test: public-key pinning and certificate pinning both remain functional after the
+     * SSL socket factory refactor. Each installs its own (non-default) socket factory on the SDK's
+     * HTTPS connections, built from the CertificateTrustManager.
+     */
+    @Test
+    public void integration_pinning_installsDistinctSocketFactory() throws Exception {
+        String[] certs = { PINNING_CERT };
+        SSLSocketFactory platformDefault = HttpsURLConnection.getDefaultSSLSocketFactory();
+        try {
+            // public key pinning
+            Countly.sharedInstance().init(new CountlyConfig(TestUtils.getContext(), appKey, serverUrl).enablePublicKeyPinning(certs));
+            SSLSocketFactory publicKeyPinningFactory = appliedServerRequestFactory();
+            Assert.assertNotNull(publicKeyPinningFactory);
+            Assert.assertNotSame("public key pinning must install its own socket factory", platformDefault, publicKeyPinningFactory);
+
+            Countly.sharedInstance().halt();
+            Countly.publicKeyPinCertificates = null;
+
+            // certificate pinning
+            Countly.sharedInstance().init(new CountlyConfig(TestUtils.getContext(), appKey, serverUrl).enableCertificatePinning(certs));
+            SSLSocketFactory certificatePinningFactory = appliedServerRequestFactory();
+            Assert.assertNotNull(certificatePinningFactory);
+            Assert.assertNotSame("certificate pinning must install its own socket factory", platformDefault, certificatePinningFactory);
+        } finally {
+            Countly.publicKeyPinCertificates = null;
+            Countly.certificatePinCertificates = null;
+        }
+    }
+
+    private SSLSocketFactory appliedServerRequestFactory() throws IOException {
+        ConnectionQueue cq = Countly.sharedInstance().connectionQueue_;
+        URLConnection conn = cq.createConnectionProcessor().urlConnectionForServerRequest("app_key=" + appKey, null);
+        Assert.assertTrue(conn instanceof HttpsURLConnection);
+        return ((HttpsURLConnection) conn).getSSLSocketFactory();
     }
 
     // ==========================================

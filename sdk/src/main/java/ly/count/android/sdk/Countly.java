@@ -686,7 +686,7 @@ public class Countly {
             connectionQueue_.deviceInfo = config.deviceInfo;
             connectionQueue_.pcc = config.pcc;
             connectionQueue_.setStorageProvider(config.storageProvider);
-            connectionQueue_.setupSSLContext();
+            connectionQueue_.setupSSLSocketFactory(config.customSSLSocketFactory);
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
             connectionQueue_.setDeviceId(config.deviceIdProvider);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
