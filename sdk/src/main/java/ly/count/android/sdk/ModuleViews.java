@@ -20,6 +20,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     String currentViewName = "";
     private boolean firstView = true;
     boolean autoViewTracker = false;
+    boolean restartManualViews = true;
     boolean automaticTrackingShouldUseShortName = false;
 
     //track orientation changes
@@ -84,6 +85,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         setGlobalViewSegmentationInternal(config.globalViewSegmentation);
         autoTrackingActivityExceptions = config.automaticViewTrackingExceptions;
         trackOrientationChanges = config.trackOrientationChange;
+        restartManualViews = !config.disableViewRestartForManualRecording;
 
         viewsInterface = new Views();
     }
@@ -188,6 +190,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return null;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] startViewInternal, View tracking is disabled, ignoring call, view will not be started view name:[" + viewName + "]");
+            return null;
+        }
+
         if (viewName == null || viewName.isEmpty()) {
             L.e("[ModuleViews] startViewInternal, Trying to record view with null or empty view name, ignoring request");
             return null;
@@ -282,6 +289,12 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            // stopallviews
+            L.d("[ModuleViews] stopViewWithIDInternal, View tracking is disabled, ignoring call, it will not be stopped view name:[" + vd.viewName + "]");
+            return;
+        }
+
         recordViewEndEvent(vd, customViewSegmentation, "stopViewWithIDInternal");
 
         if (!vd.willStartAgain) {
@@ -340,6 +353,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be paused view name:[" + vd.viewName + "]");
+            return;
+        }
+
         L.d("[ModuleViews] pauseViewWithIDInternal, pausing view for ID:[" + viewID + "], name:[" + vd.viewName + "]");
 
         if (vd.viewStartTimeSeconds == 0) {
@@ -370,6 +388,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+            return;
+        }
+
+        if (!configProvider.getViewTrackingEnabled()) {
+            L.d("[ModuleViews] resumeViewWithIDInternal, View tracking is disabled, ignoring call, it will not be resumed view name:[" + vd.viewName + "]");
             return;
         }
 
@@ -522,7 +545,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     @Override
     void onActivityStopped(int updatedActivityCount) {
-        if (autoViewTracker) {
+        if (configProvider.getAutomaticViewTrackingEnabled()) {
             //main purpose of this is handling transitions when the app is getting closed/minimised
             //for cases when going from one view to another we would report the duration there
             if (updatedActivityCount <= 0) {
@@ -531,7 +554,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        if (updatedActivityCount <= 0) {
+        if (updatedActivityCount <= 0 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
             //if we go to the background, stop all running views
             stopRunningViewsAndSend();
         }
@@ -539,8 +562,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     @Override
     void onActivityStarted(Activity activity, int updatedActivityCount) {
-        //automatic view tracking
-        if (autoViewTracker) {
+        //automatic view tracking, resolved through the SBS precedence chain (server can override the local setting)
+        if (configProvider.getAutomaticViewTrackingEnabled()) {
             if (!isActivityInExceptionList(activity)) {
                 String usedActivityName = "NULL ACTIVITY";
 
@@ -566,8 +589,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             }
         }
 
-        if (updatedActivityCount == 1) {
-            //if we go to the background, stop all running views
+        if (updatedActivityCount == 1 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
             startStoppedViews();
         }
     }

@@ -29,6 +29,8 @@ interface RequestQueueProvider {
 
     void recordEvents(final String events);
 
+    void recordEvents(final String events, @Nullable InternalRequestCallback callback);
+
     void sendConsentChanges(String formattedConsentChanges);
 
     void sendAPMCustomTrace(String key, Long durationMs, Long startMs, Long endMs, String customMetrics);
@@ -40,6 +42,8 @@ interface RequestQueueProvider {
     void sendAPMScreenTime(boolean recordForegroundTime, long durationMs, Long startMs, Long endMs);
 
     void sendDirectRequest(@NonNull final Map<String, String> requestData);
+
+    void sendMetricsRequest(@NonNull String preparedMetrics);
 
     void enrollToKeys(@NonNull String[] keys);
 
@@ -70,5 +74,7 @@ interface RequestQueueProvider {
 
     String prepareHealthCheckRequest(String preparedMetrics);
 
-    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language, String deviceType);
+    String prepareFetchContents(int portraitWidth, int portraitHeight, int landscapeWidth, int landscapeHeight, String[] categories, String language, String deviceType, @Nullable String contentId);
+
+    void registerInternalGlobalRequestCallbackAction(Runnable runnable);
 }

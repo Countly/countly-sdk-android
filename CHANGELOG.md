@@ -1,5 +1,128 @@
 ## XX.XX.XX
-* Deprecated the experimental configuration function enableServerConfiguration. It is now enabled by default and can be controlled directly from the server.
+* Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.
+* Added support for reporting the app's current theme (light or dark) when presenting feedback widgets, rating widgets, and content, so they are displayed in matching conditions.
+* Improved link handling for content and feedback widgets, so links that carry their own query parameters, such as deep links, are parsed correctly.
+* Added a content configuration option to provide a handler for links opened from the content web view, so the app can route its own deep links instead of the SDK opening the system browser, set via `setContentUrlHandler(ContentUrlHandler)`.
+
+* Mitigated an issue where content could fail to be displayed on some devices, as the content web view could stay hidden even after its resources had finished loading.
+
+## 26.1.4
+* ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.
+
+* Added support for SDK behavior settings that control the SDK's automatic session tracking, automatic view tracking, automatic crash reporting, and Journey Trigger Views.
+* Added a new push configuration option "enableAdditionalIntentRedirectionChecks()" to enable stricter validation of the notification intent's target package and class.
+* Added a new content configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes content and feedback widget links may open.
+* Added a new push configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes notification links may open.
+* Added a new configuration option "disableWebView()" to disable all WebView-based UI in the SDK.
+* Added a new config option "disableSDKLoggingInProduction()" that keeps the SDK's console logging disabled in production (non-debuggable) builds, even when logging is enabled.
+* Improved the security of the content, feedback widget, rating widget and push notifications.
+
+* Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
+* Mitigated an issue where the rating feedback popup request could be sent while in temporary device ID mode, creating a `CLYTemporaryDeviceID` user on the server.
+* Mitigated an issue where the content zone did not resume after exiting temporary device ID mode even when it was enabled by the server configuration.
+* Mitigated an issue while sending health checks after SDK is halted.
+
+## 26.1.3
+* Added gradle configuration cache support to upload symbols plugin.
+* Improved user properties auto-save conditions to flush event queue with every user property call.
+
+* Mitigated `IncorrectContextUseViolation` StrictMode warnings from non-UI context use in display metrics and content overlay construction.
+* Mitigated an issue where content overlays and feedback widgets blocked keyboard input on the host activity.
+* Mitigated a memory retention issue where content overlays and feedback widgets were briefly held after closing.
+* Mitigated a memory leak where the content overlay retained its initial host activity across activity transitions.
+* Mitigated a memory leak where content overlays and feedback widgets remained referenced via lifecycle callbacks when the host activity finished.
+
+## 26.1.2
+* Added `CountlyInitProvider` ContentProvider to register activity lifecycle callbacks before `Application.onCreate()`. This ensures the SDK captures the current activity in single-activity frameworks (Flutter, React Native) and apps with deferred initialization.
+* Added `CountlyConfig.setInitialActivity(Activity)` as an explicit way for wrapper SDKs to provide the host activity during initialization.
+* Added a new config option `setMetricProvider(MetricProvider)` to allow overriding default device metrics with custom values.
+
+## 26.1.1
+* Added Content feature method `previewContent(String contentId)` (Experimental!).
+* Improved content display and refresh mechanics.
+
+* Mitigated an issue about health checks storage in explicit storage mode.
+
+## 26.1.0
+* Extended server configuration capabilities with server-controlled listing filters:
+  * Event filters (blacklist/whitelist) to control which events are recorded.
+  * User property filters (blacklist/whitelist) to control which user properties are recorded.
+  * Segmentation filters (blacklist/whitelist) to control which segmentation keys are recorded.
+  * Event-specific segmentation filters (blacklist/whitelist) to control segmentation keys per event.
+* Added support for Journey Trigger Events that trigger a content zone refresh when recorded.
+* Added a configurable user property cache limit through server configuration.
+
+* Mitigated an issue where closing surveys that were presented via journeys was triggering an exception.
+* Mitigated an issue where when a content started loading opening a new activity could have hide it.
+
+## 25.4.9
+* Added a new config option `disableViewRestartForManualRecording()` to disable auto close/restart behavior of manual views on app background/foreground actions.
+
+## 25.4.8
+* Mitigated an issue where push notifications were not shown when consent was not required and app was killed.
+
+## 25.4.7
+* Mitigated an issue where the navigation bar showed an unwanted shadow during content display.
+
+## 25.4.6
+* Improved content error handling and display mechanics.
+* Updated user properties caching mechanism according to sessions.
+
+## 25.4.5
+* Added a new config flag `setUseSerialExecutor(boolean useSerial)` for selecting immediate request executor type.
+* Added a new config option `setWebviewDisplayOption(WebViewDisplayOption)` to control how Content and Feedback Widgets are displayed. 
+  * `IMMERSIVE` mode (default): Full-screen display (except cutouts).
+  * `SAFE_AREA` mode: Omits status bar, navigation bar and cutouts when displaying webviews.
+* Added a new config option `disableGradualRequestCleaner()` to change request queue overflow behavior. When enabled, all overflowing requests are removed at once instead of in batches.
+* Added a new method `requestQueue().addCustomNetworkRequestHeaders(Map<String,String>)` for providing or overriding custom headers after init .
+
+* Mitigated a potential issue where Remote Config calls could have blocked the main UI thread processes.
+
+* Immediate requests now will be run by parallel executor instead of serial by default.
+
+## 25.4.4
+* Improved disk size calculation in crash reports.
+  
+* Added a new function "recordMetrics(metricsOverride)" to send a device metrics request, accessible through the requestQueue interface.
+* Added a new Consent option "metrics" for controlling "recordMetrics" method. (This has no effect on Session metrics.)
+* Added "setRequestTimeoutDuration(requestTimeoutDuration)" init config method to change request timeout duration in seconds.
+
+* Mitigated an issue displaying Content on API level 35 and above.
+
+## 25.4.3
+* Improved Health Check metric information.
+* Improved Content display mechanics.
+
+* Mitigated an issue that could have happened when navigating back from a Content.
+* Mitigated a persistency issue with configuration provided SBS and its initial state.
+* Mitigated an issue where SBS could have been fetched twice.
+
+## 25.4.2
+* Mitigated an issue where latest fetched behavior settings were replacing the current settings instead of merging.
+
+## 25.4.1
+* Improved request queue handling with a built-in backoff mechanism which is enabled by default.
+* Added "disableBackoffMechanism()" init config method to disable backoff behavior.
+* Added "disableSDKBehaviorSettingsUpdates()" init config method to disable server config updates.
+* Added fullscreen support for feedback widgets.
+* Extended the notification button URL handler to allow custom handling of URLs when notification buttons are clicked in the background.
+
+* Deprecated "presentFeedbackWidget(widgetInfo, context, closeButtonText, devCallback)", replaced with "presentFeedbackWidget(widgetInfo, context, devCallback)" in the feedbacks.
+
+## 25.4.0
+* ! Minor breaking change ! Removed Secure.ANDROID_ID usage in device id generation. The SDK now exclusively uses random UUIDs for device id generation.
+* ! Minor breaking change ! Server Configuration is now enabled by default. Changes made on SDK Manager > SDK Configuration on your server will affect SDK behavior directly.
+
+* Added a Content feature method "refreshContentZone" that does a manual refresh.
+* Extended server configuration capabilities of the SDK.
+* Added a config method to provide server config in the initialization "setSDKBehaviorSettings(String)".
+* Added a new interface "CountlyNotificationButtonURLHandler" to allow custom handling of URLs when notification buttons are clicked. Could be set by "CountlyConfigPush.setNotificationButtonURLHandler"
+
+* Mitigated an issue that caused PN message data collision if two message with same ID was received.
+
+* Removed the deprecated function "CountlyConfig.setIdMode(idMode)"
+
+* Deprecated the experimental configuration function enableServerConfiguration.
 
 ## 25.1.1
 * Mitigated an issue where after closing a content, they were not being fetched again.
@@ -83,6 +206,8 @@
   * During an internal timer tick
   * Upon flushing the event queue
  
+* Updated the internal request mechanism. Downgrading from this version is not recommended.
+
 * Added support for array, List and JSONArray to all user given segmentations. They will support only mutable and ummutable versions of the primitive types. Which are:
   * String, Integer, int, Boolean, bool, Float, float, Double, double, Long, long
   * Keep in mind that float array will be converted to the double array by the JSONArray

@@ -47,8 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "25.1.1";
-
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.4";
     /**
      * Used as request meta data on every request
      */
@@ -97,7 +96,7 @@ public class Countly {
     /**
      * How often onTimer() is called. This is the default value.
      */
-    private static final long TIMER_DELAY_IN_SECONDS = 60;
+    protected static final long TIMER_DELAY_IN_SECONDS = 60;
 
     protected static String[] publicKeyPinCertificates;
     protected static String[] certificatePinCertificates;
@@ -127,13 +126,13 @@ public class Countly {
     }
 
     //SDK limit defaults
-    final int maxKeyLengthDefault = 128;
-    final int maxValueSizeDefault = 256;
-    final int maxSegmentationValuesDefault = 100;
-    final int maxBreadcrumbCountDefault = 100;
-    final int maxStackTraceLinesPerThreadDefault = 30;
-    final int maxStackTraceLineLengthDefault = 200;
-    final int maxStackTraceThreadCountDefault = 50;
+    static final int maxKeyLengthDefault = 128;
+    static final int maxValueSizeDefault = 256;
+    static final int maxSegmentationValuesDefault = 100;
+    static final int maxBreadcrumbCountDefault = 100;
+    static final int maxStackTraceLinesPerThreadDefault = 30;
+    static final int maxStackTraceLineLengthDefault = 200;
+    static final int maxStackTraceThreadCountDefault = 50;
 
     // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
     private static class SingletonHolder {
@@ -158,6 +157,9 @@ public class Countly {
     //d - regular SDK internals
     //v - spammy SDK internals
     private boolean enableLogging_;
+    // when true, console logging is kept off because the host app is a production build
+    // and the SDK was configured to disable logging in production
+    private boolean loggingForcedOffForProduction = false;
     Context context_;
 
     //Internal modules for functionality grouping
@@ -203,6 +205,9 @@ public class Countly {
 
     protected CountlyConfig config_ = null;
 
+    // for executor choice of immediate requests
+    boolean useSerialExecutorInternal = false;
+
     //fields for tracking push token debounce
     final static long lastRegistrationCallDebounceDuration = 60 * 1000;//60seconds
     long lastRegistrationCallTs = 0;
@@ -228,6 +233,7 @@ public class Countly {
         public static final String feedback = "feedback";
         public static final String remoteConfig = "remote-config";
         public static final String content = "content";
+        public static final String metrics = "metrics";
         //public static final String accessoryDevices = "accessory-devices";
     }
 
@@ -272,6 +278,9 @@ public class Countly {
         if (config == null) {
             throw new IllegalArgumentException("Can't init SDK with 'null' config");
         }
+
+        //determine whether console logging must stay off for production builds before any logging call
+        loggingForcedOffForProduction = shouldForceLoggingOffForProduction(config);
 
         //enable logging
         if (config.loggingEnabled) {
@@ -369,6 +378,9 @@ public class Countly {
                 config.sdkInternalLimits.maxKeyLength = maxKeyLengthDefault;
             }
 
+            // should be here for sbs and hc
+            useSerialExecutorInternal = config.useSerialExecutor;
+
             if (config.sdkInternalLimits.maxValueSize != null) {
                 if (config.sdkInternalLimits.maxValueSize < 1) {
                     config.sdkInternalLimits.maxValueSize = 1;
@@ -452,6 +464,11 @@ public class Countly {
             L.d("[Init] request queue size set to [" + config.maxRequestQueueSize + "]");
             countlyStore.setLimits(config.maxRequestQueueSize);
 
+            if (config.disableGradualRequestCleaner) {
+                L.d("[Init] Disabling gradual request queue cleaning. Overflow will be removed in one pass.");
+                countlyStore.setDisableGradualRequestCleaner(true);
+            }
+
             if (config.storageProvider == null) {
                 // outside of tests this should be null
                 config.storageProvider = config.countlyStore;
@@ -493,6 +510,10 @@ public class Countly {
                 config.immediateRequestGenerator = new ImmediateRequestGenerator() {
                     @Override public ImmediateRequestI CreateImmediateRequestMaker() {
                         return (new ImmediateRequestMaker());
+                    }
+
+                    @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                        return (new PreflightRequestMaker());
                     }
                 };
             }
@@ -665,7 +686,7 @@ public class Countly {
             connectionQueue_.deviceInfo = config.deviceInfo;
             connectionQueue_.pcc = config.pcc;
             connectionQueue_.setStorageProvider(config.storageProvider);
-            connectionQueue_.setupSSLContext();
+            connectionQueue_.setupSSLSocketFactory(config.customSSLSocketFactory);
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
             connectionQueue_.setDeviceId(config.deviceIdProvider);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
@@ -695,7 +716,6 @@ public class Countly {
 
             sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
-
             //set global application listeners
             if (config.application != null) {
                 L.d("[Countly] Calling registerActivityLifecycleCallbacks");
@@ -769,9 +789,9 @@ public class Countly {
                         if (L.logEnabled()) {
                             L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
                         }
-                        //for (ModuleBase module : modules) {
-                        //    module.callbackOnActivityDestroyed(activity);
-                        //}
+                        for (ModuleBase module : modules) {
+                            module.onActivityDestroyed(activity);
+                        }
                     }
                 });
 
@@ -795,6 +815,28 @@ public class Countly {
                 L.d("[Countly] SDK detects that the app is in the foreground. Increasing the activity counter and setting the foreground state.");
                 activityCount_++;
                 config.deviceInfo.inForeground();
+            }
+
+            // Seed modules with the current activity if the app is already in the foreground.
+            // This handles frameworks (Flutter, React Native) and single-activity apps where
+            // the host activity is already started before the SDK registers its lifecycle callbacks.
+            // Priority: explicit initialActivity from config, then ContentProvider-tracked activity.
+            Activity seedActivity = null;
+            if (config.initialActivity != null && !config.initialActivity.isFinishing()) {
+                seedActivity = config.initialActivity;
+                config.initialActivity = null;
+            } else {
+                Activity holderActivity = CountlyActivityHolder.getInstance().getActivity();
+                if (holderActivity != null && !holderActivity.isFinishing()) {
+                    seedActivity = holderActivity;
+                }
+            }
+
+            if (seedActivity != null) {
+                L.d("[Countly] Seeding modules with initial activity: [" + seedActivity.getClass().getSimpleName() + "]");
+                for (ModuleBase module : modules) {
+                    module.onInitialActivitySeeded(seedActivity);
+                }
             }
 
             L.i("[Init] About to call module 'initFinished'");
@@ -846,6 +888,63 @@ public class Countly {
         }
     }
 
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        L.i("[Countly] onSdkConfigurationChanged");
+
+        if (config_ == null) {
+            L.e("[Countly] onSdkConfigurationChanged, config is null");
+            return;
+        }
+
+        setLoggingEnabled(config.loggingEnabled);
+
+        long timerDelay = TIMER_DELAY_IN_SECONDS;
+        if (config.sessionUpdateTimerDelay != null) {
+            timerDelay = config.sessionUpdateTimerDelay;
+        }
+
+        startTimerService(timerService_, timerFuture, timerDelay);
+
+        config.maxRequestQueueSize = Math.max(config.maxRequestQueueSize, 1);
+        countlyStore.setLimits(config.maxRequestQueueSize);
+
+        config.dropAgeHours = Math.max(config.dropAgeHours, 0);
+        if (config.dropAgeHours > 0) {
+            countlyStore.setRequestAgeLimit(config.dropAgeHours);
+        }
+
+        config.eventQueueSizeThreshold = Math.max(config.eventQueueSizeThreshold, 1);
+        EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
+
+        // Have a look at the SDK limit values
+        if (config.sdkInternalLimits.maxKeyLength != null) {
+            config.sdkInternalLimits.maxKeyLength = Math.max(config.sdkInternalLimits.maxKeyLength, 1);
+        }
+
+        if (config.sdkInternalLimits.maxValueSize != null) {
+            config.sdkInternalLimits.maxValueSize = Math.max(config.sdkInternalLimits.maxValueSize, 1);
+        }
+
+        if (config.sdkInternalLimits.maxSegmentationValues != null) {
+            config.sdkInternalLimits.maxSegmentationValues = Math.max(config.sdkInternalLimits.maxSegmentationValues, 1);
+        }
+
+        if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
+            config.sdkInternalLimits.maxBreadcrumbCount = Math.max(config.sdkInternalLimits.maxBreadcrumbCount, 1);
+        }
+
+        if (config.sdkInternalLimits.maxStackTraceLinesPerThread != null) {
+            config.sdkInternalLimits.maxStackTraceLinesPerThread = Math.max(config.sdkInternalLimits.maxStackTraceLinesPerThread, 1);
+        }
+        if (config.sdkInternalLimits.maxStackTraceLineLength != null) {
+            config.sdkInternalLimits.maxStackTraceLineLength = Math.max(config.sdkInternalLimits.maxStackTraceLineLength, 1);
+        }
+
+        for (ModuleBase module : modules) {
+            module.onSdkConfigurationChanged(config);
+        }
+    }
+
     /**
      * Immediately disables session and event tracking and clears any stored session and event data.
      * Testing Purposes Only!
@@ -889,6 +988,10 @@ public class Countly {
         moduleHealthCheck = null;
         moduleContent = null;
 
+        // Reset configuration values that may have been changed during runtime
+        loggingForcedOffForProduction = false;
+        EVENT_QUEUE_SIZE_THRESHOLD = 100;
+
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;
 
@@ -914,12 +1017,17 @@ public class Countly {
         }
 
         ++activityCount_;
-        if (activityCount_ == 1 && !moduleSessions.manualSessionControlEnabled) {
+        if (activityCount_ == 1) {
+            // start the timer in the first activity
+            if (moduleConfiguration != null) {
+                moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
+            }
             //if we open the first activity
-            //and we are not using manual session control,
+            //and automatic session tracking is active (resolved through the SBS precedence chain),
             //begin a session
-
-            moduleSessions.beginSessionInternal();
+            if (moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
+                moduleSessions.beginSessionInternal();
+            }
         }
 
         config_.deviceInfo.inForeground();
@@ -940,8 +1048,8 @@ public class Countly {
         }
 
         --activityCount_;
-        if (activityCount_ == 0 && !moduleSessions.manualSessionControlEnabled) {
-            // if we don't use manual session control
+        if (activityCount_ == 0 && moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
+            // if automatic session tracking is active
             // Called when final Activity is stopped.
             // Sends an end session event to the server, also sends any unsent custom events.
             moduleSessions.endSessionInternal();
@@ -1026,10 +1134,10 @@ public class Countly {
 
         if (isInitialized()) {
             final boolean appIsInForeground = activityCount_ > 0;
-            if (appIsInForeground && !moduleSessions.manualSessionControlEnabled) {
+            if (appIsInForeground && moduleSessions.automaticSessionTrackingEnabled()) {
                 //if we have automatic session control and we are in the foreground, record an update
                 moduleSessions.updateSessionInternal();
-            } else if (moduleSessions.manualSessionControlEnabled && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
+            } else if (!moduleSessions.automaticSessionTrackingEnabled() && moduleSessions.manualSessionControlHybridModeEnabled && moduleSessions.sessionIsRunning()) {
                 // if we are in manual session control mode with hybrid sessions enabled (SDK takes care of update requests) and there is a session running,
                 // let's create the update request
                 moduleSessions.updateSessionInternal();
@@ -1079,8 +1187,78 @@ public class Countly {
     }
 
     public void setLoggingEnabled(final boolean enableLogging) {
+        if (enableLogging && loggingForcedOffForProduction) {
+            //logging is suppressed for production builds, keep console output off
+            enableLogging_ = false;
+            return;
+        }
         enableLogging_ = enableLogging;
         L.d("Enabling logging");
+    }
+
+    /**
+     * Decide whether the SDK must keep console logging off because the host app is a
+     * production (non-debuggable) build and logging-in-production was disabled in config.
+     *
+     * @param config the provided init configuration
+     * @return true if console logging must be forced off
+     */
+    private boolean shouldForceLoggingOffForProduction(@NonNull CountlyConfig config) {
+        if (!config.disableSDKLoggingInProduction) {
+            return false;
+        }
+
+        Context context = config.context != null ? config.context : config.application;
+        if (context == null) {
+            //without a context we can not tell the build type, so do not force anything off
+            return false;
+        }
+
+        return !Utils.isAppInDebuggableMode(context);
+    }
+
+    /**
+     * To add new header key/value pairs or override existing ones.
+     * A null or empty map is ignored. Null or empty keys, as well as null values, are ignored.
+     * Subsequent requests (including those created after overriding) will contain the updated header set.
+     *
+     * @param customHeaderValues map of header key/value pairs to add/override
+     * @return Returns the same Countly instance for convenient chaining
+     */
+    /* package */
+    synchronized void addCustomNetworkRequestHeaders(Map<String, String> customHeaderValues) {
+        if (!isInitialized()) {
+            L.e("[addCustomNetworkRequestHeaders] SDK must be initialised before calling this method");
+            return;
+        }
+
+        if (customHeaderValues == null || customHeaderValues.isEmpty()) {
+            L.d("[addCustomNetworkRequestHeaders] Provided map was null or empty, ignoring");
+            return;
+        }
+
+        if (requestHeaderCustomValues == null) {
+            requestHeaderCustomValues = new HashMap<>();
+        }
+
+        int added = 0;
+        int overridden = 0;
+        for (Map.Entry<String, String> entry : customHeaderValues.entrySet()) {
+            String k = entry.getKey();
+            String v = entry.getValue();
+            if (k == null || k.isEmpty() || v == null) {
+                continue; // skip invalid entries
+            }
+            if (requestHeaderCustomValues.containsKey(k)) {
+                overridden++;
+            } else {
+                added++;
+            }
+            requestHeaderCustomValues.put(k, v);
+        }
+
+        connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
+        L.i("[addCustomNetworkRequestHeaders] Added:" + added + " Overridden:" + overridden + " TotalNow:" + requestHeaderCustomValues.size());
     }
 
     /**

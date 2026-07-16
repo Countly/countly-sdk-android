@@ -60,9 +60,25 @@ abstract class ModuleBase {
     }
 
     /**
+     * Called during init when the app is already in the foreground and an initial activity
+     * was provided via CountlyConfig.setInitialActivity(). This only sets the activity
+     * reference without triggering counters, sessions, or view tracking.
+     */
+    void onInitialActivitySeeded(@NonNull Activity activity) {
+    }
+
+    /**
      * Called manually by a countly call from the developer
      */
     void onActivityStopped(int updatedActivityCount) {
+    }
+
+    /**
+     * Called when an Activity is destroyed. Modules that hold Activity references must
+     * clear them here (using identity comparison) to prevent leaking destroyed activities
+     * through the Countly singleton.
+     */
+    void onActivityDestroyed(@NonNull Activity activity) {
     }
 
     //void callbackOnActivityCreated(Activity activity) {
@@ -99,7 +115,7 @@ abstract class ModuleBase {
     }
 
     //notify the SDK modules that internal configuration was updated
-    void sdkConfigurationChanged() {
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
 
     }
 

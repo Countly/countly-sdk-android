@@ -181,7 +181,7 @@ public class RemoteConfigVariantControlTests {
 
     @Test
     public void testNormalFlow() {
-        CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":\"variant\"}]}"));
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":\"variant\"}]}"));
         Countly countly = new Countly().init(config);
 
         // Developer did not provide a callback
@@ -204,7 +204,7 @@ public class RemoteConfigVariantControlTests {
      */
     @Test
     public void testNullVariant() {
-        CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":null}]}"));
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse("{\"key\":[{\"name\":null}]}"));
         Countly countly = new Countly().init(config);
 
         // Developer did not provide a callback
@@ -221,7 +221,7 @@ public class RemoteConfigVariantControlTests {
      */
     @Test
     public void testFilteringWrongKeys() {
-        CountlyConfig config = TestUtils.createVariantConfig(createIRGForSpecificResponse("{\"key\":[{\"noname\":\"variant1\"},{\"name\":\"variant2\"}]}"));
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse("{\"key\":[{\"noname\":\"variant1\"},{\"name\":\"variant2\"}]}"));
         Countly countly = new Countly().init(config);
 
         // Developer did not provide a callback
@@ -235,27 +235,50 @@ public class RemoteConfigVariantControlTests {
     }
 
     ImmediateRequestGenerator createIRGForSpecificResponse(final String targetResponse) {
-        return () -> (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
-            if (targetResponse == null) {
-                callback.callback(null);
-                return;
+        return new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (targetResponse == null) {
+                        callback.callback(null);
+                        return;
+                    }
+
+                    JSONObject jobj = null;
+
+                    try {
+                        jobj = new JSONObject(targetResponse);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    callback.callback(jobj);
+                };
             }
 
-            JSONObject jobj = null;
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (targetResponse == null) {
+                        callback.callback(null);
+                        return;
+                    }
 
-            try {
-                jobj = new JSONObject(targetResponse);
-            } catch (JSONException e) {
-                e.printStackTrace();
+                    JSONObject jobj = null;
+
+                    try {
+                        jobj = new JSONObject(targetResponse);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+
+                    callback.callback(jobj);
+                };
             }
-
-            callback.callback(jobj);
         };
     }
 
     @Test
     public void variantGetters_preDownload() {
-        CountlyConfig config = TestUtils.createVariantConfig(null);
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
         Countly countly = new Countly().init(config);
 
         //should return empty map of values

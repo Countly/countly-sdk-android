@@ -2,20 +2,28 @@ package ly.count.android.sdk;
 
 import android.app.UiModeManager;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Base64;
+import android.webkit.WebResourceResponse;
+import android.webkit.WebSettings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,6 +32,103 @@ import java.util.concurrent.Future;
 import static android.content.Context.UI_MODE_SERVICE;
 
 public class Utils {
+    /**
+     * This is a communication url between web views and the SDK
+     */
+    protected static final String COMM_URL = "https://countly_action_event";
+
+    /**
+     * Schemes that are never dispatched to ACTION_VIEW from server-controlled content, because they
+     * can read local data or run script. Used as the default denylist when no scheme allow-list is
+     * set. "data" and "blob" are intentionally NOT here — they are inline / runtime-generated assets
+     * (images, fonts, CSS) widgets legitimately embed and cannot read app-local data, so they load
+     * in the default mode and, like any other scheme, follow an allow-list when one is configured.
+     */
+    private static final Set<String> DANGEROUS_INTENT_SCHEMES = new HashSet<>(Arrays.asList("file", "content", "javascript", "jar"));
+
+    /**
+     * Scheme policy for externally-dispatched links (content overlay links, push notification links).
+     * When {@code allowedSchemes} is non-empty, only those schemes are permitted (allow-list mode).
+     * Otherwise any scheme except the known-dangerous ones is permitted (deep links such as
+     * "myapp", "market", "tel", "mailto" stay allowed). A null scheme is never permitted.
+     * {@code allowedSchemes} entries are expected to be lower-case; the scheme is matched case-insensitively.
+     */
+    public static boolean isExternalSchemeAllowed(String scheme, Set<String> allowedSchemes) {
+        if (scheme == null) {
+            return false;
+        }
+        String normalized = scheme.toLowerCase(Locale.ROOT);
+        if (allowedSchemes != null && !allowedSchemes.isEmpty()) {
+            return allowedSchemes.contains(normalized);
+        }
+        return !DANGEROUS_INTENT_SCHEMES.contains(normalized);
+    }
+
+    /**
+     * Whether a WebView sub-resource (image, script, stylesheet, frame) with this scheme may load.
+     * "https" always loads because it is how the content itself is served, so an outbound-link
+     * allow-list (which may list only a custom deep-link scheme such as "myapp") does not
+     * accidentally block the page's own https assets. Every other scheme — including plain "http",
+     * "data" and "blob" — follows the shared link policy: the dangerous local/script schemes stay
+     * blocked, inline data/blob assets load in the default mode, and an allow-list (when configured)
+     * governs everything except https.
+     */
+    public static boolean isWebContentSchemeAllowed(String scheme, Set<String> allowedSchemes) {
+        if (scheme != null && "https".equals(scheme.toLowerCase(Locale.ROOT))) {
+            return true;
+        }
+        return isExternalSchemeAllowed(scheme, allowedSchemes);
+    }
+
+    /**
+     * Builds a lower-cased, null-safe {@link Set} of intent schemes from a user-provided list. Null
+     * elements and a null list are tolerated (yielding an empty set). Shared by the content and push
+     * config setters so their normalization stays identical.
+     */
+    @NonNull
+    public static Set<String> normalizeSchemeSet(@Nullable List<String> schemes) {
+        Set<String> normalized = new HashSet<>();
+        if (schemes != null) {
+            for (String scheme : schemes) {
+                if (scheme != null) {
+                    normalized.add(scheme.toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        return normalized;
+    }
+
+    /**
+     * Applies the SDK's WebView security hardening (defense-in-depth) to the given settings. The
+     * SDK only ever loads server-issued HTTPS content in its WebViews, so disabling local
+     * file/content access closes the local-file exfiltration vector without affecting legitimate
+     * content. Call this from every WebView creation site so the policy lives in one place.
+     */
+    public static void applyWebViewSecurityDefaults(@Nullable WebSettings settings) {
+        if (settings == null) {
+            return;
+        }
+        settings.setAllowFileAccess(false); // default true on API <= 29
+        settings.setAllowContentAccess(false); // OWASP MASTG-BEST-0013
+        settings.setAllowFileAccessFromFileURLs(false);
+        settings.setAllowUniversalAccessFromFileURLs(false);
+        settings.setGeolocationEnabled(false);
+        settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            settings.setSafeBrowsingEnabled(true);
+        }
+    }
+
+    /**
+     * An empty {@code text/plain} response used to neutralize a blocked WebView sub-resource. A
+     * fresh instance is returned per call because the backing stream is stateful.
+     */
+    @NonNull
+    public static WebResourceResponse blankWebResourceResponse() {
+        return new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream(new byte[0]));
+    }
+
     private static final ExecutorService bg = Executors.newSingleThreadExecutor();
 
     public static Future<?> runInBackground(Runnable runnable) {
@@ -152,6 +257,22 @@ public class Utils {
     @androidx.annotation.ChecksSdkIntAtLeast(parameter = 0)
     public static boolean API(int version) {
         return Build.VERSION.SDK_INT >= version;
+    }
+
+    /**
+     * Determine whether the host app is built as a debuggable build.
+     * A non-debuggable build is what a production/release flavor produces.
+     *
+     * @param context any context belonging to the host app
+     * @return true if the app is flagged debuggable, false if it is a production build
+     * or the debuggable state can not be determined
+     */
+    public static boolean isAppInDebuggableMode(@NonNull Context context) {
+        try {
+            return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     /**

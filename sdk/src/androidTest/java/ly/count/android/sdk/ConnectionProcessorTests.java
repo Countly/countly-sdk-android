@@ -29,15 +29,24 @@ import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 
 import static ly.count.android.sdk.UtilsNetworking.sha256Hash;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -78,8 +87,96 @@ public class ConnectionProcessorTests {
                 return true;
             }
 
+            @Override public boolean getSessionTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getViewTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getCustomEventTrackingEnabled() {
+                return false;
+            }
+
+            @Override public boolean getContentZoneEnabled() {
+                return false;
+            }
+
             @Override public boolean getCrashReportingEnabled() {
                 return true;
+            }
+
+            @Override public boolean getAutomaticSessionTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getAutomaticViewTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getAutomaticCrashReportingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getLocationTrackingEnabled() {
+                return true;
+            }
+
+            @Override public boolean getRefreshContentZoneEnabled() {
+                return true;
+            }
+
+            @Override public boolean getBOMEnabled() {
+                return true;
+            }
+
+            @Override public int getBOMAcceptedTimeoutSeconds() {
+                return 10;
+            }
+
+            @Override public double getBOMRQPercentage() {
+                return 0.5;
+            }
+
+            @Override public int getBOMRequestAge() {
+                return 24;
+            }
+
+            @Override public int getBOMDuration() {
+                return 60;
+            }
+
+            @Override public int getRequestTimeoutDurationMillis() {
+                return 30_000;
+            }
+
+            @Override public int getUserPropertyCacheLimit() {
+                return 100;
+            }
+
+            @Override public FilterList<Set<String>> getEventFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
+            }
+
+            @Override public FilterList<Set<String>> getUserPropertyFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
+            }
+
+            @Override public FilterList<Set<String>> getSegmentationFilterList() {
+                return new FilterList<>(new HashSet<>(), false);
+            }
+
+            @Override public FilterList<Map<String, Set<String>>> getEventSegmentationFilterList() {
+                return new FilterList<>(new ConcurrentHashMap<>(), false);
+            }
+
+            @Override public Set<String> getJourneyTriggerEvents() {
+                return Collections.emptySet();
+            }
+
+            @Override public Set<String> getJourneyTriggerViews() {
+                return Collections.emptySet();
             }
         };
 
@@ -112,7 +209,7 @@ public class ConnectionProcessorTests {
             }
         };
 
-        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
+        connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
         testDeviceId = "123";
     }
 
@@ -121,7 +218,7 @@ public class ConnectionProcessorTests {
         final String serverURL = "https://secureserver";
         final CountlyStore mockStore = mock(CountlyStore.class);
         final DeviceIdProvider mockDeviceId = mock(DeviceIdProvider.class);
-        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock);
+        final ConnectionProcessor connectionProcessor1 = new ConnectionProcessor(serverURL, mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
         assertEquals(serverURL, connectionProcessor1.getServerURL());
         assertSame(mockStore, connectionProcessor1.getCountlyStore());
     }
@@ -188,7 +285,7 @@ public class ConnectionProcessorTests {
         customValues.put("5", "");
         customValues.put("6", null);
 
-        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock);
+        ConnectionProcessor connectionProcessor = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, null, customValues, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest("eventData", null);
 
         assertEquals("bb", urlConnection.getRequestProperty("aa"));
@@ -197,6 +294,71 @@ public class ConnectionProcessorTests {
         assertNull(urlConnection.getRequestProperty(""));
         assertEquals("", urlConnection.getRequestProperty("5"));
         assertNull(urlConnection.getRequestProperty("33"));
+    }
+
+    /**
+     * A custom SSL socket factory is applied to an https server request, even when no
+     * certificate/public-key pinning is configured. This is the key behavior the old pin-gated
+     * code lacked: the factory used to be applied only when the pinning statics were set.
+     */
+    @Test
+    public void urlConnectionForServerRequest_appliesCustomSSLSocketFactoryOnHttps() throws IOException {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("https://secureserver", mockStore, mockDeviceId, configurationProviderFake, rip, customFactory, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final URLConnection urlConnection = cp.urlConnectionForServerRequest("eventData", null);
+
+        assertTrue(urlConnection instanceof HttpsURLConnection);
+        assertSame(customFactory, ((HttpsURLConnection) urlConnection).getSSLSocketFactory());
+        assertEquals(30_000, urlConnection.getConnectTimeout());
+        assertFalse(urlConnection.getDoOutput());
+    }
+
+    /**
+     * The custom SSL socket factory is also applied to the preflight (HEAD) request path.
+     */
+    @Test
+    public void urlConnectionForPreflightRequest_appliesCustomSSLSocketFactory() throws IOException {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("https://secureserver", mockStore, mockDeviceId, configurationProviderFake, rip, customFactory, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final HttpURLConnection conn = (HttpURLConnection) cp.urlConnectionForPreflightRequest("https://secureserver/o/sdk?method=fetch");
+
+        assertTrue(conn instanceof HttpsURLConnection);
+        assertSame(customFactory, ((HttpsURLConnection) conn).getSSLSocketFactory());
+        assertEquals("HEAD", conn.getRequestMethod());
+    }
+
+    /**
+     * A plain http server URL has no TLS layer, so the custom factory cannot be applied. The
+     * request must still be built without throwing.
+     */
+    @Test
+    public void urlConnectionForServerRequest_customFactoryNotAppliedOnHttp() throws IOException {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("http://server", mockStore, mockDeviceId, configurationProviderFake, rip, customFactory, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final URLConnection urlConnection = cp.urlConnectionForServerRequest("eventData", null);
+
+        assertFalse(urlConnection instanceof HttpsURLConnection);
+        assertEquals("http", urlConnection.getURL().getProtocol());
+    }
+
+    /**
+     * With no custom factory (and no pinning), an https request falls back to the platform default
+     * socket factory, never to a Countly-injected one.
+     */
+    @Test
+    public void urlConnectionForServerRequest_noFactoryUsesPlatformDefaultOnHttps() throws IOException {
+        SSLSocketFactory unusedFactory = mock(SSLSocketFactory.class);
+        ConnectionProcessor cp = new ConnectionProcessor("https://secureserver", mockStore, mockDeviceId, configurationProviderFake, rip, null, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+
+        final URLConnection urlConnection = cp.urlConnectionForServerRequest("eventData", null);
+
+        assertTrue(urlConnection instanceof HttpsURLConnection);
+        SSLSocketFactory used = ((HttpsURLConnection) urlConnection).getSSLSocketFactory();
+        assertNotNull(used);
+        assertNotSame(unusedFactory, used);
     }
 
     @Test

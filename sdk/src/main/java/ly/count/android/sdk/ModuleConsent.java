@@ -30,6 +30,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         Countly.CountlyFeatureNames.clicks,
         Countly.CountlyFeatureNames.scrolls,
         Countly.CountlyFeatureNames.content,
+        Countly.CountlyFeatureNames.metrics
     };
 
     public enum ConsentChangeSource {ChangeConsentCall, DeviceIDChangedNotMerged}
@@ -283,7 +284,16 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             if (L.logEnabled()) {
                 checkAllConsentInternal();
             }
+        } else if (!config.disableStoringDefaultPushConsent) {
+            //if consent is not required, we need to make sure that the push consent is set to true
+            //so that the "getConsentPushNoInit" returns true
+            doPushConsentSpecialAction(true);
         }
+    }
+
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        requiresConsent = config.shouldRequireConsent;
     }
 
     @Override

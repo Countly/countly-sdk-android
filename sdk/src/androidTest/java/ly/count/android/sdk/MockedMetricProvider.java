@@ -39,8 +39,8 @@ public class MockedMetricProvider implements MetricProvider {
         return "G";
     }
 
-    @Override public int getTimezoneOffset() {
-        return 66;
+    @Override public String getTimezoneOffset() {
+        return "66";
     }
 
     @Override public String getLocale() {
@@ -59,8 +59,8 @@ public class MockedMetricProvider implements MetricProvider {
         return "K";
     }
 
-    @Override public long getTotalRAM() {
-        return 42;
+    @Override public String getTotalRAM() {
+        return "42";
     }
 
     @Override public String getRamCurrent(Context context) {
@@ -77,14 +77,6 @@ public class MockedMetricProvider implements MetricProvider {
 
     @Override public String getOpenGL(Context context) {
         return "O";
-    }
-
-    @Override public String getDiskCurrent() {
-        return "23";
-    }
-
-    @Override public String getDiskTotal() {
-        return "45";
     }
 
     @Nullable @Override public String getBatteryLevel(Context context) {
@@ -117,5 +109,9 @@ public class MockedMetricProvider implements MetricProvider {
 
     @Override public DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
         return new DisplayMetrics();
+    }
+
+    @Override public DiskMetric getDiskSpaces(Context context) {
+        return new DiskMetric("45", "23");
     }
 }

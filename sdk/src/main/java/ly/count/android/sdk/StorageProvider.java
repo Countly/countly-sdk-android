@@ -2,9 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 interface StorageProvider {
     String[] getRequests();
@@ -26,6 +24,8 @@ interface StorageProvider {
     void removeEvents(final List<Event> eventsToRemove);
 
     int getEventQueueSize();
+
+    int getMaxRequestQueueSize();
 
     String getEventsForRequestAndEmptyEventQueue();
 

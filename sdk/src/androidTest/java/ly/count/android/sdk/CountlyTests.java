@@ -37,13 +37,14 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -401,7 +402,7 @@ public class CountlyTests {
         assertEquals(0, mCountly.getActivityCount());
         assertTrue(mCountly.getPrevSessionDurationStartTime() > 0);
         verify(requestQueueProvider).endSession(0);
-        verify(requestQueueProvider, times(1)).recordEvents(anyString()); // not 0 anymore, it will send orientation event
+        verify(requestQueueProvider, times(1)).recordEvents(anyString(), isNull()); // not 0 anymore, it will send orientation event
     }
 
     /**
@@ -428,7 +429,7 @@ public class CountlyTests {
         assertEquals(0, mCountly.getActivityCount());
         assertTrue(mCountly.getPrevSessionDurationStartTime() > 0);
         verify(requestQueueProvider).endSession(0);
-        verify(requestQueueProvider).recordEvents(eventStr);
+        verify(requestQueueProvider).recordEvents(eventStr, null);
     }
 
     @Test
@@ -460,7 +461,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
-        verifyZeroInteractions(requestQueueProvider);
+        verifyNoInteractions(requestQueueProvider);
     }
 
     /**
@@ -477,7 +478,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.moduleEvents.storageProvider, times(0)).getEventsForRequestAndEmptyEventQueue();
-        verifyZeroInteractions(requestQueueProvider);
+        verifyNoInteractions(requestQueueProvider);
     }
 
     @Test
@@ -493,7 +494,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.config_.storageProvider, times(1)).getEventsForRequestAndEmptyEventQueue();
-        verify(requestQueueProvider, times(1)).recordEvents(eventData);
+        verify(requestQueueProvider, times(1)).recordEvents(eventData, null);
     }
 
     @Test
@@ -509,7 +510,7 @@ public class CountlyTests {
         mCountly.moduleRequestQueue.sendEventsIfNeeded(false);
 
         verify(mCountly.config_.storageProvider, times(1)).getEventsForRequestAndEmptyEventQueue();
-        verify(requestQueueProvider, times(1)).recordEvents(eventData);
+        verify(requestQueueProvider, times(1)).recordEvents(eventData, null);
     }
 
     @Test
@@ -534,7 +535,7 @@ public class CountlyTests {
         mCountly.onTimer();
 
         verify(requestQueueProvider).updateSession(0);
-        verify(requestQueueProvider, times(1)).recordEvents(anyString()); // not 0 anymore, it will send orientation event
+        verify(requestQueueProvider, times(1)).recordEvents(anyString(), isNull()); // not 0 anymore, it will send orientation event
     }
 
     @Test
@@ -551,7 +552,7 @@ public class CountlyTests {
         mCountly.onTimer();
 
         verify(requestQueueProvider).updateSession(0);
-        verify(requestQueueProvider).recordEvents(eventData);
+        verify(requestQueueProvider).recordEvents(eventData, null);
     }
 
     @Test

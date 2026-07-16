@@ -7,7 +7,6 @@ import java.util.List;
 public class BreadcrumbHelper {
 
     private final @NonNull LinkedList<String> logs = new LinkedList<>();
-    private final int maxBreadcrumbs;
 
     private final @NonNull ModuleLog L;
 
@@ -15,11 +14,10 @@ public class BreadcrumbHelper {
         assert maxBreadcrumbs > 0;
         assert L != null;
 
-        this.maxBreadcrumbs = maxBreadcrumbs;
         this.L = L;
     }
 
-    protected void addBreadcrumb(@NonNull String breadcrumb, int valueSize) {
+    protected void addBreadcrumb(@NonNull String breadcrumb, int valueSize, int maxBreadcrumbs) {
         assert breadcrumb != null;
         assert !breadcrumb.isEmpty();
         assert valueSize > 0;

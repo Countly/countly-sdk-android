@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -27,6 +28,7 @@ public class ModuleRatings extends ModuleBase {
     //star rating
     StarRatingCallback starRatingCallback_;// saved callback that is used for automatic star rating
     boolean showStarRatingDialogOnFirstActivity = false;
+    ImmediateRequestGenerator iRGenerator;
 
     final Ratings ratingsInterface;
 
@@ -34,6 +36,7 @@ public class ModuleRatings extends ModuleBase {
         super(cly, config);
         L.v("[ModuleRatings] Initialising");
 
+        iRGenerator = config.immediateRequestGenerator;
         starRatingCallback_ = config.starRatingCallback;
         setStarRatingInitConfig(config.starRatingSessionLimit, config.starRatingTextTitle, config.starRatingTextMessage, config.starRatingTextDismiss);
         setIfRatingDialogIsCancellableInternal(config.starRatingDialogIsCancellable);
@@ -448,9 +451,25 @@ public class ModuleRatings extends ModuleBase {
             return;
         }
 
+        if (!_cly.config_.webViewEnabled) {
+            L.w("[ModuleRatings] showFeedbackPopupInternal, WebView is disabled via configuration, skipping");
+            if (devCallback != null) {
+                devCallback.callback("WebView is disabled via configuration");
+            }
+            return;
+        }
+
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.starRating)) {
             if (devCallback != null) {
                 devCallback.callback("Consent is not granted");
+            }
+            return;
+        }
+
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            L.e("[ModuleRatings] feedback popup can't be shown when in temporary device ID mode");
+            if (devCallback != null) {
+                devCallback.callback("[ModuleRatings] feedback popup can't be shown when in temporary device ID mode");
             }
             return;
         }
@@ -471,16 +490,16 @@ public class ModuleRatings extends ModuleBase {
         }
 
         String requestData = requestQueueProvider.prepareRatingWidgetRequest(widgetId);
-        final String ratingWidgetUrl = baseInfoProvider.getServerURL() + "/feedback?widget_id=" + widgetId +
+        final String ratingWidgetUrl = UtilsDevice.appendThemeParam(baseInfoProvider.getServerURL() + "/feedback?widget_id=" + widgetId +
             "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider.getDeviceId()) +
-            "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey());
+            "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey()), activity);
 
         L.d("[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
 
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
 
-        (new ImmediateRequestMaker()).doWork(requestData, "/o/feedback/widget", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/feedback/widget", cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override
             public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
@@ -520,6 +539,8 @@ public class ModuleRatings extends ModuleBase {
                                 webView.clearHistory();
                                 webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                                 webView.getSettings().setJavaScriptEnabled(true);
+                                Utils.applyWebViewSecurityDefaults(webView.getSettings());
+                                webView.setWebViewClient(new FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes));
                                 webView.loadUrl(ratingWidgetUrl);
 
                                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);
@@ -564,13 +585,41 @@ public class ModuleRatings extends ModuleBase {
     }
 
     static class FeedbackDialogWebViewClient extends WebViewClient {
+
+        WebViewUrlListener listener;
+        // Scheme policy for outbound links / sub-resources, shared with the content overlay. Empty or
+        // null -> default denylist; non-empty -> allow-list mode (sourced from config.content).
+        private final Set<String> allowedSchemes;
+
+        FeedbackDialogWebViewClient() {
+            this(null);
+        }
+
+        FeedbackDialogWebViewClient(Set<String> allowedSchemes) {
+            this.allowedSchemes = allowedSchemes;
+        }
+
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
             String url = request.getUrl().toString();
 
+            if (listener != null) {
+                if (listener.onUrl(url, view)) {
+                    return true;
+                }
+            }
+
             // Filter out outgoing calls
             if (url.endsWith("cly_x_int=1")) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                Uri link = Uri.parse(url);
+                // Apply the shared scheme policy so dangerous schemes such as file/content/javascript
+                // are not dispatched to ACTION_VIEW from server content, honoring any configured
+                // allow-list the same way the content overlay does.
+                if (!Utils.isExternalSchemeAllowed(link.getScheme(), allowedSchemes)) {
+                    Countly.sharedInstance().L.w("[FeedbackDialogWebViewClient] Blocked link with disallowed scheme: [" + link.getScheme() + "]");
+                    return true;
+                }
+                Intent intent = new Intent(Intent.ACTION_VIEW, link);
                 view.getContext().startActivity(intent);
                 return true;
             }
@@ -579,13 +628,23 @@ public class ModuleRatings extends ModuleBase {
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-            // Countly.sharedInstance().L.i("attempting to load resource: " + url);
-            return null;
+            return interceptScheme(url == null ? null : Uri.parse(url));
         }
 
         @Override
         public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-            // Countly.sharedInstance().L.i("attempting to load resource: " + request.getUrl());
+            return interceptScheme(request.getUrl());
+        }
+
+        // Blocks dangerous local/script sub-resource schemes (file/content/javascript/jar/data),
+        // mirroring CountlyWebViewClient. https (the content itself) always loads; other schemes
+        // follow the configured allow-list / default denylist.
+        private WebResourceResponse interceptScheme(Uri uri) {
+            String scheme = uri == null ? null : uri.getScheme();
+            if (!Utils.isWebContentSchemeAllowed(scheme, allowedSchemes)) {
+                Countly.sharedInstance().L.v("[FeedbackDialogWebViewClient] Blocked sub-resource with disallowed scheme: [" + uri + "]");
+                return Utils.blankWebResourceResponse();
+            }
             return null;
         }
     }

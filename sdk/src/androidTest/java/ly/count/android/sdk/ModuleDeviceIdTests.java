@@ -13,12 +13,12 @@ public class ModuleDeviceIdTests {
     @Before
     public void setUp() {
         Countly.sharedInstance().halt();
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
     }
 
     @After
     public void tearDown() {
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
     }
 
     /**

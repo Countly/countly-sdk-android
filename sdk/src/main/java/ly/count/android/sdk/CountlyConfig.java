@@ -1,10 +1,12 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.net.ssl.SSLSocketFactory;
 
 public class CountlyConfig {
 
@@ -79,7 +81,7 @@ public class CountlyConfig {
     protected String appKey = null;
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID.
      */
     protected String deviceID = null;
 
@@ -109,6 +111,8 @@ public class CountlyConfig {
     protected String starRatingTextDismiss = null;
 
     protected boolean loggingEnabled = false;
+
+    protected boolean disableSDKLoggingInProduction = false;
 
     protected boolean enableAutomaticViewTracking = false;
 
@@ -160,6 +164,8 @@ public class CountlyConfig {
 
     protected String[] certificatePinningCertificates = null;
 
+    protected SSLSocketFactory customSSLSocketFactory = null;
+
     protected Integer sessionUpdateTimerDelay = null;
 
     /**
@@ -174,6 +180,8 @@ public class CountlyConfig {
     protected boolean starRatingDisableAskingForEachAppVersion = false;
 
     protected Application application = null;
+
+    protected Activity initialActivity = null;
 
     boolean disableLocation = false;
 
@@ -201,6 +209,24 @@ public class CountlyConfig {
 
     // Requests older than this value in hours would be dropped (0 means this feature is disabled)
     int dropAgeHours = 0;
+    String sdkBehaviorSettings;
+    boolean backOffMechanismEnabled = true;
+    boolean sdkBehaviorSettingsRequestsDisabled = false;
+    int requestTimeoutDuration = 30; // in seconds
+
+    // If set to true, immediate requests will use serial AsyncTask executor instead of the thread pool
+    boolean useSerialExecutor = false;
+    WebViewDisplayOption webViewDisplayOption = WebViewDisplayOption.IMMERSIVE;
+    boolean webViewEnabled = true;
+
+    // If set to true, request queue cleaner will remove all overflow at once instead of gradually (loop limited) removing
+    boolean disableGradualRequestCleaner = false;
+
+    // If set to true, the SDK will not store the default push consent state on initialization for not requiring consent
+    boolean disableStoringDefaultPushConsent = false;
+
+    // If set to true, the SDK will not restart manual views while switching between foreground and background
+    boolean disableViewRestartForManualRecording = false;
 
     /**
      * THIS VARIABLE SHOULD NOT BE USED
@@ -289,22 +315,12 @@ public class CountlyConfig {
     }
 
     /**
-     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to OpenUDID, then, if it's not available, to Google Advertising ID.
+     * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID.
      *
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setDeviceId(String deviceID) {
         this.deviceID = deviceID;
-        return this;
-    }
-
-    /**
-     * enum value specifying which device ID generation strategy Countly should use: OpenUDID or Google Advertising ID.
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call should not be used anymore as it does not have any purpose anymore
-     */
-    public synchronized CountlyConfig setIdMode(DeviceIdType idMode) {
         return this;
     }
 
@@ -366,6 +382,33 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setLoggingEnabled(boolean enabled) {
         this.loggingEnabled = enabled;
+        return this;
+    }
+
+    /**
+     * Call this if you want the SDK to keep its console (logcat) logging disabled
+     * when the host app is built as a production (non-debuggable) build, even if
+     * logging was enabled through {@link #setLoggingEnabled(boolean)} or through the
+     * runtime call {@link Countly#setLoggingEnabled(boolean)}.
+     * A production build is detected as one that is not flagged debuggable in its
+     * application info. This only affects console output. A log listener provided
+     * through {@link #setLogListener(ModuleLog.LogCallback)} keeps receiving logs.
+     */
+    public synchronized CountlyConfig disableSDKLoggingInProduction() {
+        this.disableSDKLoggingInProduction = true;
+        return this;
+    }
+
+    /**
+     * Set a custom metric provider to override default device metrics.
+     * Only the methods you override will replace the SDK defaults.
+     * Methods that return null will fall back to the SDK's built-in values.
+     *
+     * @param metricProvider Your custom MetricProvider implementation
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setMetricProvider(MetricProvider metricProvider) {
+        this.metricProviderOverride = metricProvider;
         return this;
     }
 
@@ -691,6 +734,36 @@ public class CountlyConfig {
     }
 
     /**
+     * Provide a custom SSLSocketFactory that Countly uses for all of its HTTPS requests
+     * (session, event, remote-config, feedback/rating/content availability, health-check and
+     * preflight requests).
+     * <p>
+     * Use this to route Countly's network traffic through your own TLS provider — for example a
+     * FIPS 140-3 validated cryptographic module — or to enforce a specific TLS protocol version
+     * or cipher suite. Protocol and cipher-suite restrictions must be applied inside the supplied
+     * factory (for example by wrapping it and calling {@code setEnabledProtocols} /
+     * {@code setEnabledCipherSuites} on each created socket, or through {@code SSLParameters});
+     * Countly applies the factory as it is.
+     * <p>
+     * Notes:
+     * <ul>
+     *   <li>Applies only to "https://" server URLs. It has no effect on a plain "http://" server URL.</li>
+     *   <li>Takes precedence over {@link #enablePublicKeyPinning(String[])} and
+     *   {@link #enableCertificatePinning(String[])}. When both are provided, this factory is used and
+     *   the built-in pinning trust manager is not applied; add pinning to your own factory if you need it.</li>
+     *   <li>Does not apply to WebView-rendered content, feedback and rating widgets (the Android WebView
+     *   uses its own network stack) nor to push notification image downloads.</li>
+     * </ul>
+     *
+     * @param sslSocketFactory the factory to use; a null value leaves the default behavior unchanged
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setCustomSSLSocketFactory(SSLSocketFactory sslSocketFactory) {
+        customSSLSocketFactory = sslSocketFactory;
+        return this;
+    }
+
+    /**
      * Set if Countly SDK should ignore app crawlers
      *
      * @param shouldIgnore if crawlers should be ignored
@@ -835,6 +908,20 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setApplication(Application application) {
         this.application = application;
+        return this;
+    }
+
+    /**
+     * Set the initial activity reference for SDK initialization.
+     * This is needed for frameworks like Flutter and React Native where the host activity
+     * is already started before the SDK registers its lifecycle callbacks.
+     * Setting this ensures that content overlays and feedback widgets can display correctly.
+     *
+     * @param activity the current foreground activity
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setInitialActivity(Activity activity) {
+        this.initialActivity = activity;
         return this;
     }
 
@@ -992,7 +1079,6 @@ public class CountlyConfig {
         return this;
     }
 
-    
     /**
      * This is an experimental feature and it can have breaking changes
      *
@@ -1005,9 +1091,136 @@ public class CountlyConfig {
     public synchronized CountlyConfig enableServerConfiguration() {
         return this;
     }
-    
+
     protected synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
+        return this;
+    }
+
+    /**
+     * Set the server configuration to be set while initializing the SDK
+     *
+     * @param sdkBehaviorSettings The server configuration to be set
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setSDKBehaviorSettings(String sdkBehaviorSettings) {
+        this.sdkBehaviorSettings = sdkBehaviorSettings;
+        return this;
+    }
+
+    /**
+     * Disable the back off mechanism
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableBackoffMechanism() {
+        this.backOffMechanismEnabled = false;
+        return this;
+    }
+
+    /**
+     * Disable the SDK behavior settings update calls to the server
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableSDKBehaviorSettingsUpdates() {
+        this.sdkBehaviorSettingsRequestsDisabled = true;
+        return this;
+    }
+
+    /**
+     * Set the request timeout duration in seconds
+     * Minimum value is "1" second
+     * Default value is "30" seconds
+     *
+     * @param requestTimeoutDuration The request timeout duration in seconds
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setRequestTimeoutDuration(int requestTimeoutDuration) {
+        int tempRequestTimeoutDuration = requestTimeoutDuration;
+        if (tempRequestTimeoutDuration <= 0) {
+            tempRequestTimeoutDuration = 1;
+        }
+        this.requestTimeoutDuration = tempRequestTimeoutDuration;
+        return this;
+    }
+
+    /**
+     * Set the webview display option for Content and Feedback Widgets
+     *
+     * @param displayOption IMMERSIVE for full screen with hidden system UI, or
+     * SAFE_AREA to use app usable area and not overlap system UI
+     * @return config content to chain calls
+     */
+    public synchronized CountlyConfig setWebviewDisplayOption(WebViewDisplayOption displayOption) {
+        if (displayOption != null) {
+            this.webViewDisplayOption = displayOption;
+        }
+        return this;
+    }
+
+    /**
+     * Disable all WebView-based UI in the SDK. When called, no WebView is ever created or shown
+     * for any feature. This covers the Content feature overlay, Feedback Widgets (surveys, NPS,
+     * and rating widgets), and the rating popup. WebView UI is enabled by default.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableWebView() {
+        this.webViewEnabled = false;
+        return this;
+    }
+
+    /**
+     * To select the legacy AsyncTask.execute (serial executor) or
+     * instead executeOnExecutor(THREAD_POOL_EXECUTOR)
+     * Default is false and the SDK will use the thread pool executor.
+     *
+     * @param useSerial set to true to use serial executor
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setUseSerialExecutor(boolean useSerial) {
+        this.useSerialExecutor = useSerial;
+        return this;
+    }
+
+    /**
+     * Disable the gradual request cleaner. By default when the request queue exceeds the configured
+     * maximum size, only a limited number of the oldest requests are removed per cleanup cycle
+     * (capped by an internal loop limit of 100) to gradually shrink the queue. Calling this method changes
+     * the behavior so that whenever the queue exceeds the maximum size, all overflowing requests
+     * (plus one extra slot for the new request) are removed in a single operation.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableGradualRequestCleaner() {
+        this.disableGradualRequestCleaner = true;
+        return this;
+    }
+
+    /**
+     * Disable storing the default push consent on initialization.
+     * By default, if consent is required and push consent is not set,
+     * the SDK was storing push consent as false on initialization.
+     * Now, if consent is not required, the SDK will store push consent as true on initialization.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableStoringDefaultPushConsent() {
+        this.disableStoringDefaultPushConsent = true;
+        return this;
+    }
+
+    /**
+     * Disable view restart when manual view recording is done.
+     * By default, if automatic view tracking is not enabled and a manual view is recorded,
+     * the SDK was restarting the views to properly track the view duration in bg/fg transitions.
+     * Now, with this option enabled, the SDK will not restart the views on manual view recording.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableViewRestartForManualRecording() {
+        this.disableViewRestartForManualRecording = true;
         return this;
     }
 

@@ -593,7 +593,7 @@ public class ModuleViewsTests {
         String[] viewNames = { act.getClass().getSimpleName(), act2.getClass().getSimpleName(), act3.getClass().getSimpleName() };
         final Map<String, Object> segm = new HashMap<>();
 
-        TestUtils.getCountyStore().clear();
+        TestUtils.getCountlyStore().clear();
         TestUtils.assertRQSize(0);
         //go from one activity to another in the expected way and then "go to background"
         ///////// 1
@@ -1342,7 +1342,7 @@ public class ModuleViewsTests {
         mCountly.views().startView("a", null);
 
         // 0 is consent request
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 0, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false });
         TestUtils.validateRequest(TestUtils.commonDeviceId, TestUtils.map("location", ""), 1);
         // start false because session did not start
         validateView("a", 0.0, 2, 3, false, true, null, vals[0], "");
@@ -1351,12 +1351,12 @@ public class ModuleViewsTests {
         mCountly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.sessions });
         mCountly.views().startView("b", null);
 
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 3, new boolean[] { true, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 3, new boolean[] { true, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false });
         validateView("b", 0.0, 4, 5, false, true, null, vals[1], vals[0]);
 
         //internal flag should be reset whens session consent is removed
         mCountly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.sessions });
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false });
 
         mCountly.views().startView("c", null);
         // start false because session did not start
@@ -1417,6 +1417,35 @@ public class ModuleViewsTests {
     public void internalLimits_setGlobalSegmentation_maxSegmentationValues_interface() throws JSONException {
         CountlyConfig config = TestUtils.createBaseConfig();
         config.sdkInternalLimits.setMaxSegmentationValues(2);
+        config.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(config);
+        countly.views().startView("a");
+        Map<String, Object> viewStartSegm = TestUtils.map();
+        // start false because session did not start
+        ClearFillSegmentationViewStart(viewStartSegm, "a", false);
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewStartSegm, 1, 0.0d, 0.0d, 0);
+
+        countly.views().setGlobalViewSegmentation(TestUtils.map("a", 1, "b", 2, "c", 3, "d", 4, "e", 5));
+        countly.views().stopViewWithName("a");
+        Map<String, Object> viewEndSegm = TestUtils.map();
+        ClearFillSegmentationViewEnd(viewEndSegm, "a", TestUtils.map("d", 4, "e", 5));
+        ModuleEventsTests.validateEventInRQ(ModuleViews.VIEW_EVENT_KEY, viewEndSegm, 1, 0.0d, 0.0d, 1);
+    }
+
+    /**
+     * Validate that max segmentation values clips the last two values of the
+     * global segmentation with server config
+     * Also validate that the global segmentation is updated correctly
+     * when the view is stopped
+     * "setGlobalViewSegmentation" call from the views interface is used
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void serverConfig_setGlobalSegmentation_maxSegmentationValues_interface() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(new ServerConfigBuilder().segmentationValuesLimit(2).build());
         config.setEventQueueSizeToSend(1);
 
         Countly countly = new Countly().init(config);
@@ -1908,11 +1937,11 @@ public class ModuleViewsTests {
         try {
             validateView("test", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
             validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
-        } catch (Exception ignored) {
+        } catch (AssertionError ignored) {
             validateView("test", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
             validateView("test2", 0.0, 3, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
         }
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true, true });
 
         countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
         ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 6);
@@ -1946,7 +1975,7 @@ public class ModuleViewsTests {
 
         countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
         validateView("test2", 0.0, 4, 6, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 5, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true, true });
 
         countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
         ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 6);
@@ -2025,12 +2054,98 @@ public class ModuleViewsTests {
 
         countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.views });
         validateView(activity2.getClass().getName(), 0.0, 6, 8, false, false, TestUtils.map(), "_CLY_", "_CLY_", null);
-        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 7, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true });
+        ModuleConsentTests.validateConsentRequest(TestUtils.commonDeviceId, 7, new boolean[] { true, true, true, true, true, true, true, true, true, true, true, true, false, true, true, true });
 
         countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.views });
 
         ModuleConsentTests.validateAllConsentRequest(TestUtils.commonDeviceId, 8);
         Assert.assertEquals(9, TestUtils.getCurrentRQ().length);
+    }
+
+    /**
+     * "startView" with bg/fg switch case
+     * - Validate that after an auto stopped view is started and app gone to background
+     * running view should not stop because behavior is disabled
+     * - After coming from the background to foreground no view should be started because behavior is disabled
+     *
+     * @throws InterruptedException if the thread is interrupted
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void startView_restartAfterActivityComesFromForeground_behaviorDisabled() throws InterruptedException, JSONException {
+        CountlyConfig countlyConfig = TestUtils.createScenarioEventIDConfig(TestUtils.incrementalViewIdGenerator(), TestUtils.incrementalEventIdGenerator());
+        countlyConfig.setApplication(null);
+        countlyConfig.setContext(TestUtils.getContext());
+        countlyConfig.disableViewRestartForManualRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(countlyConfig);
+
+        Activity activity = mock(Activity.class);
+
+        TestUtils.assertRQSize(0);
+
+        countly.onStart(activity);
+        countly.views().startView("test");
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide1", "_CLY_", "", "_CLY_", 1, 3, 0, 1);
+        validateView("test", 0.0, 2, 3, true, true, null, "idv1", "");
+
+        Thread.sleep(1000);
+
+        countly.onStop();
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
+        Thread.sleep(1000);
+        countly.onStart(activity);
+
+        ModuleSessionsTests.validateSessionBeginRequest(4, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.ORIENTATION_EVENT_KEY, null, 1, 0.0, 0.0, "ide2", "_CLY_", "idv1", "_CLY_", 5, 6, 0, 1);
+
+        Thread.sleep(1000);
+
+        countly.views().stopViewWithName("test");
+        validateView("test", 3.0, 6, 7, false, false, null, "idv1", "");
+        countly.onStop();
+
+        ModuleSessionsTests.validateSessionEndRequest(7, 1, TestUtils.commonDeviceId);
+        TestUtils.assertRQSize(8);
+    }
+
+    /**
+     * Auto view tracking with restart is disabled for manual views
+     * Validate that after an auto stopped view is started and app gone to background
+     * running view should stop because auto views are not affected by the disabled behavior
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void autoViewTracking_restartDisabledForManualViews() throws JSONException, InterruptedException {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig(TestUtils.getContext());
+        countlyConfig.setLoggingEnabled(true);
+        countlyConfig.enableAutomaticViewTracking();
+        countlyConfig.disableViewRestartForManualRecording();
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        Activity activity = Mockito.mock(Activity.class);
+        countly.onStart(activity);
+
+        ModuleSessionsTests.validateSessionBeginRequest(0, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0, 0, 1, 3);
+        validateView(activity.getClass().getName(), 0.0, 2, 3, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        Thread.sleep(1000);
+        countly.onStop();
+        ModuleSessionsTests.validateSessionEndRequest(3, 1, TestUtils.commonDeviceId);
+        validateView(activity.getClass().getName(), 1.0, 4, 5, false, false, null, "_CLY_", "_CLY_");
+
+        countly.onStart(activity);
+        Thread.sleep(1000);
+        ModuleSessionsTests.validateSessionBeginRequest(5, TestUtils.commonDeviceId);
+        ModuleEventsTests.validateEventInRQ("[CLY]_orientation", TestUtils.map("mode", "portrait"), 1, 0, 0, 6, 8);
+
+        validateView(activity.getClass().getName(), 0.0, 7, 8, true, true, TestUtils.map(), "_CLY_", "_CLY_", null);
+        Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
     }
 
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {

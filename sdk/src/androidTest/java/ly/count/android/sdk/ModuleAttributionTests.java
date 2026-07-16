@@ -117,7 +117,6 @@ public class ModuleAttributionTests {
 
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
         Countly mCountly = new Countly().init(TestUtils.createAttributionCountlyConfig(false, null, null, rqp, null, null, ia_1));
-
         verify(rqp, times(1)).sendIndirectAttribution(ia_1_string);
         verify(rqp, times(0)).sendDirectAttributionLegacy(any(String.class), any(String.class));
     }

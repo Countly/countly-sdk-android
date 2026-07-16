@@ -28,9 +28,18 @@ repositories {
   }
 }
 
+kotlin {
+  jvmToolchain(17)
+}
+
 android {
   compileSdk 35
   namespace 'ly.count.android.demo'
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
 
   signingConfigs {
     release {
@@ -43,6 +52,12 @@ android {
     }
   }
 
+  buildFeatures {
+    // Required so `BuildConfig.COUNTLY_SERVER_URL` / `COUNTLY_APP_KEY`
+    // (declared below) get generated. AGP 8+ disables BuildConfig by default.
+    buildConfig true
+  }
+
   defaultConfig {
     applicationId "ly.count.android.demo"
     minSdk 21
@@ -50,6 +65,11 @@ android {
     versionCode 1
     versionName "1.0"
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+    buildConfigField "String", "COUNTLY_SERVER_URL",
+      "\"${System.getenv('COUNTLY_SERVER_URL') ?: project.findProperty('countlyServerUrl') ?: 'https://your.server.ly'}\""
+    buildConfigField "String", "COUNTLY_APP_KEY",
+      "\"${System.getenv('COUNTLY_APP_KEY') ?: project.findProperty('countlyAppKey') ?: 'YOUR_APP_KEY'}\""
   }
   buildTypes {
     debug {
@@ -74,6 +94,9 @@ android {
   //        sourceCompatibility JavaVersion.VERSION_1_8
   //        targetCompatibility JavaVersion.VERSION_1_8
   //    }
+  // kotlinOptions {
+  //   jvmTarget = "1.8"
+  // }
 
   /*
   //for automatic symbol upload

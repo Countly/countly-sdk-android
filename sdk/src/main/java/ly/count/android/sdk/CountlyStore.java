@@ -86,6 +86,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     int dropAgeHours = 0;
     private final static int requestRemovalLoopLimit = 100;
 
+    // If true, when cleaning request queue overflow remove all overflowing requests at once (plus one slot)
+    // instead of gradually removing up to 'requestRemovalLoopLimit'
+    boolean disableGradualRequestCleaner = false;
+
     //explicit storage fields
     boolean explicitStorageModeEnabled;
     boolean esDirtyFlag = false;
@@ -270,7 +274,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                 if (esHealthCheckCache != null) {
                     //check if the cached health check state matches the one in persistent memory
                     String currentHCValue = preferences_.getString(PREFERENCE_HEALTH_CHECK_STATE, "");
-                    if (!esEventQueueCache.equals(currentHCValue)) {
+                    if (!esHealthCheckCache.equals(currentHCValue)) {
                         writePerformed = true;
                         spe.putString(PREFERENCE_HEALTH_CHECK_STATE, esHealthCheckCache);
                     }
@@ -456,7 +460,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return;
         }
 
-        if (requestStr == null && requestStr.isEmpty()) {
+        if (requestStr.isEmpty()) {
             L.w("[CountlyStore] addRequest, providing null or empty request string");
             return;
         }
@@ -497,13 +501,24 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return;
         }
 
-        int requestsToRemove = Math.min(requestRemovalLoopLimit, requests.size() - maxRequestQueueSize) + 1; // +1 because it should open a new place for newcomer
-        L.i("[CountlyStore] deleteOldestRequests, Will remove the oldest " + requestsToRemove + " request");
+        int overflow = requests.size() - maxRequestQueueSize;
+        int requestsToRemove;
+        if (disableGradualRequestCleaner) {
+            requestsToRemove = overflow + 1;
+            L.i("[CountlyStore] deleteOldestRequests, Gradual cleaner disabled. Removing all overflow: " + requestsToRemove + " request");
+        } else {
+            requestsToRemove = Math.min(requestRemovalLoopLimit, overflow) + 1; // +1 because it should open a new place for newcomer
+            L.i("[CountlyStore] deleteOldestRequests, Will remove the oldest " + requestsToRemove + " request");
+        }
         requests.subList(0, requestsToRemove).clear(); // sublist reflects all changes to the main list
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_deleteOldestRequest", UtilsTime.getNanoTime() - tsStart);
         }
+    }
+
+    void setDisableGradualRequestCleaner(boolean disable) {
+        disableGradualRequestCleaner = disable;
     }
 
     synchronized void deleteOldestRequest_reworked() {
@@ -991,5 +1006,9 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
             editor.apply();
         }
+    }
+
+    public int getMaxRequestQueueSize() {
+        return maxRequestQueueSize;
     }
 }

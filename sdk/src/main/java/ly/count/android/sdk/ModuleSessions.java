@@ -46,6 +46,10 @@ public class ModuleSessions extends ModuleBase {
             return;
         }
 
+        if (!configProvider.getSessionTrackingEnabled()) {
+            return;
+        }
+
         if (sessionIsRunning()) {
             L.w("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
             healthTracker.logSessionStartedWhileRunning();
@@ -56,6 +60,8 @@ public class ModuleSessions extends ModuleBase {
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
         sessionRunning = true;
         prevSessionDurationStartTime_ = System.currentTimeMillis();
+        _cly.moduleUserProfile.saveInternal();
+
         requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
 
         if (_cly.moduleViews.trackOrientationChanges) {
@@ -70,6 +76,10 @@ public class ModuleSessions extends ModuleBase {
             return;
         }
 
+        if (!configProvider.getSessionTrackingEnabled()) {
+            return;
+        }
+
         if (!sessionIsRunning()) {
             L.w("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
             healthTracker.logSessionUpdatedWhileNotRunning();
@@ -77,6 +87,8 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
+            _cly.moduleUserProfile.saveInternal();
+
             requestQueueProvider.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
         }
     }
@@ -85,6 +97,10 @@ public class ModuleSessions extends ModuleBase {
         L.d("[ModuleSessions] endSessionInternal, checkConsent:[" + checkConsent + "]");
 
         if (checkConsent && !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
+            return;
+        }
+
+        if (!configProvider.getSessionTrackingEnabled()) {
             return;
         }
 
@@ -106,6 +122,15 @@ public class ModuleSessions extends ModuleBase {
 
     void endSessionInternal() {
         endSessionInternal(true);
+    }
+
+    /**
+     * Resolved "is automatic session tracking active" value. It is seeded from the developer config
+     * ('!manualSessionControlEnabled') and can be overridden by the SBS layers, so the server takes
+     * precedence over the developer's manual session control choice.
+     */
+    boolean automaticSessionTrackingEnabled() {
+        return configProvider.getAutomaticSessionTrackingEnabled();
     }
 
     /**
@@ -140,8 +165,8 @@ public class ModuleSessions extends ModuleBase {
         L.d("[ModuleSessions] onConsentChanged, consentChangeDelta:[" + consentChangeDelta + "], newConsent:[" + newConsent + "], changeSource:[" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if (newConsent) {
-                //if consent was just given and manual sessions sessions are not enabled, start a session if we are in the foreground
-                if (!manualSessionControlEnabled && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+                //if consent was just given and automatic session tracking is active, start a session if we are in the foreground
+                if (automaticSessionTrackingEnabled() && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
                     beginSessionInternal();
                 }
             } else {
@@ -163,7 +188,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (!manualSessionControlEnabled && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (automaticSessionTrackingEnabled() && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             //start a session if we initialized in the foreground
             beginSessionInternal();
         }
@@ -177,7 +202,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void deviceIdChanged(boolean withoutMerge) {
-        if (!manualSessionControlEnabled && withoutMerge && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (automaticSessionTrackingEnabled() && withoutMerge && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
             L.d("[ModuleSessions] deviceIdChanged, automatic session control enabled and device id changed without merge, starting a new session");
             beginSessionInternal();
         }
@@ -186,10 +211,10 @@ public class ModuleSessions extends ModuleBase {
     public class Sessions {
         public void beginSession() {
             synchronized (_cly) {
-                L.i("[Sessions] Calling 'beginSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                L.i("[Sessions] Calling 'beginSession', automatic session tracking active:[" + automaticSessionTrackingEnabled() + "]");
 
-                if (!manualSessionControlEnabled) {
-                    L.w("[Sessions] 'beginSession' will be ignored since manual session control is not enabled");
+                if (automaticSessionTrackingEnabled()) {
+                    L.w("[Sessions] 'beginSession' will be ignored since automatic session tracking is active");
                     return;
                 }
 
@@ -199,10 +224,10 @@ public class ModuleSessions extends ModuleBase {
 
         public void updateSession() {
             synchronized (_cly) {
-                L.i("[Sessions] Calling 'updateSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                L.i("[Sessions] Calling 'updateSession', automatic session tracking active:[" + automaticSessionTrackingEnabled() + "]");
 
-                if (!manualSessionControlEnabled) {
-                    L.w("[Sessions] 'updateSession' will be ignored since manual session control is not enabled");
+                if (automaticSessionTrackingEnabled()) {
+                    L.w("[Sessions] 'updateSession' will be ignored since automatic session tracking is active");
                     return;
                 }
 
@@ -217,10 +242,10 @@ public class ModuleSessions extends ModuleBase {
 
         public void endSession() {
             synchronized (_cly) {
-                L.i("[Sessions] Calling 'endSession', manual session control enabled:[" + manualSessionControlEnabled + "]");
+                L.i("[Sessions] Calling 'endSession', automatic session tracking active:[" + automaticSessionTrackingEnabled() + "]");
 
-                if (!manualSessionControlEnabled) {
-                    L.w("[Sessions] 'endSession' will be ignored since manual session control is not enabled");
+                if (automaticSessionTrackingEnabled()) {
+                    L.w("[Sessions] 'endSession' will be ignored since automatic session tracking is active");
                     return;
                 }
 

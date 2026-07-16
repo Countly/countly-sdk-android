@@ -1,9 +1,7 @@
 package ly.count.android.sdk;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.provider.Settings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.UUID;
@@ -83,7 +81,15 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         deviceIdInstance.changeToCustomId(deviceId);
 
         // trigger fetching if the temp id given on init
-        _cly.moduleConfiguration.fetchConfigFromServer();
+        _cly.moduleConfiguration.fetchConfigFromServer(_cly.config_);
+
+        // Resume the content zone now that a real device ID is set again. The config re-fetch above
+        // only notifies modules when a value changes, so an unchanged (still enabled) content-zone
+        // value would otherwise leave the zone torn down after exiting temporary mode. This runs only
+        // here (not on a generic device ID change), so a plain changeWithoutMerge does not re-arm it.
+        if (_cly.moduleContent != null) {
+            _cly.moduleContent.resumeContentZoneAfterTemporaryIdExit();
+        }
 
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);
@@ -137,8 +143,8 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         //update remote config_ values after id change if automatic update is enabled
         _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
 
-        if (!_cly.moduleSessions.manualSessionControlEnabled) {
-            //if manual session control is not enabled, end the current session
+        if (_cly.moduleSessions.automaticSessionTrackingEnabled()) {
+            //if automatic session tracking is active, end the current session
             _cly.moduleSessions.endSessionInternal(); // this will check consent
         }
 
@@ -252,33 +258,26 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
     }
 
-    public final static String PREF_KEY = "openudid";
+    public final static String PREF_KEY = "openudid"; // key of old impl, keeping because needs migration
     public final static String PREFS_NAME = "openudid_prefs";
 
-    @SuppressLint("HardwareIds")
-    @Override @NonNull public String getOpenUDID() {
+    @Override @NonNull public String getUUID() {
         String retrievedID;
 
         SharedPreferences mPreferences = _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        //Try to get the openudid from local preferences
+        //Try to get the stored UUID from local preferences
         retrievedID = mPreferences.getString(PREF_KEY, null);
         if (retrievedID == null) //Not found if temp storage
         {
-            Countly.sharedInstance().L.d("[OpenUDID] Generating openUDID");
-            //Try to get the ANDROID_ID
-            retrievedID = Settings.Secure.getString(_cly.context_.getContentResolver(), Settings.Secure.ANDROID_ID);
-            if (retrievedID == null || retrievedID.equals("9774d56d682e549c") || retrievedID.length() < 15) {
-                //if ANDROID_ID is null, or it's equals to the GalaxyTab generic ANDROID_ID or is too short bad, generates a new one
-                //the new one would be random
-                retrievedID = UUID.randomUUID().toString();
-            }
+            Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, Generating UUID");
+            retrievedID = UUID.randomUUID().toString();
 
             final SharedPreferences.Editor e = mPreferences.edit();
             e.putString(PREF_KEY, retrievedID);
             e.apply();
         }
 
-        Countly.sharedInstance().L.d("[OpenUDID] ID: " + retrievedID);
+        Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, retrievedID:[" + retrievedID + "]");
 
         return retrievedID;
     }

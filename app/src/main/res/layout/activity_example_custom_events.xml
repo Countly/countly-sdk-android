@@ -1,135 +1,248 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_vertical"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    tools:context=".ActivityExampleCustomEvents"
-    >
-
-  <ScrollView
-      android:layout_width="match_parent"
-      android:layout_height="match_parent"
-      android:clipToPadding="false"
-      android:paddingBottom="16dp"
-      android:paddingTop="48dp"
-      tools:ignore="UselessParent"
-      >
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:gravity="center_vertical"
         android:orientation="vertical"
-        >
+        android:padding="16dp">
 
-      <Button
-          android:id="@+id/button4"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent01"
-          android:text="@string/record_event"
-          />
+        <!-- Section 1: Record Custom Event -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/FormCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
 
-      <Button
-          android:id="@+id/button10"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent02"
-          android:text="@string/record_event_with_count"
-          />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-      <Button
-          android:id="@+id/button11"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent03"
-          android:text="@string/record_event_with_sum"
-          />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Record Custom Event"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"/>
 
-      <Button
-          android:id="@+id/button12"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent04"
-          android:text="@string/record_event_with_duration"
-          />
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    app:hintEnabled="true">
 
-      <Button
-          android:id="@+id/button13"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent05"
-          android:text="@string/record_event_with_segm"
-          />
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputEventName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Event Name"/>
+                </com.google.android.material.textfield.TextInputLayout>
 
-      <Button
-          android:id="@+id/button14"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent06"
-          android:text="@string/record_event_with_segm_count"
-          />
+                <!-- Horizontal row: Count, Sum, Duration -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
 
-      <Button
-          android:id="@+id/button15"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent07"
-          android:text="@string/record_event_with_segm_count_sum"
-          />
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        app:hintEnabled="true">
 
-      <Button
-          android:id="@+id/button16"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent08"
-          android:text="@string/record_event_with_segm_count_sum_dur"
-          />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/inputEventCount"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Count"
+                            android:inputType="number"
+                            android:text="1"/>
+                    </com.google.android.material.textfield.TextInputLayout>
 
-      <Button
-          android:id="@+id/button17"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent09"
-          android:text="@string/start_event"
-          />
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        app:hintEnabled="true">
 
-      <Button
-          android:id="@+id/button18"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent10"
-          android:text="@string/end_event"
-          />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/inputEventSum"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Sum"
+                            android:inputType="numberDecimal"/>
+                    </com.google.android.material.textfield.TextInputLayout>
 
-      <Button
-          android:id="@+id/button67"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent12"
-          android:text="Cancel Timed Event"
-          />
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        app:hintEnabled="true">
 
-      <Button
-          android:id="@+id/button19"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickRecordEvent11"
-          android:text="@string/end_event_with_segm_count_sum"
-          />
-      <Button
-          android:id="@+id/btnTriggerSendingEvents"
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:onClick="onClickTriggerSendingEvents"
-          android:text="Trigger sending events"
-          />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/inputEventDuration"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Duration"
+                            android:inputType="numberDecimal"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- Segmentation section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Segmentation"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="8dp"
+                    android:layout_marginTop="4dp"/>
+
+                <LinearLayout
+                    android:id="@+id/segmentationContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnAddSegment"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Add Segment"
+                    android:layout_marginBottom="8dp"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRecordEvent"
+                    style="@style/Widget.MaterialComponents.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Record Event"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Section 2: Timed Events -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/FormCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Timed Events"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp"/>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    app:hintEnabled="true">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/inputTimedEventName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Timed Event Name"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Horizontal row: Start, End, Cancel -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnStartTimedEvent"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="4dp"
+                        android:text="Start"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEndTimedEvent"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:text="End"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCancelTimedEvent"
+                        style="@style/Widget.MaterialComponents.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="4dp"
+                        android:text="Cancel"/>
+                </LinearLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Section 3: Preset Events -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Preset Events"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPreset1"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Event with Segmentation"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPreset2"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Event with Count + Sum"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTriggerSend"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Trigger Sending Events"/>
+
     </LinearLayout>
-  </ScrollView>
-
-</LinearLayout>
+</ScrollView>
