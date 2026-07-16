@@ -453,4 +453,37 @@ public class CountlyWebViewClientTests {
         CountlyWebViewClient httpAllowed = new CountlyWebViewClient(new HashSet<>(Arrays.asList("http")));
         Assert.assertNull(httpAllowed.shouldInterceptRequest(null, fakeRequest("http://example.com/a.png", false)));
     }
+
+    // =====================================
+    // Readiness gate (regression)
+    // =====================================
+
+    /**
+     * Regression: a nomodule {@code <script src>} is in the DOM but is never fetched by a module-capable
+     * WebView, so it has no Resource-Timing entry. The gate must SKIP it (a plain {@code script[src]}
+     * check hung on it until the 60s timeout, leaving the widget blank). Firing well under TIMEOUT_MS
+     * proves the nomodule script was excluded from the readiness gate, not shown via the fail-open path.
+     */
+    @Test
+    public void nomoduleScript_excludedFromReadinessGate_showsPromptly() throws InterruptedException {
+        WebView wv = createWebView();
+        CountDownLatch latch = new CountDownLatch(1);
+        client.afterPageFinished = (failed) -> {
+            callbackResults.add(failed);
+            latch.countDown();
+        };
+        // nomodule <script src>: in the DOM but not fetched by a modern WebView → no timing entry.
+        String html = "<!DOCTYPE html><html><head>"
+            + "<script nomodule src=\"data:text/javascript,0\"></script>"
+            + "</head><body>content<script>window.__ready=1;</script></body></html>";
+        runOnMainSync(() -> {
+            wv.setWebViewClient(client);
+            wv.loadDataWithBaseURL("https://example.com/", html, "text/html", "utf-8", null);
+        });
+
+        Assert.assertTrue("readiness callback did not fire under the 60s timeout — readyState gate regressed",
+            latch.await(20, TimeUnit.SECONDS));
+        Assert.assertEquals(1, callbackResults.size());
+        Assert.assertFalse("content must be shown (failed=false), not discarded", callbackResults.get(0));
+    }
 }
