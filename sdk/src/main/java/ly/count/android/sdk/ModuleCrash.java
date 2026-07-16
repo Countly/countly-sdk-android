@@ -24,6 +24,9 @@ public class ModuleCrash extends ModuleBase {
 
     boolean recordAllThreads = false;
 
+    //tracks whether the unhandled crash handler has already been installed, so we only wrap the global handler once
+    boolean unhandledCrashHandlerInstalled = false;
+
     @Nullable
     Map<String, Object> customCrashSegments = null;
 
@@ -123,7 +126,7 @@ public class ModuleCrash extends ModuleBase {
         String dumpString = Base64.encodeToString(bytes, Base64.NO_WRAP);
 
         CrashData crashData = prepareCrashData(dumpString, false, true, null);
-        if (!crashFilterCheck(crashData)) {
+        if (!crashFilterCheck(crashData, true)) {
             sendCrashReportToQueue(crashData, true);
         }
     }
@@ -196,7 +199,12 @@ public class ModuleCrash extends ModuleBase {
     }
 
     void enableCrashReporting() {
+        if (unhandledCrashHandlerInstalled) {
+            //already installed, don't wrap the global handler again
+            return;
+        }
         L.d("[ModuleCrash] Enabling unhandled crash reporting");
+        unhandledCrashHandlerInstalled = true;
         //get default handler
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 
@@ -205,11 +213,11 @@ public class ModuleCrash extends ModuleBase {
             @Override
             public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
                 L.d("[ModuleCrash] Uncaught crash handler triggered");
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
+                if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes) && configProvider.getAutomaticCrashReportingEnabled()) {
 
                     String stackTrace = prepareStackTrace(e);
                     CrashData crashData = prepareCrashData(stackTrace, false, false, null);
-                    if (!crashFilterCheck(crashData)) {
+                    if (!crashFilterCheck(crashData, false)) {
                         sendCrashReportToQueue(crashData, false);
                     }
                 }
@@ -230,9 +238,10 @@ public class ModuleCrash extends ModuleBase {
      * If it does, the crash should be ignored
      *
      * @param crashData CrashData object to check
+     * @param isNativeCrash whether the crash is a native crash dump (base64 string, not a Java stack trace)
      * @return true if a match was found
      */
-    boolean crashFilterCheck(@NonNull CrashData crashData) {
+    boolean crashFilterCheck(@NonNull CrashData crashData, final boolean isNativeCrash) {
         assert crashData != null;
 
         L.d("[ModuleCrash] Calling crashFilterCheck");
@@ -254,8 +263,12 @@ public class ModuleCrash extends ModuleBase {
 
         UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(crashData.getBreadcrumbs(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
-        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
-        crashData.setStackTrace(truncatedStackTrace);
+        // Stack trace line limits must not be applied to native crashes: the "stack trace" of a
+        // native crash is a single-line base64 dump, so per-line truncation would corrupt the dump.
+        if (!isNativeCrash) {
+            String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
+            crashData.setStackTrace(truncatedStackTrace);
+        }
         UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation(), L);
         UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashMetrics(), L);
 
@@ -318,7 +331,7 @@ public class ModuleCrash extends ModuleBase {
         String exceptionString = prepareStackTrace(exception);
 
         CrashData crashData = prepareCrashData(exceptionString, itIsHandled, false, customSegmentation);
-        if (crashFilterCheck(crashData)) {
+        if (crashFilterCheck(crashData, false)) {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
             sendCrashReportToQueue(crashData, false);
@@ -353,15 +366,34 @@ public class ModuleCrash extends ModuleBase {
             return;
         }
 
-        if (config.crashes.enableUnhandledCrashReporting) {
-            enableCrashReporting();
-        }
+        // Install the uncaught-exception handler when automatic crash reporting is enabled. The flag is
+        // resolved through the SBS precedence chain (seeded from the developer's enableUnhandledCrashReporting,
+        // overridden by the server), so the server can enable it even if the developer did not. We never wrap
+        // the global handler while automatic crash reporting is disabled, so apps that did not enable it (and
+        // whose server does not enable it) keep their own handler intact, avoiding interference with other crash tools.
+        installUnhandledCrashHandlerIfEnabled();
 
         //check for previous native crash dumps
         if (config.crashes.checkForNativeCrashDumps) {
             //flag so that this can be turned off during testing
             _cly.moduleCrash.checkForNativeCrashDumps(config.context);
         }
+    }
+
+    /**
+     * Installs the unhandled crash handler if automatic crash reporting is enabled (resolved through the SBS
+     * precedence chain) and it has not been installed yet. Called at init and whenever the SDK configuration
+     * changes, so a server that enables 'acr' at runtime starts catching crashes.
+     */
+    private void installUnhandledCrashHandlerIfEnabled() {
+        if (!unhandledCrashHandlerInstalled && configProvider.getCrashReportingEnabled() && configProvider.getAutomaticCrashReportingEnabled()) {
+            enableCrashReporting();
+        }
+    }
+
+    @Override
+    void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
+        installUnhandledCrashHandlerIfEnabled();
     }
 
     @Override

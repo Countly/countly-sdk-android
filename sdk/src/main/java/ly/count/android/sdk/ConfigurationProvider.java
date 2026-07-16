@@ -18,6 +18,12 @@ interface ConfigurationProvider {
 
     boolean getCrashReportingEnabled();
 
+    boolean getAutomaticSessionTrackingEnabled();
+
+    boolean getAutomaticViewTrackingEnabled();
+
+    boolean getAutomaticCrashReportingEnabled();
+
     boolean getLocationTrackingEnabled();
 
     boolean getRefreshContentZoneEnabled();
@@ -48,6 +54,8 @@ interface ConfigurationProvider {
     FilterList<Map<String, Set<String>>> getEventSegmentationFilterList();
 
     Set<String> getJourneyTriggerEvents();
+
+    Set<String> getJourneyTriggerViews();
 
     class FilterList<T> {
         T filterList;

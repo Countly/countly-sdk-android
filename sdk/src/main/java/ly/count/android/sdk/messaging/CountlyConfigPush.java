@@ -6,12 +6,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import ly.count.android.sdk.Countly;
+import ly.count.android.sdk.Utils;
 
 public class CountlyConfigPush {
     Application application;
     Countly.CountlyMessagingProvider provider;
     Set<String> allowedIntentClassNames = new HashSet<>();
     Set<String> allowedIntentPackageNames = new HashSet<>();
+    Set<String> allowedIntentSchemes = new HashSet<>();
+    boolean useAdditionalIntentRedirectionChecks = false;
 
     CountlyNotificationButtonURLHandler notificationButtonURLHandler;
 
@@ -59,6 +62,37 @@ public class CountlyConfigPush {
      */
     public synchronized CountlyConfigPush setAllowedIntentPackageNames(@NonNull List<String> allowedIntentPackageNames) {
         this.allowedIntentPackageNames = new HashSet<>(allowedIntentPackageNames);
+        return this;
+    }
+
+    /**
+     * Enable additional intent redirection checks for notification clicks. When enabled, the
+     * intent's target component must match the allowed package and class names exactly (see
+     * {@link #setAllowedIntentClassNames(List)} and {@link #setAllowedIntentPackageNames(List)})
+     * before the notification action is dispatched. Disabled by default.
+     * <p>
+     * The target class must be allow-listed explicitly even when it is in the app's own package, so
+     * when this is enabled you must add each launchable target class via
+     * {@link #setAllowedIntentClassNames(List)} (otherwise matching notification clicks are rejected).
+     *
+     * @return Returns the same push config object for convenient linking
+     */
+    public synchronized CountlyConfigPush enableAdditionalIntentRedirectionChecks() {
+        this.useAdditionalIntentRedirectionChecks = true;
+        return this;
+    }
+
+    /**
+     * Set the URI schemes that notification links are allowed to open via ACTION_VIEW. When a
+     * non-empty list is provided, only links whose scheme is in the list are opened. When left
+     * empty (the default), any scheme except known-dangerous ones ("file", "content", "javascript",
+     * "jar", "data") is allowed, so http(s) and deep links keep working. Matched case-insensitively.
+     *
+     * @param allowedIntentSchemes the URI schemes permitted for notification links, for example ["https", "myapp"]
+     * @return Returns the same push config object for convenient linking
+     */
+    public synchronized CountlyConfigPush setAllowedIntentSchemes(List<String> allowedIntentSchemes) {
+        this.allowedIntentSchemes = Utils.normalizeSchemeSet(allowedIntentSchemes);
         return this;
     }
 

@@ -1,9 +1,13 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.util.DisplayMetrics;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -13,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleContentTests {
@@ -110,6 +115,28 @@ public class ModuleContentTests {
         String request = capturedRequests.get(0);
         Assert.assertTrue(request.contains("content_id=test_content_123"));
         Assert.assertTrue(request.contains("preview=true"));
+    }
+
+    /**
+     * The global disableWebView() switch should disable the content feature,
+     * even when content consent is granted.
+     */
+    @Test
+    public void previewContent_webViewDisabledByConfig() {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.setRequiresConsent(true);
+        config.setConsentEnabled(new String[] { Countly.CountlyFeatureNames.content });
+        config.disableWebView();
+        config.disableHealthCheck();
+        config.immediateRequestGenerator = createCapturingIRGenerator();
+
+        mCountly = new Countly();
+        mCountly.init(config);
+        mCountly.moduleContent.countlyTimer = null;
+        capturedRequests.clear();
+
+        mCountly.contents().previewContent("test_content_123");
+        Assert.assertEquals(0, capturedRequests.size());
     }
 
     /**
@@ -254,5 +281,148 @@ public class ModuleContentTests {
 
         mc.onActivityDestroyed(seeded);
         Assert.assertNull(getCurrentActivity(mc));
+    }
+
+    private boolean readShouldFetchContents(ModuleContent module) throws Exception {
+        java.lang.reflect.Field field = ModuleContent.class.getDeclaredField("shouldFetchContents");
+        field.setAccessible(true);
+        return (boolean) field.get(module);
+    }
+
+    /**
+     * Validation: the server-driven content zone (ecz) keeps working across a temporary-device-ID
+     * toggle. When the SDK enters temporary mode the content zone is torn down, and when a real
+     * device ID is assigned the server config is re-fetched and the content zone resumes.
+     *
+     * 1- Init with an immediate-request generator that returns ecz=true for the server config (/o/sdk)
+     * 2- Verify the content zone is armed after the ecz=true server config is applied
+     * 3- Enter temporary device ID mode and verify the content zone is torn down
+     * 4- Leave temporary mode with a real device ID and verify the content zone resumes
+     *    (the deferred-on-exit server config re-fetch re-applies ecz=true)
+     */
+    @Test
+    public void contentZone_resumesAfterTemporaryDeviceIDToggle() throws Exception {
+        final String serverConfigWithEcz = new ServerConfigBuilder().contentZone(true).build();
+
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.disableHealthCheck();
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if ("/o/sdk".equals(customEndpoint)) {
+                        try {
+                            callback.callback(new JSONObject(serverConfigWithEcz));
+                        } catch (JSONException e) {
+                            callback.callback(null);
+                        }
+                    } else {
+                        // content and any other immediate requests: no payload needed for this test
+                        callback.callback(null);
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(null);
+            }
+        };
+
+        mCountly = new Countly().init(config);
+
+        // ecz=true was applied at init, so the content zone should be armed
+        Assert.assertTrue(readShouldFetchContents(mCountly.moduleContent));
+
+        // entering temporary device ID mode tears the content zone down
+        mCountly.deviceId().enableTemporaryIdMode();
+        Assert.assertFalse(readShouldFetchContents(mCountly.moduleContent));
+
+        // leaving temporary mode with a real ID re-fetches the server config (ecz=true) and resumes the zone
+        mCountly.deviceId().changeWithoutMerge("real_user_after_temp");
+        Assert.assertTrue(readShouldFetchContents(mCountly.moduleContent));
+    }
+
+    @Test
+    public void contentZone_doesNotResumeAfterExplicitExit() throws Exception {
+        final String serverConfigWithEcz = new ServerConfigBuilder().contentZone(true).build();
+
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.disableHealthCheck();
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if ("/o/sdk".equals(customEndpoint)) {
+                        try {
+                            callback.callback(new JSONObject(serverConfigWithEcz));
+                        } catch (JSONException e) {
+                            callback.callback(null);
+                        }
+                    } else {
+                        callback.callback(null);
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(null);
+            }
+        };
+
+        mCountly = new Countly().init(config);
+
+        // ecz=true armed the content zone at init
+        Assert.assertTrue(readShouldFetchContents(mCountly.moduleContent));
+
+        // the developer explicitly exits the content zone
+        mCountly.contents().exitContentZone();
+        Assert.assertFalse(readShouldFetchContents(mCountly.moduleContent));
+
+        // a device ID change must NOT silently resume a zone the developer turned off
+        mCountly.deviceId().changeWithoutMerge("real_user_after_exit");
+        Assert.assertFalse(readShouldFetchContents(mCountly.moduleContent));
+    }
+
+    // ======== theme ("th") param on the content URL ========
+
+    /**
+     * parseContent must append the app theme ("th") to the content URL that gets loaded into the
+     * WebView, so the content is rendered matching the theme. A dark foreground Activity is set so
+     * the resolved theme is deterministic ("d"); the URL already has a query, so "&th=d" is used.
+     * The l/d mapping and separator logic themselves are covered by UtilsDeviceTests.
+     */
+    @Test
+    public void parseContent_appendsThemeParamToContentUrl() throws JSONException {
+        Countly countly = initWithConsent(true);
+        ModuleContent mc = countly.moduleContent;
+
+        Activity darkActivity = mock(Activity.class);
+        Resources darkResources = mock(Resources.class);
+        Configuration darkCfg = new Configuration();
+        darkCfg.uiMode = Configuration.UI_MODE_NIGHT_YES;
+        when(darkActivity.getResources()).thenReturn(darkResources);
+        when(darkResources.getConfiguration()).thenReturn(darkCfg);
+        CountlyActivityHolder.getInstance().setActivity(darkActivity);
+
+        try {
+            String html = "https://content.example/page?cid=1";
+            JSONObject placement = new JSONObject();
+            placement.put("x", 0);
+            placement.put("y", 0);
+            placement.put("w", 100);
+            placement.put("h", 100);
+            JSONObject geo = new JSONObject();
+            geo.put("p", placement);
+            JSONObject response = new JSONObject();
+            response.put("html", html);
+            response.put("geo", geo);
+
+            DisplayMetrics dm = TestUtils.getContext().getResources().getDisplayMetrics();
+            Map<Integer, TransparentActivityConfig> configs = mc.parseContent(response, dm);
+
+            TransparentActivityConfig portrait = configs.get(Configuration.ORIENTATION_PORTRAIT);
+            Assert.assertNotNull(portrait);
+            Assert.assertEquals(html + "&th=d", portrait.url);
+        } finally {
+            CountlyActivityHolder.getInstance().clearActivity(darkActivity);
+        }
     }
 }

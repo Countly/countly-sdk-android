@@ -36,7 +36,9 @@ class ModuleHealthCheck extends ModuleBase {
 
     @Override
     void onActivityStopped(int updatedActivityCount) {
-        hCounter.saveState();
+        if (hCounter != null) {
+            hCounter.saveState();
+        }
     }
 
     void sendHealthCheck() {
@@ -83,9 +85,15 @@ class ModuleHealthCheck extends ModuleBase {
                 return;
             }
 
+            HealthCheckCounter counter = hCounter;
+            if (counter == null) {
+                L.d("[ModuleHealthCheck] sendHealthCheck, SDK was halted before the response returned, skipping counter reset");
+                return;
+            }
+
             //at this point we can expect that the request succeed and we can clear the counters
             L.d("[ModuleHealthCheck] sendHealthCheck, SDK health information sent successfully");
-            hCounter.clearAndSave();
+            counter.clearAndSave();
         }, L);
     }
 }

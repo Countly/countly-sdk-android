@@ -6,6 +6,7 @@ import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.HashMap;
 import java.util.Map;
+import javax.net.ssl.SSLSocketFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -84,6 +85,8 @@ public class CountlyConfigTests {
         String[] publicKeyCerts = { "ddd", "111", "ffd" };
         String[] certificateCerts = { "ddsd", "vvcv", "mbnb" };
 
+        SSLSocketFactory customSSLSocketFactory = mock(SSLSocketFactory.class);
+
         Map<String, Object> crashSegments = new HashMap<>();
         crashSegments.put("s2s", "fdf");
         crashSegments.put("s224s", 2323);
@@ -139,6 +142,7 @@ public class CountlyConfigTests {
         config.setAppCrawlerNames(appCrawlerNames);
         config.enableCertificatePinning(certificateCerts);
         config.enablePublicKeyPinning(publicKeyCerts);
+        config.setCustomSSLSocketFactory(customSSLSocketFactory);
         config.setEnableAttribution(true);
         config.setCustomCrashSegment(crashSegments);
         config.setUpdateSessionTimerDelay(137);
@@ -191,6 +195,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(appCrawlerNames, config.appCrawlerNames);
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
+        Assert.assertSame(customSSLSocketFactory, config.customSSLSocketFactory);
         Assert.assertEquals(crashSegments, config.crashes.customCrashSegment);
         Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
         Assert.assertTrue(config.starRatingDialogIsCancellable);
@@ -269,6 +274,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.starRatingTextMessage);
         Assert.assertNull(config.starRatingTextTitle);
         Assert.assertFalse(config.loggingEnabled);
+        Assert.assertFalse(config.disableSDKLoggingInProduction);
         Assert.assertFalse(config.crashes.enableUnhandledCrashReporting);
         Assert.assertFalse(config.enableAutomaticViewTracking);
         Assert.assertFalse(config.autoTrackingUseShortName);
@@ -292,6 +298,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.appCrawlerNames);
         Assert.assertNull(config.publicKeyPinningCertificates);
         Assert.assertNull(config.certificatePinningCertificates);
+        Assert.assertNull(config.customSSLSocketFactory);
         Assert.assertNull(config.crashes.customCrashSegment);
         Assert.assertNull(config.sessionUpdateTimerDelay);
         Assert.assertFalse(config.starRatingDialogIsCancellable);

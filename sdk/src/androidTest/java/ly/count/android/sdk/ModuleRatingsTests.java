@@ -1,8 +1,11 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONException;
@@ -184,6 +187,49 @@ public class ModuleRatingsTests {
 
         ratingSegmentation = prepareRatingSegmentation("5", "B", "a", "v", false);
         ModuleEventsTests.validateEventInRQ(ModuleFeedback.RATING_EVENT_KEY, ratingSegmentation, 1);
+    }
+
+    /**
+     * Reproduction + regression test for the temporary-device-ID leak.
+     * The rating feedback popup performs an immediate request to "/o/feedback/widget" that carries
+     * "device_id". While in temporary device ID mode this must not be sent, otherwise a
+     * "CLYTemporaryDeviceID" user is created on the server.
+     *
+     * 1- Init with a capturing immediate-request generator and a real (custom) device ID
+     * 2- Enter temporary device ID mode
+     * 3- Call showFeedbackPopupInternal with valid widget id, consent and a (mock) Activity
+     * 4- Verify no immediate request is issued (no endpoint captured)
+     * 5- Verify the developer callback reports that temporary device ID mode blocked it
+     */
+    @Test
+    public void showFeedbackPopup_blockedInTemporaryDeviceIDMode() {
+        final List<String> capturedEndpoints = new ArrayList<>();
+
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.disableHealthCheck();
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> capturedEndpoints.add(customEndpoint);
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> capturedEndpoints.add(customEndpoint);
+            }
+        };
+
+        Countly countly = new Countly().init(config);
+        countly.deviceId().enableTemporaryIdMode();
+        Assert.assertTrue(countly.moduleDeviceId.isTemporaryIdEnabled());
+
+        // ignore anything that init / mode switch may have produced
+        capturedEndpoints.clear();
+
+        final String[] callbackMessage = { null };
+        countly.moduleRatings.showFeedbackPopupInternal("widget123", "Close", mock(Activity.class), error -> callbackMessage[0] = error);
+
+        Assert.assertEquals(0, capturedEndpoints.size());
+        Assert.assertNotNull(callbackMessage[0]);
+        Assert.assertTrue(callbackMessage[0].contains("temporary device ID mode"));
     }
 
     private Map<String, Object> prepareRatingSegmentation(String rating, String widgetId, String email, String comment, boolean userCanBeContacted) {

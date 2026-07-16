@@ -31,8 +31,10 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -45,6 +47,8 @@ class ContentOverlayView extends FrameLayout {
     TransparentActivityConfig configLandscape;
     int currentOrientation;
     private ContentCallback contentCallback;
+    private final Set<String> allowedLinkSchemes;
+    private final ContentUrlHandler contentUrlHandler;
     private Runnable onCloseRunnable;
     private Runnable onWidgetCancelRunnable;
     private boolean isClosed = false;
@@ -84,7 +88,9 @@ class ContentOverlayView extends FrameLayout {
         @NonNull TransparentActivityConfig landscape,
         int orientation,
         @Nullable ContentCallback callback,
-        @NonNull Runnable onClose) {
+        @NonNull Runnable onClose,
+        @Nullable Set<String> allowedLinkSchemes,
+        @Nullable ContentUrlHandler contentUrlHandler) {
         // View.mContext must not pin the constructing activity (overlay outlives activity
         // transitions; window attachment uses currentHostActivity). On API 31+ we additionally
         // need a UI context to satisfy StrictMode#detectIncorrectContextUse — see
@@ -97,6 +103,9 @@ class ContentOverlayView extends FrameLayout {
         this.contentCallback = callback;
         this.onCloseRunnable = onClose;
         this.currentHostActivity = activity;
+        // Defensive copy so a later config change cannot retroactively alter this overlay's policy.
+        this.allowedLinkSchemes = allowedLinkSchemes == null ? null : new HashSet<>(allowedLinkSchemes);
+        this.contentUrlHandler = contentUrlHandler;
 
         setBackgroundColor(Color.TRANSPARENT);
         setClickable(false);
@@ -773,12 +782,12 @@ class ContentOverlayView extends FrameLayout {
 
     private void eventAction(Map<String, Object> query) {
         Log.i(Countly.TAG, "[ContentOverlayView] eventAction, event action detected");
-        if (query.containsKey("event")) {
-            JSONArray event = (JSONArray) query.get("event");
-            if (event == null) {
-                Log.w(Countly.TAG, "[ContentOverlayView] eventAction, event is null");
-                return;
-            }
+        // splitQuery only stores "event" as a JSONArray when its JSON validates; a malformed payload
+        // from web content falls back to a raw String, so guard the cast (as resizeMeAction guards
+        // resize_me) to keep a ClassCastException from propagating out of shouldOverrideUrlLoading.
+        Object eventObj = query.get("event");
+        if (eventObj instanceof JSONArray) {
+            JSONArray event = (JSONArray) eventObj;
             for (int i = 0; i < event.length(); i++) {
                 try {
                     JSONObject eventJson = event.getJSONObject(i);
@@ -830,6 +839,39 @@ class ContentOverlayView extends FrameLayout {
         }
     }
 
+    // Dispatches an ACTION_VIEW intent for a URL originating from web content, gated by the shared
+    // scheme policy: with no allow-list the dangerous schemes (file/content/javascript/jar/data) are
+    // blocked while http(s) and deep links are allowed; with an allow-list configured, only those
+    // schemes pass. Component/selector and flags are cleared so the intent cannot be redirected to a
+    // specific (possibly internal) target.
+    private void startSafeExternalIntent(@NonNull String url) {
+        // Give the app's content URL handler first refusal (e.g. to route its own deep link). If it
+        // reports it handled the URL, the SDK does not dispatch an intent. A handler exception is
+        // caught so it can never break link handling; on false/absent handler the SDK opens as usual.
+        if (contentUrlHandler != null) {
+            try {
+                if (contentUrlHandler.onContentUrl(url)) {
+                    Log.d(Countly.TAG, "[ContentOverlayView] startSafeExternalIntent, url handled by content URL handler: [" + url + "]");
+                    return;
+                }
+            } catch (Throwable t) {
+                Log.e(Countly.TAG, "[ContentOverlayView] startSafeExternalIntent, content URL handler threw", t);
+            }
+        }
+
+        Uri uri = Uri.parse(url);
+        String scheme = uri.getScheme();
+        if (!Utils.isExternalSchemeAllowed(scheme, allowedLinkSchemes)) {
+            Log.w(Countly.TAG, "[ContentOverlayView] startSafeExternalIntent, blocked link with disallowed scheme: [" + scheme + "]");
+            return;
+        }
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        intent.setComponent(null);
+        intent.setSelector(null);
+        intent.setFlags(0);
+        startActivityFromOverlay(intent);
+    }
+
     private boolean linkAction(Map<String, Object> query, WebView view) {
         Log.i(Countly.TAG, "[ContentOverlayView] linkAction, link action detected");
         if (!query.containsKey("link")) {
@@ -840,8 +882,7 @@ class ContentOverlayView extends FrameLayout {
             return false;
         }
 
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link.toString()));
-        startActivityFromOverlay(intent);
+        startSafeExternalIntent(link.toString());
         return true;
     }
 
@@ -893,6 +934,22 @@ class ContentOverlayView extends FrameLayout {
         }
     }
 
+    // Reserved content-communication param keys. Their names are reserved: a value (a link, or a
+    // segmentation string) that literally contains "&<key>=<something-that-validates>" may be
+    // mis-split. This is documented for integrators.
+    private static final String[] RESERVED_KEYS = {"action", "event", "resize_me", "close", "link"};
+
+    // The whole action URL is already percent-decoded (CountlyWebViewClient), so values are in plain
+    // form. Two params can carry a literal '&' in their value: "link" (sent unencoded, may hold its
+    // own query string) and a decoded "event"/"resize_me" JSON (segmentation strings can contain
+    // '&'). A plain '&' split would therefore mis-slice them, and the params can appear in any order.
+    //
+    // Instead we span the query from the END: at each step we take the right-most reserved marker
+    // ("&<key>=") whose value VALIDATES for that key (event/resize_me = JSON, close = 0/1, action =
+    // a known verb, link = has a URI scheme), record it, and shrink the span to its left. A marker
+    // whose value does NOT validate is treated as ordinary text inside an enclosing value (so it is
+    // skipped and absorbed by an outer param). What remains at the front is the comm-url-adjacent
+    // identifier ("?cly_x_action_event=1" / "?cly_widget_command=1"), parsed verbatim with its '?'.
     private Map<String, Object> splitQuery(@NonNull String url) {
         Map<String, Object> query_pairs = new HashMap<>();
         String[] pairs = url.split(Utils.COMM_URL + "/?");
@@ -900,29 +957,105 @@ class ContentOverlayView extends FrameLayout {
             return query_pairs;
         }
 
-        String[] pairs2 = pairs[1].split("&");
-        for (String pair : pairs2) {
-            int idx = pair.indexOf('=');
-            if (idx < 0) {
-                continue;
-            }
-            String key = pair.substring(0, idx);
-            String value = pair.substring(idx + 1);
+        String q = pairs[1];
+        int end = q.length();
 
-            try {
-                if ("event".equals(key)) {
-                    query_pairs.put(key, new JSONArray(value));
-                } else if ("resize_me".equals(key)) {
-                    query_pairs.put(key, new JSONObject(value));
-                } else {
-                    query_pairs.put(key, value);
+        while (end > 0) {
+            int chosenIdx = -1;
+            String chosenKey = null;
+            Object chosenValue = null;
+
+            // Right-to-left, pick the first reserved marker whose value validates. Scanning from the
+            // right lets an inner (invalid) marker be absorbed into an outer, valid value.
+            int searchFrom = end;
+            while (searchFrom > 0) {
+                int marker = -1;
+                String markerKey = null;
+                for (String key : RESERVED_KEYS) {
+                    int idx = q.lastIndexOf("&" + key + "=", searchFrom - 1);
+                    if (idx > marker && idx + key.length() + 2 <= end) {
+                        marker = idx;
+                        markerKey = key;
+                    }
                 }
-            } catch (JSONException e) {
-                Log.e(Countly.TAG, "[ContentOverlayView] splitQuery, Failed to parse JSON", e);
+                if (marker < 0) {
+                    break;
+                }
+                String value = q.substring(marker + markerKey.length() + 2, end);
+                Object parsed = validateReservedValue(markerKey, value);
+                if (parsed != null) {
+                    chosenIdx = marker;
+                    chosenKey = markerKey;
+                    chosenValue = parsed;
+                    break;
+                }
+                // Not a real param -> ordinary text; keep looking further left.
+                searchFrom = marker;
+            }
+
+            if (chosenIdx < 0) {
+                break;
+            }
+            query_pairs.put(chosenKey, chosenValue);
+            end = chosenIdx;
+        }
+
+        // Remaining prefix is the identifier param(s) adjacent to the comm URL (leading '?' kept).
+        for (String pair : q.substring(0, end).split("&")) {
+            int idx = pair.indexOf('=');
+            if (idx >= 0) {
+                query_pairs.put(pair.substring(0, idx), pair.substring(idx + 1));
             }
         }
 
         return query_pairs;
+    }
+
+    // Validates a reserved param value and returns what to store, or null if it does not validate
+    // (meaning the "&<key>=" was actually text inside an enclosing value, not a real parameter).
+    @Nullable
+    private Object validateReservedValue(@NonNull String key, @NonNull String value) {
+        switch (key) {
+            case "event":
+                try {
+                    return new JSONArray(value);
+                } catch (JSONException e) {
+                    return null;
+                }
+            case "resize_me":
+                try {
+                    return new JSONObject(value);
+                } catch (JSONException e) {
+                    return null;
+                }
+            case "close":
+                return "0".equals(value) || "1".equals(value) ? value : null;
+            case "action":
+                return "event".equals(value) || "link".equals(value) || "resize_me".equals(value) ? value : null;
+            case "link":
+                return hasUriScheme(value) ? value : null;
+            default:
+                return null;
+        }
+    }
+
+    // True if value begins with a URI scheme (ALPHA *( ALPHA / DIGIT / "+" / "-" / "." ) ":"), which
+    // covers http(s) URLs and custom-scheme deeplinks. The server prepends "https://" to schemeless
+    // links, so a valid link value always carries a scheme.
+    private static boolean hasUriScheme(@NonNull String value) {
+        int colon = value.indexOf(':');
+        if (colon <= 0) {
+            return false;
+        }
+        for (int i = 0; i < colon; i++) {
+            char c = value.charAt(i);
+            boolean ok = (i == 0) ? Character.isLetter(c)
+                : (Character.isLetterOrDigit(c) || c == '+' || c == '-' || c == '.');
+            if (!ok) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void recalculateSafeAreaOffsets(@NonNull Activity activity) {
@@ -1119,12 +1252,21 @@ class ContentOverlayView extends FrameLayout {
         wv.setLayoutParams(webLayoutParams);
 
         wv.setBackgroundColor(Color.TRANSPARENT);
-        wv.getSettings().setJavaScriptEnabled(true);
-        wv.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+        WebSettings settings = wv.getSettings();
+        settings.setJavaScriptEnabled(true); // required for interactive content
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+        // Security hardening (defense-in-depth). The overlay only ever loads server-issued HTTPS
+        // content, so disabling local file/content access closes the local-file exfiltration vector
+        // without affecting legitimate content. Sub-resource scheme restrictions are enforced in
+        // CountlyWebViewClient. Shared with the feedback/ratings WebViews via Utils.
+        Utils.applyWebViewSecurityDefaults(settings);
+
         wv.clearCache(true);
         wv.clearHistory();
 
-        CountlyWebViewClient client = new CountlyWebViewClient();
+        CountlyWebViewClient client = new CountlyWebViewClient(allowedLinkSchemes);
         webViewClient = client;
         client.registerWebViewUrlListener((url, webView) -> {
             if (url.startsWith(Utils.COMM_URL)) {
@@ -1136,8 +1278,7 @@ class ContentOverlayView extends FrameLayout {
             }
 
             if (url.endsWith("cly_x_int=1")) {
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                startActivityFromOverlay(intent);
+                startSafeExternalIntent(url);
                 return true;
             }
 

@@ -1,4 +1,28 @@
 ## XX.XX.XX
+* Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.
+* Added support for reporting the app's current theme (light or dark) when presenting feedback widgets, rating widgets, and content, so they are displayed in matching conditions.
+* Improved link handling for content and feedback widgets, so links that carry their own query parameters, such as deep links, are parsed correctly.
+* Added a content configuration option to provide a handler for links opened from the content web view, so the app can route its own deep links instead of the SDK opening the system browser, set via `setContentUrlHandler(ContentUrlHandler)`.
+
+* Mitigated an issue where content could fail to be displayed on some devices, as the content web view could stay hidden even after its resources had finished loading.
+
+## 26.1.4
+* ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.
+
+* Added support for SDK behavior settings that control the SDK's automatic session tracking, automatic view tracking, automatic crash reporting, and Journey Trigger Views.
+* Added a new push configuration option "enableAdditionalIntentRedirectionChecks()" to enable stricter validation of the notification intent's target package and class.
+* Added a new content configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes content and feedback widget links may open.
+* Added a new push configuration option "setAllowedIntentSchemes(List)" to restrict which URI schemes notification links may open.
+* Added a new configuration option "disableWebView()" to disable all WebView-based UI in the SDK.
+* Added a new config option "disableSDKLoggingInProduction()" that keeps the SDK's console logging disabled in production (non-debuggable) builds, even when logging is enabled.
+* Improved the security of the content, feedback widget, rating widget and push notifications.
+
+* Mitigated an issue where a native crash dump was truncated by the stack trace line length limit when a global crash filter was set.
+* Mitigated an issue where the rating feedback popup request could be sent while in temporary device ID mode, creating a `CLYTemporaryDeviceID` user on the server.
+* Mitigated an issue where the content zone did not resume after exiting temporary device ID mode even when it was enabled by the server configuration.
+* Mitigated an issue while sending health checks after SDK is halted.
+
+## 26.1.3
 * Added gradle configuration cache support to upload symbols plugin.
 * Improved user properties auto-save conditions to flush event queue with every user property call.
 
