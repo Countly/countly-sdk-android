@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The Gradle-driven opt-in security settings are declared by the integrator app as resources named
+  "countly_security_*" and read by the SDK only via Resources.getIdentifier(...). Because there is no
+  static R.bool/R.string reference, a release build with resource shrinking could otherwise strip
+  them, silently disabling the security settings. This keep rule (merged from the SDK AAR) forces the
+  shrinker to retain them so the settings survive in shrunk/optimized builds.
+-->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@bool/countly_security_*,@string/countly_security_*" />

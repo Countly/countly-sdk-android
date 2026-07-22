@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Fixtures for ConfigSecurityGradleTests.readSettings_readsDeclaredResources — exercise the real
+  resValue->resource->readSettings path. All values are false/none so that any test which inits the
+  SDK reads them, applies nothing, and is behaviourally unchanged. The logging key is declared as a
+  STRING (not bool) on purpose, to exercise the string-typed-bool fallback in readSettings.
+-->
+<resources>
+    <bool name="countly_security_enable_all">false</bool>
+    <bool name="countly_security_disable_webview">false</bool>
+    <string name="countly_security_disable_logging_in_production">false</string>
+</resources>

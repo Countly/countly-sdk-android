@@ -279,6 +279,14 @@ public class Countly {
             throw new IllegalArgumentException("Can't init SDK with 'null' config");
         }
 
+        // Apply opt-in security settings provided by the app's build via Gradle (as Android
+        // resources) before anything reads the config, so a build can enforce the SDK's hardening
+        // without changing init code. Absent resources leave the config unchanged; flags only ever
+        // turn protections on. This runs before shouldForceLoggingOffForProduction below so the
+        // Gradle-provided logging flag is respected. Diagnostics are emitted after logging is enabled
+        // (below), because at this point logging is still off and any warning would be dropped.
+        final android.os.Bundle securityGradleSettings = ConfigSecurityGradle.applyToConfig(config, config.context != null ? config.context : config.application, null);
+
         //determine whether console logging must stay off for production builds before any logging call
         loggingForcedOffForProduction = shouldForceLoggingOffForProduction(config);
 
@@ -289,6 +297,11 @@ public class Countly {
         }
 
         L.SetListener(config.providedLogCallback);
+
+        // The security settings above were applied before logging was enabled. Now that logging is
+        // on, surface any misconfiguration (unrecognized/blank values) and log the effective state.
+        ConfigSecurityGradle.warnOnMisconfiguration(securityGradleSettings, L);
+        ConfigSecurityGradle.logEffectiveConfig(config, L);
 
         if (COUNTLY_SDK_NAME.equals(DEFAULT_COUNTLY_SDK_NAME) && COUNTLY_SDK_VERSION_STRING.equals(DEFAULT_COUNTLY_SDK_VERSION_STRING)) {
             L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
