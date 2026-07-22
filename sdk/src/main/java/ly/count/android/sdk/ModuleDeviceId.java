@@ -264,12 +264,15 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
     @Override @NonNull public String getUUID() {
         String retrievedID;
 
-        SharedPreferences mPreferences = _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        // Namespace the legacy OpenUDID file the same way as the main store, so two instances do
+        // not share (and regenerate over) one another's generated UUID. Default instance keeps the
+        // legacy "openudid_prefs" file.
+        SharedPreferences mPreferences = _cly.context_.getSharedPreferences(CountlyStore.namespacedName(PREFS_NAME, _cly.storageNamespace_), Context.MODE_PRIVATE);
         //Try to get the stored UUID from local preferences
         retrievedID = mPreferences.getString(PREF_KEY, null);
         if (retrievedID == null) //Not found if temp storage
         {
-            Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, Generating UUID");
+            L.d("[ModuleDeviceId] getUUID, Generating UUID");
             retrievedID = UUID.randomUUID().toString();
 
             final SharedPreferences.Editor e = mPreferences.edit();
@@ -277,7 +280,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             e.apply();
         }
 
-        Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, retrievedID:[" + retrievedID + "]");
+        L.d("[ModuleDeviceId] getUUID, retrievedID:[" + retrievedID + "]");
 
         return retrievedID;
     }

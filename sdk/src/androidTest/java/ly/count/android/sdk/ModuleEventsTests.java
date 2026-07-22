@@ -196,15 +196,15 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), any(String.class), any(String.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
-        Event startEvent = ModuleEvents.timedEvents.get(eventKey);
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
 
         Thread.sleep(1000);
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
 
         ArgumentCaptor<Long> arg1 = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
@@ -230,9 +230,9 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
-        Event startEvent = ModuleEvents.timedEvents.get(eventKey);
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
 
         Thread.sleep(2000);
 
@@ -245,7 +245,7 @@ public class ModuleEventsTests {
 
         res = mCountly.events().endEvent(eventKey, segm, 6372, 5856.34d);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
 
         final Map<String, Object> segmVals = new HashMap<>();
         segmVals.put("aa", "dd");
@@ -275,18 +275,18 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
 
         res = mCountly.events().cancelEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
         // TODO: Check these 2 null event IDs
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertFalse(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
     }
 
@@ -297,12 +297,12 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
 
         res = mCountly.events().cancelEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
         // finished first start and cancel
@@ -311,15 +311,15 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
-        Event startEvent = ModuleEvents.timedEvents.get(eventKey);
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
 
         Thread.sleep(1000);
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
 
         ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);

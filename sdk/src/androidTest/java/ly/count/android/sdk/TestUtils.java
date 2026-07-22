@@ -496,6 +496,17 @@ public class TestUtils {
     }
 
     /**
+     * A CountlyStore bound to a specific instance's storage namespace, for verifying that named
+     * instances persist their queues/device-id/config to isolated files.
+     */
+    protected static CountlyStore getCountlyStore(Countly countly) {
+        // A real (silent) ModuleLog rather than a mock: this store is only read for verification and
+        // never has its interactions verified, and a real logger keeps the helper usable on Android
+        // runtimes where the Mockito/ByteBuddy mock maker cannot inject classes.
+        return new CountlyStore(getContext(), new ModuleLog(), false, countly.storageNamespace_);
+    }
+
+    /**
      * Get current request queue from target folder
      *
      * @return array of request params
@@ -511,8 +522,21 @@ public class TestUtils {
      * @return array of request params
      */
     protected static @NonNull Map<String, String>[] getCurrentRQ(String filter) {
+        return getCurrentRQ(filter, getCountlyStore());
+    }
+
+    /**
+     * Get the request queue of a specific instance, read from that instance's namespaced storage.
+     *
+     * @return array of request params
+     */
+    protected static @NonNull Map<String, String>[] getCurrentRQ(Countly countly) {
+        return getCurrentRQ("", getCountlyStore(countly));
+    }
+
+    protected static @NonNull Map<String, String>[] getCurrentRQ(String filter, CountlyStore store) {
         //get all request files from target folder
-        String[] requests = getCountlyStore().getRequests();
+        String[] requests = store.getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 

@@ -306,6 +306,15 @@ public class ModuleContent extends ModuleBase {
             return;
         }
 
+        // Only one content or feedback overlay may be presented at a time across the whole process,
+        // including other SDK instances (the overlay is bound to the single foreground Activity).
+        if (ContentOverlayView.isOtherOverlayPresented(contentOverlay)) {
+            shouldFetchContents = true;
+            isCurrentlyInContentZone = false;
+            L.w("[ModuleContent] showContentOverlay, another content or feedback overlay is already being shown (possibly by another instance), skipping content");
+            return;
+        }
+
         // Clean up any existing overlay
         if (contentOverlay != null) {
             contentOverlay.destroy();
@@ -323,6 +332,7 @@ public class ModuleContent extends ModuleBase {
         int orientation = activity.getResources().getConfiguration().orientation;
 
         contentOverlay = new ContentOverlayView(
+            _cly,
             activity,
             portrait,
             landscape,

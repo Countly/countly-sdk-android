@@ -345,7 +345,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 RemoteConfigValueStore rcvs = loadConfig();
                 return rcvs.getAllValuesLegacy();
             } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+                L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
                 return new HashMap<>();
             }
         }
@@ -357,7 +357,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 RemoteConfigValueStore rcvs = loadConfig();
                 return rcvs.getAllValues();
             } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+                L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
                 return new HashMap<>();
             }
         }

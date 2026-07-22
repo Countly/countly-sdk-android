@@ -16,8 +16,24 @@ public class ModuleLog {
     int countWarnings = 0;
     int countErrors = 0;
 
+    // Per-instance logging state. In a multi-instance setup every Countly object owns its own
+    // ModuleLog, so console output honors that instance's own config instead of the singleton's.
+    // loggingEnabled is mirrored from the owning Countly (see Countly#setLoggingEnabled); tag is set
+    // once per named instance in Countly.instance(name) (named instances get "Countly-<name>", the
+    // default keeps the plain "Countly" tag) so a named instance's logcat output is attributable.
+    boolean loggingEnabled = false;
+    String tag = Countly.TAG;
+
     void SetListener(LogCallback logListener) {
         this.logListener = logListener;
+    }
+
+    void setLoggingEnabled(boolean loggingEnabled) {
+        this.loggingEnabled = loggingEnabled;
+    }
+
+    void setTag(String tag) {
+        this.tag = tag;
     }
 
     void trackWarning() {
@@ -60,8 +76,8 @@ public class ModuleLog {
         if (!logEnabled()) {
             return;
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.v(Countly.TAG, msg);
+        if (loggingEnabled) {
+            Log.v(tag, msg);
         }
         informListener(msg, null, LogLevel.Verbose);
     }
@@ -70,8 +86,8 @@ public class ModuleLog {
         if (!logEnabled()) {
             return;
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.d(Countly.TAG, msg);
+        if (loggingEnabled) {
+            Log.d(tag, msg);
         }
         informListener(msg, null, LogLevel.Debug);
     }
@@ -80,8 +96,8 @@ public class ModuleLog {
         if (!logEnabled()) {
             return;
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.i(Countly.TAG, msg);
+        if (loggingEnabled) {
+            Log.i(tag, msg);
         }
         informListener(msg, null, LogLevel.Info);
     }
@@ -95,8 +111,8 @@ public class ModuleLog {
         if (!logEnabled()) {
             return;
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.w(Countly.TAG, msg);
+        if (loggingEnabled) {
+            Log.w(tag, msg);
         }
         informListener(msg, null, LogLevel.Warning);
     }
@@ -110,14 +126,14 @@ public class ModuleLog {
         if (!logEnabled()) {
             return;
         }
-        if (Countly.sharedInstance().isLoggingEnabled()) {
-            Log.e(Countly.TAG, msg, t);
+        if (loggingEnabled) {
+            Log.e(tag, msg, t);
         }
         informListener(msg, t, LogLevel.Error);
     }
 
     public boolean logEnabled() {
-        return logListener != null || Countly.sharedInstance().isLoggingEnabled();
+        return logListener != null || loggingEnabled;
     }
 
     private void informListener(String msg, final Throwable t, final LogLevel level) {
@@ -133,7 +149,7 @@ public class ModuleLog {
                 logListener.LogHappened(msg, level);
             }
         } catch (Exception ex) {
-            Log.e(Countly.TAG, "[ModuleLog] Failed to inform listener [" + ex.toString() + "]");
+            Log.e(tag, "[ModuleLog] Failed to inform listener [" + ex.toString() + "]");
         }
     }
 }

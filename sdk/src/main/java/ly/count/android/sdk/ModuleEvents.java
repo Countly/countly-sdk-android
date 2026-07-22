@@ -7,7 +7,9 @@ import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
 
 public class ModuleEvents extends ModuleBase implements EventProvider {
-    static final Map<String, Event> timedEvents = new HashMap<>();
+    // Per-instance timed-event store. Was 'static', which let a timed event started on one Countly
+    // instance be ended/cancelled/cleared by another; each instance now owns its own timed events.
+    final Map<String, Event> timedEvents = new HashMap<>();
 
     final static String ACTION_EVENT_KEY = "[CLY]_action";
     final static String VISIBILITY_KEY = "cly_v";

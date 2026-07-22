@@ -80,6 +80,12 @@ public class CountlyConfig {
      */
     protected String appKey = null;
 
+    // Optional, advisory instance name. This field does NOT by itself create or namespace an
+    // instance - the effective instance name is the one passed to Countly.instance(name). At init
+    // this value is only cross-checked against that registry name and a warning is logged on a
+    // mismatch (or when it is set on the default instance, where it is ignored).
+    protected String instanceName = null;
+
     /**
      * unique ID for the device the app is running on; note that null in deviceID means that Countly will fall back to UUID.
      */
@@ -311,6 +317,24 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setAppKey(String appKey) {
         this.appKey = appKey;
+        return this;
+    }
+
+    /**
+     * Optionally records the intended instance name on this config. The effective name of an instance
+     * is the one you pass to {@code Countly.instance(name)} - that is what creates the instance and
+     * isolates its storage (request queue, event queue, device id, configuration). This setter does
+     * not create or namespace anything on its own; at init the value is only cross-checked against
+     * the name the instance was obtained with, and a warning is logged if they differ (or if it is
+     * set on the default instance obtained via {@code sharedInstance()}, where it is ignored). To
+     * create an isolated named instance, use {@code Countly.instance(name).init(config)} - passing
+     * your app key as the name is the natural choice for one instance per Countly application.
+     *
+     * @param instanceName the name to record on the config (should match the name passed to instance())
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
         return this;
     }
 

@@ -46,12 +46,45 @@ class ContentOverlayView extends FrameLayout {
     TransparentActivityConfig configPortrait;
     TransparentActivityConfig configLandscape;
     int currentOrientation;
+    // Owning Countly instance. Content/feedback events recorded from the overlay and its request
+    // flushes must go to the instance that opened the overlay, not to Countly.sharedInstance()
+    // (which would route every instance's content events into the default instance's queue).
+    @NonNull private final Countly cly;
     private ContentCallback contentCallback;
     private final Set<String> allowedLinkSchemes;
     private final ContentUrlHandler contentUrlHandler;
     private Runnable onCloseRunnable;
     private Runnable onWidgetCancelRunnable;
     private boolean isClosed = false;
+
+    // Process-global presentation guard. The content and feedback modules are per-instance, but the
+    // overlay is bound to the single foreground Activity, so at most ONE content/feedback overlay may
+    // be presented at a time across ALL instances. Claimed in attachToActivity, released in
+    // close()/destroy() - never on background detach (the overlay is still the active presentation
+    // while backgrounded).
+    private static ContentOverlayView presentedOverlay;
+
+    /**
+     * @return true if any content or feedback overlay is currently presented, on any instance.
+     */
+    static boolean isOverlayPresented() {
+        return presentedOverlay != null && !presentedOverlay.isClosed;
+    }
+
+    /**
+     * @return true if an overlay OTHER than {@code self} is currently presented. This lets an
+     * instance refresh or replace its own overlay while still being blocked from stacking on top of a
+     * different instance's (or the other module's) overlay.
+     */
+    static boolean isOtherOverlayPresented(ContentOverlayView self) {
+        return presentedOverlay != null && presentedOverlay != self && !presentedOverlay.isClosed;
+    }
+
+    private void releasePresentationGuard() {
+        if (presentedOverlay == this) {
+            presentedOverlay = null;
+        }
+    }
     private Activity currentHostActivity;
     private WindowManager windowManager;
     private boolean isAddedToWindow = false;
@@ -83,7 +116,8 @@ class ContentOverlayView extends FrameLayout {
         return activity.getApplicationContext();
     }
 
-    @SuppressLint("SetJavaScriptEnabled") ContentOverlayView(@NonNull Activity activity,
+    @SuppressLint("SetJavaScriptEnabled") ContentOverlayView(@NonNull Countly cly,
+        @NonNull Activity activity,
         @NonNull TransparentActivityConfig portrait,
         @NonNull TransparentActivityConfig landscape,
         int orientation,
@@ -97,6 +131,7 @@ class ContentOverlayView extends FrameLayout {
         // resolveOverlayContext above.
         super(resolveOverlayContext(activity));
 
+        this.cly = cly;
         this.configPortrait = portrait;
         this.configLandscape = landscape;
         this.currentOrientation = orientation;
@@ -433,6 +468,10 @@ class ContentOverlayView extends FrameLayout {
             return;
         }
 
+        // Claim the process-global presentation guard: from here this overlay is the active
+        // presentation (idempotent across background/foreground reattaches).
+        presentedOverlay = this;
+
         // Check if we're already attached to this activity
         if (currentHostActivity == activity && isAddedToWindow) {
             // Still check for orientation changes — WindowManager views don't get onConfigurationChanged
@@ -606,7 +645,7 @@ class ContentOverlayView extends FrameLayout {
             // Clamp dimensions on the copy so content doesn't exceed the safe area.
             // This must be done here (not on the original configs) because SafeAreaCalculator
             // can return stale WindowMetrics during orientation transitions.
-            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, Countly.sharedInstance().L);
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, cly.L);
             boolean isLandscape = currentOrientation == Configuration.ORIENTATION_LANDSCAPE;
             int safeWidth = isLandscape ? safeArea.landscapeWidth : safeArea.portraitWidth;
             int safeHeight = isLandscape ? safeArea.landscapeHeight : safeArea.portraitHeight;
@@ -694,7 +733,7 @@ class ContentOverlayView extends FrameLayout {
         int widthPx, heightPx;
 
         if (currentConfig.useSafeArea) {
-            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, Countly.sharedInstance().L);
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, cly.L);
             if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
                 widthPx = safeArea.landscapeWidth;
                 heightPx = safeArea.landscapeHeight;
@@ -815,13 +854,13 @@ class ContentOverlayView extends FrameLayout {
                         segmentation.put(key, value);
                     }
 
-                    Countly.sharedInstance().events().recordEvent(eventJson.get("key").toString(), segmentation);
+                    cly.events().recordEvent(eventJson.get("key").toString(), segmentation);
                 } catch (JSONException e) {
                     Log.e(Countly.TAG, "[ContentOverlayView] eventAction, Failed to parse event JSON", e);
                 }
             }
 
-            Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
+            cly.requestQueue().attemptToSendStoredRequests();
         }
     }
 
@@ -1059,7 +1098,7 @@ class ContentOverlayView extends FrameLayout {
     }
 
     private void recalculateSafeAreaOffsets(@NonNull Activity activity) {
-        SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, Countly.sharedInstance().L);
+        SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, cly.L);
 
         // Update offsets with correct values from Activity context
         configPortrait.topOffset = safeArea.portraitTopOffset;
@@ -1181,6 +1220,7 @@ class ContentOverlayView extends FrameLayout {
             return;
         }
         isClosed = true;
+        releasePresentationGuard();
 
         Log.d(Countly.TAG, "[ContentOverlayView] close, closing content overlay");
 
@@ -1207,6 +1247,7 @@ class ContentOverlayView extends FrameLayout {
 
         exitImmersiveMode();
         isClosed = true;
+        releasePresentationGuard();
 
         unregisterOrientationCallback();
         unregisterActivityLifecycleCallback();

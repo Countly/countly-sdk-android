@@ -75,6 +75,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     private final SharedPreferences preferences_;
     private final SharedPreferences preferencesPush_;
+    // True only for the default-instance store. The push preferences file is shared process-wide
+    // (push is owned by the default/"primary" instance), so only the default instance may clear it -
+    // otherwise halting a named instance would wipe the primary instance's push consent and cache.
+    private final boolean ownsPushStorage;
 
     private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
@@ -109,13 +113,65 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     public CountlyStore(final Context context, ModuleLog logModule, boolean explicitStorageModeEnabled) {
+        this(context, logModule, explicitStorageModeEnabled, null);
+    }
+
+    /**
+     * @param storageNamespace suffix that isolates this instance's persisted state. A null or empty
+     *                         namespace keeps the legacy file name (used by the default instance),
+     *                         so an app upgrading from a single-instance SDK version keeps its
+     *                         request queue, event queue, device id, and schema version intact.
+     *                         Non-default instances get a suffixed file, isolating their storage.
+     */
+    public CountlyStore(final Context context, ModuleLog logModule, boolean explicitStorageModeEnabled, String storageNamespace) {
         if (context == null) {
             throw new IllegalArgumentException("must provide valid context");
         }
         this.explicitStorageModeEnabled = explicitStorageModeEnabled;
-        preferences_ = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE);
+        this.ownsPushStorage = (storageNamespace == null || storageNamespace.isEmpty());
+        preferences_ = context.getSharedPreferences(namespacedName(PREFERENCES, storageNamespace), Context.MODE_PRIVATE);
+        // Push preferences intentionally stay on the shared legacy file: push is owned by the
+        // default ("primary") instance and there is a single push registration per process.
         preferencesPush_ = createPreferencesPush(context);
         L = logModule;
+    }
+
+    /**
+     * Builds a SharedPreferences file name for a storage namespace. An empty or null namespace maps
+     * to the legacy base name (default instance, backward compatible); otherwise base + "_" + ns.
+     */
+    static String namespacedName(String base, String storageNamespace) {
+        if (storageNamespace == null || storageNamespace.isEmpty()) {
+            return base;
+        }
+        return base + "_" + storageNamespace;
+    }
+
+    /**
+     * Turns an instance name into a file-name-safe storage namespace. Non-alphanumeric characters
+     * are replaced with '_', and a short deterministic FNV-1a hash of the raw name is appended so
+     * two names that sanitize to the same string (e.g. "a.b" and "a-b") still get distinct files.
+     */
+    static String sanitizeNamespace(String name) {
+        if (name == null || name.isEmpty()) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(name.length() + 9);
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        int hash = 0x811C9DC5; // FNV-1a 32-bit offset basis
+        for (int i = 0; i < name.length(); i++) {
+            hash ^= name.charAt(i);
+            hash *= 0x01000193; // FNV prime
+        }
+        sb.append('_').append(Integer.toHexString(hash));
+        return sb.toString();
     }
 
     public void setLimits(final int maxRequestQueueSize) {
@@ -881,7 +937,11 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         esRequestQueueCache = null;
         esEventQueueCache = null;
 
-        preferencesPush_.edit().clear().apply();
+        // Only the default instance owns the shared push preferences file; a named instance must not
+        // wipe the primary instance's push consent/cache when it is halted or cleared.
+        if (ownsPushStorage) {
+            preferencesPush_.edit().clear().apply();
+        }
     }
 
     @Nullable

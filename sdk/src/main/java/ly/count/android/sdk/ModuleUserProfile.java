@@ -30,7 +30,8 @@ public class ModuleUserProfile extends ModuleBase {
     String org;
     String phone;
     String picture;
-    static String picturePath;//protected only for testing
+    String picturePath;//protected only for testing. Per-instance: was 'static', which let the last
+    // instance to set a profile-picture path clobber it for every other instance.
     String gender;
     Map<String, Object> custom;
     Map<String, JSONObject> customMods;

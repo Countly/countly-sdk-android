@@ -105,7 +105,7 @@ public class ContentOverlayViewTests {
         landscape.useSafeArea = false;
 
         return new ContentOverlayView(
-            activity, portrait, landscape,
+            Countly.sharedInstance(), activity, portrait, landscape,
             activity.getResources().getConfiguration().orientation,
             callback,
             onClose != null ? onClose : () -> {
@@ -954,7 +954,7 @@ public class ContentOverlayViewTests {
             landscape.useSafeArea = false;
 
             overlay = new ContentOverlayView(
-                activity, portrait, landscape,
+                Countly.sharedInstance(), activity, portrait, landscape,
                 Configuration.ORIENTATION_PORTRAIT, null, () -> {
             }, null, null);
 
@@ -1163,6 +1163,28 @@ public class ContentOverlayViewTests {
             } catch (Exception e) {
                 Assert.fail("Failed to verify: " + e);
             }
+        });
+    }
+
+    /**
+     * Process-global presentation guard: only one content/feedback overlay may be presented at a
+     * time across all instances. attachToActivity claims it, close() releases it, and the presenting
+     * overlay is not "other" to itself (so it can still refresh in place).
+     */
+    @Test
+    public void presentationGuard_isProcessGlobal_releasedOnClose() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            ContentOverlayView other = createOverlay(activity); // created but never attached
+
+            overlay.attachToActivity(activity);
+            Assert.assertTrue("attach claims the presentation guard", ContentOverlayView.isOverlayPresented());
+            Assert.assertTrue("a different overlay must see one already presented", ContentOverlayView.isOtherOverlayPresented(other));
+            Assert.assertFalse("the presenting overlay is not 'other' to itself", ContentOverlayView.isOtherOverlayPresented(overlay));
+
+            overlay.close(null);
+            Assert.assertFalse("close releases the guard", ContentOverlayView.isOverlayPresented());
+            Assert.assertFalse(ContentOverlayView.isOtherOverlayPresented(other));
         });
     }
 

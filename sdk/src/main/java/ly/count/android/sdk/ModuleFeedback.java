@@ -299,9 +299,9 @@ public class ModuleFeedback extends ModuleBase {
         widgetListUrl.append("&app_key=");
         widgetListUrl.append(UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey()));
         widgetListUrl.append("&sdk_version=");
-        widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING);
+        widgetListUrl.append(_cly.COUNTLY_SDK_VERSION_STRING);
         widgetListUrl.append("&sdk_name=");
-        widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
+        widgetListUrl.append(_cly.COUNTLY_SDK_NAME);
         widgetListUrl.append("&platform=android");
 
         // TODO: this will be the base for the custom segmentation users can send while presenting a widget
@@ -496,6 +496,13 @@ public class ModuleFeedback extends ModuleBase {
             };
         }
 
+        // Only one content or feedback overlay may be presented at a time across the whole process,
+        // including other SDK instances (the overlay is bound to the single foreground Activity).
+        if (ContentOverlayView.isOtherOverlayPresented(feedbackOverlay)) {
+            L.w("[ModuleFeedback] a content or feedback overlay is already being shown (possibly by another instance), skipping this widget");
+            return;
+        }
+
         // Clean up any existing feedback overlay
         if (feedbackOverlay != null) {
             feedbackOverlay.destroy();
@@ -504,6 +511,7 @@ public class ModuleFeedback extends ModuleBase {
 
         final Activity hostActivity = activity;
         feedbackOverlay = new ContentOverlayView(
+            _cly,
             hostActivity,
             pConfig,
             lConfig,
@@ -593,9 +601,9 @@ public class ModuleFeedback extends ModuleBase {
         requestData.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
         requestData.append("&shown=1");
         requestData.append("&sdk_version=");
-        requestData.append(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING);
+        requestData.append(_cly.COUNTLY_SDK_VERSION_STRING);
         requestData.append("&sdk_name=");
-        requestData.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
+        requestData.append(_cly.COUNTLY_SDK_NAME);
         requestData.append("&platform=android");
         requestData.append("&app_version=");
         requestData.append(cachedAppVersion);

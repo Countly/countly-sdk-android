@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -98,8 +99,9 @@ public class Countly {
      */
     protected static final long TIMER_DELAY_IN_SECONDS = 60;
 
-    protected static String[] publicKeyPinCertificates;
-    protected static String[] certificatePinCertificates;
+    // Certificate/public-key pinning material now lives per-instance on the owning ConnectionQueue
+    // (see ConnectionQueue#publicKeyPinCertificates). Keeping it static made two instances pointed
+    // at different servers share one pinning set (last-init-wins) — a correctness and security hazard.
 
     interface LifecycleObserver {
         boolean LifeCycleAtleastStarted();
@@ -134,11 +136,17 @@ public class Countly {
     static final int maxStackTraceLineLengthDefault = 200;
     static final int maxStackTraceThreadCountDefault = 50;
 
-    // see http://stackoverflow.com/questions/7048198/thread-safe-singletons-in-java
-    private static class SingletonHolder {
-        @SuppressLint("StaticFieldLeak")
-        static final Countly instance = new Countly();
-    }
+    // Reserved name of the default (shared) instance returned by sharedInstance(). The '[CLY]_'
+    // prefix is the SDK's internal-key convention, so it will not collide with a customer app key
+    // or instance name.
+    static final String DEFAULT_NAME = "[CLY]_default_instance";
+
+    // Registry of live Countly instances keyed by instance name (default instance under
+    // DEFAULT_NAME). Static for process-wide access exactly like the previous singleton; instances
+    // live for the process lifetime - halt() resets an instance's state but keeps the object
+    // registered, so repeated sharedInstance()/instance(name) calls return a stable object.
+    @SuppressLint("StaticFieldLeak")
+    static final Map<String, Countly> instances_ = new ConcurrentHashMap<>();
 
     ConnectionQueue connectionQueue_;
     private ScheduledExecutorService timerService_;
@@ -185,6 +193,11 @@ public class Countly {
     //reference to countly store
     CountlyStore countlyStore;
 
+    // Storage namespace suffix for this instance's persisted files (main store + legacy OpenUDID).
+    // Empty for the default instance -> legacy file names (backward compatible); derived from the
+    // instance name for named instances so their storage is fully isolated.
+    String storageNamespace_ = "";
+
     //overrides
     boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
 
@@ -216,6 +229,18 @@ public class Countly {
 
     boolean applicationClassProvided = false;
 
+    // The name this instance is registered under in the process-wide registry. Authoritative for
+    // storage namespacing: DEFAULT_NAME -> legacy files; any other name -> isolated, suffixed files.
+    String instanceName_ = DEFAULT_NAME;
+
+    // Process-global lifecycle/component callbacks are registered on the Application per init().
+    // We keep references so halt() can unregister them; otherwise every init/halt cycle leaks a
+    // callback bound to a dead instance that keeps receiving Activity/config events - a real hazard
+    // once multiple instances come and go in one process.
+    private Application lifecycleApplication_;
+    private Application.ActivityLifecycleCallbacks activityLifecycleCallbacks_;
+    private ComponentCallbacks componentCallbacks_;
+
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
         public static final String events = "events";
@@ -238,10 +263,77 @@ public class Countly {
     }
 
     /**
-     * Returns the Countly singleton.
+     * Returns the default (shared) Countly instance. Existing single-instance integrations use this
+     * method and are unaffected by multi-instance support - the default instance keeps the legacy
+     * storage location and behavior.
      */
     public static Countly sharedInstance() {
-        return SingletonHolder.instance;
+        return instance(DEFAULT_NAME);
+    }
+
+    /**
+     * Returns the Countly instance registered under the given name, creating it (uninitialized) if it
+     * does not yet exist. The {@code name} argument is the sole identity of the instance: it is what
+     * isolates the instance's storage (request queue, event queue, device id, configuration) from
+     * every other instance. Any stable string works; passing your app key as the name is the natural
+     * choice for one instance per Countly application. A null or empty name returns the default
+     * (shared) instance. The returned instance is not initialized - call {@code init(config)} on it.
+     *
+     * @param name the instance name (sole identity of the instance)
+     * @return the (possibly newly created, uninitialized) Countly instance registered under that name
+     */
+    public static Countly instance(String name) {
+        final String key = (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
+        return instances_.computeIfAbsent(key, k -> {
+            Countly c = new Countly();
+            c.instanceName_ = k;
+            // Give named instances a distinct logcat tag so their console output is attributable; the
+            // default instance keeps the plain "Countly" tag for backward compatibility.
+            if (!DEFAULT_NAME.equals(k)) {
+                c.L.setTag(TAG + "-" + k);
+            }
+            return c;
+        });
+    }
+
+    /**
+     * Returns the Countly instance registered under the given name, or null if no such instance has
+     * been created yet. Unlike {@link #instance(String)} this never creates a new instance. A null or
+     * empty name refers to the default (shared) instance.
+     *
+     * @param name the instance name
+     * @return the existing instance, or null if none is registered under that name
+     */
+    public static Countly getInstance(String name) {
+        final String key = (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
+        return instances_.get(key);
+    }
+
+    /**
+     * Returns the names of all currently registered named instances. The default (shared) instance is
+     * not included - it is always reachable via {@link #sharedInstance()}.
+     *
+     * @return a snapshot list of registered named-instance names (may be empty)
+     */
+    public static List<String> listInstances() {
+        List<String> names = new ArrayList<>(instances_.size());
+        for (String key : instances_.keySet()) {
+            if (!DEFAULT_NAME.equals(key)) {
+                names.add(key);
+            }
+        }
+        return names;
+    }
+
+    /**
+     * Halts every registered instance (including the default), resetting each instance's state and
+     * clearing its stored data. The instances remain registered, so a later {@code instance(name)} or
+     * {@code sharedInstance()} returns the same (now halted) object, ready to be initialised again.
+     */
+    public static void haltAllInstances() {
+        for (Countly c : instances_.values()) {
+            c.halt();
+        }
     }
 
     /**
@@ -318,6 +410,26 @@ public class Countly {
 
         if (config.appKey == null || config.appKey.isEmpty()) {
             throw new IllegalArgumentException("valid appKey is required, but was provided either 'null' or empty String");
+        }
+
+        //resolve this instance's storage namespace from the name it is registered under. The default
+        //(shared) instance keeps the legacy, un-namespaced files for backward compatibility; a named
+        //instance gets an isolated, sanitized suffix so its queues, device id, and config never
+        //collide with another instance's storage.
+        //CountlyConfig.setInstanceName is advisory: the effective name is the one passed to
+        //instance(name). Warn loudly (never silently) when the config's name cannot take effect, so a
+        //misconfiguration does not silently land data in the wrong storage namespace.
+        if (config.instanceName != null && !config.instanceName.isEmpty() && !config.instanceName.equals(instanceName_)) {
+            if (DEFAULT_NAME.equals(instanceName_)) {
+                L.w("[Init] CountlyConfig.setInstanceName [" + config.instanceName + "] was set, but this handle is the default instance (obtained via sharedInstance()); the name is ignored and legacy storage is used. To create an isolated named instance use Countly.instance(\"" + config.instanceName + "\").init(config).");
+            } else {
+                L.w("[Init] CountlyConfig instanceName [" + config.instanceName + "] differs from the name this instance was obtained with [" + instanceName_ + "]; using [" + instanceName_ + "].");
+            }
+        }
+        if (DEFAULT_NAME.equals(instanceName_)) {
+            storageNamespace_ = "";
+        } else {
+            storageNamespace_ = CountlyStore.sanitizeNamespace(instanceName_);
         }
 
         if (config.application == null) {
@@ -448,7 +560,7 @@ public class Countly {
                 //we are running a test and using a mock object
                 countlyStore = config.countlyStore;
             } else {
-                countlyStore = new CountlyStore(config.context, L, config.explicitStorageModeEnabled);
+                countlyStore = new CountlyStore(config.context, L, config.explicitStorageModeEnabled, storageNamespace_);
                 config.setCountlyStore(countlyStore);
             }
 
@@ -509,11 +621,15 @@ public class Countly {
             if (config.immediateRequestGenerator == null) {
                 config.immediateRequestGenerator = new ImmediateRequestGenerator() {
                     @Override public ImmediateRequestI CreateImmediateRequestMaker() {
-                        return (new ImmediateRequestMaker());
+                        ImmediateRequestMaker maker = new ImmediateRequestMaker();
+                        maker.useSerialExecutor = useSerialExecutorInternal;
+                        return maker;
                     }
 
                     @Override public ImmediateRequestI CreatePreflightRequestMaker() {
-                        return (new PreflightRequestMaker());
+                        PreflightRequestMaker maker = new PreflightRequestMaker();
+                        maker.useSerialExecutor = useSerialExecutorInternal;
+                        return maker;
                     }
                 };
             }
@@ -668,16 +784,17 @@ public class Countly {
             }
 
             if (config.publicKeyPinningCertificates != null) {
-                sharedInstance().L.i("[Init] Enabling public key pinning");
-                publicKeyPinCertificates = config.publicKeyPinningCertificates;
+                L.i("[Init] Enabling public key pinning");
+                connectionQueue_.publicKeyPinCertificates = config.publicKeyPinningCertificates;
             }
 
             if (config.certificatePinningCertificates != null) {
-                Countly.sharedInstance().L.i("[Init] Enabling certificate pinning");
-                certificatePinCertificates = config.certificatePinningCertificates;
+                L.i("[Init] Enabling certificate pinning");
+                connectionQueue_.certificatePinCertificates = config.certificatePinningCertificates;
             }
 
             //initialize networking queues
+            connectionQueue_.cly = this;
             connectionQueue_.L = L;
             connectionQueue_.healthTracker = config.healthTracker;
             connectionQueue_.configProvider = config.configProvider;
@@ -719,7 +836,8 @@ public class Countly {
             //set global application listeners
             if (config.application != null) {
                 L.d("[Countly] Calling registerActivityLifecycleCallbacks");
-                config.application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+                lifecycleApplication_ = config.application;
+                activityLifecycleCallbacks_ = new Application.ActivityLifecycleCallbacks() {
                     @Override
                     public void onActivityCreated(Activity activity, Bundle bundle) {
                         if (L.logEnabled()) {
@@ -793,9 +911,10 @@ public class Countly {
                             module.onActivityDestroyed(activity);
                         }
                     }
-                });
+                };
+                config.application.registerActivityLifecycleCallbacks(activityLifecycleCallbacks_);
 
-                config.application.registerComponentCallbacks(new ComponentCallbacks() {
+                componentCallbacks_ = new ComponentCallbacks() {
                     @Override
                     public void onConfigurationChanged(Configuration configuration) {
                         L.d("[Countly] ComponentCallbacks, onConfigurationChanged");
@@ -806,7 +925,8 @@ public class Countly {
                     public void onLowMemory() {
                         L.d("[Countly] ComponentCallbacks, onLowMemory");
                     }
-                });
+                };
+                config.application.registerComponentCallbacks(componentCallbacks_);
             } else {
                 L.d("[Countly] Global activity listeners not registred due to no Application class");
             }
@@ -956,6 +1076,20 @@ public class Countly {
         sdkIsInitialised = false;
         L.SetListener(null);
         stopTimer();
+
+        //unregister the process-global lifecycle/component callbacks this instance registered at
+        //init so a halted instance stops receiving Activity/configuration events and does not leak
+        if (lifecycleApplication_ != null) {
+            if (activityLifecycleCallbacks_ != null) {
+                lifecycleApplication_.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks_);
+                activityLifecycleCallbacks_ = null;
+            }
+            if (componentCallbacks_ != null) {
+                lifecycleApplication_.unregisterComponentCallbacks(componentCallbacks_);
+                componentCallbacks_ = null;
+            }
+            lifecycleApplication_ = null;
+        }
 
         if (connectionQueue_ != null) {
             if (countlyStore != null) {
@@ -1190,9 +1324,12 @@ public class Countly {
         if (enableLogging && loggingForcedOffForProduction) {
             //logging is suppressed for production builds, keep console output off
             enableLogging_ = false;
+            L.setLoggingEnabled(false);
             return;
         }
         enableLogging_ = enableLogging;
+        //mirror the resolved flag into this instance's logger so console output is gated per-instance
+        L.setLoggingEnabled(enableLogging_);
         L.d("Enabling logging");
     }
 
