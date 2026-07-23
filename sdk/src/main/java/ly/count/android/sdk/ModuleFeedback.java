@@ -614,7 +614,7 @@ public class ModuleFeedback extends ModuleBase {
 
         L.d("[ModuleFeedback] Using following request params for retrieving widget data:[" + requestDataStr + "]");
 
-        (new ImmediateRequestMaker()).doWork(requestDataStr, widgetDataEndpoint, cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
+        iRGenerator.CreateImmediateRequestMaker().doWork(requestDataStr, widgetDataEndpoint, cp, false, networkingIsEnabled, new ImmediateRequestMaker.InternalImmediateRequestCallback() {
             @Override public void callback(JSONObject checkResponse) {
                 if (checkResponse == null) {
                     L.d("[ModuleFeedback] Not possible to retrieve widget data. Probably due to lack of connection to the server");
