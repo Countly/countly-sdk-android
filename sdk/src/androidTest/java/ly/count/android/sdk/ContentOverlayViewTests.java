@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -1355,6 +1356,9 @@ public class ContentOverlayViewTests {
         EventProvider ep = TestUtils.setEventProviderToMock(Countly.sharedInstance(), mock(EventProvider.class));
         withActivity(activity -> {
             overlay = createOverlay(activity);
+            // Starting the test Activity makes ModuleViews record an incidental [CLY]_orientation
+            // event; drop it so this verification is scoped to the overlay action under test.
+            clearInvocations(ep);
             String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event"
                 + "&event=[{\"key\":\"button_click\",\"sg\":{\"btn\":\"buy\"}}]";
             Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
@@ -1370,6 +1374,9 @@ public class ContentOverlayViewTests {
         EventProvider ep = TestUtils.setEventProviderToMock(Countly.sharedInstance(), mock(EventProvider.class));
         withActivity(activity -> {
             overlay = createOverlay(activity);
+            // Starting the test Activity makes ModuleViews record an incidental [CLY]_orientation
+            // event; drop it so this verification is scoped to the overlay action under test.
+            clearInvocations(ep);
             String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event"
                 + "&event=[{\"key\":\"e1\",\"sg\":{\"a\":\"1\"},\"segmentation\":{\"b\":\"2\"}}]";
             Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
@@ -1385,6 +1392,9 @@ public class ContentOverlayViewTests {
         EventProvider ep = TestUtils.setEventProviderToMock(Countly.sharedInstance(), mock(EventProvider.class));
         withActivity(activity -> {
             overlay = createOverlay(activity);
+            // Starting the test Activity makes ModuleViews record an incidental [CLY]_orientation
+            // event; drop it so this verification is scoped to the overlay action under test.
+            clearInvocations(ep);
             String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=[{\"sg\":{\"a\":\"1\"}}]";
             Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
         });

@@ -6,6 +6,7 @@ import android.content.pm.ApplicationInfo;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -169,7 +170,9 @@ public class ModuleLogTests {
      */
     @Test
     public void productionBuild_flagOn_logListenerStillReceivesLogs() {
-        final List<String> received = new ArrayList<>();
+        // The SDK logs from background threads too, so the listener can be invoked concurrently with
+        // the assertion loop below; a plain ArrayList would throw ConcurrentModificationException.
+        final List<String> received = new CopyOnWriteArrayList<>();
         ModuleLog.LogCallback listener = (logMessage, logLevel) -> received.add(logMessage);
 
         Countly countly = new Countly();

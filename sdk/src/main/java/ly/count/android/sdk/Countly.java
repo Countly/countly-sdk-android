@@ -148,6 +148,38 @@ public class Countly {
     @SuppressLint("StaticFieldLeak")
     static final Map<String, Countly> instances_ = new ConcurrentHashMap<>();
 
+    // Test support only (default OFF, never enabled in production): instrumented tests create many
+    // detached "new Countly().init(...)" instances but usually halt only the singleton, so each
+    // detached instance keeps its session-update timer running and leaks 'onTimer' ticks into the
+    // shared store during later tests. When tracking is enabled, each initialized instance is
+    // recorded here so the test runner can halt whatever a test left behind between tests. Guarded by
+    // 'instanceTrackingForTests' so there is zero cost and no behavior change for normal apps.
+    static volatile boolean instanceTrackingForTests = false;
+    static final java.util.List<Countly> trackedInstancesForTests = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    // Test support only (null in production): overrides the process foreground/background detection.
+    // Instrumented tests share one process, and ProcessLifecycleOwner keeps reporting "started" for a
+    // while after a prior test's Activity stops (its ~700ms debounce), so a later test that inits
+    // without injecting its own lifecycle observer would non-deterministically be seen as foreground
+    // and auto-begin a session. The test runner resets this to a deterministic default between tests;
+    // a test that needs foreground still injects its own CountlyConfig.lifecycleObserver, which is
+    // consulted directly and bypasses this override.
+    static volatile Boolean lifecycleStateOverrideForTests = null;
+
+    /** Halts every tracked instance still initialized and clears the registry. Test support only. */
+    static void haltTrackedInstances() {
+        for (Countly c : trackedInstancesForTests) {
+            if (c != null && c.isInitialized()) {
+                try {
+                    c.halt();
+                } catch (Throwable ignored) {
+                    // a best-effort cleanup between tests must never fail the run
+                }
+            }
+        }
+        trackedInstancesForTests.clear();
+    }
+
     ConnectionQueue connectionQueue_;
     private ScheduledExecutorService timerService_;
     private ScheduledFuture<?> timerFuture = null;
@@ -406,6 +438,14 @@ public class Countly {
             throw new IllegalArgumentException("Can't init SDK with 'null' config");
         }
 
+        // Apply opt-in security settings provided by the app's build via Gradle (as Android
+        // resources) before anything reads the config, so a build can enforce the SDK's hardening
+        // without changing init code. Absent resources leave the config unchanged; flags only ever
+        // turn protections on. This runs before shouldForceLoggingOffForProduction below so the
+        // Gradle-provided logging flag is respected. Diagnostics are emitted after logging is enabled
+        // (below), because at this point logging is still off and any warning would be dropped.
+        final android.os.Bundle securityGradleSettings = ConfigSecurityGradle.applyToConfig(config, config.context != null ? config.context : config.application, null);
+
         //determine whether console logging must stay off for production builds before any logging call
         loggingForcedOffForProduction = shouldForceLoggingOffForProduction(config);
 
@@ -416,6 +456,11 @@ public class Countly {
         }
 
         L.SetListener(config.providedLogCallback);
+
+        // The security settings above were applied before logging was enabled. Now that logging is
+        // on, surface any misconfiguration (unrecognized/blank values) and log the effective state.
+        ConfigSecurityGradle.warnOnMisconfiguration(securityGradleSettings, L);
+        ConfigSecurityGradle.logEffectiveConfig(config, L);
 
         if (COUNTLY_SDK_NAME.equals(DEFAULT_COUNTLY_SDK_NAME) && COUNTLY_SDK_VERSION_STRING.equals(DEFAULT_COUNTLY_SDK_VERSION_STRING)) {
             L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "]");
@@ -868,6 +913,12 @@ public class Countly {
 
             sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
+
+            if (instanceTrackingForTests) {
+                // Test support only: remember this instance so the test runner can halt it (and stop
+                // its leaked session-update timer) after the test that created it finishes.
+                trackedInstancesForTests.add(this);
+            }
             //set global application listeners
             if (config.application != null) {
                 L.d("[Countly] Calling registerActivityLifecycleCallbacks");
@@ -1023,6 +1074,9 @@ public class Countly {
     }
 
     boolean lifecycleStateAtLeastStartedInternal() {
+        if (lifecycleStateOverrideForTests != null) {
+            return lifecycleStateOverrideForTests;
+        }
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 

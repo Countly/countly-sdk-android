@@ -1196,6 +1196,24 @@ public class CountlyConfig {
     }
 
     /**
+     * Applies the SDK's recommended security hardening in a single call: disables all WebView-based
+     * UI ({@link #disableWebView()}) and keeps console logging off in production, non-debuggable
+     * builds ({@link #disableSDKLoggingInProduction()}). Intended for apps that do not use the SDK's
+     * Content, Feedback, or rating WebView UI. Apps that do use that UI should set the individual
+     * options they need instead. (The WebView lockdown and dangerous-scheme blocking are the
+     * always-on baseline that protects any WebView the SDK does show; this call does not re-enable
+     * the WebView it just disabled.) For push notifications, see
+     * {@code CountlyConfigPush.enableRecommendedSecuritySettings(List)}.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enableRecommendedSecuritySettings() {
+        disableWebView();
+        disableSDKLoggingInProduction();
+        return this;
+    }
+
+    /**
      * To select the legacy AsyncTask.execute (serial executor) or
      * instead executeOnExecutor(THREAD_POOL_EXECUTOR)
      * Default is false and the SDK will use the thread pool executor.

@@ -41,4 +41,10 @@ class CountlyActivityHolder {
         }
         currentActivity = null;
     }
+
+    // Test support only: drops the held Activity so a prior test's Activity does not leak into a later
+    // test (this holder is a process-wide singleton). Not used in production.
+    void resetForTests() {
+        currentActivity = null;
+    }
 }
