@@ -25,10 +25,19 @@ import android.os.Bundle;
 import androidx.test.runner.AndroidJUnitRunner;
 
 public class InstrumentationTestRunner extends AndroidJUnitRunner {
+    // Halts any Countly instance a test leaves initialized, so its leaked session-update timer cannot
+    // mutate the shared store during a later test. See CountlyInstanceLeakCleanup.
+    private static final String LEAK_CLEANUP_LISTENER = "ly.count.android.sdk.CountlyInstanceLeakCleanup";
+
     // TODO: since Android 4.3 dexmaker requires this workaround, can be removed once dexmaker fixes this issue http://code.google.com/p/dexmaker/issues/detail?id=2
     @Override
     public void onCreate(Bundle arguments) {
-        super.onCreate(arguments);
+        Bundle args = arguments != null ? arguments : new Bundle();
+        String existing = args.getString("listener");
+        args.putString("listener", existing == null || existing.isEmpty()
+            ? LEAK_CLEANUP_LISTENER
+            : existing + "," + LEAK_CLEANUP_LISTENER);
+        super.onCreate(args);
         System.setProperty("dexmaker.dexcache", getTargetContext().getCacheDir().toString());
     }
 }

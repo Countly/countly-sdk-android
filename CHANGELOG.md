@@ -3,6 +3,8 @@
 * Added support for reporting the app's current theme (light or dark) when presenting feedback widgets, rating widgets, and content, so they are displayed in matching conditions.
 * Improved link handling for content and feedback widgets, so links that carry their own query parameters, such as deep links, are parsed correctly.
 * Added a content configuration option to provide a handler for links opened from the content web view, so the app can route its own deep links instead of the SDK opening the system browser, set via `setContentUrlHandler(ContentUrlHandler)`.
+* Added one-call security convenience methods `CountlyConfig.enableRecommendedSecuritySettings()` and `CountlyConfigPush.enableRecommendedSecuritySettings(List)` that apply the recommended hardening in a single call.
+* Added Gradle-driven opt-in security settings: the SDK reads Android resources (provided from the build via `resValue`, or a values XML) at init to enable the security hardening without manifest or init-code changes. Resource names: `countly_security_enable_all`, `countly_security_disable_webview`, `countly_security_disable_logging_in_production`, `countly_security_content_allowed_schemes`, `countly_security_push_additional_checks`, `countly_security_push_allowed_class_names`, `countly_security_push_allowed_package_names`, and `countly_security_push_allowed_schemes`. Resources are absent by default, so existing integrations are unaffected.
 
 * Mitigated an issue where content could fail to be displayed on some devices, as the content web view could stay hidden even after its resources had finished loading.
 
