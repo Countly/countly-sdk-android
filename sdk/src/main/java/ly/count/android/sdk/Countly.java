@@ -140,6 +140,29 @@ public class Countly {
         static final Countly instance = new Countly();
     }
 
+    // Test support only (default OFF, never enabled in production): instrumented tests create many
+    // detached "new Countly().init(...)" instances but usually halt only the singleton, so each
+    // detached instance keeps its session-update timer running and leaks 'onTimer' ticks into the
+    // shared store during later tests. When tracking is enabled, each initialized instance is
+    // recorded here so the test runner can halt whatever a test left behind between tests. Guarded by
+    // 'instanceTrackingForTests' so there is zero cost and no behavior change for normal apps.
+    static volatile boolean instanceTrackingForTests = false;
+    static final java.util.List<Countly> trackedInstancesForTests = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    /** Halts every tracked instance still initialized and clears the registry. Test support only. */
+    static void haltTrackedInstances() {
+        for (Countly c : trackedInstancesForTests) {
+            if (c != null && c.isInitialized()) {
+                try {
+                    c.halt();
+                } catch (Throwable ignored) {
+                    // a best-effort cleanup between tests must never fail the run
+                }
+            }
+        }
+        trackedInstancesForTests.clear();
+    }
+
     ConnectionQueue connectionQueue_;
     private ScheduledExecutorService timerService_;
     private ScheduledFuture<?> timerFuture = null;
@@ -729,6 +752,12 @@ public class Countly {
 
             sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
+
+            if (instanceTrackingForTests) {
+                // Test support only: remember this instance so the test runner can halt it (and stop
+                // its leaked session-update timer) after the test that created it finishes.
+                trackedInstancesForTests.add(this);
+            }
             //set global application listeners
             if (config.application != null) {
                 L.d("[Countly] Calling registerActivityLifecycleCallbacks");
