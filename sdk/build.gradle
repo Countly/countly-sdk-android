@@ -20,6 +20,15 @@ android {
     minSdk 21
     targetSdk 37
 
+    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would
+    // force every integrator to compile against SDK 37. The SDK's real compile floor is 34
+    // (Build.VERSION_CODES.UPSIDE_DOWN_CAKE / WindowMetrics.getDensity()), so declare that
+    // instead and keep integrators off a needless toolchain bump. All prior releases shipped
+    // with no floor (minCompileSdk=1).
+    aarMetadata {
+      minCompileSdk 34
+    }
+
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true
     testFunctionalTest true
