@@ -149,6 +149,15 @@ public class Countly {
     static volatile boolean instanceTrackingForTests = false;
     static final java.util.List<Countly> trackedInstancesForTests = new java.util.concurrent.CopyOnWriteArrayList<>();
 
+    // Test support only (null in production): overrides the process foreground/background detection.
+    // Instrumented tests share one process, and ProcessLifecycleOwner keeps reporting "started" for a
+    // while after a prior test's Activity stops (its ~700ms debounce), so a later test that inits
+    // without injecting its own lifecycle observer would non-deterministically be seen as foreground
+    // and auto-begin a session. The test runner resets this to a deterministic default between tests;
+    // a test that needs foreground still injects its own CountlyConfig.lifecycleObserver, which is
+    // consulted directly and bypasses this override.
+    static volatile Boolean lifecycleStateOverrideForTests = null;
+
     /** Halts every tracked instance still initialized and clears the registry. Test support only. */
     static void haltTrackedInstances() {
         for (Countly c : trackedInstancesForTests) {
@@ -910,6 +919,9 @@ public class Countly {
     }
 
     boolean lifecycleStateAtLeastStartedInternal() {
+        if (lifecycleStateOverrideForTests != null) {
+            return lifecycleStateOverrideForTests;
+        }
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 
