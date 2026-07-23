@@ -7,18 +7,18 @@ buildscript {
   }
   dependencies {
     //classpath "com.vanniktech:gradle-android-junit-jacoco-plugin:0.16.0" //test coverage reports
-    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.28.0' //for publishing
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.37.0' //for publishing
   }
 }
 
 android {
   namespace 'ly.count.android.sdk'
-  compileSdk 35
-  buildToolsVersion "35.0.0"
+  compileSdk 37
+  buildToolsVersion "37.0.0"
 
   defaultConfig {
     minSdk 21
-    targetSdk 35
+    targetSdk 37
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true
@@ -27,24 +27,24 @@ android {
   buildTypes {
     debug {
       //should be set to 'true' for jacoco code coverage
-      testCoverageEnabled = false
+      enableUnitTestCoverage false
       multiDexEnabled true
     }
     release {
       minifyEnabled false
       multiDexEnabled true
-      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
     }
   }
 
-  lintOptions {
+  lint {
     abortOnError false
   }
 
   // This enables long timeouts required on slow environments, e.g. Travis
-  adbOptions {
+  installation {
     timeOutInMs 20 * 60 * 1000 // 20 minutes
-    installOptions "-d", "-t"
+    installOptions = ["-d", "-t"]
   }
   testNamespace 'ly.count.android.sdk.test'
 }
