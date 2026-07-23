@@ -337,6 +337,41 @@ public class Countly {
     }
 
     /**
+     * Halts the named instance and removes it from the process-wide registry. Unlike {@link #halt()}
+     * (which resets an instance but keeps it registered so it can be initialised again), this
+     * additionally deregisters the object: afterwards {@link #getInstance(String)} returns null for
+     * that name and {@link #instance(String)} creates a fresh, uninitialized instance. Use this to
+     * reclaim an instance you no longer need - without it the registry retains every instance ever
+     * created for the process lifetime, which matters if instances are keyed by dynamic (unbounded)
+     * names.
+     * <p>
+     * The default (shared) instance can not be removed: it must remain a stable object for
+     * {@link #sharedInstance()}, so a null, empty, or default name is a no-op (warned, not silent).
+     * Any reference a caller still holds to the removed instance becomes detached (halted and no
+     * longer registered); obtain a fresh handle via {@link #instance(String)} instead.
+     *
+     * @param name the instance name to halt and deregister
+     */
+    public static void removeInstance(String name) {
+        final String key = (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
+        if (DEFAULT_NAME.equals(key)) {
+            sharedInstance().L.w("[Countly] removeInstance, the default (shared) instance can not be removed; use halt() to reset it. Ignoring.");
+            return;
+        }
+        //remove first so a concurrent instance(name) creates a fresh object rather than handing back
+        //the one being torn down; then halt the removed object to stop its timer, unregister its
+        //global callbacks, and clear its stored data. Once it is out of the static registry and the
+        //caller drops its handle, the whole instance (context, config, queues) becomes GC-eligible.
+        Countly c = instances_.remove(key);
+        if (c == null) {
+            sharedInstance().L.d("[Countly] removeInstance, no instance registered under [" + key + "], nothing to remove");
+            return;
+        }
+        c.L.i("[Countly] removeInstance, halting and deregistering instance [" + key + "]");
+        c.halt();
+    }
+
+    /**
      * Constructs a Countly object.
      * Creates a new ConnectionQueue and initializes the session timer.
      */

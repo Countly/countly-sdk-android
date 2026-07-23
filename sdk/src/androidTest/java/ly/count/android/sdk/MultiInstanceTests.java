@@ -42,7 +42,7 @@ import org.junit.runner.RunWith;
 public class MultiInstanceTests {
     // Names this suite creates. They are halted and their namespaced storage cleared between tests
     // so nothing leaks across tests or across test classes.
-    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName" };
+    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove" };
 
     private static final String APP_KEY_A = "appKeyA";
     private static final String APP_KEY_B = "appKeyB";
@@ -217,6 +217,39 @@ public class MultiInstanceTests {
         a.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
         a.halt();
         Assert.assertSame("instance identity survives halt()", a, Countly.instance("instB"));
+    }
+
+    /**
+     * removeInstance halts a named instance AND drops it from the registry (unlike halt(), which keeps
+     * it registered), so the object graph it retains becomes GC-eligible - the fix for the registry
+     * growing without bound. The default instance can never be removed: it stays a stable object for
+     * sharedInstance().
+     */
+    @Test
+    public void removeInstance_deregistersAndHalts_defaultCannotBeRemoved() {
+        Countly named = Countly.instance("instRemove");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instRemove"));
+        Assert.assertTrue(named.isInitialized());
+        Assert.assertSame("registered before removal", named, Countly.getInstance("instRemove"));
+        Assert.assertTrue("listed before removal", Countly.listInstances().contains("instRemove"));
+
+        Countly.removeInstance("instRemove");
+
+        // deregistered: getInstance no longer sees it and it drops out of the listing
+        Assert.assertNull("getInstance must be null after removal", Countly.getInstance("instRemove"));
+        Assert.assertFalse("must not be listed after removal", Countly.listInstances().contains("instRemove"));
+        // the removed handle was halted as part of removal
+        Assert.assertFalse("removed instance must be halted", named.isInitialized());
+        // a later instance(name) creates a fresh, uninitialized object rather than the removed one
+        Countly recreated = Countly.instance("instRemove");
+        Assert.assertNotSame("instance(name) after removal must create a new object", named, recreated);
+        Assert.assertFalse("recreated instance is uninitialized until init()", recreated.isInitialized());
+
+        // the default (shared) instance can not be removed: it must remain a stable object
+        Countly def = Countly.sharedInstance();
+        Countly.removeInstance(null);
+        Countly.removeInstance(Countly.DEFAULT_NAME);
+        Assert.assertSame("default instance survives removeInstance", def, Countly.sharedInstance());
     }
 
     /**

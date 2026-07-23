@@ -1,6 +1,5 @@
 ## XX.XX.XX
-* Added support for multiple independent SDK instances, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself. `Countly.sharedInstance()` is unchanged, so existing integrations keep working.
-* Added the multi-instance management methods `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.haltAllInstances()`, plus the optional `CountlyConfig.setInstanceName(String)`.
+* Added support for multiple independent SDK instances, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, `Countly.haltAllInstances()`, and `Countly.removeInstance(name)`, and optionally record the intended name via `CountlyConfig.setInstanceName(String)`. `Countly.sharedInstance()` is unchanged, so existing integrations keep working.
 * Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.
 * Added support for reporting the app's current theme (light or dark) when presenting feedback widgets, rating widgets, and content, so they are displayed in matching conditions.
 * Improved link handling for content and feedback widgets, so links that carry their own query parameters, such as deep links, are parsed correctly.
