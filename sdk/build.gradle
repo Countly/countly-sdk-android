@@ -58,7 +58,7 @@ android {
   testNamespace 'ly.count.android.sdk.test'
 }
 
-def mockitoVersion = "4.11.0"
+def mockitoVersion = "5.14.2"
 
 dependencies {
   api fileTree(dir: 'libs', include: ['*.jar'])

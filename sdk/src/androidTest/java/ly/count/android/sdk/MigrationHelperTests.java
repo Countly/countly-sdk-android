@@ -508,6 +508,19 @@ public class MigrationHelperTests {
     }
 
     /**
+     * A named instance (ownsPushStorage=false) must not edit the shared, process-global push file.
+     */
+    @Test
+    public void performMigration2To3_namedInstance_leavesSharedPushUntouched() {
+        SharedPreferences sp = CountlyStore.createPreferencesPush(getApplicationContext());
+        sp.edit().putString(MigrationHelper.legacyCACHED_PUSH_MESSAGING_MODE, "abc").apply();
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext(), false);
+        mh.performMigration2To3(new HashMap<>());
+        Assert.assertEquals("abc", sp.getString(MigrationHelper.legacyCACHED_PUSH_MESSAGING_MODE, null));
+    }
+
+    /**
      * Create a legacy entry
      *
      * @param key

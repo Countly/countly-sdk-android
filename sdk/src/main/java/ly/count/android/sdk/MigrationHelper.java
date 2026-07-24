@@ -26,12 +26,19 @@ class MigrationHelper {
     StorageProvider storage;
     ModuleLog L;
     Context cachedContext;
+    // Only the default instance owns the shared push file; steps touching it run only for the owner.
+    boolean ownsPushStorage = true;
 
     static final public String legacyDeviceIDTypeValue_AdvertisingID = "ADVERTISING_ID";
 
     public static final String legacyCACHED_PUSH_MESSAGING_MODE = "PUSH_MESSAGING_MODE";
 
     public MigrationHelper(@NonNull StorageProvider storage, @NonNull ModuleLog moduleLog, @NonNull Context context) {
+        this(storage, moduleLog, context, true);
+    }
+
+    /** ownsPushStorage: true only for the default instance, which owns the shared push file. */
+    public MigrationHelper(@NonNull StorageProvider storage, @NonNull ModuleLog moduleLog, @NonNull Context context, boolean ownsPushStorage) {
         assert storage != null;
         assert moduleLog != null;
         assert context != null;
@@ -39,6 +46,7 @@ class MigrationHelper {
         this.storage = storage;
         L = moduleLog;
         cachedContext = context;
+        this.ownsPushStorage = ownsPushStorage;
         L.v("[MigrationHelper] Initialising");
     }
 
@@ -248,6 +256,10 @@ class MigrationHelper {
      * @param migrationParams
      */
     void performMigration2To3(@NonNull Map<String, Object> migrationParams) {
+        // Only the owner (default instance) may edit the shared, process-global push file.
+        if (!ownsPushStorage) {
+            return;
+        }
         SharedPreferences sp = CountlyStore.createPreferencesPush(cachedContext);
         sp.edit().remove(legacyCACHED_PUSH_MESSAGING_MODE).apply();
     }
