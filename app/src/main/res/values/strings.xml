@@ -70,4 +70,5 @@
   <string name="activity_name_consent">Consent Management</string>
   <string name="activity_name_location">Location</string>
   <string name="activity_name_sessions">Sessions</string>
+  <string name="activity_name_multi_instance">Multiple Instances</string>
 </resources>
