@@ -1025,17 +1025,25 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return true;
         }
 
-        if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_PROVIDER, -100) != -100) {
-            return true;
-        }
+        // The push preferences file is shared process-wide and owned by the default ("primary")
+        // instance. Only the owning instance may treat push data as evidence that ITS storage has
+        // been used before. For a named instance the shared push file is not its own data, so
+        // counting it here would misdetect a brand-new named store as a legacy install and trigger
+        // a schema migration - which, on a fresh store, overrides a developer-supplied device ID
+        // with a generated OPEN_UDID. A named instance's freshness is judged by its own store only.
+        if (ownsPushStorage) {
+            if (preferencesPush_.getInt(CACHED_PUSH_MESSAGING_PROVIDER, -100) != -100) {
+                return true;
+            }
 
-        if (preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null) != null) {
-            return true;
-        }
+            if (preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null) != null) {
+                return true;
+            }
 
-        //noinspection RedundantIfStatement
-        if (preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null) != null) {
-            return true;
+            //noinspection RedundantIfStatement
+            if (preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null) != null) {
+                return true;
+            }
         }
 
         return false;

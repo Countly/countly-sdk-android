@@ -42,7 +42,9 @@ import org.junit.runner.RunWith;
 public class MultiInstanceTests {
     // Names this suite creates. They are halted and their namespaced storage cleared between tests
     // so nothing leaks across tests or across test classes.
-    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove" };
+    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove", "instFresh" };
+
+    private static final String PUSH_PREFS_FILE = "ly.count.android.api.messaging";
 
     private static final String APP_KEY_A = "appKeyA";
     private static final String APP_KEY_B = "appKeyB";
@@ -161,6 +163,28 @@ public class MultiInstanceTests {
         Assert.assertEquals("", def.storageNamespace_);
         Assert.assertNotEquals("", named.storageNamespace_);
         Assert.assertTrue(named.storageNamespace_.startsWith("instB"));
+    }
+
+    /**
+     * Regression: a brand-new named instance must honor its config's device ID even when the shared,
+     * primary-owned push preferences file already has data (as it does in a real app once the default
+     * instance has cached a push provider). Before the fix, anythingSetInStorage() counted the shared
+     * push file, so a fresh named store was misdetected as a legacy install, ran a schema migration,
+     * and that migration replaced the developer-supplied device ID with a generated OPEN_UDID.
+     */
+    @Test
+    public void freshNamedInstance_honorsSuppliedDeviceId_whenSharedPushPrefsExist() {
+        // Simulate the primary instance having cached a push provider into the shared push file.
+        TestUtils.getContext().getSharedPreferences(PUSH_PREFS_FILE, Context.MODE_PRIVATE)
+            .edit().putInt("PUSH_MESSAGING_PROVIDER", 1).apply();
+
+        Countly named = Countly.instance("instFresh");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instFresh"));
+
+        // the fresh named store must not be treated as legacy: the supplied device ID is kept and
+        // its type stays DEVELOPER_SUPPLIED rather than falling back to a generated OPEN_UDID
+        Assert.assertEquals(DEVICE_B, TestUtils.getCountlyStore(named).getDeviceID());
+        Assert.assertEquals("DEVELOPER_SUPPLIED", TestUtils.getCountlyStore(named).getDeviceIDType());
     }
 
     /**
