@@ -5,12 +5,12 @@ apply plugin: 'com.android.application'
 
 android {
   namespace "ly.count.android.demo.crash"
-  compileSdkVersion 35
+  compileSdk 37
 
   defaultConfig {
     applicationId "ly.count.android.demo.crash"
     minSdk 21
-    targetSdkVersion 35
+    targetSdk 37
     versionCode 1
     versionName "1.0"
 
@@ -36,7 +36,7 @@ android {
       path file('src/main/cpp/CMakeLists.txt')
     }
   }
-  ndkVersion '21.0.6113669'
+  ndkVersion '27.1.12297006'
 
   // Use this if you are working with sdk-native subproject instead of maven library.
   // Change also the dependency config below.
