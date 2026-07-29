@@ -8,6 +8,7 @@
 * Added Gradle-driven opt-in security settings: the SDK reads Android resources (provided from the build via `resValue`, or a values XML) at init to enable the security hardening without manifest or init-code changes. Resource names: `countly_security_enable_all`, `countly_security_disable_webview`, `countly_security_disable_logging_in_production`, `countly_security_content_allowed_schemes`, `countly_security_push_additional_checks`, `countly_security_push_allowed_class_names`, `countly_security_push_allowed_package_names`, and `countly_security_push_allowed_schemes`. Resources are absent by default, so existing integrations are unaffected.
 
 * Mitigated an issue where content could fail to be displayed on some devices, as the content web view could stay hidden even after its resources had finished loading.
+* Mitigated an issue where the native libraries in "ly.count.android:sdk-native" were not laid out for 16 KB memory page sizes.
 
 ## 26.1.4
 * ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.

@@ -33,7 +33,8 @@ android {
 dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-  //testImplementation 'junit:junit:4.13.2'
+  testImplementation 'junit:junit:4.13.2'
+
   //androidTestImplementation 'androidx.test:runner:1.3.0'
   //androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
@@ -46,7 +47,8 @@ task copyLibs(type: Copy) {
 // The prebuilt .so files in libs/ are staged into the jniLibs source dir, which the
 // AGP merge*JniLibFolders tasks then consume. Gradle 9 promotes this implicit
 // dependency to a hard error, so wire it explicitly (replaces the deprecated
-// tasks.whenTaskAdded hook).
-tasks.matching { it.name ==~ /merge.*JniLibFolders/ }.configureEach {
+// tasks.whenTaskAdded hook). The unit tests inspect the same staged copies, so they
+// need the staging to have happened too.
+tasks.matching { it.name ==~ /merge.*JniLibFolders/ || it.name ==~ /test.*UnitTest/ }.configureEach {
   dependsOn copyLibs
 }
