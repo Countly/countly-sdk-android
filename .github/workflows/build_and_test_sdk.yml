@@ -58,6 +58,13 @@ jobs:
         if: always()
         run: ./gradlew sdk:build
 
+      # The native module ships prebuilt .so files that no Gradle task recompiles. Its unit tests
+      # read those committed binaries, so this is the only thing standing between a bad manual
+      # rebuild and a release. Runs on the JVM, no emulator needed.
+      - name: Build and Test the Native SDK
+        if: always()
+        run: ./gradlew sdk-native:build
+
       - name: Run the Android Unit Tests
         if: always()
         run: ./gradlew sdk:connectedAndroidTest
@@ -70,3 +77,4 @@ jobs:
           comment_title: "Unit Test Results :rocket:"
           files: |
             sdk/build/outputs/androidTest-results/**/*.xml
+            sdk-native/build/test-results/**/*.xml
