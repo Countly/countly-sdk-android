@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
 * Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.
 * Added support for reporting the app's current theme (light or dark) when presenting feedback widgets, rating widgets, and content, so they are displayed in matching conditions.
