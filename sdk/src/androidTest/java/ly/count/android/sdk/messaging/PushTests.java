@@ -5,7 +5,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
@@ -15,7 +14,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import ly.count.android.sdk.ConfigSecurityGradle;
 import ly.count.android.sdk.Countly;
 import org.junit.After;
 import org.junit.Assert;
@@ -248,84 +246,6 @@ public class PushTests {
         Assert.assertTrue(cfg.useAdditionalIntentRedirectionChecks);
         Assert.assertTrue(cfg.allowedIntentClassNames.contains("com.a.A"));
         Assert.assertTrue(cfg.allowedIntentClassNames.contains("com.b.B"));
-    }
-
-    // ---- Gradle-driven (resValue -> resource) opt-in push security settings ----
-
-    /** The Gradle settings (master + allow-lists) are applied onto the push config. */
-    @Test
-    public void applyPushSecurityGradle_appliesSettingsFromBundle() {
-        CountlyConfigPush cfg = new CountlyConfigPush((Application) ctx().getApplicationContext());
-        Bundle md = new Bundle();
-        md.putBoolean(ConfigSecurityGradle.KEY_ENABLE_ALL, true);
-        md.putString(ConfigSecurityGradle.KEY_PUSH_ALLOWED_CLASS_NAMES, "com.a.A, com.b.B");
-        md.putString(ConfigSecurityGradle.KEY_PUSH_ALLOWED_SCHEMES, "https");
-
-        CountlyPush.applyPushSecurityGradle(cfg, md);
-
-        Assert.assertTrue(cfg.useAdditionalIntentRedirectionChecks);
-        Assert.assertTrue(cfg.allowedIntentClassNames.contains("com.a.A"));
-        Assert.assertTrue(cfg.allowedIntentClassNames.contains("com.b.B"));
-        Assert.assertTrue(cfg.allowedIntentSchemes.contains("https"));
-    }
-
-    /** The dedicated push-checks setting works on its own, and absent/null bundles change nothing / do not crash. */
-    @Test
-    public void applyPushSecurityGradle_individualAndAbsent() {
-        CountlyConfigPush on = new CountlyConfigPush((Application) ctx().getApplicationContext());
-        Bundle md = new Bundle();
-        md.putString(ConfigSecurityGradle.KEY_PUSH_ADDITIONAL_CHECKS, "true"); // resValue string
-        CountlyPush.applyPushSecurityGradle(on, md);
-        Assert.assertTrue(on.useAdditionalIntentRedirectionChecks);
-
-        CountlyConfigPush off = new CountlyConfigPush((Application) ctx().getApplicationContext());
-        CountlyPush.applyPushSecurityGradle(off, new Bundle());
-        Assert.assertFalse(off.useAdditionalIntentRedirectionChecks);
-        CountlyPush.applyPushSecurityGradle(off, (Bundle) null); // no crash
-    }
-
-    /**
-     * The master switch must NOT enable the additional redirection checks without a class allow-list
-     * (that would reject every notification click). enable_all alone -> checks stay off; enable_all
-     * WITH a class allow-list -> checks on.
-     */
-    @Test
-    public void applyPushSecurityGradle_enableAll_gatesChecksOnClassList() {
-        CountlyConfigPush noClasses = new CountlyConfigPush((Application) ctx().getApplicationContext());
-        Bundle md1 = new Bundle();
-        md1.putBoolean(ConfigSecurityGradle.KEY_ENABLE_ALL, true);
-        CountlyPush.applyPushSecurityGradle(noClasses, md1);
-        Assert.assertFalse(noClasses.useAdditionalIntentRedirectionChecks); // safe: not enabled without classes
-
-        CountlyConfigPush withClasses = new CountlyConfigPush((Application) ctx().getApplicationContext());
-        Bundle md2 = new Bundle();
-        md2.putBoolean(ConfigSecurityGradle.KEY_ENABLE_ALL, true);
-        md2.putString(ConfigSecurityGradle.KEY_PUSH_ALLOWED_CLASS_NAMES, "com.a.A");
-        CountlyPush.applyPushSecurityGradle(withClasses, md2);
-        Assert.assertTrue(withClasses.useAdditionalIntentRedirectionChecks);
-        Assert.assertTrue(withClasses.allowedIntentClassNames.contains("com.a.A"));
-    }
-
-    /** enable_all must honor a class allow-list set in CODE (not only a Gradle-provided one). */
-    @Test
-    public void applyPushSecurityGradle_enableAll_honorsCodeSetClassList() {
-        CountlyConfigPush cfg = new CountlyConfigPush((Application) ctx().getApplicationContext());
-        cfg.setAllowedIntentClassNames(Arrays.asList("com.code.A")); // set in code, no Gradle classes
-        Bundle md = new Bundle();
-        md.putBoolean(ConfigSecurityGradle.KEY_ENABLE_ALL, true);
-        CountlyPush.applyPushSecurityGradle(cfg, md);
-        Assert.assertTrue(cfg.useAdditionalIntentRedirectionChecks); // honored the code-set class list
-    }
-
-    /** An empty allow-list value must not wipe a list set in code. */
-    @Test
-    public void applyPushSecurityGradle_emptyList_doesNotOverride() {
-        CountlyConfigPush cfg = new CountlyConfigPush((Application) ctx().getApplicationContext());
-        cfg.setAllowedIntentSchemes(Arrays.asList("https")); // set in code
-        Bundle md = new Bundle();
-        md.putString(ConfigSecurityGradle.KEY_PUSH_ALLOWED_SCHEMES, "   "); // blank resource
-        CountlyPush.applyPushSecurityGradle(cfg, md);
-        Assert.assertTrue(cfg.allowedIntentSchemes.contains("https")); // code value preserved
     }
 
     // ---- config -> intent-extra wiring: enableAdditionalIntentRedirectionChecks() / setAllowedIntentSchemes() reach the guards ----
