@@ -319,7 +319,7 @@ public class ModuleFeedback extends ModuleBase {
         widgetListUrl.append("&custom=");
         widgetListUrl.append(customObjectToSendWithTheWidget);
 
-        String preparedWidgetUrl = widgetListUrl.toString();
+        String preparedWidgetUrl = UtilsDevice.appendThemeParam(widgetListUrl.toString(), context);
         L.d("[ModuleFeedback] Using following url for widget:[" + preparedWidgetUrl + "]");
 
         if (!Utils.isNullOrEmpty(widgetInfo.widgetVersion)) {
@@ -512,7 +512,8 @@ public class ModuleFeedback extends ModuleBase {
             () -> {
                 feedbackOverlay = null;
             },
-            _cly.config_.content.allowedIntentSchemes
+            _cly.config_.content.allowedIntentSchemes,
+            _cly.config_.content.contentUrlHandler
         );
 
         feedbackOverlay.setOnWidgetCancelRunnable(() -> reportFeedbackWidgetCancelButton(widgetInfo));

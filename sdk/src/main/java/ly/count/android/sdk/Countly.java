@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.4";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.5";
     /**
      * Used as request meta data on every request
      */
@@ -138,6 +138,38 @@ public class Countly {
     private static class SingletonHolder {
         @SuppressLint("StaticFieldLeak")
         static final Countly instance = new Countly();
+    }
+
+    // Test support only (default OFF, never enabled in production): instrumented tests create many
+    // detached "new Countly().init(...)" instances but usually halt only the singleton, so each
+    // detached instance keeps its session-update timer running and leaks 'onTimer' ticks into the
+    // shared store during later tests. When tracking is enabled, each initialized instance is
+    // recorded here so the test runner can halt whatever a test left behind between tests. Guarded by
+    // 'instanceTrackingForTests' so there is zero cost and no behavior change for normal apps.
+    static volatile boolean instanceTrackingForTests = false;
+    static final java.util.List<Countly> trackedInstancesForTests = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    // Test support only (null in production): overrides the process foreground/background detection.
+    // Instrumented tests share one process, and ProcessLifecycleOwner keeps reporting "started" for a
+    // while after a prior test's Activity stops (its ~700ms debounce), so a later test that inits
+    // without injecting its own lifecycle observer would non-deterministically be seen as foreground
+    // and auto-begin a session. The test runner resets this to a deterministic default between tests;
+    // a test that needs foreground still injects its own CountlyConfig.lifecycleObserver, which is
+    // consulted directly and bypasses this override.
+    static volatile Boolean lifecycleStateOverrideForTests = null;
+
+    /** Halts every tracked instance still initialized and clears the registry. Test support only. */
+    static void haltTrackedInstances() {
+        for (Countly c : trackedInstancesForTests) {
+            if (c != null && c.isInitialized()) {
+                try {
+                    c.halt();
+                } catch (Throwable ignored) {
+                    // a best-effort cleanup between tests must never fail the run
+                }
+            }
+        }
+        trackedInstancesForTests.clear();
     }
 
     ConnectionQueue connectionQueue_;
@@ -686,7 +718,7 @@ public class Countly {
             connectionQueue_.deviceInfo = config.deviceInfo;
             connectionQueue_.pcc = config.pcc;
             connectionQueue_.setStorageProvider(config.storageProvider);
-            connectionQueue_.setupSSLContext();
+            connectionQueue_.setupSSLSocketFactory(config.customSSLSocketFactory);
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
             connectionQueue_.setDeviceId(config.deviceIdProvider);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
@@ -716,6 +748,12 @@ public class Countly {
 
             sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
+
+            if (instanceTrackingForTests) {
+                // Test support only: remember this instance so the test runner can halt it (and stop
+                // its leaked session-update timer) after the test that created it finishes.
+                trackedInstancesForTests.add(this);
+            }
             //set global application listeners
             if (config.application != null) {
                 L.d("[Countly] Calling registerActivityLifecycleCallbacks");
@@ -868,6 +906,9 @@ public class Countly {
     }
 
     boolean lifecycleStateAtLeastStartedInternal() {
+        if (lifecycleStateOverrideForTests != null) {
+            return lifecycleStateOverrideForTests;
+        }
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 

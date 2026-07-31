@@ -1,5 +1,6 @@
 package ly.count.android.sdk.messaging;
 
+import android.app.Application;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -235,6 +236,16 @@ public class PushTests {
         } finally {
             CountlyPush.countlyConfigPush = saved;
         }
+    }
+
+    /** The one-call push convenience enables the checks and allow-lists the given classes. */
+    @Test
+    public void enableRecommendedSecuritySettings_push_appliesBundle() {
+        CountlyConfigPush cfg = new CountlyConfigPush((Application) ctx().getApplicationContext())
+            .enableRecommendedSecuritySettings(Arrays.asList("com.a.A", "com.b.B"));
+        Assert.assertTrue(cfg.useAdditionalIntentRedirectionChecks);
+        Assert.assertTrue(cfg.allowedIntentClassNames.contains("com.a.A"));
+        Assert.assertTrue(cfg.allowedIntentClassNames.contains("com.b.B"));
     }
 
     // ---- config -> intent-extra wiring: enableAdditionalIntentRedirectionChecks() / setAllowedIntentSchemes() reach the guards ----

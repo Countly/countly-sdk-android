@@ -83,6 +83,26 @@ public class CountlyConfigPush {
     }
 
     /**
+     * Applies the recommended push security hardening in a single call: enables the additional
+     * intent redirection checks ({@link #enableAdditionalIntentRedirectionChecks()}) and allow-lists
+     * the given target activity classes ({@link #setAllowedIntentClassNames(List)}). Provide every
+     * activity your notifications may open (fully-qualified class names); otherwise those clicks are
+     * rejected. Notification links are already restricted to safe schemes by default; use
+     * {@link #setAllowedIntentSchemes(List)} to tighten that further.
+     *
+     * @param allowedIntentClassNames fully-qualified activity class names the notifications may open
+     * @return Returns the same push config object for convenient linking
+     */
+    public synchronized CountlyConfigPush enableRecommendedSecuritySettings(@NonNull List<String> allowedIntentClassNames) {
+        enableAdditionalIntentRedirectionChecks();
+        setAllowedIntentClassNames(allowedIntentClassNames);
+        if (allowedIntentClassNames.isEmpty()) {
+            Countly.sharedInstance().L.w("[CountlyConfigPush] enableRecommendedSecuritySettings was given an empty class allow-list; every notification click will be rejected until you provide the activities your notifications open");
+        }
+        return this;
+    }
+
+    /**
      * Set the URI schemes that notification links are allowed to open via ACTION_VIEW. When a
      * non-empty list is provided, only links whose scheme is in the list are opened. When left
      * empty (the default), any scheme except known-dangerous ones ("file", "content", "javascript",

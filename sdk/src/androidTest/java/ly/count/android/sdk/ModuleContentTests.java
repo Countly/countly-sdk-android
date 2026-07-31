@@ -1,9 +1,13 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.content.res.Configuration;
+import android.content.res.Resources;
+import android.util.DisplayMetrics;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -13,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleContentTests {
@@ -374,5 +379,50 @@ public class ModuleContentTests {
         // a device ID change must NOT silently resume a zone the developer turned off
         mCountly.deviceId().changeWithoutMerge("real_user_after_exit");
         Assert.assertFalse(readShouldFetchContents(mCountly.moduleContent));
+    }
+
+    // ======== theme ("th") param on the content URL ========
+
+    /**
+     * parseContent must append the app theme ("th") to the content URL that gets loaded into the
+     * WebView, so the content is rendered matching the theme. A dark foreground Activity is set so
+     * the resolved theme is deterministic ("d"); the URL already has a query, so "&th=d" is used.
+     * The l/d mapping and separator logic themselves are covered by UtilsDeviceTests.
+     */
+    @Test
+    public void parseContent_appendsThemeParamToContentUrl() throws JSONException {
+        Countly countly = initWithConsent(true);
+        ModuleContent mc = countly.moduleContent;
+
+        Activity darkActivity = mock(Activity.class);
+        Resources darkResources = mock(Resources.class);
+        Configuration darkCfg = new Configuration();
+        darkCfg.uiMode = Configuration.UI_MODE_NIGHT_YES;
+        when(darkActivity.getResources()).thenReturn(darkResources);
+        when(darkResources.getConfiguration()).thenReturn(darkCfg);
+        CountlyActivityHolder.getInstance().setActivity(darkActivity);
+
+        try {
+            String html = "https://content.example/page?cid=1";
+            JSONObject placement = new JSONObject();
+            placement.put("x", 0);
+            placement.put("y", 0);
+            placement.put("w", 100);
+            placement.put("h", 100);
+            JSONObject geo = new JSONObject();
+            geo.put("p", placement);
+            JSONObject response = new JSONObject();
+            response.put("html", html);
+            response.put("geo", geo);
+
+            DisplayMetrics dm = TestUtils.getContext().getResources().getDisplayMetrics();
+            Map<Integer, TransparentActivityConfig> configs = mc.parseContent(response, dm);
+
+            TransparentActivityConfig portrait = configs.get(Configuration.ORIENTATION_PORTRAIT);
+            Assert.assertNotNull(portrait);
+            Assert.assertEquals(html + "&th=d", portrait.url);
+        } finally {
+            CountlyActivityHolder.getInstance().clearActivity(darkActivity);
+        }
     }
 }

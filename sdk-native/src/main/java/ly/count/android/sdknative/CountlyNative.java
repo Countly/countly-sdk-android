@@ -15,9 +15,14 @@ public class CountlyNative {
             System.loadLibrary("countly_native");
             loadBreakpadSuccess = true;
             Log.d(TAG, "countly_native library loaded.");
-        } catch (Exception e) {
+        } catch (Throwable t) {
+            // System.loadLibrary signals a missing or unloadable library with UnsatisfiedLinkError,
+            // which is an Error and not an Exception. Catching only Exception let it escape the static
+            // initializer, so an app that stripped this ABI, or that ended up with a libc++_shared.so
+            // from a different NDK, crashed on the first touch of this class instead of falling back
+            // to loadBreakpadSuccess being false.
             loadBreakpadSuccess = false;
-            Log.e(TAG, "fail to load countly_native library");
+            Log.e(TAG, "fail to load countly_native library, native crash reporting is unavailable: " + t.getMessage());
         }
     }
 

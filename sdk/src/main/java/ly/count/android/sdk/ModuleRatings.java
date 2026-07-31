@@ -490,9 +490,9 @@ public class ModuleRatings extends ModuleBase {
         }
 
         String requestData = requestQueueProvider.prepareRatingWidgetRequest(widgetId);
-        final String ratingWidgetUrl = baseInfoProvider.getServerURL() + "/feedback?widget_id=" + widgetId +
+        final String ratingWidgetUrl = UtilsDevice.appendThemeParam(baseInfoProvider.getServerURL() + "/feedback?widget_id=" + widgetId +
             "&device_id=" + UtilsNetworking.urlEncodeString(deviceIdProvider.getDeviceId()) +
-            "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey());
+            "&app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey()), activity);
 
         L.d("[ModuleRatings] rating widget url :[" + ratingWidgetUrl + "]");
 

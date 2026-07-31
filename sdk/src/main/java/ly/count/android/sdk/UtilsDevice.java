@@ -16,12 +16,61 @@ import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.view.WindowMetrics;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 class UtilsDevice {
 
     static DisplayCutout cutout = null;
 
     private UtilsDevice() {
+    }
+
+    /**
+     * Resolves the theme (dark/light) the app is currently rendering with. Reads from the current
+     * foreground Activity when available and falls back to the given context otherwise. The Activity
+     * is preferred because per-app night-mode overrides (e.g. AppCompatDelegate.setDefaultNightMode)
+     * are applied to the Activity's resources, not the application context, and because in-app
+     * messages render in the Activity's window - so its configuration is the effective theme.
+     *
+     * @param fallbackContext context used when no foreground Activity is available
+     * @return "d" for dark mode, "l" for light mode, or null when the mode is undefined/unavailable
+     */
+    @Nullable
+    static String getThemeMode(@NonNull final Context fallbackContext) {
+        try {
+            final Activity activity = CountlyActivityHolder.getInstance().getActivity();
+            final Context context = activity != null ? activity : fallbackContext;
+            int nightModeFlags = context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+            switch (nightModeFlags) {
+                case Configuration.UI_MODE_NIGHT_YES:
+                    return "d";
+                case Configuration.UI_MODE_NIGHT_NO:
+                    return "l";
+                default:
+                    return null;
+            }
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * Appends the app's current theme as the "th" query parameter (l = light, d = dark) to the
+     * given URL, so a feedback widget or content loaded in a WebView is rendered matching the
+     * theme the app is displaying with. Uses "?" as the separator when the URL has no query yet,
+     * "&" otherwise. When the theme can not be resolved the URL is returned unchanged.
+     *
+     * @param url URL that will be loaded in a WebView
+     * @param context context used to resolve the theme when no foreground Activity is available
+     * @return the URL with "th" appended, or the original URL when the theme is undefined
+     */
+    @NonNull
+    static String appendThemeParam(@NonNull final String url, @NonNull final Context context) {
+        final String theme = getThemeMode(context);
+        if (theme == null) {
+            return url;
+        }
+        return url + (url.contains("?") ? "&" : "?") + "th=" + theme;
     }
 
     @NonNull
