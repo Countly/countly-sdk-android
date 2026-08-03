@@ -636,7 +636,7 @@ public class ModuleRatings extends ModuleBase {
             return interceptScheme(request.getUrl());
         }
 
-        // Blocks dangerous local/script sub-resource schemes (file/content/javascript/jar/data),
+        // Blocks dangerous sub-resource schemes (file/content/javascript/jar/zip/intent/data),
         // mirroring CountlyWebViewClient. https (the content itself) always loads; other schemes
         // follow the configured allow-list / default denylist.
         private WebResourceResponse interceptScheme(Uri uri) {
