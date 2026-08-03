@@ -840,7 +840,7 @@ class ContentOverlayView extends FrameLayout {
     }
 
     // Dispatches an ACTION_VIEW intent for a URL originating from web content, gated by the shared
-    // scheme policy: with no allow-list the dangerous schemes (file/content/javascript/jar/data) are
+    // scheme policy: with no allow-list the dangerous schemes (file/content/javascript/jar/zip/intent/data) are
     // blocked while http(s) and deep links are allowed; with an allow-list configured, only those
     // schemes pass. Component/selector and flags are cleared so the intent cannot be redirected to a
     // specific (possibly internal) target.

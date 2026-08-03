@@ -247,18 +247,42 @@ public class UtilsTests {
         Assert.assertTrue(Utils.isExternalSchemeAllowed("market", new HashSet<>()));
         Assert.assertTrue(Utils.isExternalSchemeAllowed("tel", null));
         Assert.assertTrue(Utils.isExternalSchemeAllowed("mailto", null));
-        // data/blob are inline assets, not local-data/script -> not in the denylist, allowed by default
-        Assert.assertTrue(Utils.isExternalSchemeAllowed("data", null));
+        // blob is a runtime-generated asset of the page itself, not a link target -> not denylisted
         Assert.assertTrue(Utils.isExternalSchemeAllowed("blob", null));
         // denied (dangerous), case-insensitive
         Assert.assertFalse(Utils.isExternalSchemeAllowed("file", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("content", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("javascript", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("jar", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("zip", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("intent", null));
+        // data: is denied for dispatch, but not as a sub-resource
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("data", null));
+        Assert.assertFalse(Utils.isExternalSchemeAllowed("DATA", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("FILE", null));
         Assert.assertFalse(Utils.isExternalSchemeAllowed("JavaScript", null));
         // null scheme is never allowed
         Assert.assertFalse(Utils.isExternalSchemeAllowed(null, null));
+    }
+
+    /** The denylist is the same at both sinks: outbound links and WebView sub-resources. */
+    @Test
+    public void schemePolicy_sameDenylistAtBothSinks() {
+        for (String dangerous : Arrays.asList("file", "content", "javascript", "jar", "zip", "intent", "data")) {
+            Assert.assertFalse(Utils.isExternalSchemeAllowed(dangerous, null));
+            Assert.assertFalse(Utils.isWebContentSchemeAllowed(dangerous, null));
+        }
+        // blob is a runtime-generated asset of the page itself -> not denylisted at either sink
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("blob", null));
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("blob", null));
+        // https and deep links are unaffected at both sinks
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("https", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("myapp", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("tel", null));
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("market", null));
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("https", null));
+        // an explicit allow-list still overrides the dispatch denylist (documented escape hatch)
+        Assert.assertTrue(Utils.isExternalSchemeAllowed("data", new HashSet<>(Arrays.asList("data"))));
     }
 
     /** Allow-list mode: only listed schemes pass (case-insensitive), the default denylist is omitted. */
@@ -285,13 +309,13 @@ public class UtilsTests {
         Assert.assertTrue(Utils.isWebContentSchemeAllowed("http", null));
         Assert.assertFalse(Utils.isWebContentSchemeAllowed("http", new HashSet<>(Arrays.asList("myapp"))));
         Assert.assertTrue(Utils.isWebContentSchemeAllowed("http", new HashSet<>(Arrays.asList("http"))));
-        // data/blob are inline / runtime-generated assets -> allowed as sub-resources in default
-        // mode, but (unlike https) governed by the allow-list when one is configured
-        Assert.assertTrue(Utils.isWebContentSchemeAllowed("data", null));
-        Assert.assertTrue(Utils.isWebContentSchemeAllowed("blob", null));
+        // data: is denied as a sub-resource too, unless an allow-list opts it back in
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("data", null));
         Assert.assertFalse(Utils.isWebContentSchemeAllowed("DATA", new HashSet<>(Arrays.asList("myapp"))));
-        Assert.assertFalse(Utils.isWebContentSchemeAllowed("blob", new HashSet<>(Arrays.asList("myapp"))));
         Assert.assertTrue(Utils.isWebContentSchemeAllowed("data", new HashSet<>(Arrays.asList("data"))));
+        // blob is not denylisted, but an allow-list still governs it
+        Assert.assertTrue(Utils.isWebContentSchemeAllowed("blob", null));
+        Assert.assertFalse(Utils.isWebContentSchemeAllowed("blob", new HashSet<>(Arrays.asList("myapp"))));
         // dangerous schemes still blocked
         Assert.assertFalse(Utils.isWebContentSchemeAllowed("file", null));
         Assert.assertFalse(Utils.isWebContentSchemeAllowed("javascript", null));
