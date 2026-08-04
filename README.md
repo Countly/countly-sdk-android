@@ -37,6 +37,26 @@ This SDK supports the following features:
 ## Security
 Security is very important to us. If you discover any issue regarding security, please disclose the information responsibly by sending an email to security@count.ly and **not by creating a GitHub issue**.
 
+### The `sdk-nw` artifact
+Alongside `ly.count.android:sdk`, the SDK is published as `ly.count.android:sdk-nw`, where "nw" stands for "no web view".
+It exists for organizations that need a hardened baseline to hold across a large number of applications, where relying on every application to apply the same configuration is not practical.
+Two settings are enforced by the artifact itself:
+
+* All WebView based UI is disabled, so no WebView is created or shown for the Content feature, Feedback Widgets, or the rating popup.
+* The SDK's console logging is kept off in production (non-debuggable) builds, even when logging is enabled in the configuration.
+
+Both settings are applied during `init` and can not be turned off, so no application, wrapper, or configuration mistake can weaken them.
+Everything else is identical to `ly.count.android:sdk`: the same source, the same package names, and the same API.
+Switching is a one line dependency change and requires no changes to your imports or code.
+
+```gradle
+implementation 'ly.count.android:sdk-nw:26.1.5'
+```
+
+Version numbers match the regular release they were built from, so `ly.count.android:sdk-nw:26.1.5` contains the same SDK as `ly.count.android:sdk:26.1.5`.
+Depend on either `ly.count.android:sdk` or `ly.count.android:sdk-nw`, never both, because they contain the same classes.
+Applications that need the WebView based UI, such as the Content feature or Feedback Widgets, should use `ly.count.android:sdk`.
+
 ## Badges
 If you like Countly, [why not use one of our badges](https://count.ly/brand-assets) and give a link back to us so others know about this wonderful platform?
 

@@ -50,8 +50,9 @@ public class Countly {
     private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.5";
     /**
      * Used as request meta data on every request
+     * This is the "sdk-nw" branch, so the name carries the "-nw" marker to tell it apart on the server
      */
-    private final String DEFAULT_COUNTLY_SDK_NAME = "java-native-android";
+    private final String DEFAULT_COUNTLY_SDK_NAME = "java-native-android-nw";
 
     /**
      * Current version of the Count.ly Android SDK as a displayable string.
@@ -311,6 +312,10 @@ public class Countly {
             throw new IllegalArgumentException("Can't init SDK with 'null' config");
         }
 
+        //this build enforces both settings, the config can turn them on but never off
+        config.webViewEnabled = false;
+        config.disableSDKLoggingInProduction = true;
+
         //determine whether console logging must stay off for production builds before any logging call
         loggingForcedOffForProduction = shouldForceLoggingOffForProduction(config);
 
@@ -327,6 +332,8 @@ public class Countly {
         } else {
             L.d("[Init] Initializing Countly [" + COUNTLY_SDK_NAME + "] SDK version [" + COUNTLY_SDK_VERSION_STRING + "] default name[" + DEFAULT_COUNTLY_SDK_NAME + "] default version[" + DEFAULT_COUNTLY_SDK_VERSION_STRING + "]");
         }
+
+        L.i("[Init] This is the 'nw' build of the SDK. All WebView based UI is disabled and console logging is kept off in production builds. Neither can be turned off");
 
         if (config.context == null) {
             if (config.application != null) {

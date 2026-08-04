@@ -11,6 +11,12 @@ buildscript {
   }
 }
 
+// This is the "nw" (no WebView) branch. It carries the same source as the regular SDK with two
+// settings enforced at init, WebView UI off and console logging off in production builds, neither of
+// which the config can turn back on, and it always publishes as 'ly.count.android:sdk-nw'. Keep this
+// branch a one way target: merge from the release branch into it, never the other way around, and do
+// not cut the regular 'ly.count.android:sdk' release from here.
+
 android {
   namespace 'ly.count.android.sdk'
   compileSdk 37
@@ -56,6 +62,15 @@ android {
     installOptions = ["-d", "-t"]
   }
   testNamespace 'ly.count.android.sdk.test'
+}
+
+//this branch is published under its own artifact id, everything else comes from gradle.properties
+mavenPublishing {
+  coordinates(GROUP.toString(), 'sdk-nw', VERSION_NAME.toString())
+  pom {
+    name = 'Countly Android SDK (no WebView)'
+    description = 'Android SDK for Countly mobile analytics, with all of the SDK\'s WebView based UI disabled and console logging kept off in production builds, enforced and not configurable'
+  }
 }
 
 def mockitoVersion = "4.11.0"

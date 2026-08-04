@@ -112,7 +112,8 @@ public class CountlyConfig {
 
     protected boolean loggingEnabled = false;
 
-    protected boolean disableSDKLoggingInProduction = false;
+    //always on in this "sdk-nw" build, Countly.init enforces it again so it can not be turned off
+    protected boolean disableSDKLoggingInProduction = true;
 
     protected boolean enableAutomaticViewTracking = false;
 
@@ -217,7 +218,8 @@ public class CountlyConfig {
     // If set to true, immediate requests will use serial AsyncTask executor instead of the thread pool
     boolean useSerialExecutor = false;
     WebViewDisplayOption webViewDisplayOption = WebViewDisplayOption.IMMERSIVE;
-    boolean webViewEnabled = true;
+    //always off in this "sdk-nw" build, Countly.init enforces it again so it can not be turned on
+    boolean webViewEnabled = false;
 
     // If set to true, request queue cleaner will remove all overflow at once instead of gradually (loop limited) removing
     boolean disableGradualRequestCleaner = false;
@@ -393,6 +395,8 @@ public class CountlyConfig {
      * A production build is detected as one that is not flagged debuggable in its
      * application info. This only affects console output. A log listener provided
      * through {@link #setLogListener(ModuleLog.LogCallback)} keeps receiving logs.
+     * The "ly.count.android:sdk-nw" artifact applies this on its own and does not allow
+     * it to be turned off.
      */
     public synchronized CountlyConfig disableSDKLoggingInProduction() {
         this.disableSDKLoggingInProduction = true;
@@ -1162,7 +1166,9 @@ public class CountlyConfig {
     /**
      * Disable all WebView-based UI in the SDK. When called, no WebView is ever created or shown
      * for any feature. This covers the Content feature overlay, Feedback Widgets (surveys, NPS,
-     * and rating widgets), and the rating popup. WebView UI is enabled by default.
+     * and rating widgets), and the rating popup. WebView UI is enabled by default in the
+     * "ly.count.android:sdk" artifact. The "ly.count.android:sdk-nw" artifact keeps it disabled
+     * at all times and does not allow it to be turned back on.
      *
      * @return Returns the same config object for convenient linking
      */
