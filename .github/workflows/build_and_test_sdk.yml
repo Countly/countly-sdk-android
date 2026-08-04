@@ -14,10 +14,12 @@ on:
     branches:
       - master
       - staging
+      - staging-nw
   pull_request:
     branches:
       - master
       - staging
+      - staging-nw
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -73,8 +75,8 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          check_name: "Unit Test Results :rocket:"
-          comment_title: "Unit Test Results :rocket:"
+          check_name: "Unit Test Results (nw) :rocket:"
+          comment_title: "Unit Test Results (nw) :rocket:"
           files: |
             sdk/build/outputs/androidTest-results/**/*.xml
             sdk-native/build/test-results/**/*.xml
