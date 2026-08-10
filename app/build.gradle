@@ -70,21 +70,6 @@ android {
         "\"${System.getenv('COUNTLY_SERVER_URL') ?: project.findProperty('countlyServerUrl') ?: 'https://your.server.ly'}\""
     buildConfigField "String", "COUNTLY_APP_KEY",
         "\"${System.getenv('COUNTLY_APP_KEY') ?: project.findProperty('countlyAppKey') ?: 'YOUR_APP_KEY'}\""
-    
-    // Countly SDK opt-in security. To turn it on, just add the resValue line(s) you need, e.g.:
-    //   resValue "bool",   "countly_security_enable_all", "true"
-    //   resValue "string", "countly_security_push_allowed_class_names", "ly.count.android.demo.MainActivity"
-    // The block below only exists so the demo can toggle them per build via -P (e.g.
-    // -PcountlySec_enable_all=true -PcountlySec_push_allowed_class_names=com.your.app.MainActivity);
-    // a real app does not need it.
-    ["enable_all", "disable_webview", "disable_logging_in_production", "push_additional_checks"].each { k ->
-      def v = project.findProperty("countlySec_" + k)
-      if (v != null) resValue "bool", "countly_security_" + k, v.toString().trim().equalsIgnoreCase("true").toString()
-    }
-    ["content_allowed_schemes", "push_allowed_class_names", "push_allowed_package_names", "push_allowed_schemes"].each { k ->
-      def v = project.findProperty("countlySec_" + k)
-      if (v != null) resValue "string", "countly_security_" + k, v.toString()
-    }
   }
   buildTypes {
     debug {

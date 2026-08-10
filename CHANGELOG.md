@@ -1,14 +1,20 @@
 ## XX.XX.XX
 * Added support for multiple independent SDK instances, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, `Countly.haltAllInstances()`, and `Countly.removeInstance(name)`, and optionally record the intended name via `CountlyConfig.setInstanceName(String)`. `Countly.sharedInstance()` is unchanged, so existing integrations keep working.
+* Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
+
+## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
 * Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.
 * Added support for reporting the app's current theme (light or dark) when presenting feedback widgets, rating widgets, and content, so they are displayed in matching conditions.
 * Improved link handling for content and feedback widgets, so links that carry their own query parameters, such as deep links, are parsed correctly.
 * Added a content configuration option to provide a handler for links opened from the content web view, so the app can route its own deep links instead of the SDK opening the system browser, set via `setContentUrlHandler(ContentUrlHandler)`.
 * Added one-call security convenience methods `CountlyConfig.enableRecommendedSecuritySettings()` and `CountlyConfigPush.enableRecommendedSecuritySettings(List)` that apply the recommended hardening in a single call.
-* Added Gradle-driven opt-in security settings: the SDK reads Android resources (provided from the build via `resValue`, or a values XML) at init to enable the security hardening without manifest or init-code changes. Resource names: `countly_security_enable_all`, `countly_security_disable_webview`, `countly_security_disable_logging_in_production`, `countly_security_content_allowed_schemes`, `countly_security_push_additional_checks`, `countly_security_push_allowed_class_names`, `countly_security_push_allowed_package_names`, and `countly_security_push_allowed_schemes`. Resources are absent by default, so existing integrations are unaffected.
 
 * Mitigated an issue where content could fail to be displayed on some devices, as the content web view could stay hidden even after its resources had finished loading.
+* Mitigated issues in "ly.count.android:sdk-native" where:
+  * the native libraries were not laid out for 16 KB memory page sizes.
+  * a failure to load the "countly_native" library would crash the app instead of disabling native crash reporting.
+  * "CountlyNative.getBreakpadChecksum()" returned a stale revision instead of the Breakpad revision the native library was built from.
 
 ## 26.1.4
 * ! Minor breaking change ! Deprecated the static field "CountlyPush.useAdditionalIntentRedirectionChecks". It is now a no-op; use "CountlyConfigPush.enableAdditionalIntentRedirectionChecks()" instead, otherwise the stricter push intent redirection checks stay disabled.

@@ -33,7 +33,8 @@ android {
 dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-  //testImplementation 'junit:junit:4.13.2'
+  testImplementation 'junit:junit:4.13.2'
+
   //androidTestImplementation 'androidx.test:runner:1.3.0'
   //androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
 }
@@ -49,4 +50,19 @@ task copyLibs(type: Copy) {
 // tasks.whenTaskAdded hook).
 tasks.matching { it.name ==~ /merge.*JniLibFolders/ }.configureEach {
   dependsOn copyLibs
+}
+
+// The unit tests inspect the same staged copies, so they need the staging to have
+// happened too. They reach the .so files through a plain relative path, which Gradle
+// cannot see, so declare them as inputs as well: without that the test task stays
+// UP-TO-DATE (or resolves straight out of the build cache, which is enabled here) after
+// the binaries change, and a misaligned rebuild would be reported as green.
+tasks.matching { it.name ==~ /test.*UnitTest/ }.configureEach {
+  dependsOn copyLibs
+  inputs.dir(layout.projectDirectory.dir('src/main/jniLibs'))
+    .withPropertyName('packagedNativeLibraries')
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.dir(layout.projectDirectory.dir('libs'))
+    .withPropertyName('precompiledNativeLibraries')
+    .withPathSensitivity(PathSensitivity.RELATIVE)
 }

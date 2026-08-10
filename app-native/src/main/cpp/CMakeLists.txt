@@ -42,3 +42,21 @@ target_link_libraries( # Specifies the target library.
         # Links the target library to the log library
         # included in the NDK.
         ${log-lib})
+
+# Android 15 devices can run a 16 KB memory page size and Google Play requires apps targeting
+# Android 15+ to support them. NDK r28 and newer lay the segments out that way by default, but this
+# sample is pinned to r27 (see ndkVersion in build.gradle), so ask for it explicitly. Without this
+# the sample's own library trips the "Does not support 16KB devices" warning in the APK Analyzer,
+# which looks like the Countly SDK is at fault when it is not.
+#
+# max-page-size is the flag that aligns the loadable segments and is the one strictly required here.
+# common-page-size additionally pads the RELRO region up to 16 KB. That is belt and braces rather
+# than a requirement: the tooling accepts a RELRO region that either ends on a 16 KB boundary or ends
+# exactly where its PT_LOAD does, and current lld gives RELRO its own PT_LOAD so the second condition
+# already holds. It is kept because that second condition is a property of how the linker happens to
+# group segments, while common-page-size satisfies the first one outright, and because it means the
+# whole RELRO region lands on protectable pages. Costs nothing on disk. Matches the flags in
+# sdk-native/src/cpp_precompilation/Application.mk.
+target_link_options(native-lib PRIVATE
+        "-Wl,-z,max-page-size=16384"
+        "-Wl,-z,common-page-size=16384")

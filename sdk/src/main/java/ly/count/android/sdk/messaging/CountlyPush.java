@@ -40,7 +40,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import ly.count.android.sdk.ConfigSecurityGradle;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
 import ly.count.android.sdk.ModuleLog;
@@ -492,63 +491,6 @@ public class CountlyPush {
         }
     }
 
-    // Applies the opt-in push security settings provided by the app's build via Gradle (Android
-    // resources) onto the push config. Shares the reader/keys with the core ConfigSecurityGradle.
-    // Package-private + split into a Bundle variant so it is unit-testable.
-    static void applyPushSecurityGradle(CountlyConfigPush config, Context context) {
-        // Push init runs after core init, so logging is already on here — pass L so read failures surface.
-        applyPushSecurityGradle(config, ConfigSecurityGradle.readSettings(context, Countly.sharedInstance().L));
-    }
-
-    static void applyPushSecurityGradle(CountlyConfigPush config, Bundle md) {
-        if (config == null || md == null) {
-            return;
-        }
-        ModuleLog L = Countly.sharedInstance().L;
-
-        // Surface misconfiguration (unrecognized boolean values, declared-but-blank lists).
-        ConfigSecurityGradle.warnIfUnrecognizedBool(md, ConfigSecurityGradle.KEY_ENABLE_ALL, L);
-        ConfigSecurityGradle.warnIfUnrecognizedBool(md, ConfigSecurityGradle.KEY_PUSH_ADDITIONAL_CHECKS, L);
-        ConfigSecurityGradle.warnIfDeclaredButBlank(md, ConfigSecurityGradle.KEY_PUSH_ALLOWED_CLASS_NAMES, L);
-        ConfigSecurityGradle.warnIfDeclaredButBlank(md, ConfigSecurityGradle.KEY_PUSH_ALLOWED_PACKAGE_NAMES, L);
-        ConfigSecurityGradle.warnIfDeclaredButBlank(md, ConfigSecurityGradle.KEY_PUSH_ALLOWED_SCHEMES, L);
-
-        // Allow-lists, applied only when non-empty so an empty/blank resource never loosens a list
-        // that was set in code.
-        List<String> classNames = ConfigSecurityGradle.csvValue(md, ConfigSecurityGradle.KEY_PUSH_ALLOWED_CLASS_NAMES);
-        if (!classNames.isEmpty()) {
-            config.setAllowedIntentClassNames(classNames);
-            L.i("[CountlyPush] Applied Gradle security: allowed intent class names");
-        }
-        List<String> packageNames = ConfigSecurityGradle.csvValue(md, ConfigSecurityGradle.KEY_PUSH_ALLOWED_PACKAGE_NAMES);
-        if (!packageNames.isEmpty()) {
-            config.setAllowedIntentPackageNames(packageNames);
-            L.i("[CountlyPush] Applied Gradle security: allowed intent package names");
-        }
-        List<String> schemes = ConfigSecurityGradle.csvValue(md, ConfigSecurityGradle.KEY_PUSH_ALLOWED_SCHEMES);
-        if (!schemes.isEmpty()) {
-            config.setAllowedIntentSchemes(schemes);
-            L.i("[CountlyPush] Applied Gradle security: allowed intent schemes");
-        }
-
-        // Whether a class allow-list is in effect — from Gradle just applied, OR already set in code.
-        boolean classesProvided = config.allowedIntentClassNames != null && !config.allowedIntentClassNames.isEmpty();
-
-        // Additional intent redirection checks require a class allow-list, otherwise every
-        // notification click is rejected. So the master "enable_all" only turns them on when a class
-        // allow-list is in effect; the dedicated key turns them on explicitly (with a warning if
-        // no class allow-list is set).
-        boolean all = ConfigSecurityGradle.boolValue(md, ConfigSecurityGradle.KEY_ENABLE_ALL);
-        boolean explicit = ConfigSecurityGradle.boolValue(md, ConfigSecurityGradle.KEY_PUSH_ADDITIONAL_CHECKS);
-        if (explicit || (all && classesProvided)) {
-            config.enableAdditionalIntentRedirectionChecks();
-            L.i("[CountlyPush] Applied Gradle security: additional intent redirection checks");
-            if (!classesProvided) {
-                L.w("[CountlyPush] Additional intent redirection checks were enabled via Gradle without a class allow-list (countly_security_push_allowed_class_names); notification clicks will be rejected until it is provided");
-            }
-        }
-    }
-
     private static Intent actionIntent(Context context, Intent notificationIntent, Message message, int index) {
         Intent intent;
         if (notificationIntent == null) {
@@ -839,12 +781,6 @@ public class CountlyPush {
         }
 
         CountlyPush.countlyConfigPush = countlyConfigPush;
-
-        // Apply opt-in push security settings provided by the app's build via Gradle (as Android
-        // resources), so a build can enforce the push hardening without changing init code. Absent
-        // resources leave the config unchanged; flags only ever turn protections on.
-        applyPushSecurityGradle(countlyConfigPush, countlyConfigPush.application);
-
         // set preferred push provider
         if (countlyConfigPush.provider == null) {
             if (UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
