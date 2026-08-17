@@ -135,7 +135,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     Map<String, Object> CreateViewEventSegmentation(@NonNull ViewData vd, boolean firstView, boolean visit, @NonNull Map<String, Object> customViewSegmentation) {
         Map<String, Object> viewSegmentation = new ConcurrentHashMap<>(customViewSegmentation);
 
-        String truncatedViewName = UtilsInternalLimits.truncateKeyLength(vd.viewName, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleViews] CreateViewEventSegmentation");
+        String truncatedViewName = UtilsInternalLimits.truncateKeyLength(vd.viewName, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleViews] CreateViewEventSegmentation");
         viewSegmentation.put("name", truncatedViewName);
         if (visit) {
             viewSegmentation.put("visit", "1");
@@ -325,7 +325,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
         applyLimitsToViewSegmentation(customViewSegmentation, "recordViewEndEvent", accumulatedEventSegm);
 
-        UtilsInternalLimits.truncateSegmentationValues(accumulatedEventSegm, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] recordViewEndEvent", L);
+        UtilsInternalLimits.truncateSegmentationValues(accumulatedEventSegm, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleViews] recordViewEndEvent", L);
 
         long viewDurationSeconds = lastElapsedDurationSeconds;
         Map<String, Object> segments = CreateViewEventSegmentation(vd, false, false, accumulatedEventSegm);
@@ -440,9 +440,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         assert function != null;
 
         UtilsInternalLimits.removeReservedKeysFromSegmentation(viewSegmentation, reservedSegmentationKeysViews, "[ModuleViews] " + function + ", ", L);
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(viewSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleViews] " + function);
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(viewSegmentation, _cly.sdkInternalLimits_, L, "[ModuleViews] " + function);
         source.putAll(viewSegmentation);
-        UtilsInternalLimits.truncateSegmentationValues(source, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleViews] " + function, L);
+        UtilsInternalLimits.truncateSegmentationValues(source, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleViews] " + function, L);
     }
 
     public void addSegmentationToViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {

@@ -103,12 +103,12 @@ public class ModuleAPM extends ModuleBase {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
-                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
-                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
+                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
                 }
 
                 String metricString = customMetricsToString(customMetrics);
-                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
                 String modifiedTraceKey = validateAndModifyTraceKey(truncatedTraceKey);
 
                 requestQueueProvider.sendAPMCustomTrace(modifiedTraceKey, durationMs, startTimestamp, currentTimestamp, metricString);
@@ -324,7 +324,7 @@ public class ModuleAPM extends ModuleBase {
         }
 
         //validate trace key
-        networkTraceKey = UtilsInternalLimits.truncateKeyLength(networkTraceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] recordNetworkRequestInternal");
+        networkTraceKey = UtilsInternalLimits.truncateKeyLength(networkTraceKey, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] recordNetworkRequestInternal");
         networkTraceKey = validateAndModifyTraceKey(networkTraceKey);
 
         Long responseTimeMs = endTimestamp - startTimestamp;

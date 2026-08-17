@@ -255,9 +255,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     // apply journey trigger events here
                     boolean triggerRefreshContentZone = configProvider.getJourneyTriggerEvents().contains(key);
 
-                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
+                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
 
-                    UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
+                    UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.sdkInternalLimits_, L, "[ModuleEvents] recordEventInternal");
 
                     if (viewNameRecordingEnabled) {
                         segmentation.put(CURRENT_VIEW_NAME_KEY, cvn);
@@ -531,7 +531,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 L.i("[Events] Calling recordEvent: [" + key + "]");
 
                 if (segmentation != null) {
-                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.sdkInternalLimits_.maxSegmentationValues, "[Events] recordEvent,", L);
                 }
 
                 eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null, null);

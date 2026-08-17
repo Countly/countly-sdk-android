@@ -75,8 +75,8 @@ public class ModuleRatings extends ModuleBase {
             L.d("[ModuleRatings] recordManualRatingInternal, given rating too high, defaulting to 5");
         }
 
-        String truncatedEmail = UtilsInternalLimits.truncateValueSize(email, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
-        String truncatedComment = UtilsInternalLimits.truncateValueSize(comment, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+        String truncatedEmail = UtilsInternalLimits.truncateValueSize(email, _cly.sdkInternalLimits_.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+        String truncatedComment = UtilsInternalLimits.truncateValueSize(comment, _cly.sdkInternalLimits_.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("platform", "android");

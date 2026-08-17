@@ -256,12 +256,18 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, _cly.EVENT_QUEUE_SIZE_THRESHOLD, Integer.class, (Integer value) -> value > 0));
         clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, clyConfig.loggingEnabled));
         clyConfig.setUpdateSessionTimerDelay(extractValue(keyRSessionUpdateInterval, sb, clyConfig.sessionUpdateTimerDelay, Long.valueOf(Countly.TIMER_DELAY_IN_SECONDS).intValue(), Integer.class, (Integer value) -> value > 0));
-        clyConfig.sdkInternalLimits.setMaxKeyLength(extractValue(keyRLimitKeyLength, sb, clyConfig.sdkInternalLimits.maxKeyLength, Countly.maxKeyLengthDefault, Integer.class, (Integer value) -> value > 0));
-        clyConfig.sdkInternalLimits.setMaxValueSize(extractValue(keyRLimitValueSize, sb, clyConfig.sdkInternalLimits.maxValueSize, Countly.maxValueSizeDefault, Integer.class, (Integer value) -> value > 0));
-        clyConfig.sdkInternalLimits.setMaxSegmentationValues(extractValue(keyRLimitSegValues, sb, clyConfig.sdkInternalLimits.maxSegmentationValues, Countly.maxSegmentationValuesDefault, Integer.class, (Integer value) -> value > 0));
-        clyConfig.sdkInternalLimits.setMaxBreadcrumbCount(extractValue(keyRLimitBreadcrumb, sb, clyConfig.sdkInternalLimits.maxBreadcrumbCount, Countly.maxBreadcrumbCountDefault, Integer.class, (Integer value) -> value > 0));
-        clyConfig.sdkInternalLimits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, clyConfig.sdkInternalLimits.maxStackTraceLinesPerThread, Countly.maxStackTraceLinesPerThreadDefault, Integer.class, (Integer value) -> value > 0));
-        clyConfig.sdkInternalLimits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, clyConfig.sdkInternalLimits.maxStackTraceLineLength, Countly.maxStackTraceLineLengthDefault, Integer.class, (Integer value) -> value > 0));
+        //Internal limits are resolved onto THIS instance's limits, not onto the shared CountlyConfig: they
+        //are read live on every event, view, crash and user property, so writing them back onto a config
+        //that a second instance may also hold would let this instance's /o/sdk response retruncate that
+        //instance's data. The provided layer is our own seeded copy, which already holds what the developer
+        //configured (Countly#init seeds it right after validating the config's limit overrides).
+        ConfigSdkInternalLimits limits = _cly.sdkInternalLimits_;
+        limits.setMaxKeyLength(extractValue(keyRLimitKeyLength, sb, limits.maxKeyLength, Countly.maxKeyLengthDefault, Integer.class, (Integer value) -> value > 0));
+        limits.setMaxValueSize(extractValue(keyRLimitValueSize, sb, limits.maxValueSize, Countly.maxValueSizeDefault, Integer.class, (Integer value) -> value > 0));
+        limits.setMaxSegmentationValues(extractValue(keyRLimitSegValues, sb, limits.maxSegmentationValues, Countly.maxSegmentationValuesDefault, Integer.class, (Integer value) -> value > 0));
+        limits.setMaxBreadcrumbCount(extractValue(keyRLimitBreadcrumb, sb, limits.maxBreadcrumbCount, Countly.maxBreadcrumbCountDefault, Integer.class, (Integer value) -> value > 0));
+        limits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, limits.maxStackTraceLinesPerThread, Countly.maxStackTraceLinesPerThreadDefault, Integer.class, (Integer value) -> value > 0));
+        limits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, limits.maxStackTraceLineLength, Countly.maxStackTraceLineLengthDefault, Integer.class, (Integer value) -> value > 0));
         clyConfig.content.setZoneTimerInterval(extractValue(keyRContentZoneInterval, sb, clyConfig.content.zoneTimerInterval, clyConfig.content.zoneTimerInterval, Integer.class, (Integer value) -> value >= 16));
         clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, clyConfig.shouldRequireConsent));
         clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, clyConfig.dropAgeHours, Integer.class, (Integer value) -> value >= 0));

@@ -239,6 +239,14 @@ public class Countly {
     // instance name for named instances so their storage is fully isolated.
     String storageNamespace_ = "";
 
+    // This instance's internal limits, seeded at init from the developer's config and then resolved
+    // further by this instance's server behaviour settings. They live here rather than on the
+    // CountlyConfig because ~30 call sites read them on every recorded event, view, crash and user
+    // property, and two instances may legitimately be configured from one config object - sharing the
+    // config's nested limits object would let one instance's /o/sdk response silently retruncate the
+    // other instance's data.
+    final ConfigSdkInternalLimits sdkInternalLimits_ = new ConfigSdkInternalLimits();
+
     //overrides
     boolean isHttpPostForced = false;//when true, all data sent to the server will be sent using HTTP POST
 
@@ -320,6 +328,13 @@ public class Countly {
      * choice for one instance per Countly application. A null or empty name returns the default
      * (shared) instance. The returned instance is not initialized - call {@code init(config)} on it.
      * <p>
+     * <b>A named instance starts from empty storage.</b> It does not inherit anything from
+     * {@link #sharedInstance()}: it generates its own device id, so the server sees a new user, and it can not
+     * send what the default instance has queued. So do not move an existing integration onto a named instance
+     * to reuse its app key as the name - that re-identifies every install and abandons whatever the default
+     * instance had not sent yet. Keep {@code sharedInstance()} as the primary and add named instances
+     * alongside it for the app keys that are genuinely new.
+     * <p>
      * <b>Push notifications and native crash dumps are not multi-instance.</b> Both are process-wide and
      * owned by the default (shared) instance: {@code CountlyPush} has one static registration, one token
      * and one shared preferences file, and sdk-native writes minidumps to one fixed directory. A named
@@ -370,13 +385,30 @@ public class Countly {
      */
     private static void logWithoutCreatingDefault(String message, boolean warning) {
         Countly existingDefault = instances_.get(DEFAULT_NAME);
-        if (existingDefault != null) {
+        if (existingDefault != null && existingDefault.L.logEnabled()) {
+            //the default instance's logger can actually deliver this, so let it - the message reaches that
+            //instance's log listener and health tracker
             if (warning) {
                 existingDefault.L.w(message);
             } else {
                 existingDefault.L.d(message);
             }
             return;
+        }
+
+        //Otherwise fall through rather than returning: a default instance exists in the registry as soon as
+        //anything calls sharedInstance() (a push broadcast is enough), and if it was never initialised its
+        //logger is unarmed - so returning there would drop registry diagnostics even when a named instance
+        //has logging on. Match the SDK's own logEnabled(), which counts a log listener too, not just console.
+        for (Countly c : instances_.values()) {
+            if (c.L.logEnabled()) {
+                if (warning) {
+                    c.L.w(message);
+                } else {
+                    c.L.d(message);
+                }
+                return;
+            }
         }
 
         boolean consoleLoggingWanted = false;
@@ -412,25 +444,29 @@ public class Countly {
     }
 
     /**
-     * Returns the names of all currently registered named instances. The default (shared) instance is
-     * not included - it is always reachable via {@link #sharedInstance()}.
+     * Returns the names of all currently registered instances, including the default (shared) instance,
+     * which is listed under its reserved name {@link #DEFAULT_NAME}. An instance is registered from the
+     * moment {@code sharedInstance()} or {@code instance(name)} first hands it out, whether or not it has
+     * been initialised - use {@link #getInstance(String)} plus {@link #isInitialized()} to tell those apart.
      *
-     * @return a snapshot list of registered named-instance names (may be empty)
+     * @return a snapshot list of registered instance names
      */
     public static List<String> listInstances() {
-        List<String> names = new ArrayList<>(instances_.size());
-        for (String key : instances_.keySet()) {
-            if (!DEFAULT_NAME.equals(key)) {
-                names.add(key);
-            }
-        }
-        return names;
+        return new ArrayList<>(instances_.keySet());
     }
 
     /**
-     * Halts every registered instance (including the default), resetting each instance's state and
-     * clearing its stored data. The instances remain registered, so a later {@code instance(name)} or
-     * {@code sharedInstance()} returns the same (now halted) object, ready to be initialised again.
+     * Halts every registered instance, including the default (shared) one.
+     * <p>
+     * <b>This destroys stored data.</b> Each instance is reset exactly as {@link #halt()} resets it, which
+     * erases that instance's persisted state: its device ID and ID type, its consent, its queued requests
+     * and events, its cached remote-config values and its schema version - and, for the default instance,
+     * the process-wide push preferences (push consent and cached push data) as well. Anything recorded but
+     * not yet sent is gone, and the next session starts as a new user.
+     * <p>
+     * The instances remain registered, so a later {@code instance(name)} or {@code sharedInstance()} returns
+     * the same (now halted) object, ready to be initialised again. To stop an instance without discarding
+     * its data, use {@link #removeInstance(String)}, which keeps everything on disk.
      */
     public static void haltAllInstances() {
         for (Countly c : instances_.values()) {
@@ -584,17 +620,12 @@ public class Countly {
             storageNamespace_ = CountlyStore.sanitizeNamespace(instanceName_);
         }
 
-        //A CountlyConfig belongs to exactly one instance. init() keeps the object as this instance's
-        //config_, and ModuleConfiguration writes the resolved server behaviour settings back onto it - at
-        //init from the stored settings and again on every /o/sdk response. Two instances holding one
-        //object would therefore keep overwriting each other's live limits, consent requirement and
-        //webview policy for as long as the app runs. Restoring the developer's values at init (see
-        //CountlyConfig.DerivedFieldSnapshot) fixes what an instance STARTS with, but nothing can unshare
-        //the object afterwards, so refuse rather than initialise something that misbehaves later.
-        //Re-initialising the SAME instance after halt() reuses its own config and stays allowed.
-        if (config.derivedFieldSnapshot != null && !storageNamespace_.equals(config.initialisedForNamespace)) {
-            L.e("[Init] This CountlyConfig was already used to initialise another instance, and a config can not be shared: the instances would keep overwriting each other's server-resolved settings. Instance [" + instanceName_ + "] was NOT initialised. Build a fresh CountlyConfig for each instance.");
-            return this;
+        //A CountlyConfig may be shared by several instances. What used to make that unsafe was the SDK
+        //writing its own resolved state back onto the object: the internal limits now live per instance
+        //(see sdkInternalLimits_), and DerivedFieldSnapshot resets the objects init derives, so each init
+        //starts from what the developer configured rather than from the previous instance's leftovers.
+        if (config.initialisedForNamespace != null && !storageNamespace_.equals(config.initialisedForNamespace)) {
+            L.i("[Init] This CountlyConfig was already used to initialise another instance. That is supported - each instance keeps its own storage, limits and server-resolved settings - but the values you set on it apply to every instance built from it.");
         }
 
         if (config.application == null) {
@@ -707,6 +738,12 @@ public class Countly {
             } else {
                 config.sdkInternalLimits.maxStackTraceLineLength = maxStackTraceLineLengthDefault;
             }
+
+            //Take this instance's own copy of the resolved limits. From here on the SDK reads and writes
+            //sdkInternalLimits_, never config.sdkInternalLimits, so the developer's config object is left
+            //alone and a second instance built from the same config gets its own limits. ModuleConfiguration
+            //is constructed below and layers the server behaviour settings on top of this copy.
+            sdkInternalLimits_.copyFrom(config.sdkInternalLimits);
 
             long timerDelay = TIMER_DELAY_IN_SECONDS;
             if (config.sessionUpdateTimerDelay != null) {
@@ -937,8 +974,15 @@ public class Countly {
                 //Defensive copy: the config stores the caller's map by reference, and
                 //addCustomNetworkRequestHeaders mutates this field in place. Two instances configured
                 //from one map would otherwise share it, so adding an Authorization header to one
-                //instance would send it to the other instance's server too.
+                //instance would send it to the other instance's server too. It also removed an
+                //unsynchronised cross-thread read - the network executor iterated a map the app thread
+                //could be writing.
+                //The trade-off is a behaviour change: until 26.1.5 the SDK held the caller's own map and
+                //re-read it before every request, so mutating it after init changed later requests. It no
+                //longer does, so say so out loud rather than letting an app silently keep sending a stale
+                //header (a rotated auth token being the case that matters).
                 requestHeaderCustomValues = new HashMap<>(config.customNetworkRequestHeaders);
+                L.i("[Countly] init, custom network request headers are copied at init: later changes to the map you passed to CountlyConfig will NOT be picked up. Use Countly.requestQueue().addCustomNetworkRequestHeaders(...) to change them while the SDK is running");
 
                 connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             }
@@ -1161,6 +1205,11 @@ public class Countly {
                 module.initFinished(config);
             }
 
+            //Record what the SDK ended up writing onto the config. A later init of this instance (or of
+            //another instance built from the same config) resets a value only if it still holds this, so the
+            //SDK's own write-backs are undone while anything the developer changed in between is honoured.
+            config.derivedFieldSnapshot.captureApplied(config);
+
             L.i("[Init] Finished initialising SDK");
         } else {
             //if this is not the first time we are calling init
@@ -1235,29 +1284,10 @@ public class Countly {
         config.eventQueueSizeThreshold = Math.max(config.eventQueueSizeThreshold, 1);
         EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
 
-        // Have a look at the SDK limit values
-        if (config.sdkInternalLimits.maxKeyLength != null) {
-            config.sdkInternalLimits.maxKeyLength = Math.max(config.sdkInternalLimits.maxKeyLength, 1);
-        }
-
-        if (config.sdkInternalLimits.maxValueSize != null) {
-            config.sdkInternalLimits.maxValueSize = Math.max(config.sdkInternalLimits.maxValueSize, 1);
-        }
-
-        if (config.sdkInternalLimits.maxSegmentationValues != null) {
-            config.sdkInternalLimits.maxSegmentationValues = Math.max(config.sdkInternalLimits.maxSegmentationValues, 1);
-        }
-
-        if (config.sdkInternalLimits.maxBreadcrumbCount != null) {
-            config.sdkInternalLimits.maxBreadcrumbCount = Math.max(config.sdkInternalLimits.maxBreadcrumbCount, 1);
-        }
-
-        if (config.sdkInternalLimits.maxStackTraceLinesPerThread != null) {
-            config.sdkInternalLimits.maxStackTraceLinesPerThread = Math.max(config.sdkInternalLimits.maxStackTraceLinesPerThread, 1);
-        }
-        if (config.sdkInternalLimits.maxStackTraceLineLength != null) {
-            config.sdkInternalLimits.maxStackTraceLineLength = Math.max(config.sdkInternalLimits.maxStackTraceLineLength, 1);
-        }
+        // Have a look at the SDK limit values. These are this instance's own limits, which
+        // ModuleConfiguration has just written the server-resolved values into - the config object the
+        // developer handed us is never touched, so a config shared by two instances stays clean.
+        sdkInternalLimits_.clampToMinimums();
 
         for (ModuleBase module : modules) {
             module.onSdkConfigurationChanged(config);
@@ -1288,11 +1318,67 @@ public class Countly {
     }
 
     /**
+     * Gets everything that only exists in memory into the store, so a teardown that promises to keep this
+     * instance's data actually keeps it. Each step is guarded and wrapped: a teardown must complete even if
+     * one of these fails, otherwise the instance is left half torn down.
+     */
+    private void flushInFlightStateBeforeTeardown() {
+        try {
+            if (moduleSessions != null && moduleSessions.sessionRunning) {
+                L.d("[Countly] tearDown, ending the open session so it is not left open");
+                moduleSessions.endSessionInternal();
+            }
+        } catch (Throwable t) {
+            L.w("[Countly] tearDown, failed to end the open session, [" + t + "]");
+        }
+
+        try {
+            if (moduleViews != null) {
+                L.d("[Countly] tearDown, stopping open views so their durations are recorded");
+                moduleViews.stopAllViewsInternal(null);
+            }
+        } catch (Throwable t) {
+            L.w("[Countly] tearDown, failed to stop the open views, [" + t + "]");
+        }
+
+        try {
+            if (moduleUserProfile != null) {
+                L.d("[Countly] tearDown, saving pending user profile changes");
+                moduleUserProfile.saveInternal();
+            }
+        } catch (Throwable t) {
+            L.w("[Countly] tearDown, failed to save the pending user profile changes, [" + t + "]");
+        }
+
+        try {
+            //In explicit storage mode the request and event queues live only in memory until something asks
+            //for them to be persisted, and after this teardown nothing can: requestQueue() returns null once
+            //the instance is no longer initialised.
+            if (countlyStore != null && config_ != null && config_.explicitStorageModeEnabled) {
+                L.d("[Countly] tearDown, writing the explicit-storage-mode caches to persistence");
+                countlyStore.esWriteCacheToStorage(null);
+            }
+        } catch (Throwable t) {
+            L.w("[Countly] tearDown, failed to persist the explicit storage mode caches, [" + t + "]");
+        }
+    }
+
+    /**
      * @param clearStoredData whether to also erase this instance's persisted data. The teardown itself is
      * identical either way; only {@link #halt()} destroys data.
      */
     private synchronized void tearDown(boolean clearStoredData) {
         L.i("Halting Countly!" + (clearStoredData ? " Stored data will be cleared." : " Stored data is kept."));
+
+        //When the data is being kept (removeInstance), flush what is still only in memory BEFORE anything is
+        //torn down: the module halts below only clear flags, so an open session would never get its
+        //end_session, open views would lose their duration, and pending profile edits would be dropped -
+        //and a later init of this instance would then send a second begin_session with no end in between.
+        //Skipped for halt(), which is about to erase the store anyway.
+        if (!clearStoredData) {
+            flushInFlightStateBeforeTeardown();
+        }
+
         sdkIsInitialised = false;
         L.SetListener(null);
         stopTimer();

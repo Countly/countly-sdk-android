@@ -548,6 +548,11 @@ public class CountlyConfig {
 
     /**
      * Allows you to add custom header key/value pairs to each request
+     * <p>
+     * The SDK copies these entries when it initialises, so changing the map you passed in afterwards has
+     * no effect on the requests it sends. To change a header while the SDK is running - rotating an
+     * authorization token, for example - call
+     * {@code Countly.sharedInstance().requestQueue().addCustomNetworkRequestHeaders(Map)}.
      *
      * @return Returns the same config object for convenient linking
      */
@@ -1347,31 +1352,12 @@ public class CountlyConfig {
         private final Countly.LifecycleObserver lifecycleObserver;
         private final SafeIDGenerator safeViewIDGenerator;
         private final SafeIDGenerator safeEventIDGenerator;
-        private final String deviceID;
-        //init() only writes these when locationFallback is set, which nothing does today - snapshotted so
-        //that reviving the pre-init location setter can not leak one instance's location into the next
-        private final String locationCountyCode;
-        private final String locationCity;
-        private final String locationLocation;
-        private final String locationIpAddress;
-        //Values the server behaviour settings overwrite. ModuleConfiguration.updateConfigVariables writes
-        //its resolved settings back onto the config, and it runs inside the module's constructor from the
-        //STORED settings - so with a reused config the first instance's server settings become the second
-        //instance's configuration. shouldRequireConsent is the dangerous one: inheriting a stored "consent
-        //not required" would silently switch consent gating off for an instance that asked for it.
-        private final boolean loggingEnabled;
-        private final boolean shouldRequireConsent;
-        private final Integer eventQueueSizeThreshold;
-        private final Integer sessionUpdateTimerDelay;
-        private final int maxRequestQueueSize;
-        private final int dropAgeHours;
-        private final Integer maxKeyLength;
-        private final Integer maxValueSize;
-        private final Integer maxSegmentationValues;
-        private final Integer maxBreadcrumbCount;
-        private final Integer maxStackTraceLinesPerThread;
-        private final Integer maxStackTraceLineLength;
-        private final int zoneTimerInterval;
+        //What the developer had set on the config before any init touched it, and what the SDK left on it at
+        //the end of the last init. A value is only reset when it still holds what the SDK left - see
+        //restoreValuesOnto. The values themselves are the ones the SDK writes back: the temporary-device-id
+        //sentinel and the settings the server behaviour settings resolve.
+        private final Object[] originalValues;
+        private Object[] appliedValues;
 
         DerivedFieldSnapshot(@NonNull CountlyConfig config) {
             countlyStore = config.countlyStore;
@@ -1390,27 +1376,72 @@ public class CountlyConfig {
             lifecycleObserver = config.lifecycleObserver;
             safeViewIDGenerator = config.safeViewIDGenerator;
             safeEventIDGenerator = config.safeEventIDGenerator;
-            deviceID = config.deviceID;
-            locationCountyCode = config.locationCountyCode;
-            locationCity = config.locationCity;
-            locationLocation = config.locationLocation;
-            locationIpAddress = config.locationIpAddress;
-            loggingEnabled = config.loggingEnabled;
-            shouldRequireConsent = config.shouldRequireConsent;
-            eventQueueSizeThreshold = config.eventQueueSizeThreshold;
-            sessionUpdateTimerDelay = config.sessionUpdateTimerDelay;
-            maxRequestQueueSize = config.maxRequestQueueSize;
-            dropAgeHours = config.dropAgeHours;
-            maxKeyLength = config.sdkInternalLimits.maxKeyLength;
-            maxValueSize = config.sdkInternalLimits.maxValueSize;
-            maxSegmentationValues = config.sdkInternalLimits.maxSegmentationValues;
-            maxBreadcrumbCount = config.sdkInternalLimits.maxBreadcrumbCount;
-            maxStackTraceLinesPerThread = config.sdkInternalLimits.maxStackTraceLinesPerThread;
-            maxStackTraceLineLength = config.sdkInternalLimits.maxStackTraceLineLength;
-            zoneTimerInterval = config.content.zoneTimerInterval;
+            originalValues = readValues(config);
+        }
+
+        /**
+         * The values the SDK itself writes back onto the config, in a fixed order. Held as an array rather
+         * than as three parallel copies of every field, so that "what the developer set", "what the SDK last
+         * left here" and "what is here now" can be compared position by position.
+         * <p>
+         * ADDING A VALUE THE SDK WRITES ONTO THE CONFIG MEANS ADDING IT TO BOTH readValues AND writeValue.
+         */
+        private static Object[] readValues(@NonNull CountlyConfig config) {
+            return new Object[] {
+                config.deviceID,
+                config.loggingEnabled,
+                config.shouldRequireConsent,
+                config.eventQueueSizeThreshold,
+                config.sessionUpdateTimerDelay,
+                config.maxRequestQueueSize,
+                config.dropAgeHours,
+                config.content.zoneTimerInterval,
+            };
+        }
+
+        private static void writeValue(@NonNull CountlyConfig config, int index, Object value) {
+            switch (index) {
+                case 0: config.deviceID = (String) value; break;
+                case 1: config.loggingEnabled = (Boolean) value; break;
+                case 2: config.shouldRequireConsent = (Boolean) value; break;
+                case 3: config.eventQueueSizeThreshold = (Integer) value; break;
+                case 4: config.sessionUpdateTimerDelay = (Integer) value; break;
+                case 5: config.maxRequestQueueSize = (Integer) value; break;
+                case 6: config.dropAgeHours = (Integer) value; break;
+                case 7: config.content.zoneTimerInterval = (Integer) value; break;
+                default: break;
+            }
+        }
+
+        /**
+         * Records what the config holds now, at the end of a successful init, as "what the SDK left here".
+         * A later init restores a value only when it is still untouched since this point - so the SDK's own
+         * write-backs (the temporary-device-id sentinel, the server-resolved settings) are undone, while a
+         * value the developer deliberately changed between the two inits is honoured.
+         */
+        void captureApplied(@NonNull CountlyConfig config) {
+            appliedValues = readValues(config);
+        }
+
+        private void restoreValuesOnto(@NonNull CountlyConfig config) {
+            if (appliedValues == null) {
+                //no init has completed with this config yet, so nothing has been written back to undo
+                return;
+            }
+            Object[] current = readValues(config);
+            for (int i = 0; i < current.length; i++) {
+                if (equal(current[i], appliedValues[i])) {
+                    writeValue(config, i, originalValues[i]);
+                }
+            }
+        }
+
+        private static boolean equal(Object a, Object b) {
+            return a == null ? b == null : a.equals(b);
         }
 
         void restoreOnto(@NonNull CountlyConfig config) {
+            restoreValuesOnto(config);
             config.countlyStore = countlyStore;
             config.storageProvider = storageProvider;
             config.eventQueueProvider = eventQueueProvider;
@@ -1427,24 +1458,6 @@ public class CountlyConfig {
             config.lifecycleObserver = lifecycleObserver;
             config.safeViewIDGenerator = safeViewIDGenerator;
             config.safeEventIDGenerator = safeEventIDGenerator;
-            config.deviceID = deviceID;
-            config.locationCountyCode = locationCountyCode;
-            config.locationCity = locationCity;
-            config.locationLocation = locationLocation;
-            config.locationIpAddress = locationIpAddress;
-            config.loggingEnabled = loggingEnabled;
-            config.shouldRequireConsent = shouldRequireConsent;
-            config.eventQueueSizeThreshold = eventQueueSizeThreshold;
-            config.sessionUpdateTimerDelay = sessionUpdateTimerDelay;
-            config.maxRequestQueueSize = maxRequestQueueSize;
-            config.dropAgeHours = dropAgeHours;
-            config.sdkInternalLimits.maxKeyLength = maxKeyLength;
-            config.sdkInternalLimits.maxValueSize = maxValueSize;
-            config.sdkInternalLimits.maxSegmentationValues = maxSegmentationValues;
-            config.sdkInternalLimits.maxBreadcrumbCount = maxBreadcrumbCount;
-            config.sdkInternalLimits.maxStackTraceLinesPerThread = maxStackTraceLinesPerThread;
-            config.sdkInternalLimits.maxStackTraceLineLength = maxStackTraceLineLength;
-            config.content.zoneTimerInterval = zoneTimerInterval;
         }
 
     }

@@ -150,7 +150,7 @@ public class ModuleUserProfile extends ModuleBase {
 
             JSONObject ob;
             if (custom != null) {
-                UtilsInternalLimits.truncateSegmentationValues(custom, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleUserProfile] toJSON", _cly.L);
+                UtilsInternalLimits.truncateSegmentationValues(custom, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleUserProfile] toJSON", _cly.L);
                 ob = new JSONObject(custom);
             } else {
                 ob = new JSONObject();
@@ -227,9 +227,9 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             Object valueAdded;
-            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.sdkInternalLimits_.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
             if (value instanceof String) {
-                valueAdded = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+                valueAdded = UtilsInternalLimits.truncateValueSize((String) value, _cly.sdkInternalLimits_.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
             } else if (UtilsInternalLimits.isSupportedDataType(value)) {
                 valueAdded = value;
             } else {
@@ -291,9 +291,9 @@ public class ModuleUserProfile extends ModuleBase {
             // limit to the picture path is applied when request is being made in the ConnectionProcessor
             if (value instanceof String) {
                 if (key.equals(PICTURE_PATH_KEY) || key.equals(PICTURE_KEY)) {
-                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSizePicture, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.sdkInternalLimits_.maxValueSizePicture, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 } else {
-                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.sdkInternalLimits_.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 }
             }
 
@@ -313,7 +313,7 @@ public class ModuleUserProfile extends ModuleBase {
                     continue;
                 }
 
-                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.sdkInternalLimits_.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 if (UtilsInternalLimits.isSupportedDataType(value)) {
                     dataCustomFields.put(truncatedKey, value);
                 } else {

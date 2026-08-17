@@ -80,6 +80,12 @@ public class ActivityExampleMultiInstance extends AppCompatActivity {
 
         // --- default instance (contrast) ---
         findViewById(R.id.btnRecordEventDefault).setOnClickListener(v -> {
+            //the default instance can be halted from this very screen ("Halt All Instances"), and the
+            //module accessors return null when an instance is not initialised
+            if (!Countly.sharedInstance().isInitialized()) {
+                toast("The default instance is not initialized (halt all resets it too). Restart the app to init it again.");
+                return;
+            }
             Countly.sharedInstance().events().recordEvent("default_event");
             toast("Recorded 'default_event' on the default (shared) instance");
         });
@@ -87,7 +93,7 @@ public class ActivityExampleMultiInstance extends AppCompatActivity {
         // --- registry ---
         findViewById(R.id.btnList).setOnClickListener(v -> {
             List<String> names = Countly.listInstances();
-            toast("Named instances: " + (names.isEmpty() ? "(none)" : names));
+            toast("Registered instances: " + (names.isEmpty() ? "(none)" : names));
         });
 
         findViewById(R.id.btnGetAnalytics).setOnClickListener(v -> {
@@ -101,7 +107,7 @@ public class ActivityExampleMultiInstance extends AppCompatActivity {
 
         findViewById(R.id.btnHaltAll).setOnClickListener(v -> {
             Countly.haltAllInstances();
-            toast("Halted all instances (each reset but still registered)");
+            toast("Halted every instance, the default one included. Stored data was ERASED: device IDs, consent, unsent requests and push preferences");
         });
     }
 

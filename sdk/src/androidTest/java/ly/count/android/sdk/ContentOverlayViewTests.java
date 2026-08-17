@@ -12,9 +12,12 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,6 +47,8 @@ public class ContentOverlayViewTests {
 
     private ContentOverlayView overlay;
     private ActivityScenario<OverlayTestActivity> scenario;
+    //every overlay createOverlay() hands out, so tearDown can release them all - see createOverlay
+    private final List<ContentOverlayView> createdOverlays = new ArrayList<>();
 
     /**
      * Bare activity used as a host for ContentOverlayView in tests.
@@ -94,6 +99,27 @@ public class ContentOverlayViewTests {
             }
             overlay = null;
         }
+        overlay = null;
+        // Destroy every overlay this test created, not just the one the `overlay` field happens to hold:
+        // each one registered process-global orientation and activity-lifecycle callbacks in its
+        // constructor, and any that survives keeps receiving events for the rest of the instrumentation
+        // process, perturbing later classes that assert exact request-queue contents. destroy() is
+        // idempotent, so overlays a test already released are unaffected.
+        if (!createdOverlays.isEmpty()) {
+            final List<ContentOverlayView> stranded = new ArrayList<>(createdOverlays);
+            createdOverlays.clear();
+            try {
+                InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                    for (ContentOverlayView view : stranded) {
+                        try {
+                            view.destroy();
+                        } catch (Exception ignored) {
+                        }
+                    }
+                });
+            } catch (Exception ignored) {
+            }
+        }
         if (scenario != null) {
             try {
                 scenario.close();
@@ -127,7 +153,7 @@ public class ContentOverlayViewTests {
         landscape.url = "about:blank";
         landscape.useSafeArea = false;
 
-        return new ContentOverlayView(
+        ContentOverlayView created = new ContentOverlayView(
             Countly.sharedInstance(), activity, portrait, landscape,
             activity.getResources().getConfiguration().orientation,
             callback,
@@ -136,6 +162,12 @@ public class ContentOverlayViewTests {
             null,
             contentUrlHandler
         );
+        //Every ContentOverlayView constructor registers process-global orientation and activity-lifecycle
+        //callbacks, so one that is never destroyed keeps receiving events for the rest of the instrumentation
+        //process and perturbs later test classes that assert exact request-queue contents. Most tests here
+        //keep their overlay in a local, which tearDown can not see, so track them all centrally.
+        createdOverlays.add(created);
+        return created;
     }
 
     private Object getField(String fieldName) throws Exception {
@@ -1245,9 +1277,13 @@ public class ContentOverlayViewTests {
                 Assert.assertFalse("an overlay that never attached must not block the next one",
                     ContentOverlayView.isOtherOverlayPresented(other));
 
-                // both overlays registered process-global callbacks in their constructors; tearDown only
-                // knows about `overlay`, so release the other one here
+                // Both overlays registered process-global callbacks in their constructors. tearDown cannot
+                // reach either one - it destroys `overlay` only through the `scenario` field, and this test
+                // runs in a locally scoped scenario - so release both here, while the host activity is
+                // still alive and destroy() can remove a window on the main thread.
                 other.destroy();
+                overlay.destroy();
+                overlay = null;
             });
         } finally {
             brokenScenario.close();

@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+
 public class ConfigSdkInternalLimits {
     //SDK internal limits
     protected Integer maxKeyLength;
@@ -10,6 +12,50 @@ public class ConfigSdkInternalLimits {
     protected Integer maxStackTraceLinesPerThread;
     protected Integer maxStackTraceLineLength;
     protected int maxStackTraceThreadCount = 50;
+
+    /**
+     * Copies every limit onto this object. Each Countly instance keeps its own limits (see
+     * {@code Countly#sdkInternalLimits_}) seeded from the developer's config, because the server behaviour
+     * settings resolve these values per instance and two instances may be configured from one CountlyConfig.
+     * <p>
+     * ADDING A FIELD ABOVE MEANS ADDING IT HERE. {@code ConfigSdkInternalLimitsTests} reflects over the
+     * declared fields and fails if one is missed, so a forgotten field cannot ship silently.
+     */
+    /**
+     * Raises any set limit below 1 to 1. Called after the server behaviour settings have been applied, so a
+     * server sending a nonsensical limit can not make the SDK truncate everything to nothing.
+     */
+    void clampToMinimums() {
+        if (maxKeyLength != null) {
+            maxKeyLength = Math.max(maxKeyLength, 1);
+        }
+        if (maxValueSize != null) {
+            maxValueSize = Math.max(maxValueSize, 1);
+        }
+        if (maxSegmentationValues != null) {
+            maxSegmentationValues = Math.max(maxSegmentationValues, 1);
+        }
+        if (maxBreadcrumbCount != null) {
+            maxBreadcrumbCount = Math.max(maxBreadcrumbCount, 1);
+        }
+        if (maxStackTraceLinesPerThread != null) {
+            maxStackTraceLinesPerThread = Math.max(maxStackTraceLinesPerThread, 1);
+        }
+        if (maxStackTraceLineLength != null) {
+            maxStackTraceLineLength = Math.max(maxStackTraceLineLength, 1);
+        }
+    }
+
+    void copyFrom(@NonNull ConfigSdkInternalLimits other) {
+        maxKeyLength = other.maxKeyLength;
+        maxValueSize = other.maxValueSize;
+        maxValueSizePicture = other.maxValueSizePicture;
+        maxSegmentationValues = other.maxSegmentationValues;
+        maxBreadcrumbCount = other.maxBreadcrumbCount;
+        maxStackTraceLinesPerThread = other.maxStackTraceLinesPerThread;
+        maxStackTraceLineLength = other.maxStackTraceLineLength;
+        maxStackTraceThreadCount = other.maxStackTraceThreadCount;
+    }
 
     /**
      * Sets how many segmentation values can be recorded when recording an event or view.

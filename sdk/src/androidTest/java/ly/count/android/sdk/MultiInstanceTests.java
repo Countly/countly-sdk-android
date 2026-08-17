@@ -441,8 +441,13 @@ public class MultiInstanceTests {
         // ...but its recorded data survives. Deregistering an instance must not throw away requests it
         // has not sent to the server yet.
         CountlyStore removedStore = store(CountlyStore.sanitizeNamespace("instRemove"));
-        Assert.assertEquals("removeInstance must not discard unsent requests",
-            1, TestUtils.getCurrentRQ("", removedStore).length);
+        Map<String, String>[] rqAfterRemoval = TestUtils.getCurrentRQ("", removedStore);
+        Assert.assertEquals("removeInstance must not discard unsent requests", 1,
+            countRequestsWithKey(rqAfterRemoval, "begin_session"));
+        // the session was open when the instance was removed, so it must have been closed on the way out -
+        // otherwise the server keeps an open session and a later init of this name opens a second one
+        Assert.assertEquals("removeInstance must end the session it leaves behind", 1,
+            countRequestsWithKey(rqAfterRemoval, "end_session"));
         Assert.assertEquals("removeInstance must not discard the stored device id",
             DEVICE_B, removedStore.getDeviceID());
 
@@ -562,8 +567,8 @@ public class MultiInstanceTests {
 
     /**
      * The registry management API. instance(name) creates/accesses a handle but never initializes it
-     * (users init themselves); getInstance never creates; listInstances reports named instances only;
-     * haltAllInstances halts every instance while keeping identities registered.
+     * (users init themselves); getInstance never creates; listInstances reports every registered instance
+     * including the default; haltAllInstances halts every instance while keeping identities registered.
      */
     @Test
     public void registryApi_accessIsLazyAndUninitialized_listAndHaltAll() {
@@ -586,11 +591,11 @@ public class MultiInstanceTests {
         byAppKey.init(baseConfig("instCreateB", DEVICE_A));
         Assert.assertEquals(CountlyStore.sanitizeNamespace("instCreateB"), byAppKey.storageNamespace_);
 
-        // listInstances reports the named instances but never the default
+        // listInstances reports every registered instance, the default included under its reserved name
         java.util.List<String> names = Countly.listInstances();
         Assert.assertTrue(names.contains("instCreateA"));
         Assert.assertTrue(names.contains("instCreateB"));
-        Assert.assertFalse(names.contains(Countly.DEFAULT_NAME));
+        Assert.assertTrue("the default instance is registered and must be listed too", names.contains(Countly.DEFAULT_NAME));
 
         // haltAllInstances halts every instance while keeping their identities registered
         Countly.haltAllInstances();
@@ -776,35 +781,46 @@ public class MultiInstanceTests {
     }
 
     /**
-     * A CountlyConfig can not be shared between instances, and init refuses rather than pretending.
-     * <p>
-     * init keeps the config object as the instance's {@code config_}, and ModuleConfiguration writes the
-     * resolved server behaviour settings back onto it - at init from the stored settings, and again on
-     * every server response. Two instances holding one object would keep overwriting each other's live
-     * limits, consent requirement and webview policy for as long as the app runs, which no amount of
-     * restoring at init can prevent. So the second instance is not initialised at all.
+     * One CountlyConfig may initialise several instances. What used to make that unsafe was the SDK writing
+     * its own resolved state back onto the config object, so this asserts the three things that had to be
+     * true before sharing could be allowed: the second instance really initialises, the two instances do not
+     * share the internal limits they read on every recorded event, and a value the developer changes between
+     * the two inits is honoured rather than reset to what the first init saw.
      */
     @Test
-    public void sharedConfigObject_secondInstanceRefusesToInitialise() {
+    public void sharedConfigObject_secondInstanceInitialisesWithIsolatedState() {
         CountlyConfig shared = baseConfig(APP_KEY_A, DEVICE_A)
             .setRequiresConsent(true)
             .setConsentEnabled(new String[] { Countly.CountlyFeatureNames.sessions });
+        shared.sdkInternalLimits.setMaxKeyLength(40);
 
         Countly def = Countly.sharedInstance();
         def.init(shared);
         Assert.assertTrue("the first instance initialises normally", def.isInitialized());
         def.sessions().beginSession();
 
+        // the developer changes their mind about the device id before building the second instance
+        shared.setDeviceId(DEVICE_B);
+
         Countly named = Countly.instance("instCfgA");
         named.init(shared);
 
-        // refused: not initialised, and nothing of its own on disk
-        Assert.assertFalse("a second instance must not initialise from a config another instance used",
-            named.isInitialized());
-        Assert.assertEquals("a refused instance must not write anything",
-            0, TestUtils.getCurrentRQ("", store(CountlyStore.sanitizeNamespace("instCfgA"))).length);
+        Assert.assertTrue("a second instance must initialise from a shared config", named.isInitialized());
+        Assert.assertEquals(CountlyStore.sanitizeNamespace("instCfgA"), named.storageNamespace_);
 
-        // the first instance is untouched by the attempt
+        // the change made between the two inits wins - it must not be reset to what the first init saw
+        Assert.assertEquals("the device id the developer set before the second init must be used",
+            DEVICE_B, store(CountlyStore.sanitizeNamespace("instCfgA")).getDeviceID());
+        Assert.assertEquals("the first instance keeps its own device id", DEVICE_A, store("").getDeviceID());
+
+        // limits are per instance, so one instance's resolved limits can not retruncate the other's data
+        Assert.assertNotSame("instances must not share the limits object they read on every event",
+            def.sdkInternalLimits_, named.sdkInternalLimits_);
+        named.sdkInternalLimits_.setMaxKeyLength(7);
+        Assert.assertEquals("changing one instance's limits must not touch the other's",
+            Integer.valueOf(40), def.sdkInternalLimits_.maxKeyLength);
+
+        // and the first instance is otherwise untouched by the second init
         Assert.assertTrue(def.isInitialized());
         Assert.assertEquals(APP_KEY_A, def.moduleRequestQueue.baseInfoProvider.getAppKey());
         Map<String, String>[] rqDefault = TestUtils.getCurrentRQ(def);
@@ -812,13 +828,8 @@ public class MultiInstanceTests {
         assertAllRequestsCarryAppKey(rqDefault, APP_KEY_A);
         Assert.assertTrue("the first instance keeps the consent requirement it was configured with",
             def.moduleConsent.requiresConsent);
-
-        // giving the second instance its own config works
-        Countly ok = Countly.instance("instCfgA");
-        ok.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instCfgA"));
-        Assert.assertTrue("a fresh config initialises the second instance", ok.isInitialized());
-        ok.sessions().beginSession();
-        assertAllRequestsCarryAppKey(TestUtils.getCurrentRQ(ok), APP_KEY_B);
+        Assert.assertTrue("the second instance inherits the consent requirement the config carries",
+            named.moduleConsent.requiresConsent);
     }
 
     /**

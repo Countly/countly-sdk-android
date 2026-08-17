@@ -370,12 +370,12 @@ class ServerConfigBuilder {
     }
 
     private void validateLimits(Countly countly) {
-        Assert.assertEquals(config.get(keyRLimitKeyLength), countly.config_.sdkInternalLimits.maxKeyLength);
-        Assert.assertEquals(config.get(keyRLimitValueSize), countly.config_.sdkInternalLimits.maxValueSize);
-        Assert.assertEquals(config.get(keyRLimitSegValues), countly.config_.sdkInternalLimits.maxSegmentationValues);
-        Assert.assertEquals(config.get(keyRLimitBreadcrumb), countly.config_.sdkInternalLimits.maxBreadcrumbCount);
-        Assert.assertEquals(config.get(keyRLimitTraceLength), countly.config_.sdkInternalLimits.maxStackTraceLineLength);
-        Assert.assertEquals(config.get(keyRLimitTraceLine), countly.config_.sdkInternalLimits.maxStackTraceLinesPerThread);
+        Assert.assertEquals(config.get(keyRLimitKeyLength), countly.sdkInternalLimits_.maxKeyLength);
+        Assert.assertEquals(config.get(keyRLimitValueSize), countly.sdkInternalLimits_.maxValueSize);
+        Assert.assertEquals(config.get(keyRLimitSegValues), countly.sdkInternalLimits_.maxSegmentationValues);
+        Assert.assertEquals(config.get(keyRLimitBreadcrumb), countly.sdkInternalLimits_.maxBreadcrumbCount);
+        Assert.assertEquals(config.get(keyRLimitTraceLength), countly.sdkInternalLimits_.maxStackTraceLineLength);
+        Assert.assertEquals(config.get(keyRLimitTraceLine), countly.sdkInternalLimits_.maxStackTraceLinesPerThread);
         Assert.assertEquals(config.get(keyRUserPropertyCacheLimit), countly.moduleConfiguration.getUserPropertyCacheLimit());
     }
 
