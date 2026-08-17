@@ -147,15 +147,24 @@ public class ModuleFeedback extends ModuleBase {
 
                 L.d("[ModuleFeedback] Retrieved request: [" + checkResponse.toString() + "]");
 
-                List<CountlyFeedbackWidget> feedbackEntries = parseFeedbackList(checkResponse);
+                List<CountlyFeedbackWidget> feedbackEntries = parseFeedbackList(checkResponse, L);
 
                 devCallback.onFinished(feedbackEntries, null);
             }
         }, L);
     }
 
+    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
     static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
-        Countly.sharedInstance().L.d("[ModuleFeedback] calling 'parseFeedbackList'");
+        return parseFeedbackList(requestResponse, new ModuleLog());
+    }
+
+    /**
+     * @param L logger of the instance that requested this widget list, so widget ids, types and tags are
+     * reported to that instance's log listener rather than the default instance's
+     */
+    static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse, @NonNull ModuleLog L) {
+        L.d("[ModuleFeedback] calling 'parseFeedbackList'");
 
         List<CountlyFeedbackWidget> parsedRes = new ArrayList<>();
         try {
@@ -163,7 +172,7 @@ public class ModuleFeedback extends ModuleBase {
                 JSONArray jArray = requestResponse.optJSONArray("result");
 
                 if (jArray == null) {
-                    Countly.sharedInstance().L.w("[ModuleFeedback] parseFeedbackList, response does not have a valid 'result' entry. No widgets retrieved.");
+                    L.w("[ModuleFeedback] parseFeedbackList, response does not have a valid 'result' entry. No widgets retrieved.");
                     return parsedRes;
                 }
 
@@ -179,7 +188,7 @@ public class ModuleFeedback extends ModuleBase {
 
                         JSONArray jTagArr = jObj.optJSONArray("tg");
                         if (jTagArr == null) {
-                            Countly.sharedInstance().L.w("[ModuleFeedback] parseFeedbackList, no tags received");
+                            L.w("[ModuleFeedback] parseFeedbackList, no tags received");
                         } else {
                             for (int in = 0; in < jTagArr.length(); in++) {
                                 valTagsArr.add(jTagArr.getString(in));
@@ -187,12 +196,12 @@ public class ModuleFeedback extends ModuleBase {
                         }
 
                         if (valId.isEmpty()) {
-                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
+                            L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
                             continue;
                         }
 
                         if (valType.isEmpty()) {
-                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget type, dropping");
+                            L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget type, dropping");
                             continue;
                         }
 
@@ -204,7 +213,7 @@ public class ModuleFeedback extends ModuleBase {
                         } else if (valType.equals("rating")) {
                             plannedType = FeedbackWidgetType.rating;
                         } else {
-                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
+                            L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
                             continue;
                         }
 
@@ -217,12 +226,12 @@ public class ModuleFeedback extends ModuleBase {
 
                         parsedRes.add(se);
                     } catch (Exception ex) {
-                        Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, failed to parse json, [" + ex.toString() + "]");
+                        L.e("[ModuleFeedback] parseFeedbackList, failed to parse json, [" + ex.toString() + "]");
                     }
                 }
             }
         } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, Encountered exception while parsing feedback list, [" + ex.toString() + "]");
+            L.e("[ModuleFeedback] parseFeedbackList, Encountered exception while parsing feedback list, [" + ex.toString() + "]");
         }
 
         return parsedRes;
@@ -371,7 +380,7 @@ public class ModuleFeedback extends ModuleBase {
         webView.clearHistory();
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         Utils.applyWebViewSecurityDefaults(webView.getSettings());
-        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes);
+        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes, L);
         webView.setWebViewClient(webViewClient);
         webView.loadUrl(url);
         webView.requestFocus();
@@ -500,6 +509,10 @@ public class ModuleFeedback extends ModuleBase {
         // including other SDK instances (the overlay is bound to the single foreground Activity).
         if (ContentOverlayView.isOtherOverlayPresented(feedbackOverlay)) {
             L.w("[ModuleFeedback] a content or feedback overlay is already being shown (possibly by another instance), skipping this widget");
+            //every other skip in this method reports back, so a caller awaiting the callback is not left hanging
+            if (devCallback != null) {
+                devCallback.onFinished("A content or feedback overlay is already being shown");
+            }
             return;
         }
 

@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,11 @@ public class CountlyConfig {
     protected EventQueueProvider eventQueueProvider = null;
 
     protected RequestQueueProvider requestQueueProvider = null;
+
+    // Storage namespace of the instance that last init()ed with this config; null until one does.
+    String initialisedForNamespace = null;
+    // What these fields held before any init() touched them. See DerivedFieldSnapshot.
+    DerivedFieldSnapshot derivedFieldSnapshot = null;
 
     protected DeviceIdProvider deviceIdProvider = null;
 
@@ -1294,4 +1300,152 @@ public class CountlyConfig {
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public final ConfigExperimental experimental = new ConfigExperimental();
+
+    /**
+     * What a config's derived fields held before any {@code init()} touched them.
+     * <p>
+     * A CountlyConfig is meant to be used by exactly one Countly instance, but nothing stops a developer
+     * from passing one config to two instances - and {@code init()} plus the module constructors write
+     * their results back onto the config (the store, the queues, every {@code *Provider} back-reference,
+     * the DeviceInfo, and the temporary-device-id sentinel). Reusing such a config would silently hand
+     * the next instance the previous instance's objects: its store and request queue, its consent and
+     * device-id providers, even its app key and server URL through {@code baseInfoProvider}.
+     * <p>
+     * So the first {@code init()} to use a config snapshots these fields, and every later {@code init()}
+     * restores the snapshot before it starts. Each init then sees exactly what the developer configured,
+     * whether it is a second instance or the same instance re-initialised after {@code halt()}.
+     * <p>
+     * The same applies to the values the server behaviour settings resolve to: {@code ModuleConfiguration}
+     * writes those back onto the config from its own constructor, reading the STORED settings, so no
+     * server round trip is needed for one instance's settings to become the next instance's configuration.
+     * They are snapshotted as well, because inheriting a stored "consent not required" would silently
+     * switch consent gating off for an instance whose developer required it.
+     * <p>
+     * Deliberately NOT snapshotted: {@link CountlyConfig#initialActivity} (init clears it on purpose - a
+     * later init must not re-seed a possibly destroyed activity) and the idempotent value normalisations
+     * (server-URL trailing slash and the queue-size clamps), which yield the same result when re-applied.
+     * <p>
+     * Note the residual limitation: {@code init()} also aliases the config into the instance's
+     * {@code config_}, so two instances handed one config keep reading the same object after init.
+     * Restoring at init fixes what an instance STARTS with, not later cross-writes. One config per
+     * instance remains the rule, which is why init warns loudly when it sees reuse.
+     */
+    static final class DerivedFieldSnapshot {
+        private final CountlyStore countlyStore;
+        private final StorageProvider storageProvider;
+        private final EventQueueProvider eventQueueProvider;
+        private final RequestQueueProvider requestQueueProvider;
+        private final EventProvider eventProvider;
+        private final ConsentProvider consentProvider;
+        private final DeviceIdProvider deviceIdProvider;
+        private final BaseInfoProvider baseInfoProvider;
+        private final ViewIdProvider viewIdProvider;
+        private final ConfigurationProvider configProvider;
+        private final HealthTracker healthTracker;
+        private final DeviceInfo deviceInfo;
+        private final ImmediateRequestGenerator immediateRequestGenerator;
+        private final Countly.LifecycleObserver lifecycleObserver;
+        private final SafeIDGenerator safeViewIDGenerator;
+        private final SafeIDGenerator safeEventIDGenerator;
+        private final String deviceID;
+        //init() only writes these when locationFallback is set, which nothing does today - snapshotted so
+        //that reviving the pre-init location setter can not leak one instance's location into the next
+        private final String locationCountyCode;
+        private final String locationCity;
+        private final String locationLocation;
+        private final String locationIpAddress;
+        //Values the server behaviour settings overwrite. ModuleConfiguration.updateConfigVariables writes
+        //its resolved settings back onto the config, and it runs inside the module's constructor from the
+        //STORED settings - so with a reused config the first instance's server settings become the second
+        //instance's configuration. shouldRequireConsent is the dangerous one: inheriting a stored "consent
+        //not required" would silently switch consent gating off for an instance that asked for it.
+        private final boolean loggingEnabled;
+        private final boolean shouldRequireConsent;
+        private final Integer eventQueueSizeThreshold;
+        private final Integer sessionUpdateTimerDelay;
+        private final int maxRequestQueueSize;
+        private final int dropAgeHours;
+        private final Integer maxKeyLength;
+        private final Integer maxValueSize;
+        private final Integer maxSegmentationValues;
+        private final Integer maxBreadcrumbCount;
+        private final Integer maxStackTraceLinesPerThread;
+        private final Integer maxStackTraceLineLength;
+        private final int zoneTimerInterval;
+
+        DerivedFieldSnapshot(@NonNull CountlyConfig config) {
+            countlyStore = config.countlyStore;
+            storageProvider = config.storageProvider;
+            eventQueueProvider = config.eventQueueProvider;
+            requestQueueProvider = config.requestQueueProvider;
+            eventProvider = config.eventProvider;
+            consentProvider = config.consentProvider;
+            deviceIdProvider = config.deviceIdProvider;
+            baseInfoProvider = config.baseInfoProvider;
+            viewIdProvider = config.viewIdProvider;
+            configProvider = config.configProvider;
+            healthTracker = config.healthTracker;
+            deviceInfo = config.deviceInfo;
+            immediateRequestGenerator = config.immediateRequestGenerator;
+            lifecycleObserver = config.lifecycleObserver;
+            safeViewIDGenerator = config.safeViewIDGenerator;
+            safeEventIDGenerator = config.safeEventIDGenerator;
+            deviceID = config.deviceID;
+            locationCountyCode = config.locationCountyCode;
+            locationCity = config.locationCity;
+            locationLocation = config.locationLocation;
+            locationIpAddress = config.locationIpAddress;
+            loggingEnabled = config.loggingEnabled;
+            shouldRequireConsent = config.shouldRequireConsent;
+            eventQueueSizeThreshold = config.eventQueueSizeThreshold;
+            sessionUpdateTimerDelay = config.sessionUpdateTimerDelay;
+            maxRequestQueueSize = config.maxRequestQueueSize;
+            dropAgeHours = config.dropAgeHours;
+            maxKeyLength = config.sdkInternalLimits.maxKeyLength;
+            maxValueSize = config.sdkInternalLimits.maxValueSize;
+            maxSegmentationValues = config.sdkInternalLimits.maxSegmentationValues;
+            maxBreadcrumbCount = config.sdkInternalLimits.maxBreadcrumbCount;
+            maxStackTraceLinesPerThread = config.sdkInternalLimits.maxStackTraceLinesPerThread;
+            maxStackTraceLineLength = config.sdkInternalLimits.maxStackTraceLineLength;
+            zoneTimerInterval = config.content.zoneTimerInterval;
+        }
+
+        void restoreOnto(@NonNull CountlyConfig config) {
+            config.countlyStore = countlyStore;
+            config.storageProvider = storageProvider;
+            config.eventQueueProvider = eventQueueProvider;
+            config.requestQueueProvider = requestQueueProvider;
+            config.eventProvider = eventProvider;
+            config.consentProvider = consentProvider;
+            config.deviceIdProvider = deviceIdProvider;
+            config.baseInfoProvider = baseInfoProvider;
+            config.viewIdProvider = viewIdProvider;
+            config.configProvider = configProvider;
+            config.healthTracker = healthTracker;
+            config.deviceInfo = deviceInfo;
+            config.immediateRequestGenerator = immediateRequestGenerator;
+            config.lifecycleObserver = lifecycleObserver;
+            config.safeViewIDGenerator = safeViewIDGenerator;
+            config.safeEventIDGenerator = safeEventIDGenerator;
+            config.deviceID = deviceID;
+            config.locationCountyCode = locationCountyCode;
+            config.locationCity = locationCity;
+            config.locationLocation = locationLocation;
+            config.locationIpAddress = locationIpAddress;
+            config.loggingEnabled = loggingEnabled;
+            config.shouldRequireConsent = shouldRequireConsent;
+            config.eventQueueSizeThreshold = eventQueueSizeThreshold;
+            config.sessionUpdateTimerDelay = sessionUpdateTimerDelay;
+            config.maxRequestQueueSize = maxRequestQueueSize;
+            config.dropAgeHours = dropAgeHours;
+            config.sdkInternalLimits.maxKeyLength = maxKeyLength;
+            config.sdkInternalLimits.maxValueSize = maxValueSize;
+            config.sdkInternalLimits.maxSegmentationValues = maxSegmentationValues;
+            config.sdkInternalLimits.maxBreadcrumbCount = maxBreadcrumbCount;
+            config.sdkInternalLimits.maxStackTraceLinesPerThread = maxStackTraceLinesPerThread;
+            config.sdkInternalLimits.maxStackTraceLineLength = maxStackTraceLineLength;
+            config.content.zoneTimerInterval = zoneTimerInterval;
+        }
+
+    }
 }

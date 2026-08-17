@@ -58,7 +58,17 @@ public class UtilsNetworking {
         return decodedResult;
     }
 
+    /**
+     * Convenience overload for callers with no instance context; uses a silent logger. In production
+     * that is only {@link CrashData}, which is public API constructed by the host app and therefore has
+     * no instance to attribute a log to. The only way the hashing below fails is SHA-256 being absent
+     * from the platform, so nothing diagnosable is lost in practice.
+     */
     protected static @NonNull String sha256Hash(@NonNull String toHash) {
+        return sha256Hash(toHash, new ModuleLog());
+    }
+
+    protected static @NonNull String sha256Hash(@NonNull String toHash, @NonNull ModuleLog L) {
         assert toHash != null;
 
         String hash;
@@ -72,7 +82,7 @@ public class UtilsNetworking {
             hash = bytesToHex(bytes);
         } catch (Throwable e) {
             hash = "";
-            Countly.sharedInstance().L.e("Cannot tamper-protect params", e);
+            L.e("Cannot tamper-protect params", e);
         }
         return hash;
     }

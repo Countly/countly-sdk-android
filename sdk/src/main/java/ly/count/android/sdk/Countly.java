@@ -28,6 +28,7 @@ import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
@@ -148,6 +149,10 @@ public class Countly {
     @SuppressLint("StaticFieldLeak")
     static final Map<String, Countly> instances_ = new ConcurrentHashMap<>();
 
+    //Serialises creation in instance(name) against removal in removeInstance(name), so a name is never
+    //created and removed at the same time. Plain reads go straight to the concurrent map.
+    private static final Object instancesLock_ = new Object();
+
     // Test support only (default OFF, never enabled in production): instrumented tests create many
     // detached "new Countly().init(...)" instances but usually halt only the singleton, so each
     // detached instance keeps its session-update timer running and leaks 'onTimer' ticks into the
@@ -224,6 +229,10 @@ public class Countly {
 
     //reference to countly store
     CountlyStore countlyStore;
+
+    //This instance's DeviceInfo. Every init() overwrites config.deviceInfo, so reading it back off a
+    //reused config would hand this instance another instance's foreground/background state.
+    DeviceInfo deviceInfo_;
 
     // Storage namespace suffix for this instance's persisted files (main store + legacy OpenUDID).
     // Empty for the default instance -> legacy file names (backward compatible); derived from the
@@ -310,22 +319,83 @@ public class Countly {
      * every other instance. Any stable string works; passing your app key as the name is the natural
      * choice for one instance per Countly application. A null or empty name returns the default
      * (shared) instance. The returned instance is not initialized - call {@code init(config)} on it.
+     * <p>
+     * <b>Push notifications and native crash dumps are not multi-instance.</b> Both are process-wide and
+     * owned by the default (shared) instance: {@code CountlyPush} has one static registration, one token
+     * and one shared preferences file, and sdk-native writes minidumps to one fixed directory. A named
+     * instance therefore touches neither - its push consent changes, push tokens, push clicks and native
+     * dumps are all left to the default instance. Initialise push on {@link #sharedInstance()}.
      *
      * @param name the instance name (sole identity of the instance)
      * @return the (possibly newly created, uninitialized) Countly instance registered under that name
      */
     public static Countly instance(String name) {
         final String key = (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
-        return instances_.computeIfAbsent(key, k -> {
+
+        //Deliberately NOT Map.computeIfAbsent: that is API 24, this SDK is minSdk 21 and does not enable
+        //core library desugaring, so it would throw NoSuchMethodError on API 21-23 - on the very first
+        //sharedInstance() call. Double-checked locking uses only pre-24 APIs and, unlike putIfAbsent,
+        //never constructs a losing duplicate (the constructor starts a scheduled-executor thread).
+        Countly existing = instances_.get(key);
+        if (existing != null) {
+            return existing;
+        }
+
+        synchronized (instancesLock_) {
+            existing = instances_.get(key);
+            if (existing != null) {
+                return existing;
+            }
             Countly c = new Countly();
-            c.instanceName_ = k;
+            c.instanceName_ = key;
             // Give named instances a distinct logcat tag so their console output is attributable; the
             // default instance keeps the plain "Countly" tag for backward compatibility.
-            if (!DEFAULT_NAME.equals(k)) {
-                c.L.setTag(TAG + "-" + k);
+            if (!DEFAULT_NAME.equals(key)) {
+                c.L.setTag(TAG + "-" + key);
             }
+            instances_.put(key, c);
             return c;
-        });
+        }
+    }
+
+    /**
+     * Logs a registry-level message without going through {@link #sharedInstance()}, which would create
+     * and register a default instance just to log. Prefers the default instance's logger when that object
+     * already exists, so the message also reaches that instance's log listener and health tracker.
+     * <p>
+     * The logcat fallback is gated on some instance actually having console logging on: raw
+     * {@code android.util.Log} bypasses {@link CountlyConfig#setLoggingEnabled(boolean)} and
+     * {@link CountlyConfig#disableSDKLoggingInProduction()}, and these messages carry an instance name,
+     * which is commonly the app key - it must not surface in a build that asked for no logging.
+     */
+    private static void logWithoutCreatingDefault(String message, boolean warning) {
+        Countly existingDefault = instances_.get(DEFAULT_NAME);
+        if (existingDefault != null) {
+            if (warning) {
+                existingDefault.L.w(message);
+            } else {
+                existingDefault.L.d(message);
+            }
+            return;
+        }
+
+        boolean consoleLoggingWanted = false;
+        for (Countly c : instances_.values()) {
+            if (c.L.loggingEnabled) {
+                consoleLoggingWanted = true;
+                break;
+            }
+        }
+
+        if (!consoleLoggingWanted) {
+            return;
+        }
+
+        if (warning) {
+            Log.w(TAG, message);
+        } else {
+            Log.d(TAG, message);
+        }
     }
 
     /**
@@ -381,26 +451,41 @@ public class Countly {
      * {@link #sharedInstance()}, so a null, empty, or default name is a no-op (warned, not silent).
      * Any reference a caller still holds to the removed instance becomes detached (halted and no
      * longer registered); obtain a fresh handle via {@link #instance(String)} instead.
+     * <p>
+     * The instance's stored data is <b>kept</b>: its queued requests and events, device ID, consent state
+     * and cached remote-config values stay on disk, so nothing recorded but not yet sent is lost, and
+     * initialising that name again resumes from where it left off. Removing frees the in-memory instance,
+     * not its storage - so if you key instances by short-lived, dynamic names, their files accumulate.
+     * Call {@link #halt()} on the instance first when you want its data erased as well.
      *
-     * @param name the instance name to halt and deregister
+     * @param name the instance name to stop and deregister
      */
     public static void removeInstance(String name) {
         final String key = (name == null || name.isEmpty()) ? DEFAULT_NAME : name;
         if (DEFAULT_NAME.equals(key)) {
-            sharedInstance().L.w("[Countly] removeInstance, the default (shared) instance can not be removed; use halt() to reset it. Ignoring.");
+            logWithoutCreatingDefault("[Countly] removeInstance, the default (shared) instance can not be removed; use halt() to reset it. Ignoring.", true);
             return;
         }
-        //remove first so a concurrent instance(name) creates a fresh object rather than handing back
-        //the one being torn down; then halt the removed object to stop its timer, unregister its
-        //global callbacks, and clear its stored data. Once it is out of the static registry and the
-        //caller drops its handle, the whole instance (context, config, queues) becomes GC-eligible.
-        Countly c = instances_.remove(key);
+        Countly c;
+        //Deregister under the same lock instance(name) creates under, so a concurrent creation either
+        //completes before this removal or begins after it - a brand new instance can never be removed
+        //while its creator is still inside instance(). Remove before halting so that creation hands back
+        //a fresh object rather than the one being torn down.
+        synchronized (instancesLock_) {
+            c = instances_.remove(key);
+        }
+
         if (c == null) {
-            sharedInstance().L.d("[Countly] removeInstance, no instance registered under [" + key + "], nothing to remove");
+            logWithoutCreatingDefault("[Countly] removeInstance, no instance registered under [" + key + "], nothing to remove", false);
             return;
         }
-        c.L.i("[Countly] removeInstance, halting and deregistering instance [" + key + "]");
-        c.halt();
+        //Stop outside the lock: teardown does real work (timers, callbacks, threads) and must not block
+        //instance() creation. The removed object becomes GC-eligible once the caller drops its handle,
+        //unless ModuleCrash#halt could not unlink from the process-global handler chain.
+        //Deliberately NOT halt(): deregistering an instance must not throw away data it recorded but has
+        //not sent yet. Callers who want the data gone call halt() on the instance first.
+        c.L.i("[Countly] removeInstance, stopping and deregistering instance [" + key + "], stored data is kept");
+        c.stopWithoutClearingData();
     }
 
     /**
@@ -497,6 +582,19 @@ public class Countly {
             storageNamespace_ = "";
         } else {
             storageNamespace_ = CountlyStore.sanitizeNamespace(instanceName_);
+        }
+
+        //A CountlyConfig belongs to exactly one instance. init() keeps the object as this instance's
+        //config_, and ModuleConfiguration writes the resolved server behaviour settings back onto it - at
+        //init from the stored settings and again on every /o/sdk response. Two instances holding one
+        //object would therefore keep overwriting each other's live limits, consent requirement and
+        //webview policy for as long as the app runs. Restoring the developer's values at init (see
+        //CountlyConfig.DerivedFieldSnapshot) fixes what an instance STARTS with, but nothing can unshare
+        //the object afterwards, so refuse rather than initialise something that misbehaves later.
+        //Re-initialising the SAME instance after halt() reuses its own config and stays allowed.
+        if (config.derivedFieldSnapshot != null && !storageNamespace_.equals(config.initialisedForNamespace)) {
+            L.e("[Init] This CountlyConfig was already used to initialise another instance, and a config can not be shared: the instances would keep overwriting each other's server-resolved settings. Instance [" + instanceName_ + "] was NOT initialised. Build a fresh CountlyConfig for each instance.");
+            return this;
         }
 
         if (config.application == null) {
@@ -622,6 +720,19 @@ public class Countly {
                 L.i("[Init] Explicit storage mode is being enabled");
             }
 
+            //init() and the module constructors write their results back onto the config: the store, the
+            //queues, every provider back-reference, the DeviceInfo, the temporary-device-id sentinel and
+            //the server-resolved settings. Re-initialising this instance must therefore start from what
+            //the developer configured, not from the previous init's leftovers - halt() throws away the
+            //ConnectionQueue, so a cached requestQueueProvider would write through a torn-down queue.
+            //Cross-instance reuse is refused earlier in init, so this only ever restores for one instance.
+            if (config.derivedFieldSnapshot == null) {
+                config.derivedFieldSnapshot = new CountlyConfig.DerivedFieldSnapshot(config);
+            } else {
+                config.derivedFieldSnapshot.restoreOnto(config);
+            }
+            config.initialisedForNamespace = storageNamespace_;
+
             //set or create the CountlyStore
             if (config.countlyStore != null) {
                 //we are running a test and using a mock object
@@ -712,7 +823,9 @@ public class Countly {
             if (config.metricProviderOverride != null) {
                 L.d("[Init] Custom metric provider was provided");
             }
-            config.deviceInfo = new DeviceInfo(config.metricProviderOverride);
+            deviceInfo_ = new DeviceInfo(config.metricProviderOverride);
+            deviceInfo_.L = L;
+            config.deviceInfo = deviceInfo_;
 
             if (config.tamperingProtectionSalt != null) {
                 L.d("[Init] Parameter tampering protection salt set");
@@ -745,6 +858,8 @@ public class Countly {
             try {
                 Map<String, Object> migrationParams = new HashMap<>();
                 migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_set, config.deviceID != null);
+                migrationParams.put(MigrationHelper.key_from_0_to_1_custom_id_value, config.deviceID);
+                migrationParams.put(MigrationHelper.key_from_0_to_1_temp_id_enabled, config.temporaryDeviceIdEnabled);
 
                 MigrationHelper mHelper = new MigrationHelper(config.storageProvider, L, context_, storageNamespace_.isEmpty());
                 mHelper.doWork(migrationParams);
@@ -801,6 +916,10 @@ public class Countly {
             moduleRequestQueue.consentProvider = config.consentProvider;
             moduleHealthCheck.consentProvider = config.consentProvider;
             moduleRequestQueue.deviceIdProvider = config.deviceIdProvider;
+            //these two are constructed before ModuleDeviceId exists, so their own field is still null;
+            //fill it in here rather than have them read the shared config at request time
+            moduleConfiguration.deviceIdProvider = config.deviceIdProvider;
+            moduleHealthCheck.deviceIdProvider = config.deviceIdProvider;
             moduleConsent.eventProvider = config.eventProvider;
             moduleConsent.deviceIdProvider = config.deviceIdProvider;
             moduleDeviceId.eventProvider = config.eventProvider;
@@ -815,7 +934,11 @@ public class Countly {
 
             if (config.customNetworkRequestHeaders != null) {
                 L.i("[Countly] Calling addCustomNetworkRequestHeaders");
-                requestHeaderCustomValues = config.customNetworkRequestHeaders;
+                //Defensive copy: the config stores the caller's map by reference, and
+                //addCustomNetworkRequestHeaders mutates this field in place. Two instances configured
+                //from one map would otherwise share it, so adding an Authorization header to one
+                //instance would send it to the other instance's server too.
+                requestHeaderCustomValues = new HashMap<>(config.customNetworkRequestHeaders);
 
                 connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             }
@@ -1007,7 +1130,7 @@ public class Countly {
             if (config_.lifecycleObserver.LifeCycleAtleastStarted()) {
                 L.d("[Countly] SDK detects that the app is in the foreground. Increasing the activity counter and setting the foreground state.");
                 activityCount_++;
-                config.deviceInfo.inForeground();
+                deviceInfo_.inForeground();
             }
 
             // Seed modules with the current activity if the app is already in the foreground.
@@ -1148,7 +1271,28 @@ public class Countly {
      * This will destroy all stored data
      */
     public synchronized void halt() {
-        L.i("Halting Countly!");
+        tearDown(true);
+    }
+
+    /**
+     * Stops this instance without touching its stored data: session and event tracking are disabled, the
+     * timer and worker threads are released, the process-global callbacks are unregistered, and the
+     * modules are torn down - but the request queue, event queue, device ID and consent state stay on
+     * disk, so a later {@code init(config)} on this instance picks up exactly where it left off and
+     * anything not yet sent to the server is still sent.
+     * <p>
+     * This is what {@link #removeInstance(String)} uses. {@link #halt()} is the same teardown plus a wipe.
+     */
+    synchronized void stopWithoutClearingData() {
+        tearDown(false);
+    }
+
+    /**
+     * @param clearStoredData whether to also erase this instance's persisted data. The teardown itself is
+     * identical either way; only {@link #halt()} destroys data.
+     */
+    private synchronized void tearDown(boolean clearStoredData) {
+        L.i("Halting Countly!" + (clearStoredData ? " Stored data will be cleared." : " Stored data is kept."));
         sdkIsInitialised = false;
         L.SetListener(null);
         stopTimer();
@@ -1168,10 +1312,13 @@ public class Countly {
         }
 
         if (connectionQueue_ != null) {
-            if (countlyStore != null) {
+            if (clearStoredData && countlyStore != null) {
                 countlyStore.clear();
             }
             connectionQueue_.setContext(null);
+            //init builds a fresh ConnectionQueue, so release this one's worker threads instead of
+            //stranding them; they are non-daemon and would otherwise outlive every halt/init cycle.
+            connectionQueue_.shutdownExecutors();
             connectionQueue_ = null;
         }
 
@@ -1240,7 +1387,7 @@ public class Countly {
             }
         }
 
-        config_.deviceInfo.inForeground();
+        deviceInfo_.inForeground();
 
         for (ModuleBase module : modules) {
             module.onActivityStarted(activity, activityCount_);
@@ -1265,7 +1412,7 @@ public class Countly {
             moduleSessions.endSessionInternal();
         }
 
-        config_.deviceInfo.inBackground();
+        deviceInfo_.inBackground();
 
         for (ModuleBase module : modules) {
             module.onActivityStopped(activityCount_);
@@ -1367,13 +1514,17 @@ public class Countly {
      * DON'T USE THIS!!!!
      */
     public void onRegistrationId(String registrationId, CountlyMessagingProvider provider) {
-        //if this call is done by CountlyPush, it is assumed that the SDK is already initialised
-        if (!config_.consentProvider.getConsent(CountlyFeatureNames.push)) {
+        //CountlyPush assumes the SDK is already initialised, but it is driven by an OS callback that can
+        //arrive at any time - so check instead of dereferencing a config that may not exist yet
+        if (!isInitialized() || moduleConsent == null) {
+            L.w("[onRegistrationId] Calling this before the SDK is initialized.");
             return;
         }
 
-        if (!isInitialized()) {
-            L.w("[onRegistrationId] Calling this before the SDK is initialized.");
+        //read consent off this instance's own module, never off the config object (which a developer may
+        //have handed to another instance)
+        if (!moduleConsent.getConsent(CountlyFeatureNames.push)) {
+            return;
         }
 
         //debouncing the call

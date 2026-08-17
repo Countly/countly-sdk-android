@@ -152,7 +152,13 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      */
     void doPushConsentSpecialAction(final boolean consentValue) {
         L.d("[ModuleConsent] doPushConsentSpecialAction, consentValue: [" + consentValue + "]");
+        // Push is owned process-wide by the default instance. setConsentPush gates the store write; the
+        // broadcast is gated here because CountlyPush reacts to it by registering the DEFAULT's token.
         _cly.countlyStore.setConsentPush(consentValue);
+        if (!_cly.storageNamespace_.isEmpty()) {
+            L.d("[ModuleConsent] doPushConsentSpecialAction, named instance does not own push, skipping the process-global consent broadcast");
+            return;
+        }
         _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
     }
 

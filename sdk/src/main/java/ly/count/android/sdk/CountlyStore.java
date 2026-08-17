@@ -147,17 +147,27 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         return base + "_" + storageNamespace;
     }
 
+    // Longest sanitized prefix kept before the hash suffix. The namespace ends up inside a
+    // SharedPreferences file name ("COUNTLY_STORE_<ns>.xml"), and file names are capped at 255 bytes on
+    // Android's filesystems. Past that limit SharedPreferences does not throw, it silently stops
+    // persisting - so a long instance name would look like it works while losing every write. The hash
+    // suffix still keeps truncated names distinct from each other.
+    static final int MAX_NAMESPACE_PREFIX_LENGTH = 100;
+
     /**
      * Turns an instance name into a file-name-safe storage namespace. Non-alphanumeric characters
      * are replaced with '_', and a short deterministic FNV-1a hash of the raw name is appended so
      * two names that sanitize to the same string (e.g. "a.b" and "a-b") still get distinct files.
+     * The readable part is capped at {@link #MAX_NAMESPACE_PREFIX_LENGTH} characters; the hash is
+     * always computed over the full name, so two long names sharing a prefix still get distinct files.
      */
     static String sanitizeNamespace(String name) {
         if (name == null || name.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder(name.length() + 9);
-        for (int i = 0; i < name.length(); i++) {
+        int prefixLength = Math.min(name.length(), MAX_NAMESPACE_PREFIX_LENGTH);
+        StringBuilder sb = new StringBuilder(prefixLength + 9);
+        for (int i = 0; i < prefixLength; i++) {
             char c = name.charAt(i);
             if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9')) {
                 sb.append(c);
@@ -417,7 +427,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         final List<Event> events = new ArrayList<>(array.length);
         for (String s : array) {
             try {
-                final Event event = Event.fromJSON(new JSONObject(s));
+                final Event event = Event.fromJSON(new JSONObject(s), L);
                 if (event != null) {
                     events.add(event);
                 }
@@ -475,7 +485,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         final JSONArray eventArray = new JSONArray();//todo: possibly transform to json array by hand
         for (Event e : events) {
-            eventArray.put(e.toJSON());
+            eventArray.put(e.toJSON(L));
         }
 
         String result = eventArray.toString();
@@ -734,7 +744,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         final List<Event> events = getEventList();
         if (events.size() < MAX_EVENTS) {//todo looks weird
             events.add(event);
-            writeEventDataToStorage(joinEvents(events, DELIMITER, pcc));
+            writeEventDataToStorage(joinEvents(events, DELIMITER, pcc, L));
         }
 
         if (pcc != null) {
@@ -782,10 +792,21 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     void setConsentPush(boolean consentValue) {
+        // The push file is shared and owned by the default instance. ModuleConsent calls this on every
+        // init, so without the gate creating a named instance would re-grant the owner's push consent.
+        if (!ownsPushStorage) {
+            L.d("[CountlyStore] setConsentPush, this instance does not own the shared push storage, skipping the push consent write");
+            return;
+        }
         preferencesPush_.edit().putBoolean(CONSENT_GCM_PREFERENCES, consentValue).apply();
     }
 
     Boolean getConsentPush() {
+        // Symmetry with setConsentPush: a named instance has no push, so it must not read the owner's
+        // consent either.
+        if (!ownsPushStorage) {
+            return false;
+        }
         return preferencesPush_.getBoolean(CONSENT_GCM_PREFERENCES, false);
     }
 
@@ -853,7 +874,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         if (eventsToRemove != null && eventsToRemove.size() > 0) {
             final List<Event> events = getEventList();
             if (events.removeAll(eventsToRemove)) {
-                storageWriteEventQueue(joinEvents(events, DELIMITER, pcc), false);
+                storageWriteEventQueue(joinEvents(events, DELIMITER, pcc, L), false);
             }
         }
 
@@ -870,7 +891,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * @param delimiter delimiter to use, should not be something that can be found in URL-encoded JSON string
      */
     @SuppressWarnings("SameParameterValue")
-    static String joinEvents(final List<Event> collection, final String delimiter, PerformanceCounterCollector pcc) {
+    static String joinEvents(final List<Event> collection, final String delimiter, PerformanceCounterCollector pcc, @NonNull ModuleLog L) {
         long tsStart = 0L;
         if (pcc != null) {
             tsStart = UtilsTime.getNanoTime();
@@ -878,7 +899,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         final List<String> strings = new ArrayList<>(collection.size());
         for (Event e : collection) {
-            strings.add(e.toJSON().toString());
+            strings.add(e.toJSON(L).toString());
         }
         String ret = Utils.joinCountlyStore(strings, delimiter);
 
@@ -901,12 +922,22 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     String[] getCachedPushData() {
         String[] res = new String[2];
+        // ModuleEvents reads and clears this on EVERY instance, so without the gate the first instance
+        // to init would record the owner's push click under its own app key and then delete it.
+        if (!ownsPushStorage) {
+            return res;
+        }
         res[0] = preferencesPush_.getString(CACHED_PUSH_ACTION_ID, null);
         res[1] = preferencesPush_.getString(CACHED_PUSH_ACTION_INDEX, null);
         return res;
     }
 
     void clearCachedPushData() {
+        // Only the owner may drain the shared push click cache; see getCachedPushData.
+        if (!ownsPushStorage) {
+            L.d("[CountlyStore] clearCachedPushData, this instance does not own the shared push storage, skipping");
+            return;
+        }
         SharedPreferences.Editor spe = preferencesPush_.edit();
 
         spe.remove(CACHED_PUSH_ACTION_ID);

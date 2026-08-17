@@ -937,12 +937,28 @@ class ConnectionQueue implements RequestQueueProvider {
      * Ensures that an executor has been created for ConnectionProcessor instances to be submitted to.
      */
     void ensureExecutor() {
-        if (executor_ == null) {
+        if (executor_ == null || executor_.isShutdown()) {
             if (L != null) {
                 L.v("[ConnectionQueue] ensureExecutor, Creating new executor");
             }
             executor_ = Executors.newSingleThreadExecutor();
         }
+    }
+
+    /**
+     * Releases this queue's worker threads. Called when the owning instance is halted, which discards
+     * the whole ConnectionQueue and builds a new one on the next init - without this, every halt/init
+     * cycle and every instance would strand its request executor and backoff scheduler threads, which
+     * are non-daemon and therefore live for the rest of the process.
+     * <p>
+     * {@code shutdown()} rather than {@code shutdownNow()}: a request already being sent is allowed to
+     * finish rather than being interrupted mid-flight.
+     */
+    void shutdownExecutors() {
+        if (executor_ != null) {
+            executor_.shutdown();
+        }
+        backoffScheduler_.shutdown();
     }
 
     /**

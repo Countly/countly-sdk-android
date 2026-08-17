@@ -20,6 +20,10 @@ class MigrationHelper {
      */
     static final int DATA_SCHEMA_VERSIONS = 4;
     static final String key_from_0_to_1_custom_id_set = "0_1_custom_id_set";
+    // The developer-supplied ID itself, so step 0->1 can store the ID and not just its type.
+    static final String key_from_0_to_1_custom_id_value = "0_1_custom_id_value";
+    // Temporary-ID mode comes from a config flag, not from config.deviceID, so 0->1 has to be told.
+    static final String key_from_0_to_1_temp_id_enabled = "0_1_temp_id_enabled";
     static final String param_key_device_id = "device_id";
     static final String param_key_override_id = "override_id";
     static final String param_key_old_device_id = "old_device_id";
@@ -166,19 +170,33 @@ class MigrationHelper {
     void performMigration0To1(@NonNull Map<String, Object> migrationParams) {
         String deviceIDType = storage.getDeviceIDType();
         String deviceID = storage.getDeviceID();
+        boolean customIdProvided = Boolean.TRUE.equals(migrationParams.get(key_from_0_to_1_custom_id_set));
 
         if (deviceIDType == null && deviceID == null) {
-            //if both the ID and type are null we are in big trouble
-            //set type to OPEN_UDID and generate the ID afterwards
-            storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
-            deviceIDType = DeviceIdType.OPEN_UDID.toString();
+            //Nothing stored yet: honour an init-supplied ID or temporary mode instead of generating a
+            //UUID below. Store the ID too - 3->4 aborts on a null one, leaving legacy requests without it.
+            String customId = (String) migrationParams.get(key_from_0_to_1_custom_id_value);
+            boolean tempIdEnabled = Boolean.TRUE.equals(migrationParams.get(key_from_0_to_1_temp_id_enabled));
+
+            if (customIdProvided && Utils.isNotNullOrEmpty(customId)) {
+                storage.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());
+                storage.setDeviceID(customId);
+                deviceIDType = DeviceIdType.DEVELOPER_SUPPLIED.toString();
+                deviceID = customId;
+            } else if (tempIdEnabled) {
+                //writing OPEN_UDID plus a generated UUID here would make DeviceId adopt that pair, so
+                //temporary ID mode would never be entered
+                storage.setDeviceIDType(DeviceIdType.TEMPORARY_ID.toString());
+                storage.setDeviceID(DeviceId.temporaryCountlyDeviceId);
+                deviceIDType = DeviceIdType.TEMPORARY_ID.toString();
+                deviceID = DeviceId.temporaryCountlyDeviceId;
+            } else {
+                //nothing to preserve, generate below
+                storage.setDeviceIDType(DeviceIdType.OPEN_UDID.toString());
+                deviceIDType = DeviceIdType.OPEN_UDID.toString();
+            }
         } else if (deviceIDType == null) {
             //if the type is null, but the ID value is not null, we have to guess the type
-            Boolean customIdProvided = (Boolean) migrationParams.get(key_from_0_to_1_custom_id_set);
-            if (customIdProvided == null) {
-                customIdProvided = false;
-            }
-
             if (customIdProvided) {
                 //if a custom device ID is provided during init, assume that the previous type was dev supplied
                 storage.setDeviceIDType(DeviceIdType.DEVELOPER_SUPPLIED.toString());

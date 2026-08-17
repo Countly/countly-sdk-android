@@ -85,6 +85,25 @@ class ContentOverlayView extends FrameLayout {
             presentedOverlay = null;
         }
     }
+
+    /**
+     * The guard is claimed in {@link #attachToActivity(Activity)} before the window attach, so that a
+     * second overlay can not slip in mid-attach. If the attach then fails there is no presentation to
+     * protect, and holding the guard would block every later content and feedback overlay in the
+     * process for good - so hand it back on every failure path.
+     */
+    private void abandonFailedAttach(@NonNull String reason) {
+        // A refresh of an already-attached overlay can also fail. The overlay is still a live window in
+        // that case, so it IS the active presentation: keep the guard, and above all do not touch
+        // isAddedToWindow, or removeFromWindow() would later skip the real window and orphan it.
+        if (isAddedToWindow) {
+            Log.w(Countly.TAG, "[ContentOverlayView] attach step failed (" + reason + ") while still attached, keeping the presentation guard");
+            return;
+        }
+
+        releasePresentationGuard();
+        Log.w(Countly.TAG, "[ContentOverlayView] attach failed (" + reason + "), released the presentation guard");
+    }
     private Activity currentHostActivity;
     private WindowManager windowManager;
     private boolean isAddedToWindow = false;
@@ -468,10 +487,31 @@ class ContentOverlayView extends FrameLayout {
             return;
         }
 
+        // The guard is the single definition of "at most one content or feedback overlay at a time".
+        // Enforce it here too, not only at the two module call sites: the modules re-attach their cached
+        // overlay when the app returns to the foreground without re-checking, so an overlay that was
+        // never shown (or whose earlier attach failed) could otherwise steal the presentation from the
+        // overlay that is actually on screen. Self-aware, so refreshing the presenting overlay is fine.
+        if (isOtherOverlayPresented(this)) {
+            Log.w(Countly.TAG, "[ContentOverlayView] attachToActivity, another content or feedback overlay is already presented, skipping");
+            return;
+        }
+
         // Claim the process-global presentation guard: from here this overlay is the active
         // presentation (idempotent across background/foreground reattaches).
         presentedOverlay = this;
 
+        // Anything thrown while measuring or attaching would otherwise strand the guard, blocking every
+        // later content and feedback overlay in the process. Release and rethrow so behaviour is unchanged.
+        try {
+            attachToActivityInternal(activity);
+        } catch (RuntimeException | Error t) {
+            abandonFailedAttach("unexpected " + t.getClass().getSimpleName() + " during attach");
+            throw t;
+        }
+    }
+
+    private void attachToActivityInternal(@NonNull Activity activity) {
         // Check if we're already attached to this activity
         if (currentHostActivity == activity && isAddedToWindow) {
             // Still check for orientation changes — WindowManager views don't get onConfigurationChanged
@@ -515,6 +555,8 @@ class ContentOverlayView extends FrameLayout {
         WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
         if (wm == null) {
             Log.w(Countly.TAG, "[ContentOverlayView] addToWindow, WindowManager is null, skipping");
+            isAddedToWindow = false;
+            abandonFailedAttach("no WindowManager");
             return;
         }
 
@@ -531,7 +573,12 @@ class ContentOverlayView extends FrameLayout {
             Log.w(Countly.TAG, "[ContentOverlayView] addToWindow, token not ready, retrying on next frame");
             View decor = activity.getWindow().getDecorView();
             decor.post(() -> {
-                if (isClosed || activity.isFinishing() || isAddedToWindow) {
+                if (isClosed || isAddedToWindow) {
+                    //close()/destroy() already released the guard, or another attach won the race
+                    return;
+                }
+                if (activity.isFinishing()) {
+                    abandonFailedAttach("host activity finished before the retry");
                     return;
                 }
                 try {
@@ -542,11 +589,13 @@ class ContentOverlayView extends FrameLayout {
                 } catch (Exception e2) {
                     Log.e(Countly.TAG, "[ContentOverlayView] addToWindow, retry also failed", e2);
                     isAddedToWindow = false;
+                    abandonFailedAttach("retry threw " + e2.getClass().getSimpleName());
                 }
             });
         } catch (Exception e) {
             Log.e(Countly.TAG, "[ContentOverlayView] addToWindow, failed to add view", e);
             isAddedToWindow = false;
+            abandonFailedAttach("addView threw " + e.getClass().getSimpleName());
         }
     }
 

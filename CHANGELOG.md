@@ -1,6 +1,9 @@
 ## XX.XX.XX
-* Added support for multiple independent SDK instances, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, `Countly.haltAllInstances()`, and `Countly.removeInstance(name)`, and optionally record the intended name via `CountlyConfig.setInstanceName(String)`. `Countly.sharedInstance()` is unchanged, so existing integrations keep working.
+* Added support for multiple independent SDK instances, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, `Countly.haltAllInstances()`, and `Countly.removeInstance(name)`, and optionally record the intended name via `CountlyConfig.setInstanceName(String)`. `Countly.sharedInstance()` is unchanged, so existing integrations keep working. Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
+
+* Mitigated an issue where a push token arriving before the SDK was initialized, or after it was halted, could crash the app.
+* Mitigated an issue where the request queue worker threads were not released when the SDK was halted.
 
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.

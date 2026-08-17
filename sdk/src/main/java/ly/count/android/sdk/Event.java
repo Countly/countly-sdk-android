@@ -74,12 +74,19 @@ class Event {
         this.dow = dow;
     }
 
+    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
+    JSONObject toJSON() {
+        return toJSON(new ModuleLog());
+    }
+
     /**
      * Creates and returns a JSONObject containing the event data from this object.
      *
+     * @param L logger of the instance that owns this event, so the event key and segmentation are never
+     * reported to another instance's log listener
      * @return a JSONObject containing the event data from this object
      */
-    JSONObject toJSON() {
+    JSONObject toJSON(@NonNull ModuleLog L) {
         final JSONObject json = new JSONObject();
 
         try {
@@ -135,20 +142,26 @@ class Event {
                 json.put(DUR_KEY, dur);
             }
         } catch (JSONException e) {
-            Countly.sharedInstance().L.w("Got exception converting an Event to JSON", e);
+            L.w("Got exception converting an Event to JSON", e);
         }
 
         return json;
+    }
+
+    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
+    static Event fromJSON(@NonNull final JSONObject json) {
+        return fromJSON(json, new ModuleLog());
     }
 
     /**
      * Factory method to create an Event from its JSON representation.
      *
      * @param json JSON object to extract event data from
+     * @param L logger of the instance that owns this event; see {@link #toJSON(ModuleLog)}
      * @return Event object built from the data in the JSON or null if the "key" value is not
      * present or the empty string, or if a JSON exception occurs
      */
-    static Event fromJSON(@NonNull final JSONObject json) {
+    static Event fromJSON(@NonNull final JSONObject json, @NonNull ModuleLog L) {
         Event event = new Event();
 
         try {
@@ -201,7 +214,7 @@ class Event {
                 event.segmentation = segmentation;
             }
         } catch (JSONException e) {
-            Countly.sharedInstance().L.w("Got exception converting JSON to an Event", e);
+            L.w("Got exception converting JSON to an Event", e);
             event = null;
         }
 

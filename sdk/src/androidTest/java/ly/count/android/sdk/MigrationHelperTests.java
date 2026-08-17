@@ -49,6 +49,72 @@ public class MigrationHelperTests {
         return migrationParams;
     }
 
+    /**
+     * Legacy store with a queued request and NOTHING stored about the device ID. 0->1 must persist the
+     * developer-supplied ID and not just its type: 3->4 aborts on a null ID while the schema still
+     * advances, which would leave the queued legacy request without a device_id forever.
+     */
+    @Test
+    public void performMigration0to1_bothNull_storesSuppliedIdSoQueuedRequestsGetDeviceId() {
+        cs.clear();
+        cs.addRequest("fff", false);
+        Assert.assertNull(cs.getDeviceID());
+        Assert.assertNull(cs.getDeviceIDType());
+
+        Map<String, Object> params = GetMigrationParams_0_1(true);
+        params.put(MigrationHelper.key_from_0_to_1_custom_id_value, "user-42");
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        Assert.assertEquals(0, mh.getCurrentSchemaVersion());
+        mh.doWork(params);
+
+        Assert.assertEquals(latestSchemaVersion, mh.getCurrentSchemaVersion());
+        Assert.assertEquals("user-42", cs.getDeviceID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED.toString(), cs.getDeviceIDType());
+
+        //3->4 had a real ID to work with, so the queued legacy request carries it
+        String[] requests = cs.getRequests();
+        Assert.assertEquals(1, requests.length);
+        Assert.assertTrue("queued legacy request must carry the device id after migration, was:[" + requests[0] + "]",
+            requests[0].contains("device_id=user-42"));
+    }
+
+    /**
+     * Same starting state, but temporary ID mode - which is signalled by a config flag, not by
+     * config.deviceID. Writing OPEN_UDID plus a generated UUID here would make DeviceId adopt that pair
+     * and ignore the temporary ID, so temporary mode would never be entered.
+     */
+    @Test
+    public void performMigration0to1_bothNull_preservesTemporaryIdMode() {
+        cs.clear();
+        cs.addRequest("fff", false);
+
+        Map<String, Object> params = GetMigrationParams_0_1(false);
+        params.put(MigrationHelper.key_from_0_to_1_temp_id_enabled, true);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.doWork(params);
+
+        Assert.assertEquals(DeviceId.temporaryCountlyDeviceId, cs.getDeviceID());
+        Assert.assertEquals(DeviceIdType.TEMPORARY_ID.toString(), cs.getDeviceIDType());
+    }
+
+    /**
+     * Without a supplied ID or temporary mode there is nothing to preserve, so the legacy behaviour of
+     * generating an OPEN_UDID stands.
+     */
+    @Test
+    public void performMigration0to1_bothNull_stillGeneratesOpenUdidWhenNothingToPreserve() {
+        cs.clear();
+        cs.addRequest("fff", false);
+
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+        mh.doWork(GetMigrationParams_0_1(false));
+
+        Assert.assertEquals(DeviceIdType.OPEN_UDID.toString(), cs.getDeviceIDType());
+        validateGeneratedUUID(cs.getDeviceID());
+    }
+
     void validateGeneratedUUID(String deviceId) {
         assertNotNull(deviceId);
         Assert.assertTrue(deviceId.length() > 10);

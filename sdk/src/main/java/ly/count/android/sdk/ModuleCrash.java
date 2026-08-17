@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,6 +27,13 @@ public class ModuleCrash extends ModuleBase {
 
     //tracks whether the unhandled crash handler has already been installed, so we only wrap the global handler once
     boolean unhandledCrashHandlerInstalled = false;
+
+    //Kept so halt() can unlink this instance from the process-global handler chain; otherwise a halted
+    //instance stays reachable from Thread.getDefaultUncaughtExceptionHandler() and keeps recording.
+    private Thread.UncaughtExceptionHandler installedCrashHandler = null;
+    private Thread.UncaughtExceptionHandler previousCrashHandler = null;
+    //Set when we could not unlink; the handler then only delegates. Volatile: crashes hit any thread.
+    private volatile boolean crashHandlerDetached = false;
 
     @Nullable
     Map<String, Object> customCrashSegments = null;
@@ -89,7 +97,9 @@ public class ModuleCrash extends ModuleBase {
                     //record crash
                     recordNativeException(dumpFile);
 
-                    //delete dump file
+                    //Always drop the dump, including when consent is missing: retaining it would need a
+                    //cache with its own retention policy, and minidumps are raw process memory we do not
+                    //want sitting on the device waiting for a consent that may never come.
                     dumpFile.delete();
                 }
             }
@@ -207,30 +217,60 @@ public class ModuleCrash extends ModuleBase {
         unhandledCrashHandlerInstalled = true;
         //get default handler
         final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+        previousCrashHandler = oldHandler;
 
-        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+        installedCrashHandler = new CountlyCrashHandler(this, oldHandler);
 
-            @Override
-            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
-                L.d("[ModuleCrash] Uncaught crash handler triggered");
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes) && configProvider.getAutomaticCrashReportingEnabled()) {
+        Thread.setDefaultUncaughtExceptionHandler(installedCrashHandler);
+    }
 
-                    String stackTrace = prepareStackTrace(e);
-                    CrashData crashData = prepareCrashData(stackTrace, false, false, null);
-                    if (!crashFilterCheck(crashData, false)) {
-                        sendCrashReportToQueue(crashData, false);
-                    }
-                }
+    /**
+     * The handler this instance installs into the process-global uncaught-exception chain.
+     * <p>
+     * Static, and holds the module only weakly, because {@code halt()} can unlink from the chain only
+     * while this handler is still the process default. Once the host app (or another Countly instance)
+     * installs a handler on top, there is no way to remove a link from the middle of the chain, so this
+     * object stays there for the life of the process. A strong reference would pin the halted module,
+     * and through it the whole Countly instance, its context and its queues, forever. Delegation to the
+     * previous handler must keep working either way, so that link is held strongly.
+     */
+    private static final class CountlyCrashHandler implements Thread.UncaughtExceptionHandler {
+        private final WeakReference<ModuleCrash> moduleRef;
+        private final Thread.UncaughtExceptionHandler previous;
 
-                //if there was another handler before
-                if (oldHandler != null) {
-                    //notify it also
-                    oldHandler.uncaughtException(t, e);
-                }
+        CountlyCrashHandler(@NonNull ModuleCrash module, @Nullable Thread.UncaughtExceptionHandler previous) {
+            this.moduleRef = new WeakReference<>(module);
+            this.previous = previous;
+        }
+
+        @Override
+        public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
+            ModuleCrash module = moduleRef.get();
+            //a halted (or already collected) instance only delegates, its queues are torn down
+            if (module != null && !module.crashHandlerDetached) {
+                module.recordUnhandledCrash(e);
             }
-        };
 
-        Thread.setDefaultUncaughtExceptionHandler(handler);
+            //if there was another handler before, notify it also
+            if (previous != null) {
+                previous.uncaughtException(t, e);
+            }
+        }
+    }
+
+    /**
+     * Records an unhandled crash on this instance. Kept off the handler itself so the handler can stay a
+     * static class with no strong link back to this module.
+     */
+    private void recordUnhandledCrash(@NonNull Throwable e) {
+        L.d("[ModuleCrash] Uncaught crash handler triggered");
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes) && configProvider.getAutomaticCrashReportingEnabled()) {
+            String stackTrace = prepareStackTrace(e);
+            CrashData crashData = prepareCrashData(stackTrace, false, false, null);
+            if (!crashFilterCheck(crashData, false)) {
+                sendCrashReportToQueue(crashData, false);
+            }
+        }
     }
 
     /**
@@ -375,8 +415,17 @@ public class ModuleCrash extends ModuleBase {
 
         //check for previous native crash dumps
         if (config.crashes.checkForNativeCrashDumps) {
-            //flag so that this can be turned off during testing
-            _cly.moduleCrash.checkForNativeCrashDumps(config.context);
+            //sdk-native writes dumps to one fixed process-wide path, so only the storage owner may
+            //consume them - otherwise the first instance to init claims every dump under its app key.
+            if (_cly.storageNamespace_.isEmpty()) {
+                //flag so that this can be turned off during testing
+                _cly.moduleCrash.checkForNativeCrashDumps(config.context);
+            } else {
+                //Warn, not debug: reading the folder is also what deletes it, so in an app that only ever
+                //initialises named instances nothing consumes the dumps and they accumulate on disk.
+                //Initialise the default instance as well if you use native crash reporting.
+                L.w("[ModuleCrash] initFinished, skipping the native crash dump check: the process-global dump folder belongs to the default instance, so native crashes are only reported (and the dumps only deleted) when the default instance is initialised");
+            }
         }
     }
 
@@ -398,7 +447,27 @@ public class ModuleCrash extends ModuleBase {
 
     @Override
     void halt() {
+        if (installedCrashHandler == null) {
+            return;
+        }
 
+        //stop recording first, so a crash racing this teardown can not touch the dying queues
+        crashHandlerDetached = true;
+
+        if (Thread.getDefaultUncaughtExceptionHandler() == installedCrashHandler) {
+            //still the process default, so restoring unlinks us entirely and makes the instance collectable
+            Thread.setDefaultUncaughtExceptionHandler(previousCrashHandler);
+            L.d("[ModuleCrash] halt, restored the previously installed uncaught exception handler");
+        } else {
+            //Another handler sits on top and there is no way to remove a link from the middle of the
+            //chain, so ours stays there for the life of the process, neutralised. It only holds this
+            //module weakly, so the halted instance is still collectable; it keeps delegating downstream.
+            L.d("[ModuleCrash] halt, another uncaught exception handler was installed on top of this one, it stays in the chain but will no longer record crashes");
+        }
+
+        installedCrashHandler = null;
+        previousCrashHandler = null;
+        unhandledCrashHandlerInstalled = false;
     }
 
     public class Crashes {

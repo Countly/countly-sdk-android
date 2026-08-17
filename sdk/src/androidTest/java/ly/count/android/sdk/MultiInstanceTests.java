@@ -23,9 +23,17 @@ package ly.count.android.sdk;
 
 import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import ly.count.android.sdk.messaging.ModulePush;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,7 +50,7 @@ import org.junit.runner.RunWith;
 public class MultiInstanceTests {
     // Names this suite creates. They are halted and their namespaced storage cleared between tests
     // so nothing leaks across tests or across test classes.
-    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove", "instFresh" };
+    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove", "instFresh", "instCfgA", "instCfgB" };
 
     private static final String PUSH_PREFS_FILE = "ly.count.android.api.messaging";
 
@@ -84,6 +92,32 @@ public class MultiInstanceTests {
             clearOpenUdid(CountlyStore.sanitizeNamespace(name));
         }
         clearOpenUdid("");
+        clearNativeDumps();
+    }
+
+    // The single process-wide folder sdk-native hands to breakpad. It has no instance concept, so only
+    // the default instance may consume it - these helpers let the tests prove that.
+    private static File nativeDumpFolder() {
+        return new File(TestUtils.getContext().getCacheDir().getAbsolutePath() + File.separator + "Countly" + File.separator + "CrashDumps");
+    }
+
+    private static File writeFakeNativeDump(String name) throws IOException {
+        File folder = nativeDumpFolder();
+        folder.mkdirs();
+        File dump = new File(folder, name);
+        FileOutputStream out = new FileOutputStream(dump);
+        out.write(new byte[] { 1, 2, 3, 4 });
+        out.close();
+        return dump;
+    }
+
+    private static void clearNativeDumps() {
+        File[] files = nativeDumpFolder().listFiles();
+        if (files != null) {
+            for (File file : files) {
+                file.delete();
+            }
+        }
     }
 
     private static String openUdid(String namespace) {
@@ -181,10 +215,147 @@ public class MultiInstanceTests {
         Countly named = Countly.instance("instFresh");
         named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instFresh"));
 
-        // the fresh named store must not be treated as legacy: the supplied device ID is kept and
-        // its type stays DEVELOPER_SUPPLIED rather than falling back to a generated OPEN_UDID
+        // The mechanism under test: a fresh named store must judge its own freshness by its own file, so
+        // it starts at the latest schema and runs no migration at all. Asserting the schema (not only the
+        // resulting device ID) is what separates the gated path from the un-gated one - the legacy path
+        // reaches the same device ID through MigrationHelper, so the ID alone proves nothing.
+        Assert.assertEquals("a fresh named store must not be treated as a legacy install",
+            MigrationHelper.DATA_SCHEMA_VERSIONS, TestUtils.getCountlyStore(named).getDataSchemaVersion());
+
+        // and the supplied device ID is kept rather than replaced by a generated OPEN_UDID
         Assert.assertEquals(DEVICE_B, TestUtils.getCountlyStore(named).getDeviceID());
         Assert.assertEquals("DEVELOPER_SUPPLIED", TestUtils.getCountlyStore(named).getDeviceIDType());
+
+        // the default instance owns the push file, so its own freshness check still consults it
+        Assert.assertTrue(store("").anythingSetInStorage());
+    }
+
+    /**
+     * Push ownership has two halves: the store write, and the process-global {@code CONSENT_BROADCAST}
+     * that CountlyPush reacts to by registering the DEFAULT instance's token. A named instance must
+     * suppress the broadcast as well, otherwise granting push consent on it would drive the default
+     * instance's push registration.
+     */
+    @Test
+    public void namedInstance_doesNotFireTheProcessGlobalPushConsentBroadcast() {
+        Countly named = Countly.instance("instCfgB");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).setRequiresConsent(true));
+
+        final List<String> namedLog = new ArrayList<>();
+        named.L.SetListener((logMessage, logLevel) -> namedLog.add(logMessage));
+
+        named.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.push });
+
+        boolean broadcastSuppressed = false;
+        for (String message : namedLog) {
+            if (message.contains("named instance does not own push, skipping the process-global consent broadcast")) {
+                broadcastSuppressed = true;
+                break;
+            }
+        }
+        Assert.assertTrue("a named instance must suppress the process-global push consent broadcast", broadcastSuppressed);
+
+        // and it must not have written the owner's push consent either
+        Assert.assertFalse("a named instance must not grant push consent in the shared push file",
+            store("").getConsentPush());
+    }
+
+    /**
+     * The half of {@code ModuleCrash.halt()} that cannot unlink: once the host app (or another instance)
+     * installs a handler on top, ours is stuck in the middle of the process-global chain. Halting must
+     * then leave the foreign handler alone and simply stop recording, rather than restoring over it.
+     */
+    @Test
+    public void haltingInstance_keepsAForeignCrashHandlerAndStopsRecording() {
+        Thread.UncaughtExceptionHandler originalDefault = Thread.getDefaultUncaughtExceptionHandler();
+        try {
+            Countly named = Countly.instance("instCfgB");
+            CountlyConfig config = baseConfig(APP_KEY_B, DEVICE_B);
+            config.crashes.enableCrashReporting();
+            named.init(config);
+
+            ModuleCrash moduleCrash = named.moduleCrash;
+            Assert.assertTrue("the instance must have installed its crash handler", moduleCrash.unhandledCrashHandlerInstalled);
+            Thread.UncaughtExceptionHandler countlyHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+            // the host app installs its own handler on top of ours
+            Thread.UncaughtExceptionHandler foreign = (thread, throwable) -> countlyHandler.uncaughtException(thread, throwable);
+            Thread.setDefaultUncaughtExceptionHandler(foreign);
+
+            named.halt();
+
+            // there is no way to remove a link from the middle of the chain, so the app's handler stays
+            Assert.assertSame("halt must not restore over a handler the app installed later",
+                foreign, Thread.getDefaultUncaughtExceptionHandler());
+            // and ours is neutralised rather than left recording into torn-down queues
+            Assert.assertFalse("a halted instance must no longer consider its crash handler installed",
+                moduleCrash.unhandledCrashHandlerInstalled);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalDefault);
+        }
+    }
+
+    /**
+     * Storage isolation has two halves, and the dangerous half is the one that deletes. Every other
+     * isolation test here only checks what a store contains after recording; this one covers the read
+     * side, because a named instance's ConnectionProcessor removes requests from whatever store it was
+     * handed. Wired to the wrong store it would drain, and delete, the default integration's queue.
+     */
+    @Test
+    public void namedInstanceConnectionProcessor_readsAndRemovesFromItsOwnStore() {
+        Countly def = Countly.sharedInstance();
+        def.init(baseConfig(APP_KEY_A, DEVICE_A));
+        def.sessions().beginSession();
+
+        Countly named = Countly.instance("instB");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        named.sessions().beginSession();
+
+        ConnectionProcessor namedProcessor = named.connectionQueue_.createConnectionProcessor();
+        ConnectionProcessor defaultProcessor = def.connectionQueue_.createConnectionProcessor();
+
+        // each processor must be bound to its own instance's store, and to the server URL it was
+        // configured with rather than the other instance's
+        Assert.assertSame("a named instance's processor must read its own store",
+            named.countlyStore, namedProcessor.getCountlyStore());
+        Assert.assertSame(def.countlyStore, defaultProcessor.getCountlyStore());
+        Assert.assertNotSame(namedProcessor.getCountlyStore(), defaultProcessor.getCountlyStore());
+
+        // and the request each one would drain belongs to that instance only
+        String[] namedRequests = namedProcessor.getCountlyStore().getRequests();
+        String[] defaultRequests = defaultProcessor.getCountlyStore().getRequests();
+        Assert.assertEquals(1, namedRequests.length);
+        Assert.assertEquals(1, defaultRequests.length);
+        Assert.assertTrue("the named processor must see only its own app key's request", namedRequests[0].contains("app_key=" + APP_KEY_B));
+        Assert.assertTrue(defaultRequests[0].contains("app_key=" + APP_KEY_A));
+
+        // removing through the named processor's store must not touch the default instance's queue
+        namedProcessor.getCountlyStore().removeRequest(namedRequests[0]);
+        Assert.assertEquals(0, TestUtils.getCurrentRQ(named).length);
+        Assert.assertEquals("draining a named instance must never delete the default instance's requests",
+            1, TestUtils.getCurrentRQ(def).length);
+    }
+
+    /**
+     * The namespace ends up in a SharedPreferences file name, and Android silently stops persisting once
+     * a file name passes the 255-byte filesystem limit. A long instance name must therefore be capped,
+     * while still producing distinct namespaces for distinct names.
+     */
+    @Test
+    public void sanitizeNamespace_capsTheFileNameLength() {
+        StringBuilder longName = new StringBuilder();
+        for (int i = 0; i < 400; i++) {
+            longName.append('x');
+        }
+
+        String sanitized = CountlyStore.sanitizeNamespace(longName.toString());
+        String fileName = CountlyStore.namespacedName("COUNTLY_STORE", sanitized);
+        Assert.assertTrue("the derived file name must stay well inside the 255 byte limit, was " + fileName.length(),
+            fileName.length() < 200);
+
+        // two long names sharing the truncated prefix must still get their own file
+        String other = CountlyStore.sanitizeNamespace(longName + "-other");
+        Assert.assertNotEquals(sanitized, other);
     }
 
     /**
@@ -253,21 +424,42 @@ public class MultiInstanceTests {
     public void removeInstance_deregistersAndHalts_defaultCannotBeRemoved() {
         Countly named = Countly.instance("instRemove");
         named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instRemove"));
+        named.sessions().beginSession();
         Assert.assertTrue(named.isInitialized());
         Assert.assertSame("registered before removal", named, Countly.getInstance("instRemove"));
         Assert.assertTrue("listed before removal", Countly.listInstances().contains("instRemove"));
+        Assert.assertEquals(1, TestUtils.getCurrentRQ(named).length);
 
         Countly.removeInstance("instRemove");
 
         // deregistered: getInstance no longer sees it and it drops out of the listing
         Assert.assertNull("getInstance must be null after removal", Countly.getInstance("instRemove"));
         Assert.assertFalse("must not be listed after removal", Countly.listInstances().contains("instRemove"));
-        // the removed handle was halted as part of removal
-        Assert.assertFalse("removed instance must be halted", named.isInitialized());
+        // the removed handle was stopped as part of removal
+        Assert.assertFalse("removed instance must be stopped", named.isInitialized());
+
+        // ...but its recorded data survives. Deregistering an instance must not throw away requests it
+        // has not sent to the server yet.
+        CountlyStore removedStore = store(CountlyStore.sanitizeNamespace("instRemove"));
+        Assert.assertEquals("removeInstance must not discard unsent requests",
+            1, TestUtils.getCurrentRQ("", removedStore).length);
+        Assert.assertEquals("removeInstance must not discard the stored device id",
+            DEVICE_B, removedStore.getDeviceID());
+
         // a later instance(name) creates a fresh, uninitialized object rather than the removed one
         Countly recreated = Countly.instance("instRemove");
         Assert.assertNotSame("instance(name) after removal must create a new object", named, recreated);
         Assert.assertFalse("recreated instance is uninitialized until init()", recreated.isInitialized());
+
+        // and re-initialising that name resumes from the data that was left behind
+        recreated.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instRemove"));
+        Assert.assertEquals("re-initialising a removed name must resume from its kept queue",
+            1, countRequestsWithKey(TestUtils.getCurrentRQ(recreated), "begin_session"));
+
+        // an explicit halt() is still the way to erase an instance's data
+        recreated.halt();
+        Assert.assertEquals("halt() must still clear the instance's storage",
+            0, TestUtils.getCurrentRQ("", store(CountlyStore.sanitizeNamespace("instRemove"))).length);
 
         // the default (shared) instance can not be removed: it must remain a stable object
         Countly def = Countly.sharedInstance();
@@ -520,5 +712,367 @@ public class MultiInstanceTests {
             }
         }
         Assert.assertTrue("a warning must be logged when setInstanceName is set on the default instance", warned);
+    }
+
+    private static int countRequestsWithKey(Map<String, String>[] rq, String key) {
+        int count = 0;
+        for (Map<String, String> request : rq) {
+            if (request != null && request.containsKey(key)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Whether an instance recorded the given event, looking in both places it can be: its event queue,
+     * and - once the queue has been drained into a request, which init does immediately - the "events"
+     * parameter of one of its queued requests. The request-side match drops the "[CLY]" prefix so it
+     * holds whether or not the parameter value is URL-encoded.
+     */
+    private static boolean recordedEvent(Countly countly, String eventKey) {
+        for (Event event : TestUtils.getCountlyStore(countly).getEventList()) {
+            if (eventKey.equals(event.key)) {
+                return true;
+            }
+        }
+
+        String unencodedPartOfKey = eventKey.replace("[CLY]", "");
+        for (Map<String, String> request : TestUtils.getCurrentRQ(countly)) {
+            String events = request == null ? null : request.get("events");
+            if (events != null && events.contains(unencodedPartOfKey)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The same config-caching hazard within one instance: halt() throws away the instance's
+     * ConnectionQueue and builds a new one, so a reused config that still cached the old one as
+     * requestQueueProvider would leave the re-initialised instance writing through a torn-down queue.
+     * init() must rebuild whatever it derived itself, not just when the namespace changes.
+     */
+    @Test
+    public void reusedConfigObject_isRebuiltWhenTheSameInstanceIsReinitialised() {
+        CountlyConfig shared = baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB");
+
+        Countly named = Countly.instance("instB");
+        named.init(shared);
+        RequestQueueProvider firstQueue = shared.requestQueueProvider;
+        Assert.assertNotNull(firstQueue);
+
+        named.halt();
+        named.init(shared);
+
+        Assert.assertNotSame("a re-initialised instance must not keep the ConnectionQueue halt() discarded",
+            firstQueue, shared.requestQueueProvider);
+
+        // and it still works end to end, writing into its own namespaced store
+        named.sessions().beginSession();
+        Map<String, String>[] rq = TestUtils.getCurrentRQ(named);
+        Assert.assertNotNull("the re-initialised instance must record through its live queue", firstRequestWithKey(rq, "begin_session"));
+        assertAllRequestsCarryAppKey(rq, APP_KEY_B);
+    }
+
+    /**
+     * A CountlyConfig can not be shared between instances, and init refuses rather than pretending.
+     * <p>
+     * init keeps the config object as the instance's {@code config_}, and ModuleConfiguration writes the
+     * resolved server behaviour settings back onto it - at init from the stored settings, and again on
+     * every server response. Two instances holding one object would keep overwriting each other's live
+     * limits, consent requirement and webview policy for as long as the app runs, which no amount of
+     * restoring at init can prevent. So the second instance is not initialised at all.
+     */
+    @Test
+    public void sharedConfigObject_secondInstanceRefusesToInitialise() {
+        CountlyConfig shared = baseConfig(APP_KEY_A, DEVICE_A)
+            .setRequiresConsent(true)
+            .setConsentEnabled(new String[] { Countly.CountlyFeatureNames.sessions });
+
+        Countly def = Countly.sharedInstance();
+        def.init(shared);
+        Assert.assertTrue("the first instance initialises normally", def.isInitialized());
+        def.sessions().beginSession();
+
+        Countly named = Countly.instance("instCfgA");
+        named.init(shared);
+
+        // refused: not initialised, and nothing of its own on disk
+        Assert.assertFalse("a second instance must not initialise from a config another instance used",
+            named.isInitialized());
+        Assert.assertEquals("a refused instance must not write anything",
+            0, TestUtils.getCurrentRQ("", store(CountlyStore.sanitizeNamespace("instCfgA"))).length);
+
+        // the first instance is untouched by the attempt
+        Assert.assertTrue(def.isInitialized());
+        Assert.assertEquals(APP_KEY_A, def.moduleRequestQueue.baseInfoProvider.getAppKey());
+        Map<String, String>[] rqDefault = TestUtils.getCurrentRQ(def);
+        Assert.assertEquals(1, countRequestsWithKey(rqDefault, "begin_session"));
+        assertAllRequestsCarryAppKey(rqDefault, APP_KEY_A);
+        Assert.assertTrue("the first instance keeps the consent requirement it was configured with",
+            def.moduleConsent.requiresConsent);
+
+        // giving the second instance its own config works
+        Countly ok = Countly.instance("instCfgA");
+        ok.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instCfgA"));
+        Assert.assertTrue("a fresh config initialises the second instance", ok.isInitialized());
+        ok.sessions().beginSession();
+        assertAllRequestsCarryAppKey(TestUtils.getCurrentRQ(ok), APP_KEY_B);
+    }
+
+    /**
+     * Regression: setConsentPush writes into the process-shared, primary-owned push preferences file.
+     * ModuleConsent calls it on every init (doPushConsentSpecialAction(true) when consent is not
+     * required), so before the ownership gate merely creating a named instance re-granted the primary
+     * instance's persisted push consent - the value getConsentPushNoInit reads before init.
+     */
+    @Test
+    public void namedInstance_cannotOverwritePrimaryPushConsent() {
+        // a named-namespace store must not be able to write the shared push consent at all
+        store("").setConsentPush(true);
+        store(CountlyStore.sanitizeNamespace("instB")).setConsentPush(false);
+        Assert.assertTrue("a named instance's store must not overwrite the shared push consent",
+            store("").getConsentPush());
+
+        // nor may initialising a named instance flip it - the primary has revoked push consent here
+        store("").setConsentPush(false);
+        Countly named = Countly.instance("instB");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        Assert.assertFalse("initialising a named instance must not re-grant the primary's push consent",
+            store("").getConsentPush());
+
+        // the primary instance still owns the flag and its own init stores the default consent
+        Countly def = Countly.sharedInstance();
+        def.init(baseConfig(APP_KEY_A, DEVICE_A));
+        Assert.assertTrue("the default instance still owns and writes the shared push consent",
+            store("").getConsentPush());
+    }
+
+    /**
+     * Regression: the cached push click lives in the shared, primary-owned push file, and
+     * ModuleEvents.initFinished reads AND clears it on every instance. Whichever instance initialised
+     * first therefore recorded another instance's push action under its own app key, then deleted it.
+     */
+    @Test
+    public void namedInstance_doesNotConsumePrimaryCachedPushClick() {
+        CountlyStore.cachePushData("msgIdA", "0", TestUtils.getContext());
+
+        // a named instance initialising first must neither record nor drain the primary's push click
+        Countly named = Countly.instance("instB");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+
+        Assert.assertFalse("a named instance must not record the primary instance's push click",
+            recordedEvent(named, ModulePush.PUSH_EVENT_ACTION));
+
+        String[] stillCached = store("").getCachedPushData();
+        Assert.assertEquals("the primary's cached push click must survive a named instance's init", "msgIdA", stillCached[0]);
+        Assert.assertEquals("0", stillCached[1]);
+
+        // the owning (default) instance still consumes it, and clears it afterwards
+        Countly def = Countly.sharedInstance();
+        def.init(baseConfig(APP_KEY_A, DEVICE_A));
+
+        Assert.assertTrue("the default instance must record its own cached push click",
+            recordedEvent(def, ModulePush.PUSH_EVENT_ACTION));
+        Assert.assertNull("the owner clears the cached push click once recorded", store("").getCachedPushData()[0]);
+    }
+
+    /**
+     * Regression: with cached push data present, anythingSetInStorage() makes a brand-new DEFAULT store
+     * look like a legacy install, so performMigration0To1 ran against empty storage - and its both-null
+     * branch hardcoded OPEN_UDID, generating a UUID that permanently replaced the developer's device ID.
+     */
+    @Test
+    public void defaultInstance_keepsSuppliedDeviceId_whenSharedPushDataMakesStoreLookLegacy() {
+        // The realistic trigger: CountlyPush.init() stores the messaging provider with no
+        // isInitialized() guard, so an app that inits push before Countly writes this on a fresh
+        // install. A push click cached pre-init does the same.
+        CountlyStore.storeMessagingProvider(1, TestUtils.getContext());
+        CountlyStore.cachePushData("msgIdA", "0", TestUtils.getContext());
+
+        Countly def = Countly.sharedInstance();
+        def.init(baseConfig(APP_KEY_A, DEVICE_A));
+
+        Assert.assertEquals("a developer-supplied device ID must survive the legacy migration path",
+            DEVICE_A, TestUtils.getCountlyStore(def).getDeviceID());
+        Assert.assertEquals("DEVELOPER_SUPPLIED", TestUtils.getCountlyStore(def).getDeviceIDType());
+
+        // and it is the ID that actually goes on the wire
+        def.sessions().beginSession();
+        Map<String, String> begin = firstRequestWithKey(TestUtils.getCurrentRQ(def), "begin_session");
+        Assert.assertNotNull(begin);
+        Assert.assertEquals(DEVICE_A, begin.get("device_id"));
+    }
+
+    /**
+     * Deliberate policy: without crash consent the dump is dropped rather than cached for a later run.
+     * Retaining it would need its own retention policy, and a minidump is raw process memory we do not
+     * want left on the device waiting for a consent that may never come.
+     */
+    @Test
+    public void nativeCrashDump_isDroppedWhenThereIsNoCrashConsent() throws IOException {
+        File dump = writeFakeNativeDump("dump_no_consent");
+
+        Countly def = Countly.sharedInstance();
+        //consent required but none granted -> the dump can not be reported
+        def.init(baseConfig(APP_KEY_A, DEVICE_A).setRequiresConsent(true));
+
+        Assert.assertNull("a dump must not be reported without crash consent",
+            firstRequestWithKey(TestUtils.getCurrentRQ(def), "crash"));
+        Assert.assertFalse("a dump that can not be reported must be removed, not cached", dump.exists());
+    }
+
+    /**
+     * Regression: sdk-native writes minidumps into one fixed process-wide directory, and
+     * checkForNativeCrashDumps ran on every instance, reading AND deleting them. Whichever instance
+     * initialised first uploaded every dump - raw process memory - under its own app key and server URL.
+     */
+    @Test
+    public void namedInstance_doesNotConsumePrimaryNativeCrashDumps() throws IOException {
+        File dump = writeFakeNativeDump("dump_a");
+
+        Countly named = Countly.instance("instB");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+
+        Assert.assertTrue("a named instance must not delete the process-wide native crash dump", dump.exists());
+        Assert.assertNull("a named instance must not report the process-wide native crash dump",
+            firstRequestWithKey(TestUtils.getCurrentRQ(named), "crash"));
+
+        // the owning (default) instance still consumes and reports it, under its own app key
+        Countly def = Countly.sharedInstance();
+        def.init(baseConfig(APP_KEY_A, DEVICE_A));
+
+        Map<String, String> crashRequest = firstRequestWithKey(TestUtils.getCurrentRQ(def), "crash");
+        Assert.assertNotNull("the default instance must still report the native crash dump", crashRequest);
+        Assert.assertEquals(APP_KEY_A, crashRequest.get("app_key"));
+        Assert.assertFalse("the owner consumes the dump once reported", dump.exists());
+    }
+
+    /**
+     * Regression: ModuleCrash.halt() was empty, so the uncaught-exception handler it installed stayed
+     * the process default forever, holding the whole instance graph. A halted or removed instance was
+     * therefore never collectable (contradicting what removeInstance documents) and kept recording
+     * crashes into its own torn-down queues. halt() must unlink it from the global handler chain.
+     */
+    @Test
+    public void haltingInstance_restoresTheUncaughtExceptionHandler() {
+        Thread.UncaughtExceptionHandler original = Thread.getDefaultUncaughtExceptionHandler();
+        try {
+            Countly named = Countly.instance("instB");
+            CountlyConfig config = baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB");
+            config.crashes.enableCrashReporting();
+            named.init(config);
+
+            Assert.assertNotSame("enabling crash reporting must install a handler",
+                original, Thread.getDefaultUncaughtExceptionHandler());
+
+            named.halt();
+
+            Assert.assertSame("halt must restore the handler it wrapped, so the instance stops being reachable from the process-global chain",
+                original, Thread.getDefaultUncaughtExceptionHandler());
+        } finally {
+            //never leak a test handler into the rest of the suite
+            Thread.setDefaultUncaughtExceptionHandler(original);
+        }
+    }
+
+    /**
+     * Regression: feedback widget parsing logged through Countly.sharedInstance().L. Because ModuleLog
+     * now carries a per-instance log listener, that delivered one instance's widget metadata (ids,
+     * types, tags) to the DEFAULT instance's listener. Diagnostics must follow the instance that owns
+     * the data.
+     */
+    @Test
+    public void feedbackWidgetParsing_reportsToTheOwningInstancesLogger() throws JSONException {
+        final List<String> namedLog = new ArrayList<>();
+        ModuleLog namedLogger = new ModuleLog();
+        namedLogger.SetListener((logMessage, logLevel) -> namedLog.add(logMessage));
+
+        // A listener on the DEFAULT instance's logger. That instance is deliberately left uninitialised:
+        // an initialised one logs from background threads, which would make the assertion below racy.
+        final List<String> defaultLog = new ArrayList<>();
+        Countly.sharedInstance().L.SetListener((logMessage, logLevel) -> defaultLog.add(logMessage));
+
+        // an entry with an empty widget id makes parseFeedbackList emit a diagnostic about it
+        JSONObject response = new JSONObject();
+        response.put("result", new JSONArray().put(new JSONObject().put("_id", "").put("type", "nps")));
+        ModuleFeedback.parseFeedbackList(response, namedLogger);
+
+        boolean reachedOwnLogger = false;
+        for (String message : namedLog) {
+            if (message.contains("parseFeedbackList")) {
+                reachedOwnLogger = true;
+                break;
+            }
+        }
+        Assert.assertTrue("widget parsing diagnostics must reach the logger they were given", reachedOwnLogger);
+
+        for (String message : defaultLog) {
+            Assert.assertFalse("another instance's widget parsing must never reach the default instance's log listener",
+                message.contains("parseFeedbackList"));
+        }
+    }
+
+    /**
+     * Custom network headers were taken from the config by reference, and the runtime setter mutates
+     * that same map in place. Two instances configured from one map therefore shared it, so adding an
+     * Authorization header to the instance talking to server A also sent that credential to server B.
+     */
+    @Test
+    public void customNetworkRequestHeaders_areNotSharedBetweenInstances() {
+        Map<String, String> developerMap = new HashMap<>();
+        developerMap.put("X-Env", "prod");
+
+        Countly def = Countly.sharedInstance();
+        def.init(baseConfig(APP_KEY_A, DEVICE_A).addCustomNetworkRequestHeaders(developerMap));
+
+        Countly named = Countly.instance("instCfgA");
+        named.init(baseConfig(APP_KEY_B, DEVICE_B).addCustomNetworkRequestHeaders(developerMap));
+
+        // both start from the same configured headers
+        Assert.assertEquals("prod", def.requestHeaderCustomValues.get("X-Env"));
+        Assert.assertEquals("prod", named.requestHeaderCustomValues.get("X-Env"));
+
+        Map<String, String> credential = new HashMap<>();
+        credential.put("Authorization", "Bearer tenant-a-token");
+        def.requestQueue().addCustomNetworkRequestHeaders(credential);
+
+        Assert.assertEquals("Bearer tenant-a-token", def.requestHeaderCustomValues.get("Authorization"));
+        Assert.assertFalse("one instance's credentials must never reach another instance's requests",
+            named.requestHeaderCustomValues.containsKey("Authorization"));
+        Assert.assertFalse("the SDK must not mutate the map the developer handed to the config",
+            developerMap.containsKey("Authorization"));
+    }
+
+    /**
+     * onRegistrationId is driven by an OS push callback that can arrive before init or after halt. It
+     * used to dereference the config unconditionally, so those arrivals crashed the host app inside a
+     * push callback. It must log and ignore instead.
+     */
+    @Test
+    public void onRegistrationId_beforeInitAndAfterHalt_isIgnoredInsteadOfCrashing() {
+        Countly def = Countly.sharedInstance();
+        Assert.assertFalse(def.isInitialized());
+
+        // before any init there is no config and no queue, so this used to throw straight into the push
+        // callback that called it
+        def.onRegistrationId("token-before-init", Countly.CountlyMessagingProvider.FCM);
+        Assert.assertNull("a token arriving before init must be ignored, not accepted", def.lastRegistrationCallID);
+        Assert.assertEquals("an ignored token must not queue a request", 0, TestUtils.getCurrentRQ("", store("")).length);
+
+        def.init(baseConfig(APP_KEY_A, DEVICE_A));
+        def.halt();
+        Assert.assertFalse(def.isInitialized());
+
+        // after halt the config object lingers but the connection queue is gone
+        def.onRegistrationId("token-after-halt", Countly.CountlyMessagingProvider.FCM);
+        Assert.assertNull("a token arriving after halt must be ignored too", def.lastRegistrationCallID);
+
+        // and an initialised instance still accepts the token. The request itself is queued only after a
+        // ten second delay, so assert on the accepted-call state rather than waiting for the queue.
+        def.init(baseConfig(APP_KEY_A, DEVICE_A));
+        def.onRegistrationId("real-token", Countly.CountlyMessagingProvider.FCM);
+        Assert.assertEquals("an initialised instance must accept the push token", "real-token", def.lastRegistrationCallID);
     }
 }
