@@ -42,7 +42,8 @@ public class ModuleContent extends ModuleBase {
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
-        zoneTimerInterval = config.content.zoneTimerInterval;
+        //resolved for this instance by ModuleConfiguration, not read off the shared config
+        zoneTimerInterval = cly.moduleConfiguration.currentVZoneTimerInterval;
         webViewEnabled = config.webViewEnabled;
         globalContentCallback = config.content.globalContentCallback;
         if (!webViewEnabled) {
@@ -52,7 +53,7 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-        zoneTimerInterval = config.content.zoneTimerInterval;
+        zoneTimerInterval = _cly.moduleConfiguration.currentVZoneTimerInterval;
         if (!configProvider.getContentZoneEnabled()) {
             exitContentZoneInternal();
         } else {

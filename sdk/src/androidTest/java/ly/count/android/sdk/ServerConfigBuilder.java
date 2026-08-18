@@ -353,20 +353,24 @@ class ServerConfigBuilder {
 
     private void validateIntervalsAndSizes(Countly countly) {
         Assert.assertEquals(config.get(keyRServerConfigUpdateInterval), countly.moduleConfiguration.serverConfigUpdateInterval);
-        Assert.assertEquals(config.get(keyRReqQueueSize), countly.config_.maxRequestQueueSize);
+        // These are asserted on the instance's own resolved settings, not on the CountlyConfig: the SDK no
+        // longer writes them back onto the config, so that a config shared by two instances can not carry one
+        // instance's server-resolved settings into the other. This is also the stronger assertion - these are
+        // the values the SDK actually acts on.
+        Assert.assertEquals(config.get(keyRReqQueueSize), countly.moduleConfiguration.currentVMaxRequestQueueSize);
         Assert.assertEquals(config.get(keyREventQueueSize), countly.EVENT_QUEUE_SIZE_THRESHOLD);
-        Assert.assertEquals(config.get(keyRLogging), countly.config_.loggingEnabled);
+        Assert.assertEquals(config.get(keyRLogging), countly.moduleConfiguration.currentVLoggingEnabled);
 
         try {
-            Assert.assertEquals(config.get(keyRSessionUpdateInterval), countly.config_.sessionUpdateTimerDelay);
+            Assert.assertEquals(config.get(keyRSessionUpdateInterval), countly.moduleConfiguration.currentVSessionUpdateTimerDelay);
         } catch (AssertionError _ignored) {
             // This is a workaround for the issue where sessionUpdateTimerDelay is null by default
-            Assert.assertNull(countly.config_.sessionUpdateTimerDelay);
+            Assert.assertNull(countly.moduleConfiguration.currentVSessionUpdateTimerDelay);
         }
 
-        Assert.assertEquals(config.get(keyRContentZoneInterval), countly.config_.content.zoneTimerInterval);
-        Assert.assertEquals(config.get(keyRConsentRequired), countly.config_.shouldRequireConsent);
-        Assert.assertEquals(config.get(keyRDropOldRequestTime), countly.config_.dropAgeHours);
+        Assert.assertEquals(config.get(keyRContentZoneInterval), countly.moduleConfiguration.currentVZoneTimerInterval);
+        Assert.assertEquals(config.get(keyRConsentRequired), countly.moduleConfiguration.currentVRequiresConsent);
+        Assert.assertEquals(config.get(keyRDropOldRequestTime), countly.moduleConfiguration.currentVDropAgeHours);
     }
 
     private void validateLimits(Countly countly) {

@@ -959,8 +959,9 @@ public class ModuleConfigurationTests {
             .defaults();
 
         Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
-        // Verify initial state
-        Assert.assertFalse(Countly.sharedInstance().config_.shouldRequireConsent);
+        // Verify initial state. The consent requirement is asserted on the instance, not on the config: the
+        // SDK resolves it per instance and no longer writes it back onto the developer's CountlyConfig.
+        Assert.assertFalse(Countly.sharedInstance().moduleConsent.requiresConsent);
         serverConfigBuilder.validateAgainst(Countly.sharedInstance());
 
         // use a feature that is not affected directly from the server configuration
@@ -971,7 +972,10 @@ public class ModuleConfigurationTests {
         serverConfigBuilder.consentRequired(true);
         Countly.sharedInstance().sdkIsInitialised = false;
         Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
-        Assert.assertTrue(Countly.sharedInstance().config_.shouldRequireConsent);
+        Assert.assertTrue("the server's consent requirement must take effect on the instance",
+            Countly.sharedInstance().moduleConsent.requiresConsent);
+        Assert.assertFalse("...without being written back onto the developer's config, which a second instance may also hold",
+            Countly.sharedInstance().config_.shouldRequireConsent);
         serverConfigBuilder.validateAgainst(Countly.sharedInstance());
 
         Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // first attribution request, empty consent, empty location

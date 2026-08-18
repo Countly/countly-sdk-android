@@ -98,6 +98,18 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     Set<String> currentVJourneyTriggerEvents = new HashSet<>();
     Set<String> currentVJourneyTriggerViews = new HashSet<>();
 
+    // Settings the SBS layers resolve that used to be written back onto the CountlyConfig. Per instance, so
+    // a config shared between instances can not carry one instance's resolved settings into another.
+    // Consumers read these (Countly#onSdkConfigurationChanged, ModuleConsent, ModuleContent, the request
+    // drop-age provider) instead of reading the config.
+    int currentVMaxRequestQueueSize;
+    Integer currentVEventQueueSizeThreshold;
+    boolean currentVLoggingEnabled;
+    Integer currentVSessionUpdateTimerDelay;
+    int currentVDropAgeHours;
+    boolean currentVRequiresConsent;
+    int currentVZoneTimerInterval;
+
     // SERVER CONFIGURATION PARAMS
     Integer serverConfigUpdateInterval; // in hours
     int currentServerConfigUpdateInterval = 4;
@@ -107,6 +119,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleConfiguration] Initialising");
+        //Publish ourselves on the instance before resolving anything. updateConfigVariables below can call
+        //Countly#onSdkConfigurationChanged, which reads this instance's resolved settings through
+        //_cly.moduleConfiguration - and init only assigns that field after this constructor returns.
+        cly.moduleConfiguration = this;
         config.configProvider = this;
         configProvider = this;
 
@@ -116,6 +132,19 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         serverConfigRequestsDisabled = config.sdkBehaviorSettingsRequestsDisabled;
 
         config.countlyStore.setConfigurationProvider(this);
+
+        //Seed the settings the SBS layers resolve from the developer's config. These live here, per instance,
+        //rather than being written back onto the CountlyConfig: the config object may be shared by several
+        //instances, and writing our resolved values onto it would both hand them to the other instance and
+        //poison the "provided" layer of its next resolve - which for shouldRequireConsent means silently
+        //switching consent gating off for an instance whose developer required it.
+        currentVMaxRequestQueueSize = config.maxRequestQueueSize;
+        currentVEventQueueSizeThreshold = config.eventQueueSizeThreshold;
+        currentVLoggingEnabled = config.loggingEnabled;
+        currentVSessionUpdateTimerDelay = config.sessionUpdateTimerDelay;
+        currentVDropAgeHours = config.dropAgeHours;
+        currentVRequiresConsent = config.shouldRequireConsent;
+        currentVZoneTimerInterval = config.content.zoneTimerInterval;
 
         //seed the automatic tracking flags from the local config: it is the lowest-precedence layer.
         //the SBS layers (provided -> stored -> server) override these in updateConfigVariables, giving the precedence
@@ -252,10 +281,12 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVBOMDuration = extractValue(keyRBOMDuration, sb, currentVBOMDuration, currentVBOMDuration, Integer.class, (Integer value) -> value > 0);
         currentVUserPropertyCacheLimit = extractValue(keyRUserPropertyCacheLimit, sb, currentVUserPropertyCacheLimit, currentVUserPropertyCacheLimit, Integer.class, (Integer value) -> value > 0);
 
-        clyConfig.setMaxRequestQueueSize(extractValue(keyRReqQueueSize, sb, clyConfig.maxRequestQueueSize, clyConfig.maxRequestQueueSize, Integer.class, (Integer value) -> value > 0));
-        clyConfig.setEventQueueSizeToSend(extractValue(keyREventQueueSize, sb, clyConfig.eventQueueSizeThreshold, _cly.EVENT_QUEUE_SIZE_THRESHOLD, Integer.class, (Integer value) -> value > 0));
-        clyConfig.setLoggingEnabled(extractValue(keyRLogging, sb, clyConfig.loggingEnabled, clyConfig.loggingEnabled));
-        clyConfig.setUpdateSessionTimerDelay(extractValue(keyRSessionUpdateInterval, sb, clyConfig.sessionUpdateTimerDelay, Long.valueOf(Countly.TIMER_DELAY_IN_SECONDS).intValue(), Integer.class, (Integer value) -> value > 0));
+        //Resolved onto this instance, never back onto clyConfig - see the field declarations. The provided
+        //layer is this instance's own seeded value, which is what the developer configured.
+        currentVMaxRequestQueueSize = extractValue(keyRReqQueueSize, sb, currentVMaxRequestQueueSize, currentVMaxRequestQueueSize, Integer.class, (Integer value) -> value > 0);
+        currentVEventQueueSizeThreshold = extractValue(keyREventQueueSize, sb, currentVEventQueueSizeThreshold, _cly.EVENT_QUEUE_SIZE_THRESHOLD, Integer.class, (Integer value) -> value > 0);
+        currentVLoggingEnabled = extractValue(keyRLogging, sb, currentVLoggingEnabled, currentVLoggingEnabled);
+        currentVSessionUpdateTimerDelay = extractValue(keyRSessionUpdateInterval, sb, currentVSessionUpdateTimerDelay, Long.valueOf(Countly.TIMER_DELAY_IN_SECONDS).intValue(), Integer.class, (Integer value) -> value > 0);
         //Internal limits are resolved onto THIS instance's limits, not onto the shared CountlyConfig: they
         //are read live on every event, view, crash and user property, so writing them back onto a config
         //that a second instance may also hold would let this instance's /o/sdk response retruncate that
@@ -268,9 +299,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         limits.setMaxBreadcrumbCount(extractValue(keyRLimitBreadcrumb, sb, limits.maxBreadcrumbCount, Countly.maxBreadcrumbCountDefault, Integer.class, (Integer value) -> value > 0));
         limits.setMaxStackTraceLinesPerThread(extractValue(keyRLimitTraceLine, sb, limits.maxStackTraceLinesPerThread, Countly.maxStackTraceLinesPerThreadDefault, Integer.class, (Integer value) -> value > 0));
         limits.setMaxStackTraceLineLength(extractValue(keyRLimitTraceLength, sb, limits.maxStackTraceLineLength, Countly.maxStackTraceLineLengthDefault, Integer.class, (Integer value) -> value > 0));
-        clyConfig.content.setZoneTimerInterval(extractValue(keyRContentZoneInterval, sb, clyConfig.content.zoneTimerInterval, clyConfig.content.zoneTimerInterval, Integer.class, (Integer value) -> value >= 16));
-        clyConfig.setRequiresConsent(extractValue(keyRConsentRequired, sb, clyConfig.shouldRequireConsent, clyConfig.shouldRequireConsent));
-        clyConfig.setRequestDropAgeHours(extractValue(keyRDropOldRequestTime, sb, clyConfig.dropAgeHours, clyConfig.dropAgeHours, Integer.class, (Integer value) -> value >= 0));
+        currentVZoneTimerInterval = extractValue(keyRContentZoneInterval, sb, currentVZoneTimerInterval, currentVZoneTimerInterval, Integer.class, (Integer value) -> value >= 16);
+        currentVRequiresConsent = extractValue(keyRConsentRequired, sb, currentVRequiresConsent, currentVRequiresConsent);
+        currentVDropAgeHours = extractValue(keyRDropOldRequestTime, sb, currentVDropAgeHours, currentVDropAgeHours, Integer.class, (Integer value) -> value >= 0);
 
         updateListingFilters();
 

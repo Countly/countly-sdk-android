@@ -217,20 +217,27 @@ public class ModuleCrash extends ModuleBase {
     void enableCrashReporting() {
         //read-then-set on the process-global handler chain: serialise it against any other instance doing
         //the same, so no instance is silently dropped out of the chain
+        boolean installed = false;
         synchronized (crashHandlerLock) {
-            if (unhandledCrashHandlerInstalled) {
-                //already installed, don't wrap the global handler again
-                return;
+            if (!unhandledCrashHandlerInstalled && !crashHandlerDetached) {
+                //crashHandlerDetached means this module was already torn down; installing then would put a
+                //dead instance into the process-global chain with nothing left to unlink it
+                unhandledCrashHandlerInstalled = true;
+                //get default handler
+                final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+                previousCrashHandler = oldHandler;
+
+                installedCrashHandler = new CountlyCrashHandler(this, oldHandler);
+
+                Thread.setDefaultUncaughtExceptionHandler(installedCrashHandler);
+                installed = true;
             }
+        }
+
+        //log outside the lock: informListener runs the app's LogCallback, and no other SDK lock is held
+        //while calling into app code
+        if (installed) {
             L.d("[ModuleCrash] Enabling unhandled crash reporting");
-            unhandledCrashHandlerInstalled = true;
-            //get default handler
-            final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
-            previousCrashHandler = oldHandler;
-
-            installedCrashHandler = new CountlyCrashHandler(this, oldHandler);
-
-            Thread.setDefaultUncaughtExceptionHandler(installedCrashHandler);
         }
     }
 
@@ -463,26 +470,31 @@ public class ModuleCrash extends ModuleBase {
         //what the flag exists to prevent.
         crashHandlerDetached = true;
 
-        if (installedCrashHandler == null) {
-            return;
+        //Read installedCrashHandler under the same lock that installs it, so an install racing this teardown
+        //cannot slip between the null check and the unlink. Log outside the lock: informListener runs the
+        //app's LogCallback, and no other SDK lock is ever held while calling into app code.
+        String outcome = null;
+        synchronized (crashHandlerLock) {
+            if (installedCrashHandler != null) {
+                if (Thread.getDefaultUncaughtExceptionHandler() == installedCrashHandler) {
+                    //still the process default, so restoring unlinks us entirely and makes the instance collectable
+                    Thread.setDefaultUncaughtExceptionHandler(previousCrashHandler);
+                    outcome = "[ModuleCrash] halt, restored the previously installed uncaught exception handler";
+                } else {
+                    //Another handler sits on top and there is no way to remove a link from the middle of the
+                    //chain, so ours stays there for the life of the process, neutralised. It only holds this
+                    //module weakly, so the halted instance is still collectable; it keeps delegating downstream.
+                    outcome = "[ModuleCrash] halt, another uncaught exception handler was installed on top of this one, it stays in the chain but will no longer record crashes";
+                }
+
+                installedCrashHandler = null;
+                previousCrashHandler = null;
+                unhandledCrashHandlerInstalled = false;
+            }
         }
 
-        //unlinking touches the same process-global chain that installing does
-        synchronized (crashHandlerLock) {
-            if (Thread.getDefaultUncaughtExceptionHandler() == installedCrashHandler) {
-                //still the process default, so restoring unlinks us entirely and makes the instance collectable
-                Thread.setDefaultUncaughtExceptionHandler(previousCrashHandler);
-                L.d("[ModuleCrash] halt, restored the previously installed uncaught exception handler");
-            } else {
-                //Another handler sits on top and there is no way to remove a link from the middle of the
-                //chain, so ours stays there for the life of the process, neutralised. It only holds this
-                //module weakly, so the halted instance is still collectable; it keeps delegating downstream.
-                L.d("[ModuleCrash] halt, another uncaught exception handler was installed on top of this one, it stays in the chain but will no longer record crashes");
-            }
-
-            installedCrashHandler = null;
-            previousCrashHandler = null;
-            unhandledCrashHandlerInstalled = false;
+        if (outcome != null) {
+            L.d(outcome);
         }
     }
 

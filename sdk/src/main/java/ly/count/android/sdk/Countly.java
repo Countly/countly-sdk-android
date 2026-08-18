@@ -625,7 +625,7 @@ public class Countly {
         //(see sdkInternalLimits_), and DerivedFieldSnapshot resets the objects init derives, so each init
         //starts from what the developer configured rather than from the previous instance's leftovers.
         if (config.initialisedForNamespace != null && !storageNamespace_.equals(config.initialisedForNamespace)) {
-            L.i("[Init] This CountlyConfig was already used to initialise another instance. That is supported - each instance keeps its own storage, limits and server-resolved settings - but the values you set on it apply to every instance built from it.");
+            L.w("[Init] This CountlyConfig was already used to initialise another instance. Each instance keeps its own storage, device id and internal limits, but the values you set on this object apply to every instance built from it, and the settings this instance resolves from the server are written onto it. Prefer a fresh CountlyConfig per instance.");
         }
 
         if (config.application == null) {
@@ -762,7 +762,8 @@ public class Countly {
             //the server-resolved settings. Re-initialising this instance must therefore start from what
             //the developer configured, not from the previous init's leftovers - halt() throws away the
             //ConnectionQueue, so a cached requestQueueProvider would write through a torn-down queue.
-            //Cross-instance reuse is refused earlier in init, so this only ever restores for one instance.
+            //This also runs when a config is shared across instances, which is supported: every init starts
+            //from the values the developer set rather than from the previous instance's leftovers.
             if (config.derivedFieldSnapshot == null) {
                 config.derivedFieldSnapshot = new CountlyConfig.DerivedFieldSnapshot(config);
             } else {
@@ -974,9 +975,10 @@ public class Countly {
                 //Defensive copy: the config stores the caller's map by reference, and
                 //addCustomNetworkRequestHeaders mutates this field in place. Two instances configured
                 //from one map would otherwise share it, so adding an Authorization header to one
-                //instance would send it to the other instance's server too. It also removed an
-                //unsynchronised cross-thread read - the network executor iterated a map the app thread
-                //could be writing.
+                //instance would send it to the other instance's server too.
+                //It does NOT make the map thread-safe: addCustomNetworkRequestHeaders still mutates this same
+                //map in place while ConnectionProcessor iterates it on the network executor. That race is
+                //pre-existing and unchanged here.
                 //The trade-off is a behaviour change: until 26.1.5 the SDK held the caller's own map and
                 //re-read it before every request, so mutating it after init changed later requests. It no
                 //longer does, so say so out loud rather than letting an app silently keep sending a stale
@@ -996,9 +998,11 @@ public class Countly {
                 L.d("[Init] Enabling tamper protection");
             }
 
-            if (config.dropAgeHours > 0) {
+            //resolved value, not the config's: ModuleConfiguration has already layered the stored server
+            //behaviour settings on top of what the developer configured
+            if (moduleConfiguration.currentVDropAgeHours > 0) {
                 L.d("[Init] Enabling drop older request threshold");
-                countlyStore.setRequestAgeLimit(config.dropAgeHours);
+                countlyStore.setRequestAgeLimit(moduleConfiguration.currentVDropAgeHours);
             }
 
             if (config.pushIntentAddMetadata) {
@@ -1006,15 +1010,16 @@ public class Countly {
                 addMetadataToPushIntents = config.pushIntentAddMetadata;
             }
 
-            if (config.eventQueueSizeThreshold != null) {
-                L.d("[Init] Setting event queue size: [" + config.eventQueueSizeThreshold + "]");
+            //resolved value, not the config's - see the drop-age comment above
+            if (moduleConfiguration.currentVEventQueueSizeThreshold != null) {
+                L.d("[Init] Setting event queue size: [" + moduleConfiguration.currentVEventQueueSizeThreshold + "]");
 
-                if (config.eventQueueSizeThreshold < 1) {
+                if (moduleConfiguration.currentVEventQueueSizeThreshold < 1) {
                     L.d("[Init] queue size can't be less than zero");
-                    config.eventQueueSizeThreshold = 1;
+                    moduleConfiguration.currentVEventQueueSizeThreshold = 1;
                 }
 
-                EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
+                EVENT_QUEUE_SIZE_THRESHOLD = moduleConfiguration.currentVEventQueueSizeThreshold;
             }
 
             if (config.publicKeyPinningCertificates != null) {
@@ -1057,7 +1062,9 @@ public class Countly {
                 }
 
                 @Override public int getRequestDropAgeHours() {
-                    return config.dropAgeHours;
+                    //read live on every send, so it must be this instance's resolved value and not a config
+                    //field another instance may also be resolving into
+                    return moduleConfiguration != null ? moduleConfiguration.currentVDropAgeHours : config.dropAgeHours;
                 }
 
                 @Override public String getRequestSalt() {
@@ -1264,25 +1271,29 @@ public class Countly {
             return;
         }
 
-        setLoggingEnabled(config.loggingEnabled);
+        //Read the settings this instance resolved, not the config: the config may be shared with another
+        //instance and is no longer written to by the SDK.
+        setLoggingEnabled(moduleConfiguration.currentVLoggingEnabled);
 
         long timerDelay = TIMER_DELAY_IN_SECONDS;
-        if (config.sessionUpdateTimerDelay != null) {
-            timerDelay = config.sessionUpdateTimerDelay;
+        if (moduleConfiguration.currentVSessionUpdateTimerDelay != null) {
+            timerDelay = moduleConfiguration.currentVSessionUpdateTimerDelay;
         }
 
         startTimerService(timerService_, timerFuture, timerDelay);
 
-        config.maxRequestQueueSize = Math.max(config.maxRequestQueueSize, 1);
-        countlyStore.setLimits(config.maxRequestQueueSize);
+        moduleConfiguration.currentVMaxRequestQueueSize = Math.max(moduleConfiguration.currentVMaxRequestQueueSize, 1);
+        countlyStore.setLimits(moduleConfiguration.currentVMaxRequestQueueSize);
 
-        config.dropAgeHours = Math.max(config.dropAgeHours, 0);
-        if (config.dropAgeHours > 0) {
-            countlyStore.setRequestAgeLimit(config.dropAgeHours);
+        moduleConfiguration.currentVDropAgeHours = Math.max(moduleConfiguration.currentVDropAgeHours, 0);
+        if (moduleConfiguration.currentVDropAgeHours > 0) {
+            countlyStore.setRequestAgeLimit(moduleConfiguration.currentVDropAgeHours);
         }
 
-        config.eventQueueSizeThreshold = Math.max(config.eventQueueSizeThreshold, 1);
-        EVENT_QUEUE_SIZE_THRESHOLD = config.eventQueueSizeThreshold;
+        if (moduleConfiguration.currentVEventQueueSizeThreshold != null) {
+            moduleConfiguration.currentVEventQueueSizeThreshold = Math.max(moduleConfiguration.currentVEventQueueSizeThreshold, 1);
+            EVENT_QUEUE_SIZE_THRESHOLD = moduleConfiguration.currentVEventQueueSizeThreshold;
+        }
 
         // Have a look at the SDK limit values. These are this instance's own limits, which
         // ModuleConfiguration has just written the server-resolved values into - the config object the
@@ -1323,15 +1334,10 @@ public class Countly {
      * one of these fails, otherwise the instance is left half torn down.
      */
     private void flushInFlightStateBeforeTeardown() {
-        try {
-            if (moduleSessions != null && moduleSessions.sessionRunning) {
-                L.d("[Countly] tearDown, ending the open session so it is not left open");
-                moduleSessions.endSessionInternal();
-            }
-        } catch (Throwable t) {
-            L.w("[Countly] tearDown, failed to end the open session, [" + t + "]");
-        }
-
+        //Views FIRST. Stopping a view records its duration into the EVENT queue, and ending the session is
+        //what drains that queue into the request queue (ModuleSessions#endSessionInternal calls
+        //sendEventsIfNeeded). Ending the session first would leave every view-end event stranded in the event
+        //queue with nothing left to flush it.
         try {
             if (moduleViews != null) {
                 L.d("[Countly] tearDown, stopping open views so their durations are recorded");
@@ -1342,6 +1348,18 @@ public class Countly {
         }
 
         try {
+            if (moduleSessions != null && moduleSessions.sessionRunning) {
+                L.d("[Countly] tearDown, ending the open session so it is not left open");
+                //the consent-checking variant, so a teardown never sends what the app did not agree to
+                moduleSessions.endSessionInternal();
+            }
+        } catch (Throwable t) {
+            L.w("[Countly] tearDown, failed to end the open session, [" + t + "]");
+        }
+
+        try {
+            //endSessionInternal already saves the profile when a session was running; this covers the case
+            //where none was. saveInternal is a no-op when there is nothing pending.
             if (moduleUserProfile != null) {
                 L.d("[Countly] tearDown, saving pending user profile changes");
                 moduleUserProfile.saveInternal();
@@ -1353,7 +1371,10 @@ public class Countly {
         try {
             //In explicit storage mode the request and event queues live only in memory until something asks
             //for them to be persisted, and after this teardown nothing can: requestQueue() returns null once
-            //the instance is no longer initialised.
+            //the instance is no longer initialised. This runs LAST so it captures everything the flush above
+            //queued. A request the in-flight processor acknowledges after this point stays in the persisted
+            //queue and is retried on the next init - a duplicate is better than a silent loss, and the server
+            //deduplicates on the request id.
             if (countlyStore != null && config_ != null && config_.explicitStorageModeEnabled) {
                 L.d("[Countly] tearDown, writing the explicit-storage-mode caches to persistence");
                 countlyStore.esWriteCacheToStorage(null);

@@ -45,7 +45,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         consentProvider = this;
         config.consentProvider = this;
         L.v("[ModuleConsent] constructor, Initialising");
-        L.i("[ModuleConsent] Is consent required? [" + config.shouldRequireConsent + "]");
+        //the value ModuleConfiguration resolved for THIS instance (developer config plus the stored server
+        //behaviour settings), not the shared config object, which the SDK no longer writes to
+        final boolean resolvedRequiresConsent = cly.moduleConfiguration.currentVRequiresConsent;
+        L.i("[ModuleConsent] Is consent required? [" + resolvedRequiresConsent + "]");
 
         //setup initial consent data structure
         //initialize all features to "false"
@@ -54,8 +57,8 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         //react to given consent during init
-        if (config.shouldRequireConsent) {
-            requiresConsent = config.shouldRequireConsent;
+        if (resolvedRequiresConsent) {
+            requiresConsent = resolvedRequiresConsent;
             if (config.enabledFeatureNames == null && !config.enableAllConsents) {
                 L.i("[ModuleConsent] constructor, Consent has been required but no consent was given during init");
             } else {
@@ -299,7 +302,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-        requiresConsent = config.shouldRequireConsent;
+        requiresConsent = _cly.moduleConfiguration.currentVRequiresConsent;
     }
 
     @Override

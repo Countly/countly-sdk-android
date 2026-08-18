@@ -1387,28 +1387,18 @@ public class CountlyConfig {
          * ADDING A VALUE THE SDK WRITES ONTO THE CONFIG MEANS ADDING IT TO BOTH readValues AND writeValue.
          */
         private static Object[] readValues(@NonNull CountlyConfig config) {
+            //Only deviceID: ModuleDeviceId writes the temporary-device-id sentinel onto the config, and that
+            //is now the ONLY value the SDK writes back. The settings the server behaviour settings resolve
+            //used to be here too; they are resolved per instance in ModuleConfiguration instead, so nothing
+            //has to be undone for them and a shared config is never mutated by the SDK.
             return new Object[] {
                 config.deviceID,
-                config.loggingEnabled,
-                config.shouldRequireConsent,
-                config.eventQueueSizeThreshold,
-                config.sessionUpdateTimerDelay,
-                config.maxRequestQueueSize,
-                config.dropAgeHours,
-                config.content.zoneTimerInterval,
             };
         }
 
         private static void writeValue(@NonNull CountlyConfig config, int index, Object value) {
             switch (index) {
                 case 0: config.deviceID = (String) value; break;
-                case 1: config.loggingEnabled = (Boolean) value; break;
-                case 2: config.shouldRequireConsent = (Boolean) value; break;
-                case 3: config.eventQueueSizeThreshold = (Integer) value; break;
-                case 4: config.sessionUpdateTimerDelay = (Integer) value; break;
-                case 5: config.maxRequestQueueSize = (Integer) value; break;
-                case 6: config.dropAgeHours = (Integer) value; break;
-                case 7: config.content.zoneTimerInterval = (Integer) value; break;
                 default: break;
             }
         }

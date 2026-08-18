@@ -21,9 +21,21 @@ public class ConfigSdkInternalLimits {
      * ADDING A FIELD ABOVE MEANS ADDING IT HERE. {@code ConfigSdkInternalLimitsTests} reflects over the
      * declared fields and fails if one is missed, so a forgotten field cannot ship silently.
      */
+    void copyFrom(@NonNull ConfigSdkInternalLimits other) {
+        maxKeyLength = other.maxKeyLength;
+        maxValueSize = other.maxValueSize;
+        maxValueSizePicture = other.maxValueSizePicture;
+        maxSegmentationValues = other.maxSegmentationValues;
+        maxBreadcrumbCount = other.maxBreadcrumbCount;
+        maxStackTraceLinesPerThread = other.maxStackTraceLinesPerThread;
+        maxStackTraceLineLength = other.maxStackTraceLineLength;
+        maxStackTraceThreadCount = other.maxStackTraceThreadCount;
+    }
+
     /**
      * Raises any set limit below 1 to 1. Called after the server behaviour settings have been applied, so a
-     * server sending a nonsensical limit can not make the SDK truncate everything to nothing.
+     * server sending a nonsensical limit can not make the SDK truncate everything to nothing. A limit that
+     * was never set stays unset, because null means "use the SDK default", not "clamp me to 1".
      */
     void clampToMinimums() {
         if (maxKeyLength != null) {
@@ -44,17 +56,6 @@ public class ConfigSdkInternalLimits {
         if (maxStackTraceLineLength != null) {
             maxStackTraceLineLength = Math.max(maxStackTraceLineLength, 1);
         }
-    }
-
-    void copyFrom(@NonNull ConfigSdkInternalLimits other) {
-        maxKeyLength = other.maxKeyLength;
-        maxValueSize = other.maxValueSize;
-        maxValueSizePicture = other.maxValueSizePicture;
-        maxSegmentationValues = other.maxSegmentationValues;
-        maxBreadcrumbCount = other.maxBreadcrumbCount;
-        maxStackTraceLinesPerThread = other.maxStackTraceLinesPerThread;
-        maxStackTraceLineLength = other.maxStackTraceLineLength;
-        maxStackTraceThreadCount = other.maxStackTraceThreadCount;
     }
 
     /**
