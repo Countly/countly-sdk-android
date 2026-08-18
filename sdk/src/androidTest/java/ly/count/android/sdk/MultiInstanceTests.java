@@ -50,7 +50,7 @@ import org.junit.runner.RunWith;
 public class MultiInstanceTests {
     // Names this suite creates. They are halted and their namespaced storage cleared between tests
     // so nothing leaks across tests or across test classes.
-    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove", "instFresh", "instCfgA", "instCfgB" };
+    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove", "instFresh", "instCfgA", "instCfgB", "instPushBcast" };
 
     private static final String PUSH_PREFS_FILE = "ly.count.android.api.messaging";
 
@@ -238,8 +238,15 @@ public class MultiInstanceTests {
      */
     @Test
     public void namedInstance_doesNotFireTheProcessGlobalPushConsentBroadcast() {
-        Countly named = Countly.instance("instCfgB");
+        //Its OWN instance name. Sharing a name with another test made this flaky: the registry keeps an
+        //instance across tests, so if the other user of that name ran first this instance already had push
+        //consent, giveConsent below became a no-op, doPushConsentSpecialAction never ran and the log line
+        //this test looks for was never produced. JUnit does not guarantee method order, hence intermittent.
+        Countly named = Countly.instance("instPushBcast");
         named.init(baseConfig(APP_KEY_B, DEVICE_B).setRequiresConsent(true));
+
+        Assert.assertFalse("precondition: push consent must start ungranted, otherwise giveConsent below is a no-op and this test proves nothing",
+            named.consent().getConsent(Countly.CountlyFeatureNames.push));
 
         final List<String> namedLog = new ArrayList<>();
         named.L.SetListener((logMessage, logLevel) -> namedLog.add(logMessage));
@@ -253,7 +260,9 @@ public class MultiInstanceTests {
                 break;
             }
         }
-        Assert.assertTrue("a named instance must suppress the process-global push consent broadcast", broadcastSuppressed);
+        Assert.assertTrue("push consent must actually have been granted, otherwise the broadcast path was never reached",
+            named.consent().getConsent(Countly.CountlyFeatureNames.push));
+        Assert.assertTrue("a named instance must suppress the process-global push consent broadcast. Log was:" + namedLog, broadcastSuppressed);
 
         // and it must not have written the owner's push consent either
         Assert.assertFalse("a named instance must not grant push consent in the shared push file",
