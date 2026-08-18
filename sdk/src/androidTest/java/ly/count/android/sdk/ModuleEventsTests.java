@@ -998,6 +998,44 @@ public class ModuleEventsTests {
         validateEventInRQ(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, 0, 1);
     }
 
+    /**
+     * Validates an event in a request by LOOKING IT UP BY KEY instead of by position in the events array.
+     * <p>
+     * Prefer this over the positional overload whenever a test only cares that an event was batched into a
+     * request, which is almost always. The position of an event inside a batch depends on when the event
+     * queue happened to be flushed relative to the session/timer machinery, so asserting an index makes a
+     * test fail intermittently for a reason that has nothing to do with what it is testing. When the event is
+     * genuinely absent this dumps the whole events array, so the failure says what the request actually
+     * carried rather than just naming the key that did not match.
+     */
+    protected static void validateEventInRQByKey(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventCount)
+        throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        if (rqCount > -1) {
+            Assert.assertEquals(rqCount, RQ.length);
+        }
+        TestUtils.validateRequiredParams(RQ[idx], deviceId);
+        if (!RQ[idx].containsKey("events")) {
+            Assert.fail("Not an event request idx:[" + idx + "], request:[" + RQ[idx] + "]");
+        }
+        JSONArray events = new JSONArray(RQ[idx].get("events"));
+        Assert.assertEquals("event count in request idx:[" + idx + "], events:[" + events + "]", eventCount, events.length());
+
+        JSONObject match = null;
+        for (int a = 0; a < events.length(); a++) {
+            if (eventName.equals(events.getJSONObject(a).optString("key"))) {
+                match = events.getJSONObject(a);
+                break;
+            }
+        }
+        Assert.assertNotNull("event [" + eventName + "] is not in the request. The request carried:[" + events + "]", match);
+        validateEvent(match, eventName, expectedSegmentation, count, sum, duration, id, pvid, cvid, peid);
+    }
+
+    protected static void validateEventInRQByKey(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx, int rqCount, int eventCount) throws JSONException {
+        validateEventInRQByKey(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventCount);
+    }
+
     protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventIdx, int eventCount)
         throws JSONException {
         Map<String, String>[] RQ = TestUtils.getCurrentRQ();

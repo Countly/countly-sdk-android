@@ -1019,9 +1019,13 @@ public class ModuleConfigurationTests {
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertEquals(1, TestUtils.getCountlyStore().getEventQueueSize());
 
-        validateEventInRQ("test_event", TestUtils.map(), 0, 1, 0, 3);
-        validateEventInRQ("test_event_1", TestUtils.map(), 0, 1, 1, 3);
-        validateEventInRQ("test_event_2", TestUtils.map(), 0, 1, 2, 3);
+        // Looked up by key, not by position: which slot an event lands in inside a batch depends on when the
+        // event queue was flushed relative to the session and timer machinery, and this test is about the
+        // batch SIZE the server configuration asked for, not about ordering. Asserting the index made this
+        // test fail intermittently on this branch AND on staging (measured 5/12 and 2/4 full runs).
+        validateEventInRQByKey("test_event", TestUtils.map(), 0, 1, 3);
+        validateEventInRQByKey("test_event_1", TestUtils.map(), 0, 1, 3);
+        validateEventInRQByKey("test_event_2", TestUtils.map(), 0, 1, 3);
     }
 
     /**
@@ -1289,6 +1293,11 @@ public class ModuleConfigurationTests {
 
     private static void validateEventInRQ(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventIdx, eventCount);
+    }
+
+    /** Order-independent variant: asserts the event is in the request's batch, whatever slot it occupies. */
+    private static void validateEventInRQByKey(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventCount) throws JSONException {
+        ModuleEventsTests.validateEventInRQByKey(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventCount);
     }
 
     private void base_allFeatures(Consumer<ServerConfigBuilder> consumer, int hc, int fc, int rc, int cc, int scc) throws JSONException, InterruptedException {
