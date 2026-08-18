@@ -137,10 +137,15 @@ public class Countly {
     static final int maxStackTraceLineLengthDefault = 200;
     static final int maxStackTraceThreadCountDefault = 50;
 
-    // Reserved name of the default (shared) instance returned by sharedInstance(). The '[CLY]_'
-    // prefix is the SDK's internal-key convention, so it will not collide with a customer app key
-    // or instance name.
-    static final String DEFAULT_NAME = "[CLY]_default_instance";
+    /**
+     * Reserved name of the default (shared) instance returned by {@link #sharedInstance()}, and the name it is
+     * listed under by {@link #listInstances()}. The {@code [CLY]_} prefix is the SDK's internal-key convention,
+     * so it will not collide with a customer app key or instance name.
+     * <p>
+     * Public because {@code listInstances()} returns it: without the constant a caller would have to hardcode
+     * the literal to tell the default instance apart from a named one.
+     */
+    public static final String DEFAULT_NAME = "[CLY]_default_instance";
 
     // Registry of live Countly instances keyed by instance name (default instance under
     // DEFAULT_NAME). Static for process-wide access exactly like the previous singleton; instances

@@ -37,7 +37,9 @@ public class ModuleContent extends ModuleBase {
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
-        L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + config.content.zoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
+        //the resolved interval, which is what this module actually uses below - logging the config's value
+        //would print a number the SDK is not honouring once the server behaviour settings override it
+        L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + cly.moduleConfiguration.currentVZoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
         iRGenerator = config.immediateRequestGenerator;
 
         contentInterface = new Content();

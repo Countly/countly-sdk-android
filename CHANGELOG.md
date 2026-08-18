@@ -5,6 +5,7 @@
 * Mitigated an issue where a push token arriving before the SDK was initialized, or after it was halted, could crash the app.
 * Mitigated an issue where the request queue worker threads were not released when the SDK was halted.
 * Mitigated an issue where stopping an instance discarded its open session, its open views, and its pending user profile changes.
+* ! Minor breaking change ! Internal limits set through `CountlyConfig.sdkInternalLimits` are now read once when the SDK initializes, and each instance keeps its own. Changing them on the config afterwards no longer affects a running instance.
 * ! Minor breaking change ! Custom network request headers set through `CountlyConfig.addCustomNetworkRequestHeaders(Map)` are now copied when the SDK initializes. Changing the map you passed in afterwards no longer affects the requests the SDK sends. To change a header while the SDK is running, use `Countly.sharedInstance().requestQueue().addCustomNetworkRequestHeaders(Map)`.
 
 ## 26.1.5
