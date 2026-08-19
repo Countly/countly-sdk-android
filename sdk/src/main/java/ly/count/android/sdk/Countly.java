@@ -1276,6 +1276,14 @@ public class Countly {
             return;
         }
 
+        //Nothing ever nulls config_, but tearDown nulls moduleConfiguration - and the resolved settings below
+        //are read off it. An /o/sdk response is an async callback with no cancellation handle, so it can land
+        //after removeInstance()/halt() and would otherwise dereference null and crash the host app.
+        if (moduleConfiguration == null) {
+            L.d("[Countly] onSdkConfigurationChanged, this instance was torn down before the response arrived, ignoring it");
+            return;
+        }
+
         //Read the settings this instance resolved, not the config: the config may be shared with another
         //instance and is no longer written to by the SDK.
         setLoggingEnabled(moduleConfiguration.currentVLoggingEnabled);

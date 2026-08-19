@@ -61,12 +61,16 @@ public class ModuleCrash extends ModuleBase {
 
         recordAllThreads = config.crashes.recordAllThreadsWithCrash;
 
-        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment);
+        //Copy first, for the same reason as ModuleViews' global segmentation: this truncates in place and the
+        //map belongs to the developer's config, which a second instance may also be built from.
+        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment == null ? null : new HashMap<>(config.crashes.customCrashSegment));
 
         metricOverride = config.metricOverride;
 
         crashesInterface = new Crashes();
-        breadcrumbHelper = new BreadcrumbHelper(config.sdkInternalLimits.maxBreadcrumbCount, L);
+        //the limit this instance RESOLVED (developer config plus the server behaviour settings), not the raw
+        //developer value on the config - this was the last reader still bypassing sdkInternalLimits_
+        breadcrumbHelper = new BreadcrumbHelper(cly.sdkInternalLimits_.maxBreadcrumbCount, L);
 
         assert breadcrumbHelper != null;
     }

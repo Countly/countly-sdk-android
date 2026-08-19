@@ -82,7 +82,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         config.viewIdProvider = this;
         safeViewIDGenerator = config.safeViewIDGenerator;
 
-        setGlobalViewSegmentationInternal(config.globalViewSegmentation);
+        //Copy first: setGlobalViewSegmentationInternal truncates keys/values and drops entries past the
+        //segmentation limit IN PLACE, and config.globalViewSegmentation is the developer's own map held by
+        //reference. Truncating it would apply THIS instance's resolved limits to the shared config, so a
+        //second instance built from the same config would only ever see the already-truncated entries.
+        setGlobalViewSegmentationInternal(config.globalViewSegmentation == null ? null : new HashMap<>(config.globalViewSegmentation));
         autoTrackingActivityExceptions = config.automaticViewTrackingExceptions;
         trackOrientationChanges = config.trackOrientationChange;
         restartManualViews = !config.disableViewRestartForManualRecording;

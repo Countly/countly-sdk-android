@@ -575,6 +575,42 @@ public class MultiInstanceTests {
     }
 
     /**
+     * The invariant the per-instance limits exist for: one instance's server behaviour settings must not
+     * retruncate another instance's data, even when both were built from the SAME CountlyConfig.
+     * <p>
+     * Precedence is SERVER > STORED > PROVIDED > DEVELOPER, so the instance whose own store carries a limit
+     * must honour it, while the instance whose store carries nothing must keep the developer's value. Before
+     * the limits moved onto the instance, both read the config's nested limits object, so the first instance
+     * to resolve its settings silently changed truncation for the second.
+     */
+    @Test
+    public void internalLimits_serverSettingsOfOneInstanceDoNotRetruncateAnother() throws JSONException {
+        //only instB's own namespaced store carries a server behaviour setting, and it lowers the key length
+        String storedSbs = new JSONObject()
+            .put("t", 1L)
+            .put("v", 1)
+            .put("c", new JSONObject().put("lkl", 5))
+            .toString();
+        store(CountlyStore.sanitizeNamespace("instB")).setServerConfig(storedSbs);
+
+        CountlyConfig shared = baseConfig(APP_KEY_A, DEVICE_A);
+        shared.sdkInternalLimits.setMaxKeyLength(40);
+
+        Countly withServerLimit = Countly.instance("instB");
+        withServerLimit.init(shared);
+
+        Countly withoutServerLimit = Countly.instance("instFresh");
+        withoutServerLimit.init(shared);
+
+        Assert.assertEquals("the instance whose stored settings lower the limit must use the server value",
+            Integer.valueOf(5), withServerLimit.sdkInternalLimits_.maxKeyLength);
+        Assert.assertEquals("the other instance must keep the developer's limit, not inherit the server's",
+            Integer.valueOf(40), withoutServerLimit.sdkInternalLimits_.maxKeyLength);
+        Assert.assertEquals("and the developer's own config must be left untouched",
+            Integer.valueOf(40), shared.sdkInternalLimits.maxKeyLength);
+    }
+
+    /**
      * The registry management API. instance(name) creates/accesses a handle but never initializes it
      * (users init themselves); getInstance never creates; listInstances reports every registered instance
      * including the default; haltAllInstances halts every instance while keeping identities registered.

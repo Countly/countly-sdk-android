@@ -1291,6 +1291,27 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
     }
 
+    /**
+     * Server behaviour settings must be able to RAISE a developer-set internal limit, not just lower it.
+     * Precedence is SERVER > STORED > PROVIDED > DEVELOPER, so the server value wins whichever direction it
+     * moves - it is not an AND-gate or a min() of the two. Every other limits assertion in this suite happens
+     * to move the value DOWN from the SDK default, so this direction was untested.
+     */
+    @Test
+    public void internalLimits_serverCanRaiseTheDeveloperLimit() throws JSONException {
+        countlyStore.setServerConfig(new ServerConfigBuilder().defaults().keyLengthLimit(500).build());
+
+        CountlyConfig config = TestUtils.createBaseConfig().setLoggingEnabled(false);
+        config.sdkInternalLimits.setMaxKeyLength(10);
+
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals("the server must be able to raise a developer limit; this is not an AND-gate",
+            Integer.valueOf(500), countly.sdkInternalLimits_.maxKeyLength);
+        Assert.assertEquals("the developer's config must not be rewritten by the resolution",
+            Integer.valueOf(10), config.sdkInternalLimits.maxKeyLength);
+    }
+
     private static void validateEventInRQ(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventIdx, eventCount);
     }
