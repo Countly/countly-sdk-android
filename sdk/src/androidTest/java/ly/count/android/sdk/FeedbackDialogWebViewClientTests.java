@@ -57,7 +57,7 @@ public class FeedbackDialogWebViewClientTests {
     /** Dangerous local/script sub-resource schemes are blocked; https/http load (default denylist). */
     @Test
     public void shouldInterceptRequest_defaultDenylist() {
-        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null);
+        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null, new ModuleLog());
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png")));
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("http://example.com/a.js")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("file:///data/data/ly.count.android.sdk/shared_prefs/secret.xml")));
@@ -76,7 +76,7 @@ public class FeedbackDialogWebViewClientTests {
     @Test
     public void shouldInterceptRequest_allowlistThreaded() {
         ModuleRatings.FeedbackDialogWebViewClient client =
-            new ModuleRatings.FeedbackDialogWebViewClient(new HashSet<>(Arrays.asList("myapp")));
+            new ModuleRatings.FeedbackDialogWebViewClient(new HashSet<>(Arrays.asList("myapp")), new ModuleLog());
         // https always loads (serves the widget itself)
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png")));
         // a listed non-web scheme loads
@@ -91,7 +91,7 @@ public class FeedbackDialogWebViewClientTests {
     /** The deprecated String overload must not NPE on a null url (a null scheme is blocked, fail-secure). */
     @Test
     public void shouldInterceptRequest_stringOverload_nullSafe() {
-        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null);
+        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null, new ModuleLog());
         assertBlocked(client.shouldInterceptRequest(null, (String) null)); // null url -> null scheme -> blocked, no NPE
         assertBlocked(client.shouldInterceptRequest(null, "file:///etc/hosts"));
         Assert.assertNull(client.shouldInterceptRequest(null, "https://example.com/a.png"));

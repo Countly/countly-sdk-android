@@ -275,11 +275,13 @@ public class Utils {
 
     /**
      * Read stream into a byte array
+     * <p>
+     * Kept for source compatibility - this is public API and nothing inside the SDK calls it any more. It uses
+     * a silent logger, so a read failure is not reported anywhere; prefer {@link #readStream(InputStream, ModuleLog)}.
      *
      * @param stream input to read
      * @return stream contents or {@code null} in case of error
      */
-    /** Kept for source compatibility - this is public API. Uses a silent logger. */
     public static byte[] readStream(InputStream stream) {
         return readStream(stream, new ModuleLog());
     }

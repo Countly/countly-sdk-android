@@ -336,11 +336,6 @@ public class ModuleRatings extends ModuleBase {
         showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
 
-    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
-    static StarRatingPreferences loadStarRatingPreferences(final StorageProvider sp) {
-        return loadStarRatingPreferences(sp, new ModuleLog());
-    }
-
     /**
      * Returns a object with the loaded preferences
      * TODO make this non static
@@ -599,15 +594,6 @@ public class ModuleRatings extends ModuleBase {
         // Logger of the instance that opened this dialog. Blocked-scheme decisions are security
         // relevant, so they must reach that instance's log listener, not the default instance's.
         @NonNull private final ModuleLog L;
-
-        FeedbackDialogWebViewClient() {
-            this(null);
-        }
-
-        /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
-        FeedbackDialogWebViewClient(Set<String> allowedSchemes) {
-            this(allowedSchemes, new ModuleLog());
-        }
 
         FeedbackDialogWebViewClient(Set<String> allowedSchemes, @NonNull ModuleLog L) {
             this.allowedSchemes = allowedSchemes;

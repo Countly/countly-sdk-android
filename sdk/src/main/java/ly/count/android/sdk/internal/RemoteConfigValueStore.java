@@ -181,11 +181,6 @@ public class RemoteConfigValueStore {
     // SERIALIZATION, DESERIALIZATION
     //========================================
 
-    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
-    public static RemoteConfigValueStore dataFromString(@Nullable String storageString, boolean valuesShouldBeCached) {
-        return dataFromString(storageString, valuesShouldBeCached, new ModuleLog());
-    }
-
     /**
      * @param L logger of the instance that owns these values, so their diagnostics never reach another
      * instance's log listener

@@ -1032,6 +1032,22 @@ public class ModuleEventsTests {
         validateEvent(match, eventName, expectedSegmentation, count, sum, duration, id, pvid, cvid, peid);
     }
 
+    /**
+     * The 'dur' value of the single event in request [idx].
+     * <p>
+     * For tests whose expected duration comes from a {@code Thread.sleep}: the SDK reports view durations in
+     * WHOLE SECONDS, so a 1000 ms sleep plus any scheduling delay measures 1 or 2 depending on which side of a
+     * second boundary the clock lands on. Asserting an exact value makes such a test fail on a loaded machine
+     * for a reason unrelated to what it covers, so read the measured duration, bound-check it, and pass it into
+     * the normal validation - every other assertion stays exact.
+     */
+    protected static double readSingleEventDuration(int idx) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertTrue("no request at index [" + idx + "], the queue holds [" + RQ.length + "]", idx < RQ.length);
+        JSONArray events = new JSONArray(RQ[idx].get("events"));
+        return events.getJSONObject(0).optDouble("dur", 0.0d);
+    }
+
     protected static void validateEventInRQByKey(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx, int rqCount, int eventCount) throws JSONException {
         validateEventInRQByKey(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventCount);
     }

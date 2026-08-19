@@ -154,11 +154,6 @@ public class ModuleFeedback extends ModuleBase {
         }, L);
     }
 
-    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
-    static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
-        return parseFeedbackList(requestResponse, new ModuleLog());
-    }
-
     /**
      * @param L logger of the instance that requested this widget list, so widget ids, types and tags are
      * reported to that instance's log listener rather than the default instance's

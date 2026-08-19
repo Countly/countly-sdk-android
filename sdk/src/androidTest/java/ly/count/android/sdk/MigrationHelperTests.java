@@ -501,7 +501,7 @@ public class MigrationHelperTests {
 
         cs.setRemoteConfigValues("{" + rcEntryLegacy("a", 123) + "," + rcEntryLegacy("b", "fg") + "," + rcEntryLegacy("c", jsonArray) + "," + rcEntryLegacy("d", jsonObject) + "}");
         mh.performMigration1To2(new HashMap<>());
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false, new ModuleLog());
 
         Assert.assertEquals(4, rcvs.values.length());
 
@@ -528,7 +528,7 @@ public class MigrationHelperTests {
 
         cs.setRemoteConfigValues("");
         mh.performMigration1To2(new HashMap<>());
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false, new ModuleLog());
 
         Assert.assertEquals(0, rcvs.values.length());
     }
@@ -542,7 +542,7 @@ public class MigrationHelperTests {
 
         cs.setRemoteConfigValues(null);
         mh.performMigration1To2(new HashMap<>());
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false, new ModuleLog());
 
         Assert.assertEquals(0, rcvs.values.length());
     }
@@ -556,7 +556,7 @@ public class MigrationHelperTests {
 
         cs.setRemoteConfigValues("dsfsdf");
         mh.performMigration1To2(new HashMap<>());
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false, new ModuleLog());
 
         Assert.assertEquals(0, rcvs.values.length());
     }

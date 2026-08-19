@@ -74,11 +74,6 @@ class Event {
         this.dow = dow;
     }
 
-    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
-    JSONObject toJSON() {
-        return toJSON(new ModuleLog());
-    }
-
     /**
      * Creates and returns a JSONObject containing the event data from this object.
      *
@@ -146,11 +141,6 @@ class Event {
         }
 
         return json;
-    }
-
-    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
-    static Event fromJSON(@NonNull final JSONObject json) {
-        return fromJSON(json, new ModuleLog());
     }
 
     /**

@@ -16,11 +16,6 @@ import org.json.JSONObject;
 
 public class RemoteConfigHelper {
 
-    /** Convenience overload for callers with no instance context (tests); uses a silent logger. */
-    public static @NonNull Map<String, RCData> DownloadedValuesIntoMap(@Nullable JSONObject jsonObject) {
-        return DownloadedValuesIntoMap(jsonObject, new ModuleLog());
-    }
-
     /**
      * @param L logger of the instance these downloaded values belong to, so a parse failure is reported
      * to that instance's log listener instead of the default instance's

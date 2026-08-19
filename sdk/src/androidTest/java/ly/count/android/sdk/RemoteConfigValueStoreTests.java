@@ -31,13 +31,13 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsSerializeDeserialize() throws JSONException {
-        RemoteConfigValueStore remoteConfigValueStore = RemoteConfigValueStore.dataFromString(null, false);
+        RemoteConfigValueStore remoteConfigValueStore = RemoteConfigValueStore.dataFromString(null, false, new ModuleLog());
 
         remoteConfigValueStore.values.put("fd", 12);
         remoteConfigValueStore.values.put("2fd", 142);
         remoteConfigValueStore.values.put("f3d", 123);
 
-        RemoteConfigValueStore.dataFromString(remoteConfigValueStore.dataToString(), false);
+        RemoteConfigValueStore.dataFromString(remoteConfigValueStore.dataToString(), false, new ModuleLog());
     }
 
     /**
@@ -45,12 +45,12 @@ public class RemoteConfigValueStoreTests {
      */
     @Test
     public void rcvsDataFromStringNullEmpty() {
-        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString(null, false);
+        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString(null, false, new ModuleLog());
         Assert.assertNotNull(rcvs1);
         Assert.assertNotNull(rcvs1.values);
         Assert.assertEquals(0, rcvs1.values.length());
 
-        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("", false);
+        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("", false, new ModuleLog());
         Assert.assertNotNull(rcvs2);
         Assert.assertNotNull(rcvs2.values);
         Assert.assertEquals(0, rcvs2.values.length());
@@ -62,7 +62,7 @@ public class RemoteConfigValueStoreTests {
     @Test
     public void rcvsDataFromStringSamples_1() {
         String[] rcArr = new String[] { rcEStr("a", 123, false), rcEStr("b", "fg", false) };
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true, new ModuleLog());
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
         Assert.assertEquals(2, rcvs.values.length());
@@ -87,7 +87,7 @@ public class RemoteConfigValueStoreTests {
         JSONObject jObjI = new JSONObject("{\"q\":6,\"w\":\"op\"}");
 
         String[] rcArr = { rcEStr("321", 123, false), rcEStr("😀", "😁"), rcEStr("c", jArrI), rcEStr("d", 6.5), rcEStr("e", jObjI) };
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), true, new ModuleLog());
         Assert.assertNotNull(rcvs);
         Assert.assertNotNull(rcvs.values);
 
@@ -141,7 +141,7 @@ public class RemoteConfigValueStoreTests {
     @Test
     public void dataFromString_CurrentStructure() {
         String[] rcArr = { rcEStr("a", 123), rcEStr("b", "ccx", false) };
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog());
 
         Assert.assertEquals(123, rcvs.getValue("a").value);
         Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
@@ -156,10 +156,10 @@ public class RemoteConfigValueStoreTests {
     @Test
     public void rcvsMergeValues_1() throws JSONException {
         String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog());
         JSONObject obj = new JSONObject("{\"b\": 123.3,\"c\": \"uio\"}");
 
-        Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(obj);
+        Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(obj, new ModuleLog());
         rcvs.mergeValues(newRC, false);
 
         Assert.assertEquals(3, rcvs.values.length());

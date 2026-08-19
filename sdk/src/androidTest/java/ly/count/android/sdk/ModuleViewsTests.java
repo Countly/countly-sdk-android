@@ -2168,7 +2168,22 @@ public class ModuleViewsTests {
             viewSegmentation.put("cly_pvn", pvn);
         }
 
-        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, viewDuration, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
+        //The SDK reports view durations in WHOLE SECONDS (currentTimestampSeconds() - viewStartTimeSeconds),
+        //and the tests that expect a non-zero duration produce it with Thread.sleep. A 1000 ms sleep plus any
+        //scheduling delay therefore measures 1 or 2 depending on which side of a second boundary the clock
+        //lands on, which is why CI failed with expected:<1.0> but was:<2.0> on a test that is not about
+        //timing at all. So for a non-zero expected duration, require AT LEAST that many seconds (and no more
+        //than two extra), then assert the rest of the event exactly with the value actually measured.
+        //A zero expected duration stays exact: a view-start event must report no duration.
+        Double durationToAssert = viewDuration;
+        if (viewDuration != null && viewDuration > 0.0) {
+            double measured = ModuleEventsTests.readSingleEventDuration(idx);
+            Assert.assertTrue("view [" + viewName + "] duration: expected at least [" + viewDuration + "]s, measured [" + measured + "]s",
+                measured >= viewDuration && measured <= viewDuration + 2.0);
+            durationToAssert = measured;
+        }
+
+        ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, durationToAssert, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
     }
     //todo extract orientation tests
 }
