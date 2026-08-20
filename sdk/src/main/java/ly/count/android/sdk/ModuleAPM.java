@@ -481,20 +481,20 @@ public class ModuleAPM extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (_cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (_cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
 
             activitiesOpen++;
         }
 
         // we only do this adjustment if we track it automatically
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Starting to track foreground time");
 
             calculateAppRunningTimes(activitiesOpen - 1, activitiesOpen);
         }
 
-        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Recording automatic app start duration");
             long currentTimestamp = System.currentTimeMillis();
             recordAppStart(currentTimestamp);

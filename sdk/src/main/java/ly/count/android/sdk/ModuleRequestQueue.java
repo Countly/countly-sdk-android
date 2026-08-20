@@ -167,7 +167,11 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         if (triggerRefreshContentZone) {
             callback = new InternalRequestCallback() {
                 @Override public void onRequestCompleted(String response, boolean success) {
-                    if (success) {
+                    //This lands on the network thread after the HTTP round trip, so the instance may have been
+                    //torn down in between - removeInstance's flush can record a journey-trigger view end and
+                    //then null moduleContent microseconds later. ConnectionProcessor would swallow the NPE and
+                    //abandon the request it had already delivered.
+                    if (success && _cly.moduleContent != null) {
                         _cly.moduleContent.refreshContentZoneInternal(false);
                     }
                 }

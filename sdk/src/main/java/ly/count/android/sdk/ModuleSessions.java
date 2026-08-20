@@ -166,7 +166,7 @@ public class ModuleSessions extends ModuleBase {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.sessions)) {
             if (newConsent) {
                 //if consent was just given and automatic session tracking is active, start a session if we are in the foreground
-                if (automaticSessionTrackingEnabled() && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+                if (automaticSessionTrackingEnabled() && _cly.lifeCycleAtleastStarted()) {
                     beginSessionInternal();
                 }
             } else {
@@ -188,7 +188,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (automaticSessionTrackingEnabled() && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (automaticSessionTrackingEnabled() && _cly.lifeCycleAtleastStarted()) {
             //start a session if we initialized in the foreground
             beginSessionInternal();
         }
@@ -202,7 +202,7 @@ public class ModuleSessions extends ModuleBase {
 
     @Override
     void deviceIdChanged(boolean withoutMerge) {
-        if (automaticSessionTrackingEnabled() && withoutMerge && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (automaticSessionTrackingEnabled() && withoutMerge && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleSessions] deviceIdChanged, automatic session control enabled and device id changed without merge, starting a new session");
             beginSessionInternal();
         }

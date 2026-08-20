@@ -956,9 +956,14 @@ class ConnectionQueue implements RequestQueueProvider {
      */
     void shutdownExecutors() {
         if (executor_ != null) {
+            //shutdown(), not shutdownNow(): a request already on the wire is allowed to finish rather than
+            //being interrupted mid-flight
             executor_.shutdown();
         }
-        backoffScheduler_.shutdown();
+        //shutdownNow() for the backoff scheduler: a retry that has not started yet must NOT fire after the
+        //owning instance is gone, because tick() would then revive this discarded queue through
+        //ensureExecutor() and drain with a context that teardown already cleared
+        backoffScheduler_.shutdownNow();
     }
 
     /**

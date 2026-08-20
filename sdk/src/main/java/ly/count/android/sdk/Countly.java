@@ -109,6 +109,23 @@ public class Countly {
     }
 
     /**
+     * Whether the process is at least started, asked through this instance's config.
+     * <p>
+     * Null-safe on purpose: init derives the observer onto the CountlyConfig, and a config shared by two
+     * instances is briefly without one while the second init restores the developer's values. A live sibling
+     * instance can reach the foreground check in that window - through a consent change or a device-id change -
+     * and must not crash the caller's thread over it. Treated as "not started" when unknown, which is the
+     * conservative answer: it suppresses an automatic session rather than opening a spurious one.
+     */
+    boolean lifeCycleAtleastStarted() {
+        if (config_ == null || config_.lifecycleObserver == null) {
+            L.d("[Countly] lifeCycleAtleastStarted, no lifecycle observer available yet, treating the app as not started");
+            return false;
+        }
+        return config_.lifecycleObserver.LifeCycleAtleastStarted();
+    }
+
+    /**
      * Enum used in Countly.initMessaging() method which controls what kind of
      * app installation it is. Later (in Countly Dashboard or when calling Countly API method),
      * you'll be able to choose whether you want to send a message to test devices,
@@ -287,6 +304,11 @@ public class Countly {
     // storage namespacing: DEFAULT_NAME -> legacy files; any other name -> isolated, suffixed files.
     String instanceName_ = DEFAULT_NAME;
 
+    // True once the registry has handed this object out under instanceName_. A detached "new Countly()" is
+    // never registered, which is exactly why the stale-handle check in init has to consult this and not just
+    // compare against instances_ - every detached instance carries the DEFAULT_NAME default.
+    private boolean wasRegistered_ = false;
+
     // Process-global lifecycle/component callbacks are registered on the Application per init().
     // We keep references so halt() can unregister them; otherwise every init/halt cycle leaks a
     // callback bound to a dead instance that keeps receiving Activity/config events - a real hazard
@@ -373,6 +395,7 @@ public class Countly {
             if (!DEFAULT_NAME.equals(key)) {
                 c.L.setTag(TAG + "-" + key);
             }
+            c.wasRegistered_ = true;
             instances_.put(key, c);
             return c;
         }
@@ -633,6 +656,16 @@ public class Countly {
             L.w("[Init] This CountlyConfig was already used to initialise another instance. Each instance keeps its own storage, device id and internal limits, but the values you set on this object apply to every instance built from it, and the settings this instance resolves from the server are written onto it. Prefer a fresh CountlyConfig per instance.");
         }
 
+        //A handle whose name was deregistered by removeInstance() is still a fully functional object with the
+        //same instanceName_, so re-initialising it would build a second store and queue over the namespace a
+        //freshly obtained instance(name) is already using - two sessions, two timers, and two writers
+        //read-modify-writing one request queue. Refuse instead: the caller must take a fresh handle.
+        Countly registered = instances_.get(instanceName_);
+        if (wasRegistered_ && registered != this) {
+            L.e("[Init] This handle for instance [" + instanceName_ + "] was removed from the registry and can not be initialised again; another object is registered under that name. Obtain a fresh handle with Countly.instance(name).");
+            return this;
+        }
+
         if (config.application == null) {
             L.w("[Init] Initialising the SDK without providing the application class. Some functionality will not work.");
         }
@@ -769,6 +802,13 @@ public class Countly {
             //ConnectionQueue, so a cached requestQueueProvider would write through a torn-down queue.
             //This also runs when a config is shared across instances, which is supported: every init starts
             //from the values the developer set rather than from the previous instance's leftovers.
+            //Sharing one CountlyConfig across instances is supported, and init mutates that shared object while
+            //deriving the store, the queues and the providers. init is synchronized on THIS Countly, not on the
+            //config, so two instances initialising on two threads would interleave those writes and could adopt
+            //each other's store. Serialise the whole derived-field region on the config itself. The config
+            //monitor is always taken after the instance monitor and never the other way round, so this cannot
+            //invert a lock order.
+            synchronized (config) {
             if (config.derivedFieldSnapshot == null) {
                 config.derivedFieldSnapshot = new CountlyConfig.DerivedFieldSnapshot(config);
             } else {
@@ -1054,16 +1094,23 @@ public class Countly {
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
             connectionQueue_.requestInfoProvider = new RequestInfoProvider() {
+                //These are called from the network thread, outside any try block, for every request the
+                //ConnectionProcessor drains. requestQueue() returns null as soon as sdkIsInitialised is
+                //cleared, and teardown clears it while a processor is still finishing - the teardown flush
+                //deliberately puts one in flight - so read the modules directly and fall back to the
+                //configured values instead of throwing out of run() and stopping the drain.
                 @Override public boolean isHttpPostForced() {
-                    return requestQueue().isHttpPostForced();
+                    return moduleRequestQueue != null ? moduleRequestQueue.isHttpPostForcedInternal() : isHttpPostForced;
                 }
 
                 @Override public boolean isDeviceAppCrawler() {
-                    return requestQueue().isDeviceAppCrawler();
+                    //false when the module is gone: never DROP a queued request on the way out
+                    return moduleRequestQueue != null && moduleRequestQueue.isDeviceAppCrawlerInternal();
                 }
 
                 @Override public boolean ifShouldIgnoreCrawlers() {
-                    return requestQueue().ifShouldIgnoreCrawlers();
+                    //true matches the field's own default
+                    return moduleRequestQueue == null || moduleRequestQueue.ifShouldIgnoreCrawlersInternal();
                 }
 
                 @Override public int getRequestDropAgeHours() {
@@ -1183,7 +1230,7 @@ public class Countly {
                 L.d("[Countly] Global activity listeners not registred due to no Application class");
             }
 
-            if (config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+            if (lifeCycleAtleastStarted()) {
                 L.d("[Countly] SDK detects that the app is in the foreground. Increasing the activity counter and setting the foreground state.");
                 activityCount_++;
                 deviceInfo_.inForeground();
@@ -1223,6 +1270,7 @@ public class Countly {
             config.derivedFieldSnapshot.captureApplied(config);
 
             L.i("[Init] Finished initialising SDK");
+            }
         } else {
             //if this is not the first time we are calling init
             L.i("[Init] Getting in the 'else' block");
