@@ -11,6 +11,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ModuleCrash extends ModuleBase {
@@ -63,7 +64,7 @@ public class ModuleCrash extends ModuleBase {
 
         //Copy first, for the same reason as ModuleViews' global segmentation: this truncates in place and the
         //map belongs to the developer's config, which a second instance may also be built from.
-        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment == null ? null : new HashMap<>(config.crashes.customCrashSegment));
+        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment == null ? null : new LinkedHashMap<>(config.crashes.customCrashSegment));
 
         metricOverride = config.metricOverride;
 

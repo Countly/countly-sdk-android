@@ -1356,7 +1356,7 @@ public class CountlyConfig {
         //the end of the last init. A value is only reset when it still holds what the SDK left - see
         //restoreValuesOnto. The values themselves are the ones the SDK writes back: the temporary-device-id
         //sentinel and the settings the server behaviour settings resolve.
-        private final Object[] originalValues;
+        private Object[] originalValues;
         private Object[] appliedValues;
 
         DerivedFieldSnapshot(@NonNull CountlyConfig config) {
@@ -1421,7 +1421,13 @@ public class CountlyConfig {
             Object[] current = readValues(config);
             for (int i = 0; i < current.length; i++) {
                 if (equal(current[i], appliedValues[i])) {
+                    //untouched since the SDK wrote it, so undo the SDK's write
                     writeValue(config, i, originalValues[i]);
+                } else {
+                    //the developer changed it between inits: honour it AND adopt it as the new baseline.
+                    //Leaving the baseline frozen at the first init would revert this value on a LATER init,
+                    //once the SDK had written the developer's own value back and current == applied again.
+                    originalValues[i] = current[i];
                 }
             }
         }

@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +87,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         //segmentation limit IN PLACE, and config.globalViewSegmentation is the developer's own map held by
         //reference. Truncating it would apply THIS instance's resolved limits to the shared config, so a
         //second instance built from the same config would only ever see the already-truncated entries.
-        setGlobalViewSegmentationInternal(config.globalViewSegmentation == null ? null : new HashMap<>(config.globalViewSegmentation));
+        setGlobalViewSegmentationInternal(config.globalViewSegmentation == null ? null : new LinkedHashMap<>(config.globalViewSegmentation));
         autoTrackingActivityExceptions = config.automaticViewTrackingExceptions;
         trackOrientationChanges = config.trackOrientationChange;
         restartManualViews = !config.disableViewRestartForManualRecording;
