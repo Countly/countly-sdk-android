@@ -246,13 +246,22 @@ def report(scopes, blocking, suppressed, informational, fail_on):
     text = "\n".join(lines)
     print(text)
 
+    headline = (f"Scanned **{len(scopes)}** resolved dependencies, failing on "
+                f"**{fail_on}** and above in published dependencies.")
+    markdown = ("## Dependency security scan\n\n" + headline + "\n\n```\n"
+                + text.strip() + "\n```\n")
+
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a") as handle:
-            handle.write("## Dependency security scan\n\n")
-            handle.write(f"Scanned **{len(scopes)}** resolved dependencies, failing on "
-                         f"**{fail_on}** and above in published dependencies.\n\n")
-            handle.write("```\n" + text.strip() + "\n```\n")
+            handle.write(markdown)
+
+    # The workflow posts this onto the pull request. Without it a passing scan is invisible:
+    # a green check says nothing about what was actually scanned or what was waived.
+    report_path = os.environ.get("OSV_REPORT_FILE")
+    if report_path:
+        with open(report_path, "w") as handle:
+            handle.write(markdown)
 
 
 if __name__ == "__main__":
