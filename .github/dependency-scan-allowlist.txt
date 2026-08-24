@@ -1,0 +1,10 @@
+# Vulnerabilities the dependency security scan may ignore, one per line:
+#
+#   <OSV id>  <YYYY-MM-DD expiry>  <reason>
+#
+# The expiry is mandatory. Once it passes, the finding blocks the scan again and the entry
+# has to be re-reviewed — a temporary exception must not become a permanent silence.
+# Only add an entry when there is a concrete reason the advisory cannot or need not be acted
+# on right now, and say what that reason is.
+
+GHSA-r937-wjx7-w2jp  2026-11-30  Kotlin Gradle plugin build-cache deserialization. First fixed in 2.4.20-Beta1; no stable Kotlin release carries the fix yet. Build-machine only (CVSS AV:L/AC:H/PR:H), never shipped to integrators. Drop this entry once 2.4.20 is stable.

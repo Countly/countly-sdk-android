@@ -28,7 +28,7 @@ repositories {
 dependencies {
   implementation gradleApi()
   implementation localGroovy()
-  implementation 'com.squareup.okhttp3:okhttp:3.14.9'
+  implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 
 apply plugin: "com.vanniktech.maven.publish"

@@ -42,3 +42,7 @@ app-native/.cxx/
 # Content/feedback UI test runner artifacts (videos, logcat, verdicts)
 .github/scripts/test_output/
 .github/scripts/__pycache__/
+
+# Dependency security scan output
+osv-report.md
+resolved-dependencies.txt
