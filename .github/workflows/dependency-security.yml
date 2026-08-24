@@ -1,0 +1,181 @@
+name: "Dependency Security Scan"
+
+# Runs on pushes/PRs so a bad upgrade is caught immediately, and on a schedule because a
+# dependency can become vulnerable without this repo changing at all.
+on:
+  push:
+    branches:
+      - master
+      - staging
+  pull_request:
+    branches:
+      - master
+      - staging
+  schedule:
+    # Mondays 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Modules published to Maven Central. Their runtime dependencies are what every
+  # integrator inherits, so they are scanned as `published` and always block.
+  # A module that applies the publish plugin without being listed here fails the report
+  # step rather than being silently downgraded.
+  PUBLISHED_MODULES: ":sdk,:sdk-native,:upload-plugin"
+
+jobs:
+  osv-scan:
+    name: OSV scan (all modules)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Needed to post the scan result as a comment on the pull request.
+      pull-requests: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The Android Gradle Plugin cannot configure the projects without an SDK present.
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Resolve dependencies for every module
+        run: |
+          set -o pipefail
+          ./gradlew -q --init-script .github/scripts/dependency-report.init.gradle \
+            "-DpublishedModules=$PUBLISHED_MODULES" \
+            printResolvedDependencies | tee resolved-dependencies.txt
+          count=$(grep -c '^COORD' resolved-dependencies.txt || true)
+          echo "Resolved $count coordinate lines."
+          if [ "$count" -eq 0 ]; then
+            echo "::error::Gradle produced no dependency coordinates"
+            exit 1
+          fi
+
+      # Blocks on `published` and `sample` findings. `buildscript` is reported only: it is
+      # largely AGP's own internals, which cannot be upgraded independently of AGP.
+      - name: Check resolved dependencies against OSV
+        id: osv
+        env:
+          OSV_FAIL_ON: HIGH
+          OSV_BLOCKING_SCOPES: published,sample
+        run: python3 .github/scripts/osv_scan.py < resolved-dependencies.txt
+
+      # The job summary written above only shows on the workflow run page. This is what
+      # actually puts the result on the pull request. It updates one sticky comment
+      # instead of adding a new one on every push.
+      - name: Comment scan result on the pull request
+        if: always() && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- countly-dependency-security-scan -->';
+            const outcome = '${{ steps.osv.outcome }}';
+            // The report body already carries its own heading.
+            const status = outcome === 'success'
+              ? '**Result: passed**'
+              : '**Result: FAILED — a dependency has a known vulnerability**';
+            let report = '';
+            try {
+              report = fs.readFileSync('osv-report.md', 'utf8');
+            } catch (e) {
+              report = `The scan step did not produce a report (outcome: ${outcome}). See the workflow logs.`;
+            }
+            const body = [
+              marker,
+              report,
+              status,
+              '',
+              `[Full run log](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find(c => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Upload dependency list
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resolved-dependencies
+          path: |
+            resolved-dependencies.txt
+            osv-report.md
+          if-no-files-found: warn
+
+  dependency-submission:
+    name: Submit dependency graph
+    # Runs on pushes to the long-lived branches, on the weekly cron, on manual dispatch,
+    # AND on same-repo pull requests -- the last one is what gives dependency-review a head
+    # snapshot to diff against.
+    # Fork PRs are skipped on purpose: `contents: write` is not granted to a workflow
+    # triggered by a PR from a public fork, so the submit would fail. Covering forks needs
+    # the two-workflow generate-and-upload + workflow_run pattern from the gradle/actions docs.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+      - uses: android-actions/setup-android@v3
+      - name: Submit resolved dependency graph to GitHub
+        uses: gradle/actions/dependency-submission@v4
+
+  dependency-review:
+    name: Review dependency changes
+    # Needs the submission job so the head snapshot exists before the diff.
+    # `always()` keeps this running on fork PRs, where submission is skipped -- without it,
+    # a skipped dependency-submission would skip this job too.
+    # SCOPE: this can only diff Gradle dependencies once BOTH the base branch and the head
+    # have a submitted snapshot, so expect Actions-only output until master has been through
+    # dependency-submission at least once. osv-scan is the job that covers Gradle
+    # dependencies unconditionally.
+    if: always() && github.event_name == 'pull_request'
+    needs: dependency-submission
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fail the PR on newly introduced vulnerable dependencies
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: low
+          comment-summary-in-pr: on-failure
