@@ -156,6 +156,15 @@ jobs:
       - uses: android-actions/setup-android@v3
       - name: Submit resolved dependency graph to GitHub
         uses: gradle/actions/dependency-submission@v4
+        env:
+          # Submit only the classpaths we actually declare — the same closed list the OSV
+          # report uses. Without this the graph also carries AGP's tooling configurations
+          # (lintChecks, androidTestUtil, androidJdkImage, _internal_aapt2_binary, ...),
+          # which drag in netty and bouncycastle. Those then fail dependency-review on
+          # CRITICALs that only Google can fix, contradicting the osv-scan job that
+          # deliberately treats the plugin classpath as non-blocking — and they would make
+          # every Dependabot alert on this repo an AGP-internal false alarm.
+          DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: "^((runtime|compile)Classpath|((debug|release)(AndroidTest|UnitTest)?|test)(Runtime|Compile)Classpath)$"
 
   dependency-review:
     name: Review dependency changes
