@@ -1,6 +1,8 @@
 ## XX.XX.XX
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
 
+* Updated the `androidx.annotation` dependency to 1.10.0, the `androidx.lifecycle` dependencies to 2.8.7, and the symbol upload plugin's OkHttp dependency to 4.12.0.
+
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
 * Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.

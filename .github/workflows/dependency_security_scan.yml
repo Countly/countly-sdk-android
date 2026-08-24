@@ -1,0 +1,61 @@
+name: "Dependency Security Scan"
+
+on:
+  push:
+    branches:
+      - master
+      - staging
+  pull_request:
+    branches:
+      - master
+      - staging
+  # New advisories get published against dependencies we have not touched, so the scan has to
+  # run on a timer and not only when someone edits a build file.
+  schedule:
+    - cron: '30 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: "Scan resolved dependencies against OSV"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout SDK code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: corretto
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      # Resolves the real configurations rather than reading the build files, so transitive
+      # dependencies and conflict-resolved versions are covered too.
+      - name: Resolve dependency coordinates
+        run: >
+          ./gradlew --no-daemon
+          -I .github/scripts/dependency-report.gradle
+          -DdepReportOut=build/dependency-coordinates.txt
+          collectDependencyCoordinates
+
+      # Fails only on published dependencies — the ones integrators inherit. Build-only and
+      # plugin-classpath findings are reported in the job summary without blocking.
+      - name: Check against the OSV database
+        env:
+          OSV_FAIL_ON: HIGH
+        run: python3 .github/scripts/osv_scan.py build/dependency-coordinates.txt
+
+      - name: Upload resolved dependency list
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-coordinates
+          path: build/dependency-coordinates.txt
+          if-no-files-found: warn
