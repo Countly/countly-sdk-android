@@ -187,4 +187,6 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: low
-          comment-summary-in-pr: on-failure
+          # The osv-scan job owns the single PR comment. A second bot comment here just
+          # splits the same result across two places.
+          comment-summary-in-pr: never

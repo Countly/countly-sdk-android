@@ -255,7 +255,7 @@ def main():
                 informational.append(finding)
 
     blocking.sort(key=lambda f: (-rank(f["severity"]), f["coordinate"]))
-    report(entries, blocking, suppressed, informational, fail_on)
+    report(entries, blocking, suppressed, informational, fail_on, blocking_scopes)
     return 1 if blocking else 0
 
 
@@ -268,7 +268,87 @@ def format_finding(finding):
             f"    used by: {', '.join(finding['modules'])}")
 
 
-def report(entries, blocking, suppressed, informational, fail_on):
+def _cell(text):
+    """Make a value safe to drop into a markdown table cell."""
+    return (text or "").replace("|", "\\|").replace("\n", " ").strip()
+
+
+def finding_rows(findings):
+    rows = ["| Severity | Dependency | Advisory | Fixed in | Used by |",
+            "| --- | --- | --- | --- | --- |"]
+    for finding in findings:
+        fixed = ", ".join(finding["fixed"]) if finding["fixed"] else "_none published_"
+        rows.append(
+            f"| {finding['severity']} | `{_cell(finding['coordinate'])}` | "
+            f"[{finding['id']}](https://osv.dev/vulnerability/{finding['id']}) "
+            f"— {_cell(finding['summary'])} | {_cell(fixed)} | "
+            f"{_cell(', '.join(finding['modules']))} |")
+    return "\n".join(rows)
+
+
+def build_summary(entries, blocking, suppressed, informational, fail_on, blocking_scopes):
+    """The PR comment: only what someone reading the PR can act on.
+
+    Build-tooling findings are counted but never listed. They come from the Gradle plugin
+    classpath, cannot be upgraded from this repository, and listing them buries the
+    findings that do need a decision. The full detail stays in the job summary and the
+    uploaded artifact.
+    """
+    counts = {scope: sum(1 for e in entries.values() if e["scope"] == scope)
+              for scope in sorted(KNOWN_SCOPES)}
+    actionable = [f for f in informational if f["scope"] in blocking_scopes]
+    tooling = len(informational) - len(actionable)
+
+    lines = ["## Dependency security scan", ""]
+    lines.append(f"Scanned **{len(entries)}** resolved dependencies — "
+                 + ", ".join(f"**{n}** {s}" for s, n in counts.items()) + ".")
+    lines.append("")
+    lines.append("| Findings | Count |")
+    lines.append("| --- | ---: |")
+    lines.append(f"| Blocking ({fail_on}+ in {'/'.join(sorted(blocking_scopes))}) "
+                 f"| **{len(blocking)}** |")
+    lines.append(f"| Below {fail_on}, in dependencies we control | {len(actionable)} |")
+    lines.append(f"| Waived via allowlist | {len(suppressed)} |")
+    lines.append(f"| Build tooling — not upgradeable from this repo | {tooling} |")
+    lines.append("")
+
+    if blocking:
+        lines.append(f"### Must be fixed ({len(blocking)})")
+        lines.append("")
+        lines.append(finding_rows(blocking))
+        lines.append("")
+
+    if actionable:
+        lines.append(f"<details><summary>Below the {fail_on} threshold, "
+                     f"but ours to upgrade ({len(actionable)})</summary>")
+        lines.append("")
+        lines.append(finding_rows(actionable))
+        lines.append("")
+        lines.append("</details>")
+        lines.append("")
+
+    if suppressed:
+        lines.append(f"<details><summary>Waived via allowlist ({len(suppressed)})</summary>")
+        lines.append("")
+        lines.append("| Advisory | Dependency | Expires | Reason |")
+        lines.append("| --- | --- | --- | --- |")
+        for finding in suppressed:
+            lines.append(f"| {finding['id']} | `{_cell(finding['coordinate'])}` | "
+                         f"{finding['expiry']} | {_cell(finding['reason'])} |")
+        lines.append("")
+        lines.append("</details>")
+        lines.append("")
+
+    if tooling:
+        lines.append(f"_{tooling} further finding(s) in Gradle plugin internals are reported "
+                     "in the job summary and the `resolved-dependencies` artifact. They ship "
+                     "inside the build plugins and cannot be upgraded from this repository._")
+
+    return "\n".join(lines).strip() + "\n"
+
+
+def report(entries, blocking, suppressed, informational, fail_on, blocking_scopes):
+    """Full detail to stdout and the job summary; a trimmed summary to the PR comment."""
     lines = []
 
     if blocking:
@@ -299,17 +379,15 @@ def report(entries, blocking, suppressed, informational, fail_on):
     text = "\n".join(lines).strip()
     print("\n" + text)
 
-    markdown = ("## Dependency security scan\n\n"
-                f"Scanned **{len(entries)}** resolved dependencies, failing on **{fail_on}** "
-                f"and above.\n\n```\n{text}\n```\n")
-
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
         with open(summary_path, "a", encoding="utf-8") as handle:
-            handle.write(markdown)
+            handle.write("## Dependency security scan\n\n```\n" + text + "\n```\n")
 
     # The job summary only shows on the workflow run page. This file is what the workflow
-    # posts onto the pull request, where people actually look.
+    # posts onto the pull request, so it carries the summary rather than every finding.
+    markdown = build_summary(entries, blocking, suppressed, informational, fail_on,
+                             blocking_scopes)
     with open(os.environ.get("OSV_REPORT_FILE", "osv-report.md"), "w", encoding="utf-8") as handle:
         handle.write(markdown)
 
