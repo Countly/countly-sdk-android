@@ -20,6 +20,10 @@ permissions:
   contents: read
 
 env:
+  # One threshold for both jobs. osv-scan and dependency-review look at the same
+  # dependencies; if these drift apart, one job fails a PR the other has passed.
+  SEVERITY_THRESHOLD: high
+
   # Modules published to Maven Central. Their runtime dependencies are what every
   # integrator inherits, so they are scanned as `published` and always block.
   # A module that applies the publish plugin without being listed here fails the report
@@ -69,7 +73,7 @@ jobs:
       - name: Check resolved dependencies against OSV
         id: osv
         env:
-          OSV_FAIL_ON: HIGH
+          OSV_FAIL_ON: ${{ env.SEVERITY_THRESHOLD }}
           OSV_BLOCKING_SCOPES: published,sample
         run: python3 .github/scripts/osv_scan.py < resolved-dependencies.txt
 
@@ -186,7 +190,7 @@ jobs:
       - name: Fail the PR on newly introduced vulnerable dependencies
         uses: actions/dependency-review-action@v4
         with:
-          fail-on-severity: low
+          fail-on-severity: ${{ env.SEVERITY_THRESHOLD }}
           # The osv-scan job owns the single PR comment. A second bot comment here just
           # splits the same result across two places.
           comment-summary-in-pr: never
