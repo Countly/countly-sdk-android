@@ -233,7 +233,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         applyLimitsToViewSegmentation(customViewSegmentation, "startViewInternal", accumulatedEventSegm);
 
-        boolean firstViewInSession = firstView && _cly.moduleSessions.sessionIsRunning();
+        //Read once into a local: teardown nulls moduleSessions, and this runs on the main thread via
+        //onActivityStarted. A missing sessions module means there is no session, which is the same answer
+        //sessionIsRunning() would give.
+        ModuleSessions sessionsModule = _cly.moduleSessions;
+        boolean firstViewInSession = firstView && sessionsModule != null && sessionsModule.sessionIsRunning();
 
         Map<String, Object> viewSegmentation = CreateViewEventSegmentation(currentViewData, firstViewInSession, true, accumulatedEventSegm);
 

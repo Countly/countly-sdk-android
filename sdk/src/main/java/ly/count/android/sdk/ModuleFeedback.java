@@ -433,7 +433,8 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         // Do not show feedback widget if content overlay is currently showing
-        if (_cly.moduleContent != null && _cly.moduleContent.contentOverlay != null) {
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null && contentModule.contentOverlay != null) {
             L.w("[ModuleFeedback] showFeedbackWidget_newActivity, content overlay is currently showing, skipping feedback widget");
             if (devCallback != null) {
                 devCallback.onFinished("Content overlay is currently showing");

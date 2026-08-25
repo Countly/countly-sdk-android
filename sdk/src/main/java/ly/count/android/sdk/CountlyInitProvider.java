@@ -10,19 +10,15 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * ContentProvider that installs the process-wide {@link LifecycleDispatcher} before
- * Application.onCreate(). Running this early is what makes the dispatcher's started-activity
- * count exact from process start (no activity can start before content providers are created):
- * the SDK then knows the precise foreground state at init time, and captures the first Activity
- * reference even when Countly.init() is called after the Activity has already started (e.g., in
- * Flutter, React Native, or single-activity apps with deferred initialization).
+ * ContentProvider that registers ActivityLifecycleCallbacks before Application.onCreate().
+ * This ensures that the SDK captures the first Activity reference even when Countly.init()
+ * is called after the Activity has already started (e.g., in Flutter, React Native, or
+ * single-activity apps with deferred initialization).
  *
  * The captured Activity is stored in {@link CountlyActivityHolder} and used during
  * SDK initialization to seed modules that need an Activity reference.
  *
- * This provider performs no actual content operations. If an app strips it from the manifest
- * (tools:node="remove"), the SDK installs the dispatcher at first init instead and falls back
- * to the ProcessLifecycleOwner heuristic for foreground state.
+ * This provider performs no actual content operations.
  */
 public class CountlyInitProvider extends ContentProvider {
     @Override
@@ -33,9 +29,13 @@ public class CountlyInitProvider extends ContentProvider {
         }
 
         Context appContext = context.getApplicationContext();
-        if (appContext instanceof Application) {
-            LifecycleDispatcher.getInstance().install((Application) appContext, true);
-        }
+        //One registration for the whole process. The dispatcher also feeds CountlyActivityHolder, so the
+        //behaviour this provider shipped for (capturing the current Activity before Application.onCreate,
+        //which single-activity frameworks depend on) is unchanged - it just no longer needs its own
+        //callbacks object, and every Countly instance now shares this one registration.
+        //fromProvider: content providers run before Application.onCreate, so no activity can have
+        //started yet - which is what makes the dispatcher's started-activity count exact
+        CountlyLifecycleDispatcher.getInstance().register(appContext, true);
 
         return false;
     }

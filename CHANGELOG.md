@@ -11,6 +11,9 @@
 
   Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
+* Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
+
+* Updated the `androidx.annotation` dependency to 1.10.0, the `androidx.lifecycle` dependencies to 2.8.7, and the symbol upload plugin's OkHttp dependency to 4.12.0.
 
 * Fixed an issue where an exception thrown by a crash filter callback while handling an uncaught crash would prevent the previously installed exception handler (and the system crash dialog) from running.
 * Fixed an issue where every push token refresh leaked a worker thread, and where a pending token request could be written into storage after the SDK was halted, carrying the pre-halt device ID.

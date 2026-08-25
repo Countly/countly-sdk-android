@@ -454,7 +454,8 @@ public class ModuleCrash extends ModuleBase {
             //consume them - otherwise the first instance to init claims every dump under its app key.
             if (_cly.storageNamespace_.isEmpty()) {
                 //flag so that this can be turned off during testing
-                _cly.moduleCrash.checkForNativeCrashDumps(config.context);
+                //called directly: _cly.moduleCrash is this very module
+                checkForNativeCrashDumps(config.context);
             } else {
                 //Warn, not debug: reading the folder is also what deletes it, so in an app that only ever
                 //initialises named instances nothing consumes the dumps and they accumulate on disk.

@@ -302,7 +302,14 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-        requiresConsent = _cly.moduleConfiguration.currentVRequiresConsent;
+        //Reached on the main thread from the server-config response, so a teardown can have nulled
+        //moduleConfiguration in between; keep the current value rather than crashing on a dying instance.
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        if (configurationModule != null) {
+            requiresConsent = configurationModule.currentVRequiresConsent;
+        } else {
+            L.w("[ModuleConsent] onSdkConfigurationChanged, the configuration module is gone, keeping the current requiresConsent value");
+        }
     }
 
     @Override

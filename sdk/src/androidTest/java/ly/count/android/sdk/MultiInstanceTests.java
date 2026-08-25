@@ -24,7 +24,6 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
-import android.content.res.Configuration;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -43,6 +42,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Integration tests for multi-instance support: independent Countly instances obtained via
@@ -97,9 +98,9 @@ public class MultiInstanceTests {
         }
         clearOpenUdid("");
         clearNativeDumps();
-        // the dispatcher is process-wide: drop subscribers a test (or another suite) left behind and
+        // the dispatcher is process-wide: drop instances a test (or another suite) left behind and
         // zero the simulated activity count so lifecycle simulations start from a known state
-        LifecycleDispatcher.getInstance().resetForTests();
+        CountlyLifecycleDispatcher.getInstance().resetForTests();
     }
 
     // The single process-wide folder sdk-native hands to breakpad. It has no instance concept, so only
@@ -1160,10 +1161,10 @@ public class MultiInstanceTests {
     }
 
     /**
-     * A halted instance must stop receiving process lifecycle events entirely: teardown's first act
-     * is unsubscribing from the process-wide LifecycleDispatcher (with a main-thread quiesce), so no
-     * event can be in flight toward a torn-down instance. Before the dispatcher, this was the
-     * CME/NPE window between the main thread's dispatch and a background teardown.
+     * A halted instance must stop receiving process lifecycle events entirely: teardown removes it
+     * from the process-wide CountlyLifecycleDispatcher before nulling anything, and the tearingDown
+     * gate drops an event already in flight. Before the dispatcher, this was the CME/NPE window
+     * between the main thread's dispatch and a background teardown.
      */
     @Test
     public void haltedInstance_stopsReceivingActivityLifecycle() {
@@ -1176,81 +1177,46 @@ public class MultiInstanceTests {
             .setApplication(app));
 
         String ns = CountlyStore.sanitizeNamespace("instCfgA");
+        Activity activity = mock(Activity.class);
 
-        // simulate the OS starting an activity: the subscribed instance auto-begins a session
-        LifecycleDispatcher.getInstance().handleActivityStarted(null);
-        Assert.assertNotNull("a subscribed instance must receive lifecycle events and begin a session",
+        // simulate the OS starting an activity: the registered instance auto-begins a session
+        CountlyLifecycleDispatcher.getInstance().onActivityStarted(activity);
+        Assert.assertNotNull("a registered instance must receive lifecycle events and begin a session",
             firstRequestWithKey(TestUtils.getCurrentRQ("", store(ns)), "begin_session"));
 
-        instance.halt(); // clears storage and unsubscribes first
+        instance.halt(); // clears storage and deregisters from the dispatcher
 
-        LifecycleDispatcher.getInstance().handleActivityStarted(null);
-        LifecycleDispatcher.getInstance().handleActivityStopped(null);
+        CountlyLifecycleDispatcher.getInstance().onActivityStarted(activity);
+        CountlyLifecycleDispatcher.getInstance().onActivityStopped(activity);
         Assert.assertEquals("a halted instance must not receive lifecycle events any more",
             0, store(ns).getRequests().length);
     }
 
     /**
-     * The dispatcher contract every instance teardown relies on: the subscribe() snapshot is atomic
-     * with the subscription, events are delivered in order while subscribed, the started count is
-     * exact, and unsubscribeAndQuiesce() stops delivery for good.
+     * The exact-count contract the foreground seed relies on: registered by CountlyInitProvider before
+     * any activity can start, the dispatcher counts starts and stops exactly, never underflows, and
+     * reports exactness so a late (provider-stripped) registration falls back to the heuristic.
      */
     @Test
-    public void lifecycleDispatcher_countAndSubscriptionContract() {
-        LifecycleDispatcher dispatcher = LifecycleDispatcher.getInstance();
-        final List<String> received = new ArrayList<>();
-        LifecycleDispatcher.Subscriber probe = new LifecycleDispatcher.Subscriber() {
-            @Override public void onActivityCreated(Activity activity) {
-                received.add("created");
-            }
+    public void lifecycleDispatcher_exactCountContract() {
+        CountlyLifecycleDispatcher dispatcher = CountlyLifecycleDispatcher.getInstance();
+        Assert.assertTrue("registered by the provider before any activity, the count must be exact",
+            dispatcher.hasExactActivityCount());
+        Assert.assertEquals(0, dispatcher.getStartedActivityCount());
 
-            @Override public void onActivityStarted(Activity activity) {
-                received.add("started");
-            }
-
-            @Override public void onActivityResumed(Activity activity) {
-                received.add("resumed");
-            }
-
-            @Override public void onActivityPaused(Activity activity) {
-                received.add("paused");
-            }
-
-            @Override public void onActivityStopped(Activity activity) {
-                received.add("stopped");
-            }
-
-            @Override public void onActivitySaveInstanceState(Activity activity) {
-                received.add("saveInstanceState");
-            }
-
-            @Override public void onActivityDestroyed(Activity activity) {
-                received.add("destroyed");
-            }
-
-            @Override public void onConfigurationChanged(Configuration configuration) {
-                received.add("config");
-            }
-        };
-
-        int snapshot = dispatcher.subscribe(probe);
-        Assert.assertEquals("installed by the provider before any activity, the count must be exact", 0, snapshot);
-        Assert.assertTrue(dispatcher.hasExactActivityCount());
-
-        dispatcher.handleActivityStarted(null);
-        dispatcher.handleActivityStarted(null);
+        Activity activity = mock(Activity.class);
+        dispatcher.onActivityStarted(activity);
+        dispatcher.onActivityStarted(activity);
         Assert.assertEquals(2, dispatcher.getStartedActivityCount());
-        dispatcher.handleActivityStopped(null);
+        dispatcher.onActivityStopped(activity);
         Assert.assertEquals(1, dispatcher.getStartedActivityCount());
-        Assert.assertEquals(Arrays.asList("started", "started", "stopped"), received);
-
-        dispatcher.unsubscribeAndQuiesce(probe, new ModuleLog());
-        dispatcher.handleActivityStarted(null);
-        Assert.assertEquals("no delivery after unsubscribe", 3, received.size());
+        dispatcher.onActivityStopped(activity);
+        dispatcher.onActivityStopped(activity); // an extra stop must not underflow the count
+        Assert.assertEquals(0, dispatcher.getStartedActivityCount());
     }
 
     /**
-     * Foreground-at-init comes from the dispatcher's exact started-activity count (installed by
+     * Foreground-at-init comes from the dispatcher's exact started-activity count (registered by
      * CountlyInitProvider before any activity can start), not from ProcessLifecycleOwner's debounced
      * state: an instance initialised while an activity is started seeds its activity counter exactly
      * and auto-begins its session immediately - deterministically, with no ~700ms debounce window.
@@ -1262,7 +1228,7 @@ public class MultiInstanceTests {
         // restores it after the test)
         Countly.lifecycleStateOverrideForTests = null;
 
-        LifecycleDispatcher.getInstance().handleActivityStarted(null); // the app is now "in the foreground"
+        CountlyLifecycleDispatcher.getInstance().onActivityStarted(mock(Activity.class)); // the app is now "in the foreground"
 
         Application app = (Application) TestUtils.getContext().getApplicationContext();
         Countly instance = Countly.instance("instCfgB");
