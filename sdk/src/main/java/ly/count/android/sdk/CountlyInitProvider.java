@@ -1,13 +1,11 @@
 package ly.count.android.sdk;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -31,41 +29,11 @@ public class CountlyInitProvider extends ContentProvider {
         }
 
         Context appContext = context.getApplicationContext();
-        if (appContext instanceof Application) {
-            ((Application) appContext).registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-                @Override
-                public void onActivityCreated(@NonNull Activity activity, @Nullable Bundle savedInstanceState) {
-                    CountlyActivityHolder.getInstance().setActivity(activity);
-                }
-
-                @Override
-                public void onActivityStarted(@NonNull Activity activity) {
-                    CountlyActivityHolder.getInstance().setActivity(activity);
-                }
-
-                @Override
-                public void onActivityResumed(@NonNull Activity activity) {
-                    CountlyActivityHolder.getInstance().setActivity(activity);
-                }
-
-                @Override
-                public void onActivityPaused(@NonNull Activity activity) {
-                }
-
-                @Override
-                public void onActivityStopped(@NonNull Activity activity) {
-                }
-
-                @Override
-                public void onActivitySaveInstanceState(@NonNull Activity activity, @NonNull Bundle outState) {
-                }
-
-                @Override
-                public void onActivityDestroyed(@NonNull Activity activity) {
-                    CountlyActivityHolder.getInstance().clearActivity(activity);
-                }
-            });
-        }
+        //One registration for the whole process. The dispatcher also feeds CountlyActivityHolder, so the
+        //behaviour this provider shipped for (capturing the current Activity before Application.onCreate,
+        //which single-activity frameworks depend on) is unchanged - it just no longer needs its own
+        //callbacks object, and every Countly instance now shares this one registration.
+        CountlyLifecycleDispatcher.getInstance().register(appContext);
 
         return false;
     }

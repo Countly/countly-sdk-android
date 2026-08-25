@@ -24,10 +24,8 @@ package ly.count.android.sdk;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Application;
-import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Bundle;
 import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.Lifecycle;
@@ -309,13 +307,19 @@ public class Countly {
     // compare against instances_ - every detached instance carries the DEFAULT_NAME default.
     private boolean wasRegistered_ = false;
 
+    // Set as the FIRST act of teardown, before anything is nulled. Android delivers lifecycle callbacks on
+    // the main thread while halt()/removeInstance() can run on any thread, so an event can already be in
+    // flight when teardown starts; this gate makes every dispatch entry point no-op for a dying instance.
+    // Volatile: written by the tearing-down thread, read by the main thread.
+    private volatile boolean tearingDown = false;
+
     // Process-global lifecycle/component callbacks are registered on the Application per init().
     // We keep references so halt() can unregister them; otherwise every init/halt cycle leaks a
     // callback bound to a dead instance that keeps receiving Activity/config events - a real hazard
     // once multiple instances come and go in one process.
-    private Application lifecycleApplication_;
-    private Application.ActivityLifecycleCallbacks activityLifecycleCallbacks_;
-    private ComponentCallbacks componentCallbacks_;
+    // Lifecycle callbacks are no longer registered per instance: CountlyLifecycleDispatcher holds the one
+    // process-wide registration and this instance simply adds/removes itself from its list. That removes both
+    // the N-registrations-for-N-instances problem and the per-init re-registration leak.
 
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
@@ -498,7 +502,14 @@ public class Countly {
      */
     public static void haltAllInstances() {
         for (Countly c : instances_.values()) {
-            c.halt();
+            try {
+                c.halt();
+            } catch (Throwable t) {
+                //one instance failing to halt must not leave the remaining ones running: this is a
+                //process-wide reset, so it has to be all-or-as-much-as-possible rather than stopping at the
+                //first failure
+                c.L.e("[Countly] haltAllInstances, failed to halt an instance, continuing with the rest, [" + t + "]");
+            }
         }
     }
 
@@ -1124,6 +1135,10 @@ public class Countly {
                 }
             };
 
+            //Cleared before the SDK counts as initialised, and unconditionally: the lifecycle gate reads both
+            //flags, so a re-init must not leave a stale tearingDown behind even for an instance that has no
+            //Application and therefore never joins the dispatcher.
+            tearingDown = false;
             sdkIsInitialised = true;
             //AFTER THIS POINT THE SDK IS COUNTED AS INITIALISED
 
@@ -1134,98 +1149,13 @@ public class Countly {
             }
             //set global application listeners
             if (config.application != null) {
-                L.d("[Countly] Calling registerActivityLifecycleCallbacks");
-                lifecycleApplication_ = config.application;
-                activityLifecycleCallbacks_ = new Application.ActivityLifecycleCallbacks() {
-                    @Override
-                    public void onActivityCreated(Activity activity, Bundle bundle) {
-                        if (L.logEnabled()) {
-                            L.d("[Countly] onActivityCreated, " + activity.getClass().getSimpleName());
-                        }
-                        //for (ModuleBase module : modules) {
-                        //    module.callbackOnActivityCreated(activity);
-                        //}
-                    }
-
-                    @Override
-                    public void onActivityStarted(Activity activity) {
-                        if (L.logEnabled()) {
-                            L.d("[Countly] onActivityStarted, " + activity.getClass().getSimpleName());
-                        }
-                        onStartInternal(activity);
-                        //for (ModuleBase module : modules) {
-                        //    module.callbackOnActivityStarted(activity);
-                        //}
-                    }
-
-                    @Override
-                    public void onActivityResumed(Activity activity) {
-                        if (L.logEnabled()) {
-                            L.d("[Countly] onActivityResumed, " + activity.getClass().getSimpleName());
-                        }
-                        //for star rating
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityResumed(activity);
-                        }
-                    }
-
-                    @Override
-                    public void onActivityPaused(Activity activity) {
-                        if (L.logEnabled()) {
-                            L.d("[Countly] onActivityPaused, " + activity.getClass().getSimpleName());
-                        }
-                        //for (ModuleBase module : modules) {
-                        //    module.callbackOnActivityPaused(activity);
-                        //}
-                    }
-
-                    @Override
-                    public void onActivityStopped(Activity activity) {
-                        if (L.logEnabled()) {
-                            L.d("[Countly] onActivityStopped, " + activity.getClass().getSimpleName());
-                        }
-                        onStopInternal();
-                        //for APM
-                        for (ModuleBase module : modules) {
-                            module.callbackOnActivityStopped(activity);
-                        }
-                    }
-
-                    @Override
-                    public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-                        if (L.logEnabled()) {
-                            L.d("[Countly] onActivitySaveInstanceState, " + activity.getClass().getSimpleName());
-                        }
-                        //for (ModuleBase module : modules) {
-                        //    module.callbackOnActivitySaveInstanceState(activity);
-                        //}
-                    }
-
-                    @Override
-                    public void onActivityDestroyed(Activity activity) {
-                        if (L.logEnabled()) {
-                            L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
-                        }
-                        for (ModuleBase module : modules) {
-                            module.onActivityDestroyed(activity);
-                        }
-                    }
-                };
-                config.application.registerActivityLifecycleCallbacks(activityLifecycleCallbacks_);
-
-                componentCallbacks_ = new ComponentCallbacks() {
-                    @Override
-                    public void onConfigurationChanged(Configuration configuration) {
-                        L.d("[Countly] ComponentCallbacks, onConfigurationChanged");
-                        onConfigurationChangedInternal(configuration);
-                    }
-
-                    @Override
-                    public void onLowMemory() {
-                        L.d("[Countly] ComponentCallbacks, onLowMemory");
-                    }
-                };
-                config.application.registerComponentCallbacks(componentCallbacks_);
+                //One process-wide registration, owned by CountlyLifecycleDispatcher, instead of a fresh
+                //ActivityLifecycleCallbacks per instance. Registration is idempotent: CountlyInitProvider
+                //normally does it before Application.onCreate, and this call covers an app that removed the
+                //provider from its manifest.
+                L.d("[Countly] Registering with the process-wide lifecycle dispatcher");
+                CountlyLifecycleDispatcher.getInstance().register(config.application);
+                CountlyLifecycleDispatcher.getInstance().addInstance(this);
             } else {
                 L.d("[Countly] Global activity listeners not registred due to no Application class");
             }
@@ -1303,13 +1233,18 @@ public class Countly {
         L.i("[Countly] stopTimer, Stopping global timer");
         if (timerService_ != null) {
             try {
+                //shutdown() only, and deliberately no awaitTermination. The tick is scheduled with
+                //scheduleWithFixedDelay, so shutdown() already cancels every future execution - waiting adds
+                //no guarantee, and here the wait was actively harmful: this runs inside the synchronized
+                //tearDown(), while onTimer() is synchronized on the same instance. A tick that is blocked
+                //entering onTimer() cannot proceed until tearDown() returns, so awaiting it deadlocked until
+                //the timeout expired - and entering a synchronized block is not interruptible, so the
+                //shutdownNow() in between could not break it either. The result was a deterministic 1s +
+                //1s stall on the calling thread (usually the main thread, since halt()/removeInstance() are
+                //normally called from it, and haltAllInstances() multiplied it per instance) ending in the
+                //"Global timer must be locked" log. A tick that does run after this point sees
+                //isInitialized() == false and does nothing.
                 timerService_.shutdown();
-                if (!timerService_.awaitTermination(1, TimeUnit.SECONDS)) {
-                    timerService_.shutdownNow();
-                    if (!timerService_.awaitTermination(1, TimeUnit.SECONDS)) {
-                        L.e("[Countly] stopTimer, Global timer must be locked");
-                    }
-                }
             } catch (Throwable t) {
                 L.e("[Countly] stopTimer, Error while stopping global timer " + t);
             }
@@ -1450,6 +1385,13 @@ public class Countly {
      * identical either way; only {@link #halt()} destroys data.
      */
     private synchronized void tearDown(boolean clearStoredData) {
+        //FIRST, before any state is touched: stop lifecycle events reaching this instance. Deregistering is a
+        //single copy-on-write list removal, so it costs microseconds and cannot block the main thread, and the
+        //gate catches an event that was already in flight. Everything below - stopTimer's up-to-2s wait, the
+        //store clear, the module nulling - then runs with no dispatcher able to see this instance.
+        tearingDown = true;
+        CountlyLifecycleDispatcher.getInstance().removeInstance(this);
+
         L.i("Halting Countly!" + (clearStoredData ? " Stored data will be cleared." : " Stored data is kept."));
 
         //When the data is being kept (removeInstance), flush what is still only in memory BEFORE anything is
@@ -1464,20 +1406,6 @@ public class Countly {
         sdkIsInitialised = false;
         L.SetListener(null);
         stopTimer();
-
-        //unregister the process-global lifecycle/component callbacks this instance registered at
-        //init so a halted instance stops receiving Activity/configuration events and does not leak
-        if (lifecycleApplication_ != null) {
-            if (activityLifecycleCallbacks_ != null) {
-                lifecycleApplication_.unregisterActivityLifecycleCallbacks(activityLifecycleCallbacks_);
-                activityLifecycleCallbacks_ = null;
-            }
-            if (componentCallbacks_ != null) {
-                lifecycleApplication_.unregisterComponentCallbacks(componentCallbacks_);
-                componentCallbacks_ = null;
-            }
-            lifecycleApplication_ = null;
-        }
 
         if (connectionQueue_ != null) {
             if (clearStoredData && countlyStore != null) {
@@ -1497,6 +1425,15 @@ public class Countly {
         }
         modules.clear();
 
+        //A dispatch that passed the tearingDown gate a moment before this method set it can still be running
+        //on the main thread while these fields go null, and modules reach each other through _cly. That is
+        //what crashed a CI run (ModuleSessions.endSessionInternal -> _cly.moduleViews.resetFirstView()).
+        //Rather than lock - teardown cannot wait for in-flight dispatches while holding this monitor, because
+        //onConfigurationChangedInternal is synchronized on the same instance and would deadlock against a
+        //main thread already blocked on it - every cross-module read now snapshots the sibling into a local
+        //and checks it, so nulling below cannot produce an NPE. If a new one is added, snapshot it too:
+        //`if (_cly.moduleX != null) { _cly.moduleX.y(); }` is NOT enough, the field can go null between the
+        //check and the use.
         moduleCrash = null;
         moduleViews = null;
         moduleEvents = null;
@@ -1532,6 +1469,117 @@ public class Countly {
         }
     }
 
+    /**
+     * Lifecycle dispatch entry points, called by {@link CountlyLifecycleDispatcher} on the main thread.
+     * <p>
+     * Each one gates on {@code tearingDown} and on the SDK being initialised, so an event that arrives while
+     * this instance is being destroyed is dropped rather than reaching half-nulled state. That is the whole
+     * point of the gate: the alternative was an NPE escaping {@code Activity.onStop}, which Android turns
+     * into a host-app crash.
+     */
+    //No module consumes these four callbacks - the module loops were already commented out before the
+    //dispatcher existed. They are kept as log-only so the SDK's log output, which support reads off
+    //customer devices, is byte-identical to what the per-instance callbacks produced.
+    void dispatchActivityCreated(@NonNull Activity activity) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        if (L.logEnabled()) {
+            L.d("[Countly] onActivityCreated, " + activity.getClass().getSimpleName());
+        }
+    }
+
+    void dispatchActivityPaused(@NonNull Activity activity) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        if (L.logEnabled()) {
+            L.d("[Countly] onActivityPaused, " + activity.getClass().getSimpleName());
+        }
+    }
+
+    void dispatchActivitySaveInstanceState(@NonNull Activity activity) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        if (L.logEnabled()) {
+            L.d("[Countly] onActivitySaveInstanceState, " + activity.getClass().getSimpleName());
+        }
+    }
+
+    void dispatchLowMemory() {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        L.d("[Countly] ComponentCallbacks, onLowMemory");
+    }
+
+    void dispatchActivityStarted(@NonNull Activity activity) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        if (L.logEnabled()) {
+            L.d("[Countly] onActivityStarted, " + activity.getClass().getSimpleName());
+        }
+        onStartInternal(activity);
+    }
+
+    void dispatchActivityResumed(@NonNull Activity activity) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        if (L.logEnabled()) {
+            L.d("[Countly] onActivityResumed, " + activity.getClass().getSimpleName());
+        }
+        //Hardcoded, in the order init adds the modules to `modules` - see the note on
+        //ModuleBase#callbackOnActivityResumed
+        if (moduleRatings != null) {
+            moduleRatings.callbackOnActivityResumed(activity);
+        }
+        if (moduleAPM != null) {
+            moduleAPM.callbackOnActivityResumed(activity);
+        }
+    }
+
+    void dispatchActivityStopped(@NonNull Activity activity) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        if (L.logEnabled()) {
+            L.d("[Countly] onActivityStopped, " + activity.getClass().getSimpleName());
+        }
+        onStopInternal();
+        //hardcoded on purpose - see the note on ModuleBase#callbackOnActivityStopped
+        if (moduleAPM != null) {
+            moduleAPM.callbackOnActivityStopped(activity);
+        }
+    }
+
+    void dispatchActivityDestroyed(@NonNull Activity activity) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        if (L.logEnabled()) {
+            L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
+        }
+        //Hardcoded, in the order init adds the modules to `modules` - see the note on
+        //ModuleBase#onActivityDestroyed
+        if (moduleFeedback != null) {
+            moduleFeedback.onActivityDestroyed(activity);
+        }
+        if (moduleContent != null) {
+            moduleContent.onActivityDestroyed(activity);
+        }
+    }
+
+    void dispatchConfigurationChanged(@NonNull Configuration configuration) {
+        if (tearingDown || !sdkIsInitialised) {
+            return;
+        }
+        L.d("[Countly] ComponentCallbacks, onConfigurationChanged");
+        onConfigurationChangedInternal(configuration);
+    }
+
     void onStartInternal(Activity activity) {
         if (L.logEnabled()) {
             String activityName = "NULL ACTIVITY PROVIDED";
@@ -1557,8 +1605,20 @@ public class Countly {
 
         deviceInfo_.inForeground();
 
-        for (ModuleBase module : modules) {
-            module.onActivityStarted(activity, activityCount_);
+        //Hardcoded rather than iterating the mutable modules list: teardown clears that list from another
+        //thread, which used to mean a ConcurrentModificationException or an NPE on the main thread.
+        //Adding a module that overrides this hook means wiring it in here - see ModuleBase#onActivityStarted.
+        if (moduleViews != null) {
+            moduleViews.onActivityStarted(activity, activityCount_);
+        }
+        if (moduleAPM != null) {
+            moduleAPM.onActivityStarted(activity, activityCount_);
+        }
+        if (moduleFeedback != null) {
+            moduleFeedback.onActivityStarted(activity, activityCount_);
+        }
+        if (moduleContent != null) {
+            moduleContent.onActivityStarted(activity, activityCount_);
         }
 
         calledAtLeastOnceOnStart = true;
@@ -1582,16 +1642,27 @@ public class Countly {
 
         deviceInfo_.inBackground();
 
-        for (ModuleBase module : modules) {
-            module.onActivityStopped(activityCount_);
+        //Hardcoded - see ModuleBase#onActivityStopped
+        if (moduleViews != null) {
+            moduleViews.onActivityStopped(activityCount_);
+        }
+        if (moduleFeedback != null) {
+            moduleFeedback.onActivityStopped(activityCount_);
+        }
+        if (moduleContent != null) {
+            moduleContent.onActivityStopped(activityCount_);
+        }
+        if (moduleHealthCheck != null) {
+            moduleHealthCheck.onActivityStopped(activityCount_);
         }
     }
 
     public synchronized void onConfigurationChangedInternal(Configuration newConfig) {
         L.i("Calling [onConfigurationChangedInternal]");
 
-        for (ModuleBase module : modules) {
-            module.onConfigurationChanged(newConfig);
+        //Hardcoded - see ModuleBase#onConfigurationChanged
+        if (moduleViews != null) {
+            moduleViews.onConfigurationChanged(newConfig);
         }
     }
 

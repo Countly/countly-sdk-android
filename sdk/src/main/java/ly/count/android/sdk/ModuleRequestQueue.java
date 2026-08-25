@@ -171,8 +171,9 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
                     //torn down in between - removeInstance's flush can record a journey-trigger view end and
                     //then null moduleContent microseconds later. ConnectionProcessor would swallow the NPE and
                     //abandon the request it had already delivered.
-                    if (success && _cly.moduleContent != null) {
-                        _cly.moduleContent.refreshContentZoneInternal(false);
+                    ModuleContent contentModule = _cly.moduleContent;
+                    if (success && contentModule != null) {
+                        contentModule.refreshContentZoneInternal(false);
                     }
                 }
             };
@@ -226,7 +227,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         sendEventsIfNeeded(true);
 
         //save the user profile changes if any
-        _cly.moduleUserProfile.saveInternal();
+        ModuleUserProfile userProfileModule = _cly.moduleUserProfile;
+        if (userProfileModule != null) {
+            userProfileModule.saveInternal();
+        }
 
         //trigger the processing of the request queue
         requestQueueProvider.tick();

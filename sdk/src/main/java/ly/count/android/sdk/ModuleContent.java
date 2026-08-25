@@ -55,7 +55,16 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-        zoneTimerInterval = _cly.moduleConfiguration.currentVZoneTimerInterval;
+        //Reached on the main thread from the server-config response, so a teardown can have nulled
+        //moduleConfiguration in between; keep the current value rather than crashing on a dying instance.
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        if (configurationModule != null) {
+            zoneTimerInterval = configurationModule.currentVZoneTimerInterval;
+        } else {
+            //only the interval refresh is skipped - the content zone work below does not need that module,
+            //so keeping the current interval is better than dropping the whole configuration change
+            L.w("[ModuleContent] onSdkConfigurationChanged, the configuration module is gone, keeping the current zone timer interval");
+        }
         if (!configProvider.getContentZoneEnabled()) {
             exitContentZoneInternal();
         } else {
@@ -302,7 +311,8 @@ public class ModuleContent extends ModuleBase {
         }
 
         // Do not show content if feedback widget is currently showing
-        if (_cly.moduleFeedback != null && _cly.moduleFeedback.feedbackOverlay != null) {
+        ModuleFeedback feedbackModule = _cly.moduleFeedback;
+        if (feedbackModule != null && feedbackModule.feedbackOverlay != null) {
             shouldFetchContents = true;
             isCurrentlyInContentZone = false;
             L.w("[ModuleContent] showContentOverlay, feedback widget is currently showing, skipping content");
@@ -586,7 +596,10 @@ public class ModuleContent extends ModuleBase {
                     enterContentZoneInternal(null, 0, null);
                 }
             });
-            _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+            ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+            if (requestQueueModule != null) {
+                requestQueueModule.attemptToSendStoredRequestsInternal();
+            }
         } else {
             enterContentZoneWithRetriesInternal();
         }

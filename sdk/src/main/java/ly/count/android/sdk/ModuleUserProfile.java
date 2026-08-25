@@ -337,8 +337,9 @@ public class ModuleUserProfile extends ModuleBase {
     private void onUserPropertiesChanged(Map<String, ?> sourceMap) {
         applyUserPropertyCacheLimit(sourceMap);
         isSynced = false;
-        if (storageProvider.getEventQueueSize() > 0) {
-            _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null && storageProvider.getEventQueueSize() > 0) {
+            requestQueueModule.sendEventsIfNeeded(true);
         }
     }
 
@@ -408,7 +409,12 @@ public class ModuleUserProfile extends ModuleBase {
             return;
         }
 
-        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+        //Only the event flush is skipped when the instance is being torn down - the user data itself is
+        //still sent, because this method is also what teardown calls to persist pending profile changes.
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(true);
+        }
 
         requestQueueProvider.sendUserData(cachedUserData);
         clearInternal();

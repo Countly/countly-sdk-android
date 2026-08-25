@@ -473,8 +473,10 @@ public class ModuleAPM extends ModuleBase {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.apm)) {
             if (!newConsent) {
                 //in case APM consent is removed, clear custom and network traces
-                _cly.moduleAPM.clearNetworkTraces();
-                _cly.moduleAPM.cancelAllTracesInternal();
+                //called directly: _cly.moduleAPM is this very module, so the hop through _cly added nothing
+                //but a field that teardown nulls
+                clearNetworkTraces();
+                cancelAllTracesInternal();
             }
         }
     }

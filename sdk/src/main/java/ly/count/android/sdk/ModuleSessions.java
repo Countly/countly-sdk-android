@@ -56,16 +56,35 @@ public class ModuleSessions extends ModuleBase {
             return;
         }
 
+        //Sibling modules are reached through _cly and teardown nulls those fields, so each one is read once
+        //into a local before it is used - reading the field twice could return null after the check. A module
+        //that is already gone only costs its own step; the session itself still begins, because a
+        //begin_session that never went out would leave a later end_session with nothing to close.
+        ModuleUserProfile userProfile = _cly.moduleUserProfile;
+        ModuleLocation location = _cly.moduleLocation;
+        ModuleViews views = _cly.moduleViews;
+
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
         sessionRunning = true;
         prevSessionDurationStartTime_ = System.currentTimeMillis();
-        _cly.moduleUserProfile.saveInternal();
+        if (userProfile != null) {
+            userProfile.saveInternal();
+        } else {
+            L.w("[ModuleSessions] beginSessionInternal, the user profile module is gone, not saving pending profile changes");
+        }
 
-        requestQueueProvider.beginSession(_cly.moduleLocation.locationDisabled, _cly.moduleLocation.locationCountryCode, _cly.moduleLocation.locationCity, _cly.moduleLocation.locationGpsCoordinates, _cly.moduleLocation.locationIpAddress, preparedMetrics);
+        if (location != null) {
+            requestQueueProvider.beginSession(location.locationDisabled, location.locationCountryCode, location.locationCity, location.locationGpsCoordinates, location.locationIpAddress, preparedMetrics);
+        } else {
+            //ModuleLocation's own field defaults are exactly these, so this is "no location information"
+            //rather than a guess - prepareLocationData appends nothing for them
+            L.w("[ModuleSessions] beginSessionInternal, the location module is gone, beginning the session without location information");
+            requestQueueProvider.beginSession(false, null, null, null, null, preparedMetrics);
+        }
 
-        if (_cly.moduleViews.trackOrientationChanges) {
-            _cly.moduleViews.updateOrientation(_cly.context_.getResources().getConfiguration().orientation, true);
+        if (views != null && views.trackOrientationChanges) {
+            views.updateOrientation(_cly.context_.getResources().getConfiguration().orientation, true);
         }
     }
 
@@ -87,7 +106,12 @@ public class ModuleSessions extends ModuleBase {
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
-            _cly.moduleUserProfile.saveInternal();
+            ModuleUserProfile userProfile = _cly.moduleUserProfile;
+            if (userProfile != null) {
+                userProfile.saveInternal();
+            } else {
+                L.w("[ModuleSessions] updateSessionInternal, the user profile module is gone, not saving pending profile changes");
+            }
 
             requestQueueProvider.updateSession(roundedSecondsSinceLastSessionDurationUpdate());
         }
@@ -110,14 +134,34 @@ public class ModuleSessions extends ModuleBase {
             return;
         }
 
-        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+        //resetFirstView below is the frame that killed a CI run: the main thread was inside this method when
+        //a teardown on another thread nulled moduleViews, and the NPE escaped Activity.onStop. Each sibling is
+        //snapshotted and skipped on its own so that end_session still goes out when one of them is already
+        //gone - a session left open forever is worse than one that ends without its trailing bookkeeping.
+        ModuleRequestQueue requestQueue = _cly.moduleRequestQueue;
+        ModuleUserProfile userProfile = _cly.moduleUserProfile;
+        ModuleViews views = _cly.moduleViews;
 
-        _cly.moduleUserProfile.saveInternal();
+        if (requestQueue != null) {
+            requestQueue.sendEventsIfNeeded(true);
+        } else {
+            L.w("[ModuleSessions] endSessionInternal, the request queue module is gone, not flushing events");
+        }
+
+        if (userProfile != null) {
+            userProfile.saveInternal();
+        } else {
+            L.w("[ModuleSessions] endSessionInternal, the user profile module is gone, not saving pending profile changes");
+        }
 
         requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate());
         sessionRunning = false;
 
-        _cly.moduleViews.resetFirstView();//todo these scenarios need to be tested and validated
+        if (views != null) {
+            views.resetFirstView();//todo these scenarios need to be tested and validated
+        } else {
+            L.w("[ModuleSessions] endSessionInternal, the views module is gone, not resetting the first view flag");
+        }
     }
 
     void endSessionInternal() {
@@ -171,16 +215,20 @@ public class ModuleSessions extends ModuleBase {
                 }
             } else {
                 L.d("[ModuleSessions] Ending session due to consent change");
-                if (!_cly.isBeginSessionSent) {
+                ModuleLocation location = _cly.moduleLocation;
+                if (!_cly.isBeginSessionSent && location != null) {
                     //if session consent was removed and first begins session was not sent
                     //that means that we might not have sent the initially given location information
-                    _cly.moduleLocation.sendCurrentLocationIfValid();
+                    location.sendCurrentLocationIfValid();
                 }
 
                 if (sessionIsRunning()) {
                     endSessionInternal(false);
                 } else {
-                    _cly.moduleViews.resetFirstView();
+                    ModuleViews views = _cly.moduleViews;
+                    if (views != null) {
+                        views.resetFirstView();
+                    }
                 }
             }
         }

@@ -74,6 +74,30 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param instant
      * @param eventIdOverride
      */
+    /**
+     * Every event flush goes through here. The request queue module is reached through _cly and teardown
+     * nulls that field, so a flush on a dying instance skips - leaving the event in the queue for the next
+     * init to pick up - instead of throwing. Snapshotted on each call rather than once per event, because the
+     * field can go null between a check and a use.
+     */
+    private void sendEventsIfNeededWhenPossible(boolean sendEvents) {
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(sendEvents);
+        } else {
+            L.w("[ModuleEvents] sendEventsIfNeededWhenPossible, the request queue module is gone, leaving the events queued");
+        }
+    }
+
+    private void sendEventsIfNeededWhenPossible(boolean sendEvents, boolean triggerRefreshContentZone) {
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(sendEvents, triggerRefreshContentZone);
+        } else {
+            L.w("[ModuleEvents] sendEventsIfNeededWhenPossible, the request queue module is gone, leaving the events queued");
+        }
+    }
+
     public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
         //assert key != null;
         assert count >= 1;
@@ -128,10 +152,17 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String pen = null;
         String cvn = null;
 
+        //Sibling modules are reached through _cly and teardown nulls those fields. Read once into a local -
+        //reading the field twice could return null after the check - and skip only the step that needs the
+        //missing module: the event itself is still recorded to the event queue.
+        ModuleViews viewsModule = _cly.moduleViews;
+
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
             if (viewNameRecordingEnabled) {
-                pvn = _cly.moduleViews.previousViewName;
+                if (viewsModule != null) {
+                    pvn = viewsModule.previousViewName;
+                }
                 if (pvn == null) {
                     pvn = "";
                 }
@@ -140,7 +171,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             cvid = viewIdProvider.getCurrentViewId();
             if (viewNameRecordingEnabled) {
                 pen = previousEventName;
-                cvn = _cly.moduleViews.currentViewName;
+                if (viewsModule != null) {
+                    cvn = viewsModule.currentViewName;
+                }
                 if (pen == null) {
                     pen = "";
                 }
@@ -155,7 +188,12 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         }
 
         //before each event is recorded, check if user profile data needs to be saved
-        _cly.moduleUserProfile.saveInternal();
+        ModuleUserProfile userProfileModule = _cly.moduleUserProfile;
+        if (userProfileModule != null) {
+            userProfileModule.saveInternal();
+        } else {
+            L.w("[ModuleEvents] recordEventInternal, the user profile module is gone, not saving pending profile changes");
+        }
 
         if (visibilityTracking) {
             if (segmentation == null) {
@@ -181,13 +219,13 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             case ModuleFeedback.SURVEY_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                    sendEventsIfNeededWhenPossible(true);
                 }
                 break;
             case ModuleFeedback.RATING_EVENT_KEY: //these events can be reported from a lot of sources, therefore multiple consents could apply
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating) || consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
@@ -206,19 +244,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     boolean triggerRefreshContentZone = viewName != null && configProvider.getJourneyTriggerViews().contains(viewName);
 
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(triggerRefreshContentZone, triggerRefreshContentZone);
+                    sendEventsIfNeededWhenPossible(triggerRefreshContentZone, triggerRefreshContentZone);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
                 if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                    sendEventsIfNeededWhenPossible(true);
                 }
                 break;
             case ACTION_EVENT_KEY:
@@ -227,7 +265,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
                     }
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             default:
@@ -267,7 +305,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     previousEventName = keyTruncated;
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(triggerRefreshContentZone, triggerRefreshContentZone);
+                    sendEventsIfNeededWhenPossible(triggerRefreshContentZone, triggerRefreshContentZone);
                 }
                 break;
         }
