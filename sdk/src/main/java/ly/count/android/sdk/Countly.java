@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.util.Log;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import java.util.ArrayList;
@@ -1291,28 +1292,6 @@ public class Countly {
         return ProcessLifecycleOwner.get().getLifecycle().getCurrentState().isAtLeast(Lifecycle.State.STARTED);
     }
 
-    private void stopTimer() {
-        L.i("[Countly] stopTimer, Stopping global timer");
-        if (timerService_ != null) {
-            try {
-                //shutdown() only, and deliberately no awaitTermination. The tick is scheduled with
-                //scheduleWithFixedDelay, so shutdown() already cancels every future execution - waiting adds
-                //no guarantee, and here the wait was actively harmful: this runs inside the synchronized
-                //tearDown(), while onTimer() is synchronized on the same instance. A tick that is blocked
-                //entering onTimer() cannot proceed until tearDown() returns, so awaiting it deadlocked until
-                //the timeout expired - and entering a synchronized block is not interruptible, so the
-                //shutdownNow() in between could not break it either. The result was a deterministic 1s +
-                //1s stall on the calling thread (usually the main thread, since halt()/removeInstance() are
-                //normally called from it, and haltAllInstances() multiplied it per instance) ending in the
-                //"Global timer must be locked" log. A tick that does run after this point sees
-                //isInitialized() == false and does nothing.
-                timerService_.shutdown();
-            } catch (Throwable t) {
-                L.e("[Countly] stopTimer, Error while stopping global timer " + t);
-            }
-        }
-    }
-
     //synchronized: unlike the lifecycle events, this is NOT routed through the dispatcher's tearingDown
     //gate - the /o/sdk response lands via an async callback with no cancellation handle, so it can run
     //concurrently with tearDown() on another thread. The null-guard below only covers the sequential
@@ -1320,7 +1299,7 @@ public class Countly {
     //startTimerService (RejectedExecutionException on a shut-down executor), null moduleConfiguration
     //under the dereferences below, or clear the modules list mid-iteration. Lock order stays
     //instance -> config: the only synchronous caller (init) already holds the instance monitor. No
-    //wait-while-holding is introduced: tearDown's stopTimer no longer awaits anything.
+    //wait-while-holding is introduced: tearDown only shuts the timer down, the drain is outside it.
     synchronized void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
         L.i("[Countly] onSdkConfigurationChanged");
 
@@ -1379,8 +1358,14 @@ public class Countly {
      * next init starts as a new user. Only an instance that was initialised in this process run has a
      * store to clear - called before init, this resets the object but leaves earlier runs' files on disk.
      */
-    public synchronized void halt() {
-        tearDown(true);
+    public void halt() {
+        //NOT synchronized: the quiesce below hops through the main looper, and the main thread may be inside
+        //a lifecycle dispatch at that moment. Holding this instance's monitor while waiting for that hop
+        //would deadlock until the timeout. tearDown is itself synchronized, so the critical section is still
+        //serialised - only the quiesce and the timer drain sit outside it, which is the whole point.
+        unsubscribeFromLifecycleBeforeTeardown();
+        ScheduledExecutorService timerToDrain = tearDown(true);
+        awaitTimerServiceTermination(timerToDrain);
     }
 
     /**
@@ -1392,8 +1377,44 @@ public class Countly {
      * <p>
      * This is what {@link #removeInstance(String)} uses. {@link #halt()} is the same teardown plus a wipe.
      */
-    synchronized void stopWithoutClearingData() {
-        tearDown(false);
+    void stopWithoutClearingData() {
+        //see halt() for why this is not synchronized
+        unsubscribeFromLifecycleBeforeTeardown();
+        ScheduledExecutorService timerToDrain = tearDown(false);
+        awaitTimerServiceTermination(timerToDrain);
+    }
+
+    /**
+     * Drops this instance's lifecycle subscription and waits until no lifecycle event can be in flight toward
+     * it. MUST run before {@link #tearDown} takes the instance monitor - see
+     * {@code CountlyLifecycleDispatcher#removeInstanceAndQuiesce}.
+     */
+    private void unsubscribeFromLifecycleBeforeTeardown() {
+        tearingDown = true;
+        CountlyLifecycleDispatcher.getInstance().removeInstanceAndQuiesce(this, L);
+    }
+
+    /**
+     * Drains an already-shut-down timer service, WITHOUT the instance monitor. That is what makes the wait
+     * safe: a tick blocked on the monitor can acquire it, see the torn-down state, no-op and let the await
+     * finish. Inside the monitor the same wait was a self-deadlock that burned its full timeout, because the
+     * tick it waited for could not start until teardown returned - and entering a synchronized block is not
+     * interruptible, so shutdownNow() could not break it either.
+     */
+    private void awaitTimerServiceTermination(@Nullable ScheduledExecutorService service) {
+        if (service == null) {
+            return;
+        }
+        try {
+            if (!service.awaitTermination(1, TimeUnit.SECONDS)) {
+                service.shutdownNow();
+                if (!service.awaitTermination(1, TimeUnit.SECONDS)) {
+                    L.e("[Countly] awaitTimerServiceTermination, the global timer must be locked");
+                }
+            }
+        } catch (Throwable t) {
+            L.e("[Countly] awaitTimerServiceTermination, error while stopping the global timer " + t);
+        }
     }
 
     /**
@@ -1456,13 +1477,12 @@ public class Countly {
      * @param clearStoredData whether to also erase this instance's persisted data. The teardown itself is
      * identical either way; only {@link #halt()} destroys data.
      */
-    private synchronized void tearDown(boolean clearStoredData) {
-        //FIRST, before any state is touched: stop lifecycle events reaching this instance. Deregistering is a
-        //single copy-on-write list removal, so it costs microseconds and cannot block the main thread, and the
-        //gate catches an event that was already in flight. Everything below - stopTimer's up-to-2s wait, the
-        //store clear, the module nulling - then runs with no dispatcher able to see this instance.
+    private synchronized ScheduledExecutorService tearDown(boolean clearStoredData) {
+        //Lifecycle events were already stopped AND quiesced by the caller, outside this monitor, so by now no
+        //dispatch can be in flight toward this instance. The flag is set there too; it stays as the backstop
+        //for what quiesce cannot cover - a late registration (provider stripped from the manifest) and a
+        //wedged main looper that never ran the drain hop.
         tearingDown = true;
-        CountlyLifecycleDispatcher.getInstance().removeInstance(this);
 
         L.i("Halting Countly!" + (clearStoredData ? " Stored data will be cleared." : " Stored data is kept."));
 
@@ -1477,7 +1497,14 @@ public class Countly {
 
         sdkIsInitialised = false;
         L.SetListener(null);
-        stopTimer();
+
+        //shut the timer down without waiting; the drain happens in the caller's epilogue, after this monitor
+        //is released. A tick that already started blocks here, then no-ops - onTimer rechecks isInitialized().
+        ScheduledExecutorService timerToDrain = timerService_;
+        if (timerToDrain != null) {
+            L.i("[Countly] tearDown, stopping the global timer");
+            timerToDrain.shutdown();
+        }
 
         if (connectionQueue_ != null) {
             if (clearStoredData && countlyStore != null) {
@@ -1531,6 +1558,8 @@ public class Countly {
 
         connectionQueue_ = new ConnectionQueue();
         timerService_ = Executors.newSingleThreadScheduledExecutor();
+
+        return timerToDrain;
     }
 
     synchronized void notifyDeviceIdChange(boolean withoutMerge) {

@@ -1,6 +1,7 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.content.res.Configuration;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -55,16 +56,25 @@ public class ModuleLifecycleDispatchTests {
     private List<String> expectedOrderFor(String methodName, Class<?>... paramTypes) {
         List<String> expected = new ArrayList<>();
         for (ModuleBase module : countly.modules) {
-            try {
-                Method declared = module.getClass().getDeclaredMethod(methodName, paramTypes);
-                if (declared.getDeclaringClass() != ModuleBase.class) {
-                    expected.add(module.getClass().getSimpleName());
-                }
-            } catch (NoSuchMethodException notOverridden) {
-                // the module does not consume this hook
+            if (overridesHook(module.getClass(), methodName, paramTypes)) {
+                expected.add(module.getClass().getSimpleName());
             }
         }
         return expected;
+    }
+
+    /**
+     * True when this module declares the hook itself, which for a direct ModuleBase subclass is exactly what
+     * "overrides it" means. Scanning getDeclaredMethods rather than calling getDeclaredMethod keeps the
+     * not-overridden case a plain false instead of an exception that has to be caught and ignored.
+     */
+    private static boolean overridesHook(Class<?> moduleClass, String methodName, Class<?>[] paramTypes) {
+        for (Method declared : moduleClass.getDeclaredMethods()) {
+            if (declared.getName().equals(methodName) && Arrays.equals(declared.getParameterTypes(), paramTypes)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void assertWiring(String hook, String[] wired, String methodName, Class<?>... paramTypes) {
@@ -80,12 +90,12 @@ public class ModuleLifecycleDispatchTests {
 
     @Test
     public void everyLifecycleOverrideIsWiredIntoTheDispatcherInModuleListOrder() {
-        assertWiring("onActivityStarted", WIRED_ON_ACTIVITY_STARTED, "onActivityStarted", android.app.Activity.class, int.class);
+        assertWiring("onActivityStarted", WIRED_ON_ACTIVITY_STARTED, "onActivityStarted", Activity.class, int.class);
         assertWiring("onActivityStopped", WIRED_ON_ACTIVITY_STOPPED, "onActivityStopped", int.class);
-        assertWiring("onActivityDestroyed", WIRED_ON_ACTIVITY_DESTROYED, "onActivityDestroyed", android.app.Activity.class);
-        assertWiring("onConfigurationChanged", WIRED_ON_CONFIGURATION_CHANGED, "onConfigurationChanged", android.content.res.Configuration.class);
-        assertWiring("callbackOnActivityResumed", WIRED_CALLBACK_ON_RESUMED, "callbackOnActivityResumed", android.app.Activity.class);
-        assertWiring("callbackOnActivityStopped", WIRED_CALLBACK_ON_STOPPED, "callbackOnActivityStopped", android.app.Activity.class);
+        assertWiring("onActivityDestroyed", WIRED_ON_ACTIVITY_DESTROYED, "onActivityDestroyed", Activity.class);
+        assertWiring("onConfigurationChanged", WIRED_ON_CONFIGURATION_CHANGED, "onConfigurationChanged", Configuration.class);
+        assertWiring("callbackOnActivityResumed", WIRED_CALLBACK_ON_RESUMED, "callbackOnActivityResumed", Activity.class);
+        assertWiring("callbackOnActivityStopped", WIRED_CALLBACK_ON_STOPPED, "callbackOnActivityStopped", Activity.class);
     }
 
     /**

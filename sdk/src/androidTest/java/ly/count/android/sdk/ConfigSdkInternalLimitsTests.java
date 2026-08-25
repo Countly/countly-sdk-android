@@ -30,7 +30,6 @@ public class ConfigSdkInternalLimitsTests {
             if (field.isSynthetic() || Modifier.isStatic(field.getModifiers())) {
                 continue;
             }
-            field.setAccessible(true);
 
             Class<?> type = field.getType();
             if (type == Integer.class || type == int.class) {

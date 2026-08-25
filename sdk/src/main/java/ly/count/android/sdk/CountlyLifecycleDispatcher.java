@@ -6,9 +6,13 @@ import android.content.ComponentCallbacks;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The single process-wide bridge between Android's lifecycle callbacks and the SDK's instances.
@@ -147,6 +151,50 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
      * Stops delivering lifecycle events to this instance. Teardown calls this before it nulls anything, so
      * that the window in which an event can reach a half-destroyed instance is closed rather than guarded.
      */
+    /**
+     * Removes the instance and does not return until no lifecycle event can still be in flight toward it, so
+     * its owner may tear state down without racing the main thread. This is what turns the teardown race from
+     * "guarded" into "closed": {@code tearingDown} and the per-dereference null checks stop the crash, but
+     * only this stops the event from arriving at all.
+     * <p>
+     * Dispatch runs on the main thread, so the guarantee is "the main thread has moved past any dispatch that
+     * could still see this instance". Called ON the main thread that is already true - we are the dispatch
+     * thread. From any other thread it costs one posted no-op to the main looper: by the time it runs, any
+     * dispatch that captured the instance before its removal has finished, because both run on that thread.
+     * <p>
+     * The caller MUST NOT hold a lock the main thread might want - the teardown path calls this before it
+     * takes the instance monitor for exactly that reason, since the main thread could be blocked on that
+     * monitor inside a dispatch and the two would deadlock until the timeout. If the looper cannot run the
+     * hop within a second (wedged main thread) this gives up: the instance is already removed, and the
+     * per-dispatch gate still stops a straggler.
+     */
+    void removeInstanceAndQuiesce(@NonNull Countly countly, @NonNull ModuleLog L) {
+        instances.remove(countly);
+
+        Looper mainLooper = Looper.getMainLooper();
+        if (mainLooper == null || Looper.myLooper() == mainLooper) {
+            return;
+        }
+
+        final CountDownLatch drained = new CountDownLatch(1);
+        if (!new Handler(mainLooper).post(new Runnable() {
+            @Override public void run() {
+                drained.countDown();
+            }
+        })) {
+            L.w("[CountlyLifecycleDispatcher] removeInstanceAndQuiesce, the main looper refused the drain hop, proceeding with teardown");
+            return;
+        }
+        try {
+            if (!drained.await(1, TimeUnit.SECONDS)) {
+                L.w("[CountlyLifecycleDispatcher] removeInstanceAndQuiesce, the main thread did not drain within 1s, proceeding with teardown");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            L.w("[CountlyLifecycleDispatcher] removeInstanceAndQuiesce, interrupted while waiting for the main thread to drain");
+        }
+    }
+
     void removeInstance(@NonNull Countly countly) {
         instances.remove(countly);
     }

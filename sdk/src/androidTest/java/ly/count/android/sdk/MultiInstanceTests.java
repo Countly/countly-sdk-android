@@ -26,8 +26,8 @@ import android.app.Application;
 import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -113,9 +113,9 @@ public class MultiInstanceTests {
         File folder = nativeDumpFolder();
         folder.mkdirs();
         File dump = new File(folder, name);
-        FileOutputStream out = new FileOutputStream(dump);
-        out.write(new byte[] { 1, 2, 3, 4 });
-        out.close();
+        //Files.write rather than a FileOutputStream: it closes the handle itself, so an assertion failing
+        //mid-test cannot leak one
+        Files.write(dump.toPath(), new byte[] { 1, 2, 3, 4 });
         return dump;
     }
 
@@ -147,6 +147,9 @@ public class MultiInstanceTests {
             .enableManualSessionControl();
     }
 
+    //Deliberately returns null, not an empty map: callers assert notNull to mean "this request was sent",
+    //and an empty map would make every one of those assertions pass whether the request existed or not.
+    @SuppressWarnings("PMD.ReturnEmptyCollectionRatherThanNull")
     private static Map<String, String> firstRequestWithKey(Map<String, String>[] rq, String key) {
         for (Map<String, String> request : rq) {
             if (request != null && request.containsKey(key)) {
@@ -645,7 +648,7 @@ public class MultiInstanceTests {
         Assert.assertEquals(CountlyStore.sanitizeNamespace("instCreateB"), byAppKey.storageNamespace_);
 
         // listInstances reports every registered instance, the default included under its reserved name
-        java.util.List<String> names = Countly.listInstances();
+        List<String> names = Countly.listInstances();
         Assert.assertTrue(names.contains("instCreateA"));
         Assert.assertTrue(names.contains("instCreateB"));
         Assert.assertTrue("the default instance is registered and must be listed too", names.contains(Countly.DEFAULT_NAME));
@@ -1045,6 +1048,9 @@ public class MultiInstanceTests {
      * that same map in place. Two instances configured from one map therefore shared it, so adding an
      * Authorization header to the instance talking to server A also sent that credential to server B.
      */
+    //The HashMaps below are what a developer realistically passes in; making them concurrent would test
+    //something no caller does. They are local to one test thread and never shared.
+    @SuppressWarnings("PMD.UseConcurrentHashMap")
     @Test
     public void customNetworkRequestHeaders_areNotSharedBetweenInstances() {
         Map<String, String> developerMap = new HashMap<>();
