@@ -1,10 +1,22 @@
 ## XX.XX.XX
-* Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`, and optionally record the intended name on the config with `CountlyConfig.setInstanceName(String)`. 
+* ! Minor breaking change ! Custom network request headers are now copied at init. Changing the map given to `CountlyConfig.addCustomNetworkRequestHeaders(Map)` after init no longer affects later requests. Use `requestQueue().addCustomNetworkRequestHeaders(Map)` to change headers at runtime.
+* ! Minor breaking change ! `halt()` now also erases the generated device ID cache, so the next init starts as a new user, as documented. It also releases the SDK's activity lifecycle callbacks and stops its worker threads, which previously leaked on every halt/init cycle.
+* ! Minor breaking change ! The protected static fields `Countly.publicKeyPinCertificates` and `Countly.certificatePinCertificates` were removed. Certificate and public key pinning set through `CountlyConfig` keeps working and is now applied per instance.
+* ! Minor breaking change ! The tampering protection salt is now read from the config once, at init. Changing it on the config object after init no longer affects later requests.
+* ! Minor breaking change ! `RemoteConfigValueStore.dataFromString`, `RemoteConfigHelper.DownloadedValuesIntoMap`, and `UtilsNetworking.sha256Hash` now require a `ModuleLog` argument. Code compiled against the old signatures must pass one (for example `Countly.sharedInstance().L`).
+
+* Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
 
   `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
 
   Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
+
+* Fixed an issue where an exception thrown by a crash filter callback while handling an uncaught crash would prevent the previously installed exception handler (and the system crash dialog) from running.
+* Fixed an issue where every push token refresh leaked a worker thread, and where a pending token request could be written into storage after the SDK was halted, carrying the pre-halt device ID.
+* Fixed an issue where, when upgrading from a legacy store that held no device ID, a custom device ID or temporary ID mode given at init was ignored and a random device ID was generated instead.
+* Fixed an issue where the SDK could retain a destroyed Activity when it was initialized without an Application class.
+* Fixed an issue where initializing the SDK shortly after the app moved to the background could still be detected as foreground (a platform lifecycle debounce) and start a session that would never end. Foreground state is now derived from an exact activity count tracked from process start.
 
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.

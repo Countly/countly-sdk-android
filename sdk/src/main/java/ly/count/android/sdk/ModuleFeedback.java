@@ -13,6 +13,7 @@ import android.webkit.WebSettings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,8 +43,16 @@ public class ModuleFeedback extends ModuleBase {
     ImmediateRequestGenerator iRGenerator;
 
     Feedback feedbackInterface = null;
-    private Activity currentActivity;
+    //Weak, like CountlyActivityHolder: the clearing path (onActivityDestroyed) only runs when the
+    //instance was initialised with an Application class - an instance without one (seeded through
+    //onInitialActivitySeeded) would otherwise pin the seeding Activity for as long as this instance
+    //lives, with the process-lifetime instance registry as the GC root.
+    private WeakReference<Activity> currentActivity;
     ContentOverlayView feedbackOverlay;
+
+    private @Nullable Activity getCurrentActivity() {
+        return currentActivity != null ? currentActivity.get() : null;
+    }
 
     ModuleFeedback(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -58,7 +67,7 @@ public class ModuleFeedback extends ModuleBase {
     @Override
     void onInitialActivitySeeded(@NonNull Activity activity) {
         L.d("[ModuleFeedback] onInitialActivitySeeded, activity: [" + activity.getClass().getSimpleName() + "]");
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
     }
 
     @Override
@@ -67,7 +76,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
 
         // Move existing feedback overlay to the new activity
         if (feedbackOverlay != null && !activity.isFinishing() && !activity.isDestroyed()) {
@@ -91,7 +100,7 @@ public class ModuleFeedback extends ModuleBase {
     void onActivityDestroyed(@NonNull Activity activity) {
         // Identity check guards against clearing a newer activity when the destroy callback
         // for an older activity arrives after onActivityStarted of the next one (rotation race).
-        if (currentActivity == activity) {
+        if (getCurrentActivity() == activity) {
             currentActivity = null;
         }
         // The overlay itself is intentionally kept alive across activity transitions.
@@ -408,10 +417,11 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         Activity activity = null;
+        Activity heldActivity = getCurrentActivity();
         if (context instanceof Activity && !((Activity) context).isFinishing()) {
             activity = (Activity) context;
-        } else if (currentActivity != null && !currentActivity.isFinishing()) {
-            activity = currentActivity;
+        } else if (heldActivity != null && !heldActivity.isFinishing()) {
+            activity = heldActivity;
         }
 
         if (activity == null) {

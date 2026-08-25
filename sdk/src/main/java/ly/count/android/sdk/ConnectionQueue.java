@@ -33,6 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -374,16 +375,26 @@ class ConnectionQueue implements RequestQueueProvider {
 
         L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
 
-        // To ensure begin_session will be fully processed by the server before token_session
-        final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
-        worker.schedule(new Runnable() {
-            @Override
-            public void run() {
-                L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
-                addRequestToQueue(data, false, null);
-                tick();
-            }
-        }, 10, TimeUnit.SECONDS);
+        // To ensure begin_session will be fully processed by the server before token_session.
+        // Scheduled on this queue's own backoff scheduler, NOT a method-local executor: the local one
+        // leaked a worker thread per token refresh and outlived shutdownExecutors(), so a teardown inside
+        // the 10-second window let the task write a token request carrying the pre-teardown device id
+        // into a store that halt() had just cleared. The backoff scheduler is shutdownNow()-ed on
+        // teardown, which cancels a not-yet-started task - exactly the wanted lifecycle.
+        try {
+            backoffScheduler_.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
+                    addRequestToQueue(data, false, null);
+                    tick();
+                }
+            }, 10, TimeUnit.SECONDS);
+        } catch (RejectedExecutionException ex) {
+            //the scheduler is already shut down: this queue was discarded by a teardown, drop the token
+            //request rather than writing into a store the owning instance no longer manages
+            L.d("[Connection Queue] tokenSession, queue is already torn down, dropping the token request");
+        }
     }
 
     /**

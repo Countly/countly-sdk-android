@@ -34,6 +34,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -75,10 +76,29 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     private final SharedPreferences preferences_;
     private final SharedPreferences preferencesPush_;
+    //this instance's namespaced generated-UUID cache; only clear() touches it here, reads/writes
+    //happen in ModuleDeviceId#getUUID
+    private final SharedPreferences preferencesOpenUdid_;
     // True only for the default-instance store. The push preferences file is shared process-wide
     // (push is owned by the default/"primary" instance), so only the default instance may clear it -
     // otherwise halting a named instance would wipe the primary instance's push consent and cache.
     private final boolean ownsPushStorage;
+
+    // One lock object per request-queue backing file, shared by every CountlyStore ever opened over
+    // that file. The store's own methods are synchronized on the store INSTANCE, which suffices while a
+    // namespace has exactly one live store - but removeInstance() keeps the data and documents that the
+    // name is immediately reusable, while the removed instance's ConnectionProcessor may still be
+    // draining the kept queue on its non-awaited executor. That drain and the successor's store are two
+    // different objects over one file: without a common monitor their read-modify-writes of the joined
+    // queue string lose each other's updates (a request silently dropped, or an acknowledged one
+    // resurrected and sent twice). Entries are never removed - one small Object per namespace used in
+    // the process lifetime, same order of magnitude as the instance registry itself.
+    private static final ConcurrentHashMap<String, Object> requestQueueFileLocks = new ConcurrentHashMap<>();
+
+    // This store's entry of requestQueueFileLocks. Always taken INSIDE the instance monitor (the
+    // synchronized methods below), never the other way around, so the lock order instance -> file lock
+    // is process-wide consistent and cannot deadlock.
+    private final Object requestQueueLock;
 
     private static final String CONSENT_GCM_PREFERENCES = "ly.count.android.api.messaging.consent.gcm";
 
@@ -129,10 +149,22 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
         this.explicitStorageModeEnabled = explicitStorageModeEnabled;
         this.ownsPushStorage = (storageNamespace == null || storageNamespace.isEmpty());
-        preferences_ = context.getSharedPreferences(namespacedName(PREFERENCES, storageNamespace), Context.MODE_PRIVATE);
+        String prefsFileName = namespacedName(PREFERENCES, storageNamespace);
+        preferences_ = context.getSharedPreferences(prefsFileName, Context.MODE_PRIVATE);
+        //not computeIfAbsent: that is API 24 and this SDK is minSdk 21 without core library desugaring
+        //(same constraint as Countly.instance()). putIfAbsent is on ConcurrentMap since API 9.
+        Object lock = requestQueueFileLocks.get(prefsFileName);
+        if (lock == null) {
+            requestQueueFileLocks.putIfAbsent(prefsFileName, new Object());
+            lock = requestQueueFileLocks.get(prefsFileName);
+        }
+        requestQueueLock = lock;
         // Push preferences intentionally stay on the shared legacy file: push is owned by the
         // default ("primary") instance and there is a single push registration per process.
         preferencesPush_ = createPreferencesPush(context);
+        // This instance's generated-UUID cache (see ModuleDeviceId#getUUID), opened here so clear()
+        // can wipe it without retaining the caller's Context.
+        preferencesOpenUdid_ = context.getSharedPreferences(namespacedName(ModuleDeviceId.PREFS_NAME, storageNamespace), Context.MODE_PRIVATE);
         L = logModule;
     }
 
@@ -531,18 +563,22 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             return;
         }
 
-        List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
+        //the read-modify-write below must be atomic against every other store over the same file,
+        //not just against this store's own methods - see requestQueueLock
+        synchronized (requestQueueLock) {
+            List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
 
-        L.v("[CountlyStore] addRequest, s:[" + writeInSync + "] new q size:[" + (requests.size() + 1) + "] r:[" + requestStr + "]");
-        if (requests.size() >= maxRequestQueueSize) {
-            checkAndRemoveTooOldRequests(requests); // remove too old requests
-            if (requests.size() >= maxRequestQueueSize) { // remove oldest if nothing is too old
-                deleteOldestRequests(requests);
+            L.v("[CountlyStore] addRequest, s:[" + writeInSync + "] new q size:[" + (requests.size() + 1) + "] r:[" + requestStr + "]");
+            if (requests.size() >= maxRequestQueueSize) {
+                checkAndRemoveTooOldRequests(requests); // remove too old requests
+                if (requests.size() >= maxRequestQueueSize) { // remove oldest if nothing is too old
+                    deleteOldestRequests(requests);
+                }
             }
-        }
 
-        requests.add(requestStr);
-        storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), writeInSync);
+            requests.add(requestStr);
+            storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), writeInSync);
+        }
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_addRequest", UtilsTime.getNanoTime() - tsStart);
@@ -593,12 +629,15 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             tsStart = UtilsTime.getNanoTime();
         }
 
-        //todo rework to not need an array and joining by removing the first substring until the delimiter
-        String[] requests = getRequests();
+        //atomic against other stores over the same file - see requestQueueLock
+        synchronized (requestQueueLock) {
+            //todo rework to not need an array and joining by removing the first substring until the delimiter
+            String[] requests = getRequests();
 
-        L.i("[CountlyStore] deleteOldestRequest, Will remove the oldest request");
+            L.i("[CountlyStore] deleteOldestRequest, Will remove the oldest request");
 
-        storageWriteRequestQueue(Utils.joinCountlyStoreArray_reworked(requests, DELIMITER, 1), false);
+            storageWriteRequestQueue(Utils.joinCountlyStoreArray_reworked(requests, DELIMITER, 1), false);
+        }
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_deleteOldestRequest", UtilsTime.getNanoTime() - tsStart);
@@ -667,9 +706,12 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (requestStr != null && requestStr.length() > 0) {
-            final List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
-            if (requests.remove(requestStr)) {
-                storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), false);
+            //atomic against other stores over the same file - see requestQueueLock
+            synchronized (requestQueueLock) {
+                final List<String> requests = new ArrayList<>(Arrays.asList(getRequests()));
+                if (requests.remove(requestStr)) {
+                    storageWriteRequestQueue(Utils.joinCountlyStore(requests, DELIMITER), false);
+                }
             }
         }
 
@@ -701,7 +743,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (newRequests != null) {
-            storageWriteRequestQueue(Utils.joinCountlyStoreArray_reworked(newRequests, DELIMITER), false);
+            //atomic against other stores over the same file - see requestQueueLock
+            synchronized (requestQueueLock) {
+                storageWriteRequestQueue(Utils.joinCountlyStoreArray_reworked(newRequests, DELIMITER), false);
+            }
         }
 
         if (pcc != null) {
@@ -716,7 +761,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
 
         if (newRequests != null) {
-            storageWriteRequestQueue(Utils.joinCountlyStore(newRequests, DELIMITER), false);
+            //atomic against other stores over the same file - see requestQueueLock
+            synchronized (requestQueueLock) {
+                storageWriteRequestQueue(Utils.joinCountlyStore(newRequests, DELIMITER), false);
+            }
         }
 
         if (pcc != null) {
@@ -955,18 +1003,28 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         return sp.getInt(CACHED_PUSH_MESSAGING_PROVIDER, 0);
     }
 
-    // for unit testing
+    // used by halt(): erases everything this instance persisted
     public synchronized void clear() {
-        final SharedPreferences.Editor prefsEditor = preferences_.edit();
-        prefsEditor.remove(EVENTS_PREFERENCE);
-        prefsEditor.remove(REQUEST_PREFERENCE);
-        prefsEditor.clear();
-        prefsEditor.apply();
+        //under the file lock so a still-draining processor of a removed sibling store cannot interleave
+        //its read-modify-write with the wipe
+        synchronized (requestQueueLock) {
+            final SharedPreferences.Editor prefsEditor = preferences_.edit();
+            prefsEditor.remove(EVENTS_PREFERENCE);
+            prefsEditor.remove(REQUEST_PREFERENCE);
+            prefsEditor.clear();
+            prefsEditor.apply();
+        }
 
         //clear explicit storage things
         esDirtyFlag = false;
         esRequestQueueCache = null;
         esEventQueueCache = null;
+
+        //The generated-UUID cache lives in its own (namespaced) file, not in the main store. Without
+        //wiping it too, a halt-then-init would silently re-adopt the pre-halt device id through
+        //ModuleDeviceId#getUUID - and halt()/haltAllInstances() promise that erasing stored data makes
+        //the next session start as a new user (which is also what a privacy-driven erase expects).
+        preferencesOpenUdid_.edit().clear().apply();
 
         // Only the default instance owns the shared push preferences file; a named instance must not
         // wipe the primary instance's push consent/cache when it is halted or cleared.

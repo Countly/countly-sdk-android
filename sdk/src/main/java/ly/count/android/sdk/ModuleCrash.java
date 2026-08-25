@@ -270,7 +270,20 @@ public class ModuleCrash extends ModuleBase {
             ModuleCrash module = moduleRef.get();
             //a halted (or already collected) instance only delegates, its queues are torn down
             if (module != null && !module.crashHandlerDetached) {
-                module.recordUnhandledCrash(e);
+                //The record pipeline runs developer code (crash filters) and allocation-heavy metric
+                //collection on a thread that is already crashing. If any of it throws, the exception must
+                //not escape this handler: the runtime would swallow it, every handler further down the
+                //chain - other Countly instances and Android's own KillApplicationHandler - would never
+                //run, no crash dialog would show, and the process would be left alive with a dead thread.
+                try {
+                    module.recordUnhandledCrash(e);
+                } catch (Throwable recordFailure) {
+                    try {
+                        module.L.e("[ModuleCrash] uncaughtException, failed to record the crash, delegating anyway [" + recordFailure + "]");
+                    } catch (Throwable ignored) {
+                        //the logger itself may run app code (log listener); nothing may stop the delegation
+                    }
+                }
             }
 
             //if there was another handler before, notify it also
