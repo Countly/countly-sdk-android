@@ -47,6 +47,20 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
     // has already registered on the main thread.
     private volatile boolean registered = false;
 
+    // Makes {count mutation + instance-list capture} atomic per started/stopped event, and
+    // {addInstance + count snapshot} atomic against it. Held for nanoseconds (an int and a list
+    // reference) - dispatch into instances always happens OUTSIDE this lock, so the main thread never
+    // meaningfully blocks here.
+    private final Object stateLock = new Object();
+
+    private int startedActivityCount = 0;
+
+    // True only when register() ran from CountlyInitProvider, i.e. before any activity could have
+    // started. Only then is startedActivityCount the exact process-wide truth; a late registration
+    // (provider stripped from the manifest, first registration at init time) has missed events and
+    // callers must fall back to the ProcessLifecycleOwner heuristic.
+    private volatile boolean countExactSinceProcessStart = false;
+
     private CountlyLifecycleDispatcher() {
     }
 
@@ -59,6 +73,14 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
      * and from any thread: the second and later calls do nothing.
      */
     void register(@Nullable Context context) {
+        register(context, false);
+    }
+
+    /**
+     * @param fromProvider true when called by {@link CountlyInitProvider} (before any activity can
+     * exist), which is what makes the started-activity count exact from process start
+     */
+    void register(@Nullable Context context, boolean fromProvider) {
         if (registered || context == null) {
             return;
         }
@@ -73,6 +95,7 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
             Application application = (Application) appContext;
             application.registerActivityLifecycleCallbacks(this);
             application.registerComponentCallbacks(this);
+            countExactSinceProcessStart = fromProvider;
             registered = true;
         }
     }
@@ -81,9 +104,42 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
         return registered;
     }
 
-    void addInstance(@NonNull Countly countly) {
-        if (!instances.contains(countly)) {
-            instances.add(countly);
+    /**
+     * Adds the instance and returns the started-activity count it should seed itself with, taken
+     * atomically with joining: the instance will receive exactly the events after this snapshot,
+     * never one that is also included in it.
+     *
+     * @return the exact number of currently started activities, or -1 when the dispatcher was not
+     * registered before the first activity and the count is therefore not trustworthy
+     */
+    int addInstance(@NonNull Countly countly) {
+        synchronized (stateLock) {
+            if (!instances.contains(countly)) {
+                instances.add(countly);
+            }
+            return countExactSinceProcessStart ? startedActivityCount : -1;
+        }
+    }
+
+    /** True when {@link #register} ran before any activity could have started (provider path). */
+    boolean hasExactActivityCount() {
+        return countExactSinceProcessStart;
+    }
+
+    /** The number of currently started activities; only meaningful when {@link #hasExactActivityCount()}. */
+    int getStartedActivityCount() {
+        synchronized (stateLock) {
+            return startedActivityCount;
+        }
+    }
+
+    // Test support only: instrumented tests share one process and one dispatcher, so a test that
+    // simulates lifecycle events must start from a known state without depending on every other test
+    // having halted its instances.
+    void resetForTests() {
+        synchronized (stateLock) {
+            instances.clear();
+            startedActivityCount = 0;
         }
     }
 
@@ -104,8 +160,16 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
 
     @Override public void onActivityStarted(@NonNull Activity activity) {
         CountlyActivityHolder.getInstance().setActivity(activity);
-        for (Countly countly : instances) {
-            countly.dispatchActivityStarted(activity);
+        //count and list snapshot move together: an instance added concurrently either is in the
+        //snapshot and gets this event (its addInstance() count predates the increment) or is not and
+        //has the event in its seeded count - never both, never neither
+        Object[] toNotify;
+        synchronized (stateLock) {
+            startedActivityCount++;
+            toNotify = instances.toArray();
+        }
+        for (Object countly : toNotify) {
+            ((Countly) countly).dispatchActivityStarted(activity);
         }
     }
 
@@ -123,8 +187,16 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
     }
 
     @Override public void onActivityStopped(@NonNull Activity activity) {
-        for (Countly countly : instances) {
-            countly.dispatchActivityStopped(activity);
+        //see onActivityStarted for the count/snapshot pairing
+        Object[] toNotify;
+        synchronized (stateLock) {
+            if (startedActivityCount > 0) {
+                startedActivityCount--;
+            }
+            toNotify = instances.toArray();
+        }
+        for (Object countly : toNotify) {
+            ((Countly) countly).dispatchActivityStopped(activity);
         }
     }
 

@@ -21,12 +21,15 @@ THE SOFTWARE.
 */
 package ly.count.android.sdk;
 
+import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +42,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static org.mockito.Mockito.mock;
 
 /**
  * Integration tests for multi-instance support: independent Countly instances obtained via
@@ -93,6 +98,9 @@ public class MultiInstanceTests {
         }
         clearOpenUdid("");
         clearNativeDumps();
+        // the dispatcher is process-wide: drop instances a test (or another suite) left behind and
+        // zero the simulated activity count so lifecycle simulations start from a known state
+        CountlyLifecycleDispatcher.getInstance().resetForTests();
     }
 
     // The single process-wide folder sdk-native hands to breakpad. It has no instance concept, so only
@@ -167,7 +175,7 @@ public class MultiInstanceTests {
         def.init(baseConfig(APP_KEY_A, DEVICE_A));
 
         Countly named = Countly.instance("instB");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
 
         def.sessions().beginSession();
         named.sessions().beginSession();
@@ -213,7 +221,7 @@ public class MultiInstanceTests {
             .edit().putInt("PUSH_MESSAGING_PROVIDER", 1).apply();
 
         Countly named = Countly.instance("instFresh");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instFresh"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
 
         // The mechanism under test: a fresh named store must judge its own freshness by its own file, so
         // it starts at the latest schema and runs no migration at all. Asserting the schema (not only the
@@ -317,7 +325,7 @@ public class MultiInstanceTests {
         def.sessions().beginSession();
 
         Countly named = Countly.instance("instB");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
         named.sessions().beginSession();
 
         ConnectionProcessor namedProcessor = named.connectionQueue_.createConnectionProcessor();
@@ -384,7 +392,7 @@ public class MultiInstanceTests {
         def.sessions().beginSession();
 
         Countly named = Countly.instance("instFile");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instFile"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
         named.sessions().beginSession();
 
         // a brand-new legacy-scoped store (no namespace) sees the default instance's request, never
@@ -418,7 +426,7 @@ public class MultiInstanceTests {
         Assert.assertNotSame("a named instance is not the default", def, a);
 
         // halting resets state but keeps the object registered
-        a.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        a.init(baseConfig(APP_KEY_B, DEVICE_B));
         a.halt();
         Assert.assertSame("instance identity survives halt()", a, Countly.instance("instB"));
     }
@@ -432,7 +440,7 @@ public class MultiInstanceTests {
     @Test
     public void removeInstance_deregistersAndHalts_defaultCannotBeRemoved() {
         Countly named = Countly.instance("instRemove");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instRemove"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
         named.sessions().beginSession();
         Assert.assertTrue(named.isInitialized());
         Assert.assertSame("registered before removal", named, Countly.getInstance("instRemove"));
@@ -466,7 +474,7 @@ public class MultiInstanceTests {
         Assert.assertFalse("recreated instance is uninitialized until init()", recreated.isInitialized());
 
         // and re-initialising that name resumes from the data that was left behind
-        recreated.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instRemove"));
+        recreated.init(baseConfig(APP_KEY_B, DEVICE_B));
         Assert.assertEquals("re-initialising a removed name must resume from its kept queue",
             1, countRequestsWithKey(TestUtils.getCurrentRQ(recreated), "begin_session"));
 
@@ -509,10 +517,10 @@ public class MultiInstanceTests {
     public void perInstanceLogging_isIndependent() {
         // two named instances so the check does not depend on the heavily-shared default instance
         Countly loud = Countly.instance("instLoud");
-        loud.init(baseConfig(APP_KEY_A, DEVICE_A).setInstanceName("instLoud").setLoggingEnabled(true));
+        loud.init(baseConfig(APP_KEY_A, DEVICE_A).setLoggingEnabled(true));
 
         Countly quiet = Countly.instance("instLog");
-        quiet.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instLog").setLoggingEnabled(false));
+        quiet.init(baseConfig(APP_KEY_B, DEVICE_B).setLoggingEnabled(false));
 
         Assert.assertTrue(loud.isLoggingEnabled());
         Assert.assertTrue(loud.L.loggingEnabled);
@@ -535,7 +543,7 @@ public class MultiInstanceTests {
         one.init(baseConfig(APP_KEY_A, DEVICE_A));
 
         Countly two = Countly.instance("instTimed");
-        two.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instTimed"));
+        two.init(baseConfig(APP_KEY_B, DEVICE_B));
 
         Assert.assertTrue(one.events().startEvent("timer_one"));
 
@@ -563,7 +571,7 @@ public class MultiInstanceTests {
 
         // a named instance's lifecycle must not touch the shared push prefs
         Countly named = Countly.instance("instB");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
         named.halt();
         Assert.assertTrue("named instance halt must not wipe primary push consent", store("").getConsentPush());
 
@@ -627,7 +635,7 @@ public class MultiInstanceTests {
         Assert.assertSame("instance(name) is just an accessor - same object each call", handle, Countly.getInstance("instCreateA"));
 
         // the user initializes it explicitly; storage is isolated under the (sanitized) name
-        handle.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instCreateA"));
+        handle.init(baseConfig(APP_KEY_B, DEVICE_B));
         Assert.assertTrue(handle.isInitialized());
         Assert.assertEquals(CountlyStore.sanitizeNamespace("instCreateA"), handle.storageNamespace_);
 
@@ -685,8 +693,7 @@ public class MultiInstanceTests {
         javax.net.ssl.SSLSocketFactory noopFactory = (javax.net.ssl.SSLSocketFactory) javax.net.ssl.SSLSocketFactory.getDefault();
 
         Countly pinned = Countly.instance("instB");
-        pinned.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB")
-            .enablePublicKeyPinning(pins).setCustomSSLSocketFactory(noopFactory));
+        pinned.init(baseConfig(APP_KEY_B, DEVICE_B)            .enablePublicKeyPinning(pins).setCustomSSLSocketFactory(noopFactory));
 
         Countly plain = Countly.sharedInstance();
         plain.init(baseConfig(APP_KEY_A, DEVICE_A));
@@ -711,7 +718,7 @@ public class MultiInstanceTests {
         Countly def = Countly.sharedInstance();
         def.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_A, TestUtils.commonURL).setLoggingEnabled(true));
         Countly named = Countly.instance("instB");
-        named.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_B, TestUtils.commonURL).setInstanceName("instB").setLoggingEnabled(true));
+        named.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_B, TestUtils.commonURL).setLoggingEnabled(true));
 
         String defId = TestUtils.getCountlyStore(def).getDeviceID();
         String namedId = TestUtils.getCountlyStore(named).getDeviceID();
@@ -725,43 +732,6 @@ public class MultiInstanceTests {
         Assert.assertNotNull(defOpenUdid);
         Assert.assertNotNull(namedOpenUdid);
         Assert.assertNotEquals("named instance's OpenUDID must be isolated from the default's", defOpenUdid, namedOpenUdid);
-    }
-
-    /**
-     * setInstanceName is advisory: setting it on the default instance (obtained via sharedInstance())
-     * does NOT create a named instance or namespace storage, and the SDK warns loudly rather than
-     * silently landing data in the wrong place.
-     */
-    @Test
-    public void setInstanceNameOnDefaultInstance_isIgnoredButWarned() {
-        final List<String> warnings = new ArrayList<>();
-        // A standalone default-named instance (instanceName_ == DEFAULT_NAME, exactly as
-        // sharedInstance() is) exercises the same "config names the default instance" path, while
-        // keeping the log-listener assertion independent of other tests mutating the shared default.
-        Countly def = new Countly();
-        def.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_A, TestUtils.commonURL)
-            .setDeviceId(DEVICE_A)
-            .setInstanceName("ignoredName")
-            .setLoggingEnabled(true)
-            .setLogListener((logMessage, logLevel) -> {
-                if (logLevel == ModuleLog.LogLevel.Warning) {
-                    warnings.add(logMessage);
-                }
-            }));
-
-        // the default instance ignores the config name: legacy storage, not registered under the name
-        Assert.assertEquals("", def.storageNamespace_);
-        Assert.assertNull("setInstanceName on the default instance must not register a named instance", Countly.getInstance("ignoredName"));
-
-        // and it warns loudly instead of failing silently
-        boolean warned = false;
-        for (String w : warnings) {
-            if (w.contains("ignoredName")) {
-                warned = true;
-                break;
-            }
-        }
-        Assert.assertTrue("a warning must be logged when setInstanceName is set on the default instance", warned);
     }
 
     private static int countRequestsWithKey(Map<String, String>[] rq, String key) {
@@ -805,7 +775,7 @@ public class MultiInstanceTests {
      */
     @Test
     public void reusedConfigObject_isRebuiltWhenTheSameInstanceIsReinitialised() {
-        CountlyConfig shared = baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB");
+        CountlyConfig shared = baseConfig(APP_KEY_B, DEVICE_B);
 
         Countly named = Countly.instance("instB");
         named.init(shared);
@@ -894,7 +864,7 @@ public class MultiInstanceTests {
         // nor may initialising a named instance flip it - the primary has revoked push consent here
         store("").setConsentPush(false);
         Countly named = Countly.instance("instB");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
         Assert.assertFalse("initialising a named instance must not re-grant the primary's push consent",
             store("").getConsentPush());
 
@@ -916,7 +886,7 @@ public class MultiInstanceTests {
 
         // a named instance initialising first must neither record nor drain the primary's push click
         Countly named = Countly.instance("instB");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
 
         Assert.assertFalse("a named instance must not record the primary instance's push click",
             recordedEvent(named, ModulePush.PUSH_EVENT_ACTION));
@@ -989,7 +959,7 @@ public class MultiInstanceTests {
         File dump = writeFakeNativeDump("dump_a");
 
         Countly named = Countly.instance("instB");
-        named.init(baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB"));
+        named.init(baseConfig(APP_KEY_B, DEVICE_B));
 
         Assert.assertTrue("a named instance must not delete the process-wide native crash dump", dump.exists());
         Assert.assertNull("a named instance must not report the process-wide native crash dump",
@@ -1016,7 +986,7 @@ public class MultiInstanceTests {
         Thread.UncaughtExceptionHandler original = Thread.getDefaultUncaughtExceptionHandler();
         try {
             Countly named = Countly.instance("instB");
-            CountlyConfig config = baseConfig(APP_KEY_B, DEVICE_B).setInstanceName("instB");
+            CountlyConfig config = baseConfig(APP_KEY_B, DEVICE_B);
             config.crashes.enableCrashReporting();
             named.init(config);
 
@@ -1130,5 +1100,183 @@ public class MultiInstanceTests {
         def.init(baseConfig(APP_KEY_A, DEVICE_A));
         def.onRegistrationId("real-token", Countly.CountlyMessagingProvider.FCM);
         Assert.assertEquals("an initialised instance must accept the push token", "real-token", def.lastRegistrationCallID);
+    }
+
+    /**
+     * The uncaught-exception chain runs developer code (crash filters) on a thread that is already
+     * crashing. A filter that throws must not swallow the delegation: every handler below this
+     * instance - other Countly instances and ultimately Android's own KillApplicationHandler - still
+     * has to run, otherwise the crash is reported by nobody, no crash dialog shows, and the process
+     * is left alive with a dead thread.
+     */
+    @Test
+    public void throwingCrashFilter_doesNotSwallowDownstreamHandlers() {
+        Thread.UncaughtExceptionHandler originalDefault = Thread.getDefaultUncaughtExceptionHandler();
+        try {
+            final boolean[] previousHandlerRan = { false };
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> previousHandlerRan[0] = true);
+
+            Countly named = Countly.instance("instCfgB");
+            CountlyConfig config = baseConfig(APP_KEY_B, DEVICE_B);
+            config.crashes.enableCrashReporting();
+            config.crashes.setGlobalCrashFilterCallback(crash -> {
+                throw new IllegalStateException("filter deliberately failing");
+            });
+            named.init(config);
+
+            Thread.UncaughtExceptionHandler chainHead = Thread.getDefaultUncaughtExceptionHandler();
+            Assert.assertTrue("the instance must have installed its crash handler", named.moduleCrash.unhandledCrashHandlerInstalled);
+
+            // simulate the runtime dispatching an uncaught exception into the chain
+            chainHead.uncaughtException(Thread.currentThread(), new RuntimeException("boom"));
+
+            Assert.assertTrue("a throwing crash filter must not stop delegation to the previous handler", previousHandlerRan[0]);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalDefault);
+        }
+    }
+
+    /**
+     * halt() promises "destroys all stored data ... the next session starts as a new user". The
+     * generated device id used to survive the wipe in the separate OpenUDID cache file, so a
+     * halted-and-reinitialised instance silently came back as the same user. The wipe must cover the
+     * OpenUDID cache too.
+     */
+    @Test
+    public void halt_clearsGeneratedOpenUdid_nextInitIsANewUser() {
+        // no device id supplied -> the generated (OpenUDID) path is exercised
+        Countly def = Countly.sharedInstance();
+        def.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_A, TestUtils.commonURL).setLoggingEnabled(true));
+        String firstId = TestUtils.getCountlyStore(def).getDeviceID();
+        Assert.assertNotNull(firstId);
+        Assert.assertEquals("the generated id and the OpenUDID cache must agree", firstId, openUdid(""));
+
+        def.halt();
+        Assert.assertNull("halt must wipe the OpenUDID cache file too", openUdid(""));
+
+        def.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_A, TestUtils.commonURL).setLoggingEnabled(true));
+        String secondId = TestUtils.getCountlyStore(def).getDeviceID();
+        Assert.assertNotNull(secondId);
+        Assert.assertNotEquals("after halt the next init must start as a new user, not resurrect the old id", firstId, secondId);
+    }
+
+    /**
+     * A halted instance must stop receiving process lifecycle events entirely: teardown removes it
+     * from the process-wide CountlyLifecycleDispatcher before nulling anything, and the tearingDown
+     * gate drops an event already in flight. Before the dispatcher, this was the CME/NPE window
+     * between the main thread's dispatch and a background teardown.
+     */
+    @Test
+    public void haltedInstance_stopsReceivingActivityLifecycle() {
+        Application app = (Application) TestUtils.getContext().getApplicationContext();
+        Countly instance = Countly.instance("instCfgA");
+        // no manual session control: lifecycle events must drive the session automatically
+        instance.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_A, TestUtils.commonURL)
+            .setDeviceId(DEVICE_A)
+            .setLoggingEnabled(true)
+            .setApplication(app));
+
+        String ns = CountlyStore.sanitizeNamespace("instCfgA");
+        Activity activity = mock(Activity.class);
+
+        // simulate the OS starting an activity: the registered instance auto-begins a session
+        CountlyLifecycleDispatcher.getInstance().onActivityStarted(activity);
+        Assert.assertNotNull("a registered instance must receive lifecycle events and begin a session",
+            firstRequestWithKey(TestUtils.getCurrentRQ("", store(ns)), "begin_session"));
+
+        instance.halt(); // clears storage and deregisters from the dispatcher
+
+        CountlyLifecycleDispatcher.getInstance().onActivityStarted(activity);
+        CountlyLifecycleDispatcher.getInstance().onActivityStopped(activity);
+        Assert.assertEquals("a halted instance must not receive lifecycle events any more",
+            0, store(ns).getRequests().length);
+    }
+
+    /**
+     * The exact-count contract the foreground seed relies on: registered by CountlyInitProvider before
+     * any activity can start, the dispatcher counts starts and stops exactly, never underflows, and
+     * reports exactness so a late (provider-stripped) registration falls back to the heuristic.
+     */
+    @Test
+    public void lifecycleDispatcher_exactCountContract() {
+        CountlyLifecycleDispatcher dispatcher = CountlyLifecycleDispatcher.getInstance();
+        Assert.assertTrue("registered by the provider before any activity, the count must be exact",
+            dispatcher.hasExactActivityCount());
+        Assert.assertEquals(0, dispatcher.getStartedActivityCount());
+
+        Activity activity = mock(Activity.class);
+        dispatcher.onActivityStarted(activity);
+        dispatcher.onActivityStarted(activity);
+        Assert.assertEquals(2, dispatcher.getStartedActivityCount());
+        dispatcher.onActivityStopped(activity);
+        Assert.assertEquals(1, dispatcher.getStartedActivityCount());
+        dispatcher.onActivityStopped(activity);
+        dispatcher.onActivityStopped(activity); // an extra stop must not underflow the count
+        Assert.assertEquals(0, dispatcher.getStartedActivityCount());
+    }
+
+    /**
+     * Foreground-at-init comes from the dispatcher's exact started-activity count (registered by
+     * CountlyInitProvider before any activity can start), not from ProcessLifecycleOwner's debounced
+     * state: an instance initialised while an activity is started seeds its activity counter exactly
+     * and auto-begins its session immediately - deterministically, with no ~700ms debounce window.
+     */
+    @Test
+    public void initWhileActivityStarted_seedsExactForegroundAndBeginsSession() {
+        // the test runner pins the foreground override to "background" for isolation; this test is
+        // specifically about the exact-count path, which the override outranks - clear it (the runner
+        // restores it after the test)
+        Countly.lifecycleStateOverrideForTests = null;
+
+        CountlyLifecycleDispatcher.getInstance().onActivityStarted(mock(Activity.class)); // the app is now "in the foreground"
+
+        Application app = (Application) TestUtils.getContext().getApplicationContext();
+        Countly instance = Countly.instance("instCfgB");
+        instance.init(new CountlyConfig(TestUtils.getContext(), APP_KEY_B, TestUtils.commonURL)
+            .setDeviceId(DEVICE_B)
+            .setLoggingEnabled(true)
+            .setApplication(app));
+
+        String ns = CountlyStore.sanitizeNamespace("instCfgB");
+        Assert.assertNotNull("an init while an activity is started must seed foreground from the exact count and begin a session",
+            firstRequestWithKey(TestUtils.getCurrentRQ("", store(ns)), "begin_session"));
+    }
+
+    /**
+     * Two CountlyStore objects can be live over one namespace: removeInstance() keeps the data and
+     * documents the name as immediately reusable, while the removed instance's ConnectionProcessor
+     * may still be draining the kept queue on its non-awaited executor. The queue mutation is a
+     * read-modify-write of one joined string, synchronized per store OBJECT, so without a shared
+     * file-level monitor two stores lose each other's updates. Hammer one file from two stores on two
+     * threads and require that not a single request is lost or duplicated.
+     */
+    @Test
+    public void concurrentStoresOverOneNamespace_loseNoRequests() throws InterruptedException {
+        final String ns = CountlyStore.sanitizeNamespace("instB");
+        final CountlyStore first = store(ns);
+        final CountlyStore second = store(ns);
+        final int perWriter = 40;
+
+        Thread writerA = new Thread(() -> {
+            for (int i = 0; i < perWriter; i++) {
+                first.addRequest("a_" + i, false);
+            }
+        });
+        Thread writerB = new Thread(() -> {
+            for (int i = 0; i < perWriter; i++) {
+                second.addRequest("b_" + i, false);
+            }
+        });
+        writerA.start();
+        writerB.start();
+        writerA.join();
+        writerB.join();
+
+        List<String> finalQueue = new ArrayList<>(Arrays.asList(store(ns).getRequests()));
+        for (int i = 0; i < perWriter; i++) {
+            Assert.assertTrue("request a_" + i + " was lost by a concurrent writer", finalQueue.contains("a_" + i));
+            Assert.assertTrue("request b_" + i + " was lost by a concurrent writer", finalQueue.contains("b_" + i));
+        }
+        Assert.assertEquals("no request may be duplicated either", perWriter * 2, finalQueue.size());
     }
 }

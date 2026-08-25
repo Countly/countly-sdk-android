@@ -34,27 +34,30 @@ public class ActivityExampleMultiInstance extends AppCompatActivity {
         findViewById(R.id.btnCreateAnalytics).setOnClickListener(v -> createAndInit(ANALYTICS, "analytics-device"));
 
         findViewById(R.id.btnRecordEventAnalytics).setOnClickListener(v -> {
-            if (!requireInit(ANALYTICS)) {
+            Countly analytics = requireInitialized(ANALYTICS);
+            if (analytics == null) {
                 return;
             }
-            Countly.instance(ANALYTICS).events().recordEvent("analytics_event");
+            analytics.events().recordEvent("analytics_event");
             toast("Recorded 'analytics_event' on '" + ANALYTICS + "'");
         });
 
         findViewById(R.id.btnRecordViewAnalytics).setOnClickListener(v -> {
-            if (!requireInit(ANALYTICS)) {
+            Countly analytics = requireInitialized(ANALYTICS);
+            if (analytics == null) {
                 return;
             }
-            Countly.instance(ANALYTICS).views().startAutoStoppedView("AnalyticsScreen");
+            analytics.views().startAutoStoppedView("AnalyticsScreen");
             toast("Started view 'AnalyticsScreen' on '" + ANALYTICS + "'");
         });
 
         findViewById(R.id.btnToggleLogAnalytics).setOnClickListener(v -> {
-            if (!requireInit(ANALYTICS)) {
+            Countly analytics = requireInitialized(ANALYTICS);
+            if (analytics == null) {
                 return;
             }
             analyticsLogging = !analyticsLogging;
-            Countly.instance(ANALYTICS).setLoggingEnabled(analyticsLogging);
+            analytics.setLoggingEnabled(analyticsLogging);
             toast("'" + ANALYTICS + "' logging " + (analyticsLogging ? "ENABLED" : "DISABLED") + " (default instance logging unaffected)");
         });
 
@@ -71,10 +74,11 @@ public class ActivityExampleMultiInstance extends AppCompatActivity {
         findViewById(R.id.btnCreateBilling).setOnClickListener(v -> createAndInit(BILLING, "billing-device"));
 
         findViewById(R.id.btnRecordEventBilling).setOnClickListener(v -> {
-            if (!requireInit(BILLING)) {
+            Countly billing = requireInitialized(BILLING);
+            if (billing == null) {
                 return;
             }
-            Countly.instance(BILLING).events().recordEvent("billing_event");
+            billing.events().recordEvent("billing_event");
             toast("Recorded 'billing_event' on '" + BILLING + "'");
         });
 
@@ -119,24 +123,33 @@ public class ActivityExampleMultiInstance extends AppCompatActivity {
         }
 
         // The name passed to Countly.instance(name) is what isolates this instance's storage. The
-        // distinct device ID keeps its identity separate. No application is set, so this instance
-        // records manually rather than tracking sessions/views automatically.
+        // distinct device ID keeps its identity separate. No Application class is given, so the SDK
+        // cannot observe the activity lifecycle for this instance - session control is switched to
+        // manual, otherwise an automatic session would begin at init (the app is in the foreground)
+        // that nothing could ever end, updating forever even in the background.
         CountlyConfig config = new CountlyConfig(getApplicationContext(), App.getAppKey(), App.getServerUrl())
-            .setInstanceName(name)
             .setDeviceId(deviceId)
+            .enableManualSessionControl()
             .setLoggingEnabled(true);
 
         instance.init(config);
         toast("Initialized '" + name + "' (device id: " + deviceId + ")");
     }
 
-    private boolean requireInit(String name) {
+    /**
+     * Returns the initialized instance registered under the name, or null (with a hint toast). The
+     * returned handle - not a fresh {@code Countly.instance(name)} lookup - must be used for the
+     * follow-up call: re-fetching through instance(name) would silently re-create a fresh,
+     * uninitialized instance if removeInstance(name) ran in between, and its module accessors
+     * (events(), views(), ...) would then return null.
+     */
+    private Countly requireInitialized(String name) {
         Countly instance = Countly.getInstance(name);
         if (instance == null || !instance.isInitialized()) {
             toast("Create and initialize the '" + name + "' instance first");
-            return false;
+            return null;
         }
-        return true;
+        return instance;
     }
 
     private void toast(String message) {

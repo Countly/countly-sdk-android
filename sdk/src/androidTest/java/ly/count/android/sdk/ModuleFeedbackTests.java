@@ -699,7 +699,10 @@ public class ModuleFeedbackTests {
     private Activity getCurrentActivity(ModuleFeedback module) throws Exception {
         java.lang.reflect.Field field = ModuleFeedback.class.getDeclaredField("currentActivity");
         field.setAccessible(true);
-        return (Activity) field.get(module);
+        //the module holds the activity weakly (so an instance without lifecycle callbacks cannot pin
+        //a destroyed activity); unwrap to keep these identity assertions meaningful
+        java.lang.ref.WeakReference<?> ref = (java.lang.ref.WeakReference<?>) field.get(module);
+        return ref != null ? (Activity) ref.get() : null;
     }
 
     // ======== Activity reference / leak prevention tests (issue #556) ========

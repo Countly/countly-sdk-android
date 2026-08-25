@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -30,10 +31,18 @@ public class ModuleContent extends ModuleBase {
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
 
-    private Activity currentActivity;
+    //Weak, like CountlyActivityHolder: the clearing path (onActivityDestroyed) only runs when the
+    //instance was initialised with an Application class - an instance without one (seeded through
+    //onInitialActivitySeeded) would otherwise pin the seeding Activity for as long as this instance
+    //lives, with the process-lifetime instance registry as the GC root.
+    private WeakReference<Activity> currentActivity;
     ContentOverlayView contentOverlay;
     // Buffered content when no activity is available
     private Map<Integer, TransparentActivityConfig> pendingContentConfigs;
+
+    private @Nullable Activity getCurrentActivity() {
+        return currentActivity != null ? currentActivity.get() : null;
+    }
 
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -86,7 +95,7 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onInitialActivitySeeded(@NonNull Activity activity) {
         L.d("[ModuleContent] onInitialActivitySeeded, activity: [" + activity.getClass().getSimpleName() + "]");
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
         if (UtilsDevice.cutout == null) {
             UtilsDevice.getCutout(activity);
         }
@@ -102,7 +111,7 @@ public class ModuleContent extends ModuleBase {
             UtilsDevice.getCutout(activity);
         }
 
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
 
         // Move existing overlay to the new activity
         if (contentOverlay != null && !activity.isFinishing() && !activity.isDestroyed()) {
@@ -135,7 +144,7 @@ public class ModuleContent extends ModuleBase {
     void onActivityDestroyed(@NonNull Activity activity) {
         // Identity check guards against clearing a newer activity when the destroy callback
         // for an older activity arrives after onActivityStarted of the next one (rotation race).
-        if (currentActivity == activity) {
+        if (getCurrentActivity() == activity) {
             currentActivity = null;
         }
         // The overlay itself is intentionally kept alive across activity transitions.
@@ -173,8 +182,9 @@ public class ModuleContent extends ModuleBase {
                         isCurrentlyInContentZone = true;
                         isCurrentlyRetrying = false;
 
-                        if (currentActivity != null && !currentActivity.isFinishing()) {
-                            showContentOverlay(currentActivity, placementCoordinates);
+                        Activity heldActivity = getCurrentActivity();
+                        if (heldActivity != null && !heldActivity.isFinishing()) {
+                            showContentOverlay(heldActivity, placementCoordinates);
                         } else {
                             L.d("[ModuleContent] fetchContentsInternal, no active activity, buffering content");
                             pendingContentConfigs = placementCoordinates;
@@ -535,7 +545,8 @@ public class ModuleContent extends ModuleBase {
 
     @NonNull
     private Context getSafeAreaContext() {
-        return (currentActivity != null && !currentActivity.isFinishing()) ? currentActivity : _cly.context_;
+        Activity heldActivity = getCurrentActivity();
+        return (heldActivity != null && !heldActivity.isFinishing()) ? heldActivity : _cly.context_;
     }
 
     private void exitContentZoneInternal() {

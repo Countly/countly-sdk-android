@@ -33,7 +33,9 @@ public class CountlyInitProvider extends ContentProvider {
         //behaviour this provider shipped for (capturing the current Activity before Application.onCreate,
         //which single-activity frameworks depend on) is unchanged - it just no longer needs its own
         //callbacks object, and every Countly instance now shares this one registration.
-        CountlyLifecycleDispatcher.getInstance().register(appContext);
+        //fromProvider: content providers run before Application.onCreate, so no activity can have
+        //started yet - which is what makes the dispatcher's started-activity count exact
+        CountlyLifecycleDispatcher.getInstance().register(appContext, true);
 
         return false;
     }
