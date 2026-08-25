@@ -436,7 +436,20 @@ public class TestUtils {
 
         Assert.assertTrue(cDuration >= 0);
         if (duration != null) {
-            Assert.assertEquals(duration, cDuration);
+            if (duration > 0.0d) {
+                //A non-zero expected duration in these tests is produced by really sleeping, and the SDK
+                //reports whole seconds. An overshooting Thread.sleep or a GC pause therefore carries the
+                //measured value one second past the expectation - which is why the ModuleViews duration
+                //tests failed intermittently under load, one of them carrying the comment "duration comes
+                //off sometimes". Tolerate exactly that single boundary and nothing wider: a duration wrong
+                //by more than one second is still a failure, and an under-reported one always is.
+                Assert.assertTrue("expected a duration of " + duration + " or " + (duration + 1)
+                    + " seconds (a sleep may overshoot one whole-second boundary), got " + cDuration,
+                    cDuration >= duration && cDuration <= duration + 1.0d);
+            } else {
+                //an expected zero means "no measurable time passed", which no sleep can inflate - keep exact
+                Assert.assertEquals(duration, cDuration);
+            }
         }
 
         if (instant != null) {

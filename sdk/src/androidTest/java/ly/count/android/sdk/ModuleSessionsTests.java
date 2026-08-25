@@ -234,7 +234,16 @@ public class ModuleSessionsTests {
 
         TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
         if (duration != null) {
-            Assert.assertEquals(duration.toString(), request.get("session_duration"));
+            //session_duration is whole seconds measured off real elapsed time, so the same one-boundary
+            //overshoot applies here as for view durations - see TestUtils#validateRecordEventInternalMock
+            int actual = Integer.parseInt(request.get("session_duration"));
+            if (duration > 0) {
+                Assert.assertTrue("expected a session_duration of " + duration + " or " + (duration + 1)
+                    + " seconds (a sleep may overshoot one whole-second boundary), got " + actual,
+                    actual >= duration && actual <= duration + 1);
+            } else {
+                Assert.assertEquals(duration.intValue(), actual);
+            }
         }
 
         return request;

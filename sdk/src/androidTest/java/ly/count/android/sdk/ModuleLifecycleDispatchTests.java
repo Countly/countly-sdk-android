@@ -99,6 +99,20 @@ public class ModuleLifecycleDispatchTests {
     }
 
     /**
+     * getCurrentRQ sizes its array to the whole queue and leaves a null hole for every request the filter
+     * rejected, so matches have to be counted rather than read off .length.
+     */
+    private static int countRequestsWithKey(Countly countly, String key) {
+        int found = 0;
+        for (Map<String, String> request : TestUtils.getCurrentRQ(key, TestUtils.getCountlyStore(countly))) {
+            if (request != null && request.containsKey(key)) {
+                found++;
+            }
+        }
+        return found;
+    }
+
+    /**
      * The CI crash, reproduced deterministically. The run died at test 108 of 1023 with
      * {@code ModuleViews.resetFirstView() on a null object reference} thrown out of {@code Activity.onStop}:
      * the main thread was inside {@code ModuleSessions.endSessionInternal} when a teardown on another thread
@@ -112,11 +126,17 @@ public class ModuleLifecycleDispatchTests {
         Countly foreground = Countly.instance("dispatchNulledSibling");
         foreground.init(TestUtils.createBaseConfig("deviceNulledSibling"));
 
+        // Take this instance out of the process-wide dispatcher before touching anything. Other test classes
+        // start and stop real activities, and an ambient event reaching this instance begins and ends extra
+        // sessions - which made this test pass alone and fail inside the suite on an absolute count.
+        CountlyLifecycleDispatcher.getInstance().removeInstanceAndQuiesce(foreground, new ModuleLog());
+
         // Initialising in the foreground already began a session and opened one activity, so onStopInternal
         // below takes the count to 0 - which is the only path that reaches endSessionInternal. Calling
         // onStartInternal first would make it 2 -> 1 and skip the branch entirely.
         Assert.assertTrue("a session must be running for this to exercise endSessionInternal",
             foreground.moduleSessions.sessionIsRunning());
+        int endSessionsBefore = countRequestsWithKey(foreground, "end_session");
 
         // the interleaving: teardown has nulled the module fields while this dispatch is in flight
         foreground.moduleViews = null;
@@ -128,17 +148,8 @@ public class ModuleLifecycleDispatchTests {
         // A missing sibling must skip only its own step. resetFirstView is what needs moduleViews, so it is
         // the only thing lost here - end_session still has to go out, because a session that begins and never
         // ends is a worse outcome than one that ends without its trailing bookkeeping.
-        // getCurrentRQ sizes its array to the whole queue and leaves a null hole for every request the
-        // filter rejected, so the matches have to be counted rather than read off .length
-        Map<String, String>[] rq = TestUtils.getCurrentRQ("end_session", TestUtils.getCountlyStore(foreground));
-        int endSessions = 0;
-        for (Map<String, String> request : rq) {
-            if (request != null && request.containsKey("end_session")) {
-                endSessions++;
-            }
-        }
         Assert.assertEquals("end_session must still be sent when only the views module is gone",
-            1, endSessions);
+            endSessionsBefore + 1, countRequestsWithKey(foreground, "end_session"));
 
         // the event path reads _cly.moduleViews for the view names, so it needs the same treatment
         foreground.moduleEvents.recordEventInternal("someKey", null, 1, 0.0d, 0.0d, null, null);
