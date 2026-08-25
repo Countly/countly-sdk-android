@@ -2,7 +2,7 @@ plugins {
   id 'com.android.application'
   // AGP 9 built-in Kotlin replaces the kotlin-android plugin; kapt moves to com.android.legacy-kapt
   // (resolved from google() via pluginManagement, versioned to match AGP).
-  id 'com.android.legacy-kapt' version '9.2.0'
+  id 'com.android.legacy-kapt' version '9.3.2'
   id 'androidx.navigation.safeargs.kotlin'
 }
 
@@ -35,12 +35,12 @@ android {
 
 dependencies {
 
-  implementation 'androidx.core:core-ktx:1.9.0'
-  implementation 'androidx.appcompat:appcompat:1.5.1'
-  implementation 'com.google.android.material:material:1.7.0'
-  implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-  implementation 'androidx.navigation:navigation-fragment-ktx:2.9.6'
-  implementation 'androidx.navigation:navigation-ui-ktx:2.9.6'
+  implementation 'androidx.core:core-ktx:1.17.0'
+  implementation 'androidx.appcompat:appcompat:1.7.1'
+  implementation 'com.google.android.material:material:1.13.0'
+  implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
+  implementation 'androidx.navigation:navigation-fragment-ktx:2.9.8'
+  implementation 'androidx.navigation:navigation-ui-ktx:2.9.8'
 
   implementation project(':sdk')
 }
