@@ -583,7 +583,7 @@ public class Countly {
         //Deliberately NOT halt(): deregistering an instance must not throw away data it recorded but has
         //not sent yet. Callers who want the data gone call halt() on the instance first.
         c.L.i("[Countly] removeInstance, stopping and deregistering instance [" + key + "], stored data is kept");
-        c.stopWithoutClearingData();
+        c.stop();
     }
 
     /**
@@ -1369,15 +1369,22 @@ public class Countly {
     }
 
     /**
-     * Stops this instance without touching its stored data: session and event tracking are disabled, the
-     * timer and worker threads are released, the process-global callbacks are unregistered, and the
-     * modules are torn down - but the request queue, event queue, device ID and consent state stay on
-     * disk, so a later {@code init(config)} on this instance picks up exactly where it left off and
-     * anything not yet sent to the server is still sent.
+     * Stops this instance without erasing anything it has stored.
      * <p>
-     * This is what {@link #removeInstance(String)} uses. {@link #halt()} is the same teardown plus a wipe.
+     * Session and event tracking stop, the timer and worker threads are released and the modules are torn
+     * down - but the request queue, event queue, device ID and consent state stay on disk. Initialising this
+     * instance again with {@code init(config)} resumes from where it left off, and anything recorded but not
+     * yet sent still gets sent.
+     * <p>
+     * The instance stays registered, so {@link #instance(String)} keeps returning this same object. The two
+     * related calls do strictly more: {@link #halt()} is this plus erasing the stored data, and
+     * {@link #removeInstance(String)} is this plus deregistering the name.
+     * <p>
+     * Stopping an instance that was never initialised only resets the object; files written by an earlier run
+     * are left alone. Call it from the main thread, and stop recording through this instance on other threads
+     * first, since everything the modules own goes away here.
      */
-    void stopWithoutClearingData() {
+    public void stop() {
         //see halt() for why this is not synchronized
         unsubscribeFromLifecycleBeforeTeardown();
         ScheduledExecutorService timerToDrain = tearDown(false);
