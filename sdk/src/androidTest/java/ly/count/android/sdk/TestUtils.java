@@ -374,6 +374,34 @@ public class TestUtils {
         validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, null, 0, 1);
     }
 
+    /**
+     * Waits until the current wall-clock second has enough room left that a test cannot accidentally cross a
+     * second boundary while it runs.
+     * <p>
+     * The SDK measures durations with {@link UtilsTime#currentTimestampSeconds()}, which truncates
+     * ({@code System.currentTimeMillis() / 1000}). A view started at x.999 and stopped at x+1.001 therefore
+     * reports one whole second for two milliseconds of work, and a test that sleeps 1000ms starting from
+     * x.900 reports two. Both are pure boundary luck, not slowness, and they are why the ModuleViews duration
+     * tests failed intermittently - one of them carrying the comment "duration comes off sometimes".
+     * <p>
+     * Starting each duration-sensitive test just after a boundary removes the problem without a tolerance on
+     * the assertions and without a clock hook in production code. It costs at most half a second, and only
+     * for the tests that call it.
+     */
+    public static void alignToSecondBoundary() {
+        long remainderMs = System.currentTimeMillis() % 1000L;
+        //500ms of headroom: enough for a "no duration" test to start and stop a view, and enough that a
+        //sleep(1000) plus its overshoot still lands inside the next second
+        if (remainderMs <= 500L) {
+            return;
+        }
+        try {
+            Thread.sleep(1000L - remainderMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation, String idOverride, int index, Integer interactionCount) {
         validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, idOverride, index, interactionCount);
     }
@@ -436,20 +464,12 @@ public class TestUtils {
 
         Assert.assertTrue(cDuration >= 0);
         if (duration != null) {
-            if (duration > 0.0d) {
-                //A non-zero expected duration in these tests is produced by really sleeping, and the SDK
-                //reports whole seconds. An overshooting Thread.sleep or a GC pause therefore carries the
-                //measured value one second past the expectation - which is why the ModuleViews duration
-                //tests failed intermittently under load, one of them carrying the comment "duration comes
-                //off sometimes". Tolerate exactly that single boundary and nothing wider: a duration wrong
-                //by more than one second is still a failure, and an under-reported one always is.
-                Assert.assertTrue("expected a duration of " + duration + " or " + (duration + 1)
-                    + " seconds (a sleep may overshoot one whole-second boundary), got " + cDuration,
-                    cDuration >= duration && cDuration <= duration + 1.0d);
-            } else {
-                //an expected zero means "no measurable time passed", which no sleep can inflate - keep exact
-                Assert.assertEquals(duration, cDuration);
-            }
+            //Exact, deliberately. Durations come from UtilsTime.currentTimestampSeconds(), which truncates
+            //(System.currentTimeMillis() / 1000), so a view spanning a second boundary reports a whole second
+            //for microseconds of work. That is handled by starting these tests inside a fresh second - see
+            //alignToSecondBoundary - rather than by loosening this assertion: "this view recorded no duration"
+            //is exactly the kind of thing these tests exist to catch.
+            Assert.assertEquals(duration, cDuration);
         }
 
         if (instant != null) {

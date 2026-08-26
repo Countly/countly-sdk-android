@@ -47,6 +47,7 @@ public class ModuleViewsTests {
 
     @Before
     public void setUp() {
+        TestUtils.alignToSecondBoundary();
         countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
         idx = 0;//reset the index for the view ID generator

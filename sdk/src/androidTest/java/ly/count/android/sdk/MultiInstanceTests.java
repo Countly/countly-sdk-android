@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import ly.count.android.sdk.messaging.ModulePush;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -259,10 +260,17 @@ public class MultiInstanceTests {
         Assert.assertFalse("precondition: push consent must start ungranted, otherwise giveConsent below is a no-op and this test proves nothing",
             named.consent().getConsent(Countly.CountlyFeatureNames.push));
 
-        final List<String> namedLog = new ArrayList<>();
+        //Copy-on-write, not ArrayList: this instance is initialised, so its logger is called from the SDK's
+        //background threads (network, timer) while the assertions below read the list. With a plain
+        //ArrayList this threw ConcurrentModificationException out of AbstractCollection.toString while
+        //building the "Log was:" message - the read side has to be snapshot-based.
+        final List<String> namedLog = new CopyOnWriteArrayList<>();
         named.L.SetListener((logMessage, logLevel) -> namedLog.add(logMessage));
 
         named.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.push });
+
+        //stop capturing before asserting, so nothing further arrives while the list is being read
+        named.L.SetListener(null);
 
         boolean broadcastSuppressed = false;
         for (String message : namedLog) {
@@ -1014,13 +1022,13 @@ public class MultiInstanceTests {
      */
     @Test
     public void feedbackWidgetParsing_reportsToTheOwningInstancesLogger() throws JSONException {
-        final List<String> namedLog = new ArrayList<>();
+        final List<String> namedLog = new CopyOnWriteArrayList<>();
         ModuleLog namedLogger = new ModuleLog();
         namedLogger.SetListener((logMessage, logLevel) -> namedLog.add(logMessage));
 
         // A listener on the DEFAULT instance's logger. That instance is deliberately left uninitialised:
         // an initialised one logs from background threads, which would make the assertion below racy.
-        final List<String> defaultLog = new ArrayList<>();
+        final List<String> defaultLog = new CopyOnWriteArrayList<>();
         Countly.sharedInstance().L.SetListener((logMessage, logLevel) -> defaultLog.add(logMessage));
 
         // an entry with an empty widget id makes parseFeedbackList emit a diagnostic about it
