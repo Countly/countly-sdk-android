@@ -502,6 +502,9 @@ public class Countly {
     /**
      * Halts every registered instance, including the default (shared) one.
      * <p>
+     * <b>Testing purposes only</b>, like the {@link #halt()} it is built on. It is not a "reset the SDK"
+     * call for production code, and the paragraph below about leaving instances uninitialised is why.
+     * <p>
      * <b>This destroys stored data.</b> Each instance is reset exactly as {@link #halt()} resets it, which
      * erases that instance's persisted state: its device ID and ID type (including the generated-UUID
      * cache), its consent, its queued requests and events, its cached remote-config values and its schema
@@ -517,7 +520,15 @@ public class Countly {
      * <p>
      * The instances remain registered, so a later {@code instance(name)} or {@code sharedInstance()} returns
      * the same (now halted) object, ready to be initialised again. To stop an instance without discarding
-     * its data, use {@link #removeInstance(String)}, which keeps everything on disk.
+     * its data, use {@link #stop()}, or {@link #removeInstance(String)} to also deregister the name - both
+     * keep everything on disk.
+     * <p>
+     * <b>After this call every instance is uninitialised, so every module accessor returns {@code null}</b> -
+     * {@code sharedInstance().events()}, {@code .views()}, {@code .requestQueue()}, {@code .attribution()}
+     * and the rest. Code that reaches for one of them without a null check, or without re-initialising
+     * first, will throw a {@code NullPointerException}. This bit the sample app during on-device testing:
+     * one call here left two of its screens crashing on {@code requestQueue()} and {@code attribution()}.
+     * Guard with {@link #isInitialized()} or call {@code init(config)} again before using any instance.
      */
     public static void haltAllInstances() {
         for (Countly c : instances_.values()) {
