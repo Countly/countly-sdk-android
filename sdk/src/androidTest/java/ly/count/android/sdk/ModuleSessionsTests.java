@@ -14,6 +14,7 @@ public class ModuleSessionsTests {
     @Before
     public void setUp() {
         TestUtils.getCountlyStore().clear();
+        TestUtils.alignToSecondBoundary();
     }
 
     @After
@@ -234,6 +235,7 @@ public class ModuleSessionsTests {
 
         TestUtils.validateRequiredParams(TestUtils.getCurrentRQ()[idx], deviceId);
         if (duration != null) {
+            //exact - see TestUtils#alignToSecondBoundary
             Assert.assertEquals(duration.toString(), request.get("session_duration"));
         }
 

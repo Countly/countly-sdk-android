@@ -16,6 +16,9 @@
     <activity
         android:name="ly.count.android.sdk.ContentOverlayViewTests$OverlayTestActivity"
         android:exported="false"/>
+    <activity
+        android:name="ly.count.android.sdk.ContentOverlayViewTests$NoWindowManagerActivity"
+        android:exported="false"/>
     <uses-library android:name="android.test.runner"/>
   </application>
 

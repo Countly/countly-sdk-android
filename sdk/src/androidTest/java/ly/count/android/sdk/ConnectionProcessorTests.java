@@ -239,7 +239,7 @@ public class ConnectionProcessorTests {
         assertFalse(urlConnection.getUseCaches());
         assertTrue(urlConnection.getDoInput());
         assertFalse(urlConnection.getDoOutput());
-        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + null)), urlConnection.getURL());
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + null, new ModuleLog())), urlConnection.getURL());
     }
 
     /**
@@ -252,7 +252,7 @@ public class ConnectionProcessorTests {
     public void urlConnectionForEventDataWithSalt() throws IOException {
         final String eventData = "blahblahblahasd";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
-        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue)), urlConnection.getURL());
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue, new ModuleLog())), urlConnection.getURL());
     }
 
     /**
@@ -266,7 +266,7 @@ public class ConnectionProcessorTests {
         final String eventData = "blahblahblah123";
         final String endpoint = "/thisthat";
         final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, endpoint);
-        assertEquals(new URL(connectionProcessor.getServerURL() + endpoint + "?" + eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue)), urlConnection.getURL());
+        assertEquals(new URL(connectionProcessor.getServerURL() + endpoint + "?" + eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue, new ModuleLog())), urlConnection.getURL());
     }
 
     /**

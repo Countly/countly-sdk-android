@@ -9,6 +9,7 @@ import android.os.Looper;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -30,19 +31,30 @@ public class ModuleContent extends ModuleBase {
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
 
-    private Activity currentActivity;
+    //Weak, like CountlyActivityHolder: the clearing path (onActivityDestroyed) only runs when the
+    //instance was initialised with an Application class - an instance without one (seeded through
+    //onInitialActivitySeeded) would otherwise pin the seeding Activity for as long as this instance
+    //lives, with the process-lifetime instance registry as the GC root.
+    private WeakReference<Activity> currentActivity;
     ContentOverlayView contentOverlay;
     // Buffered content when no activity is available
     private Map<Integer, TransparentActivityConfig> pendingContentConfigs;
 
+    private @Nullable Activity getCurrentActivity() {
+        return currentActivity != null ? currentActivity.get() : null;
+    }
+
     ModuleContent(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
-        L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + config.content.zoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
+        //the resolved interval, which is what this module actually uses below - logging the config's value
+        //would print a number the SDK is not honouring once the server behaviour settings override it
+        L.v("[ModuleContent] Initialising, zoneTimerInterval: [" + cly.moduleConfiguration.currentVZoneTimerInterval + "], globalContentCallback: [" + config.content.globalContentCallback + "]");
         iRGenerator = config.immediateRequestGenerator;
 
         contentInterface = new Content();
         countlyTimer = new CountlyTimer();
-        zoneTimerInterval = config.content.zoneTimerInterval;
+        //resolved for this instance by ModuleConfiguration, not read off the shared config
+        zoneTimerInterval = cly.moduleConfiguration.currentVZoneTimerInterval;
         webViewEnabled = config.webViewEnabled;
         globalContentCallback = config.content.globalContentCallback;
         if (!webViewEnabled) {
@@ -52,7 +64,16 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-        zoneTimerInterval = config.content.zoneTimerInterval;
+        //Reached on the main thread from the server-config response, so a teardown can have nulled
+        //moduleConfiguration in between; keep the current value rather than crashing on a dying instance.
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        if (configurationModule != null) {
+            zoneTimerInterval = configurationModule.currentVZoneTimerInterval;
+        } else {
+            //only the interval refresh is skipped - the content zone work below does not need that module,
+            //so keeping the current interval is better than dropping the whole configuration change
+            L.w("[ModuleContent] onSdkConfigurationChanged, the configuration module is gone, keeping the current zone timer interval");
+        }
         if (!configProvider.getContentZoneEnabled()) {
             exitContentZoneInternal();
         } else {
@@ -74,7 +95,7 @@ public class ModuleContent extends ModuleBase {
     @Override
     void onInitialActivitySeeded(@NonNull Activity activity) {
         L.d("[ModuleContent] onInitialActivitySeeded, activity: [" + activity.getClass().getSimpleName() + "]");
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
         if (UtilsDevice.cutout == null) {
             UtilsDevice.getCutout(activity);
         }
@@ -90,7 +111,7 @@ public class ModuleContent extends ModuleBase {
             UtilsDevice.getCutout(activity);
         }
 
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
 
         // Move existing overlay to the new activity
         if (contentOverlay != null && !activity.isFinishing() && !activity.isDestroyed()) {
@@ -123,7 +144,7 @@ public class ModuleContent extends ModuleBase {
     void onActivityDestroyed(@NonNull Activity activity) {
         // Identity check guards against clearing a newer activity when the destroy callback
         // for an older activity arrives after onActivityStarted of the next one (rotation race).
-        if (currentActivity == activity) {
+        if (getCurrentActivity() == activity) {
             currentActivity = null;
         }
         // The overlay itself is intentionally kept alive across activity transitions.
@@ -161,8 +182,9 @@ public class ModuleContent extends ModuleBase {
                         isCurrentlyInContentZone = true;
                         isCurrentlyRetrying = false;
 
-                        if (currentActivity != null && !currentActivity.isFinishing()) {
-                            showContentOverlay(currentActivity, placementCoordinates);
+                        Activity heldActivity = getCurrentActivity();
+                        if (heldActivity != null && !heldActivity.isFinishing()) {
+                            showContentOverlay(heldActivity, placementCoordinates);
                         } else {
                             L.d("[ModuleContent] fetchContentsInternal, no active activity, buffering content");
                             pendingContentConfigs = placementCoordinates;
@@ -299,10 +321,20 @@ public class ModuleContent extends ModuleBase {
         }
 
         // Do not show content if feedback widget is currently showing
-        if (_cly.moduleFeedback != null && _cly.moduleFeedback.feedbackOverlay != null) {
+        ModuleFeedback feedbackModule = _cly.moduleFeedback;
+        if (feedbackModule != null && feedbackModule.feedbackOverlay != null) {
             shouldFetchContents = true;
             isCurrentlyInContentZone = false;
             L.w("[ModuleContent] showContentOverlay, feedback widget is currently showing, skipping content");
+            return;
+        }
+
+        // Only one content or feedback overlay may be presented at a time across the whole process,
+        // including other SDK instances (the overlay is bound to the single foreground Activity).
+        if (ContentOverlayView.isOtherOverlayPresented(contentOverlay)) {
+            shouldFetchContents = true;
+            isCurrentlyInContentZone = false;
+            L.w("[ModuleContent] showContentOverlay, another content or feedback overlay is already being shown (possibly by another instance), skipping content");
             return;
         }
 
@@ -323,6 +355,7 @@ public class ModuleContent extends ModuleBase {
         int orientation = activity.getResources().getConfiguration().orientation;
 
         contentOverlay = new ContentOverlayView(
+            _cly,
             activity,
             portrait,
             landscape,
@@ -512,7 +545,8 @@ public class ModuleContent extends ModuleBase {
 
     @NonNull
     private Context getSafeAreaContext() {
-        return (currentActivity != null && !currentActivity.isFinishing()) ? currentActivity : _cly.context_;
+        Activity heldActivity = getCurrentActivity();
+        return (heldActivity != null && !heldActivity.isFinishing()) ? heldActivity : _cly.context_;
     }
 
     private void exitContentZoneInternal() {
@@ -573,7 +607,10 @@ public class ModuleContent extends ModuleBase {
                     enterContentZoneInternal(null, 0, null);
                 }
             });
-            _cly.moduleRequestQueue.attemptToSendStoredRequestsInternal();
+            ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+            if (requestQueueModule != null) {
+                requestQueueModule.attemptToSendStoredRequestsInternal();
+            }
         } else {
             enterContentZoneWithRetriesInternal();
         }

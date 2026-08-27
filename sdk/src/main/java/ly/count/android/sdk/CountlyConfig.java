@@ -3,6 +3,7 @@ package ly.count.android.sdk;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,11 @@ public class CountlyConfig {
     protected EventQueueProvider eventQueueProvider = null;
 
     protected RequestQueueProvider requestQueueProvider = null;
+
+    // Storage namespace of the instance that last init()ed with this config; null until one does.
+    String initialisedForNamespace = null;
+    // What these fields held before any init() touched them. See DerivedFieldSnapshot.
+    DerivedFieldSnapshot derivedFieldSnapshot = null;
 
     protected DeviceIdProvider deviceIdProvider = null;
 
@@ -520,6 +526,11 @@ public class CountlyConfig {
 
     /**
      * Allows you to add custom header key/value pairs to each request
+     * <p>
+     * The SDK copies these entries when it initialises, so changing the map you passed in afterwards has
+     * no effect on the requests it sends. To change a header while the SDK is running - rotating an
+     * authorization token, for example - call
+     * {@code Countly.sharedInstance().requestQueue().addCustomNetworkRequestHeaders(Map)}.
      *
      * @return Returns the same config object for convenient linking
      */
@@ -1291,4 +1302,156 @@ public class CountlyConfig {
      * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
      */
     public final ConfigExperimental experimental = new ConfigExperimental();
+
+    /**
+     * What a config's derived fields held before any {@code init()} touched them.
+     * <p>
+     * A CountlyConfig is meant to be used by exactly one Countly instance, but nothing stops a developer
+     * from passing one config to two instances - and {@code init()} plus the module constructors write
+     * their results back onto the config (the store, the queues, every {@code *Provider} back-reference,
+     * the DeviceInfo, and the temporary-device-id sentinel). Reusing such a config would silently hand
+     * the next instance the previous instance's objects: its store and request queue, its consent and
+     * device-id providers, even its app key and server URL through {@code baseInfoProvider}.
+     * <p>
+     * So the first {@code init()} to use a config snapshots these fields, and every later {@code init()}
+     * restores the snapshot before it starts. Each init then sees exactly what the developer configured,
+     * whether it is a second instance or the same instance re-initialised after {@code halt()}.
+     * <p>
+     * The same applies to the values the server behaviour settings resolve to: {@code ModuleConfiguration}
+     * writes those back onto the config from its own constructor, reading the STORED settings, so no
+     * server round trip is needed for one instance's settings to become the next instance's configuration.
+     * They are snapshotted as well, because inheriting a stored "consent not required" would silently
+     * switch consent gating off for an instance whose developer required it.
+     * <p>
+     * Deliberately NOT snapshotted: {@link CountlyConfig#initialActivity} (init clears it on purpose - a
+     * later init must not re-seed a possibly destroyed activity) and the idempotent value normalisations
+     * (server-URL trailing slash and the queue-size clamps), which yield the same result when re-applied.
+     * <p>
+     * Note the residual limitation: {@code init()} also aliases the config into the instance's
+     * {@code config_}, so two instances handed one config keep reading the same object after init.
+     * Restoring at init fixes what an instance STARTS with, not later cross-writes. One config per
+     * instance remains the rule, which is why init warns loudly when it sees reuse.
+     */
+    static final class DerivedFieldSnapshot {
+        private final CountlyStore countlyStore;
+        private final StorageProvider storageProvider;
+        private final EventQueueProvider eventQueueProvider;
+        private final RequestQueueProvider requestQueueProvider;
+        private final EventProvider eventProvider;
+        private final ConsentProvider consentProvider;
+        private final DeviceIdProvider deviceIdProvider;
+        private final BaseInfoProvider baseInfoProvider;
+        private final ViewIdProvider viewIdProvider;
+        private final ConfigurationProvider configProvider;
+        private final HealthTracker healthTracker;
+        private final DeviceInfo deviceInfo;
+        private final ImmediateRequestGenerator immediateRequestGenerator;
+        private final Countly.LifecycleObserver lifecycleObserver;
+        private final SafeIDGenerator safeViewIDGenerator;
+        private final SafeIDGenerator safeEventIDGenerator;
+        //What the developer had set on the config before any init touched it, and what the SDK left on it at
+        //the end of the last init. A value is only reset when it still holds what the SDK left - see
+        //restoreValuesOnto. The values themselves are the ones the SDK writes back: the temporary-device-id
+        //sentinel and the settings the server behaviour settings resolve.
+        private Object[] originalValues;
+        private Object[] appliedValues;
+
+        DerivedFieldSnapshot(@NonNull CountlyConfig config) {
+            countlyStore = config.countlyStore;
+            storageProvider = config.storageProvider;
+            eventQueueProvider = config.eventQueueProvider;
+            requestQueueProvider = config.requestQueueProvider;
+            eventProvider = config.eventProvider;
+            consentProvider = config.consentProvider;
+            deviceIdProvider = config.deviceIdProvider;
+            baseInfoProvider = config.baseInfoProvider;
+            viewIdProvider = config.viewIdProvider;
+            configProvider = config.configProvider;
+            healthTracker = config.healthTracker;
+            deviceInfo = config.deviceInfo;
+            immediateRequestGenerator = config.immediateRequestGenerator;
+            lifecycleObserver = config.lifecycleObserver;
+            safeViewIDGenerator = config.safeViewIDGenerator;
+            safeEventIDGenerator = config.safeEventIDGenerator;
+            originalValues = readValues(config);
+        }
+
+        /**
+         * The values the SDK itself writes back onto the config, in a fixed order. Held as an array rather
+         * than as three parallel copies of every field, so that "what the developer set", "what the SDK last
+         * left here" and "what is here now" can be compared position by position.
+         * <p>
+         * ADDING A VALUE THE SDK WRITES ONTO THE CONFIG MEANS ADDING IT TO BOTH readValues AND writeValue.
+         */
+        private static Object[] readValues(@NonNull CountlyConfig config) {
+            //Only deviceID: ModuleDeviceId writes the temporary-device-id sentinel onto the config, and that
+            //is now the ONLY value the SDK writes back. The settings the server behaviour settings resolve
+            //used to be here too; they are resolved per instance in ModuleConfiguration instead, so nothing
+            //has to be undone for them and a shared config is never mutated by the SDK.
+            return new Object[] {
+                config.deviceID,
+            };
+        }
+
+        private static void writeValue(@NonNull CountlyConfig config, int index, Object value) {
+            switch (index) {
+                case 0: config.deviceID = (String) value; break;
+                default: break;
+            }
+        }
+
+        /**
+         * Records what the config holds now, at the end of a successful init, as "what the SDK left here".
+         * A later init restores a value only when it is still untouched since this point - so the SDK's own
+         * write-backs (the temporary-device-id sentinel, the server-resolved settings) are undone, while a
+         * value the developer deliberately changed between the two inits is honoured.
+         */
+        void captureApplied(@NonNull CountlyConfig config) {
+            appliedValues = readValues(config);
+        }
+
+        private void restoreValuesOnto(@NonNull CountlyConfig config) {
+            if (appliedValues == null) {
+                //no init has completed with this config yet, so nothing has been written back to undo
+                return;
+            }
+            Object[] current = readValues(config);
+            for (int i = 0; i < current.length; i++) {
+                if (equal(current[i], appliedValues[i])) {
+                    //untouched since the SDK wrote it, so undo the SDK's write
+                    writeValue(config, i, originalValues[i]);
+                } else {
+                    //the developer changed it between inits: honour it AND adopt it as the new baseline.
+                    //Leaving the baseline frozen at the first init would revert this value on a LATER init,
+                    //once the SDK had written the developer's own value back and current == applied again.
+                    originalValues[i] = current[i];
+                }
+            }
+        }
+
+        private static boolean equal(Object a, Object b) {
+            return a == null ? b == null : a.equals(b);
+        }
+
+        void restoreOnto(@NonNull CountlyConfig config) {
+            restoreValuesOnto(config);
+            config.countlyStore = countlyStore;
+            config.storageProvider = storageProvider;
+            config.eventQueueProvider = eventQueueProvider;
+            config.requestQueueProvider = requestQueueProvider;
+            config.eventProvider = eventProvider;
+            config.consentProvider = consentProvider;
+            config.deviceIdProvider = deviceIdProvider;
+            config.baseInfoProvider = baseInfoProvider;
+            config.viewIdProvider = viewIdProvider;
+            config.configProvider = configProvider;
+            config.healthTracker = healthTracker;
+            config.deviceInfo = deviceInfo;
+            config.immediateRequestGenerator = immediateRequestGenerator;
+            config.lifecycleObserver = lifecycleObserver;
+            config.safeViewIDGenerator = safeViewIDGenerator;
+            config.safeEventIDGenerator = safeEventIDGenerator;
+        }
+
+    }
 }

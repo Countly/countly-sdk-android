@@ -9,7 +9,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.WeakReference;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ModuleCrash extends ModuleBase {
@@ -25,7 +27,20 @@ public class ModuleCrash extends ModuleBase {
     boolean recordAllThreads = false;
 
     //tracks whether the unhandled crash handler has already been installed, so we only wrap the global handler once
-    boolean unhandledCrashHandlerInstalled = false;
+    volatile boolean unhandledCrashHandlerInstalled = false;
+
+    //Thread.getDefaultUncaughtExceptionHandler()/setDefaultUncaughtExceptionHandler is process-global state,
+    //and installing wraps the handler that is there now. Two instances initialising on two threads hold no
+    //common monitor (init synchronises on its own Countly), so without this lock both could read the same
+    //existing handler and the second setDefault would drop the first instance out of the chain for good.
+    private static final Object crashHandlerLock = new Object();
+
+    //Kept so halt() can unlink this instance from the process-global handler chain; otherwise a halted
+    //instance stays reachable from Thread.getDefaultUncaughtExceptionHandler() and keeps recording.
+    private Thread.UncaughtExceptionHandler installedCrashHandler = null;
+    private Thread.UncaughtExceptionHandler previousCrashHandler = null;
+    //Set when we could not unlink; the handler then only delegates. Volatile: crashes hit any thread.
+    private volatile boolean crashHandlerDetached = false;
 
     @Nullable
     Map<String, Object> customCrashSegments = null;
@@ -47,12 +62,16 @@ public class ModuleCrash extends ModuleBase {
 
         recordAllThreads = config.crashes.recordAllThreadsWithCrash;
 
-        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment);
+        //Copy first, for the same reason as ModuleViews' global segmentation: this truncates in place and the
+        //map belongs to the developer's config, which a second instance may also be built from.
+        setCustomCrashSegmentsInternal(config.crashes.customCrashSegment == null ? null : new LinkedHashMap<>(config.crashes.customCrashSegment));
 
         metricOverride = config.metricOverride;
 
         crashesInterface = new Crashes();
-        breadcrumbHelper = new BreadcrumbHelper(config.sdkInternalLimits.maxBreadcrumbCount, L);
+        //the limit this instance RESOLVED (developer config plus the server behaviour settings), not the raw
+        //developer value on the config - this was the last reader still bypassing sdkInternalLimits_
+        breadcrumbHelper = new BreadcrumbHelper(cly.sdkInternalLimits_.maxBreadcrumbCount, L);
 
         assert breadcrumbHelper != null;
     }
@@ -89,7 +108,9 @@ public class ModuleCrash extends ModuleBase {
                     //record crash
                     recordNativeException(dumpFile);
 
-                    //delete dump file
+                    //Always drop the dump, including when consent is missing: retaining it would need a
+                    //cache with its own retention policy, and minidumps are raw process memory we do not
+                    //want sitting on the device waiting for a consent that may never come.
                     dumpFile.delete();
                 }
             }
@@ -143,11 +164,11 @@ public class ModuleCrash extends ModuleBase {
             combinedSegmentationValues.putAll(customCrashSegments);
         }
         if (customSegmentation != null) {
-            UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegmentation, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
+            UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegmentation, _cly.sdkInternalLimits_, L, "[ModuleCrash] sendCrashReportToQueue");
             combinedSegmentationValues.putAll(customSegmentation);
         }
 
-        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
+        UtilsInternalLimits.truncateSegmentationValues(combinedSegmentationValues, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleCrash] prepareCrashData", L);
 
         return new CrashData(error, combinedSegmentationValues, breadcrumbHelper.getBreadcrumbs(), deviceInfo.getCrashMetrics(_cly.context_, isNativeCrash, metricOverride, L), !handled);
     }
@@ -158,10 +179,10 @@ public class ModuleCrash extends ModuleBase {
         e.printStackTrace(pw);
 
         if (recordAllThreads) {
-            addAllThreadInformationToCrash(pw, _cly.config_.sdkInternalLimits);
+            addAllThreadInformationToCrash(pw, _cly.sdkInternalLimits_);
         }
 
-        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(sw.toString(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] prepareStackTrace", L);
+        String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(sw.toString(), _cly.sdkInternalLimits_.maxStackTraceLineLength, "[ModuleCrash] prepareStackTrace", L);
         return truncatedStackTrace;
     }
 
@@ -193,44 +214,98 @@ public class ModuleCrash extends ModuleBase {
             customSegments = segments;
         }
 
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegments, _cly.config_.sdkInternalLimits, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(customSegments, _cly.sdkInternalLimits_, L, "[ModuleCrash] setCustomCrashSegmentsInternal");
 
         customCrashSegments = customSegments;
     }
 
     void enableCrashReporting() {
-        if (unhandledCrashHandlerInstalled) {
-            //already installed, don't wrap the global handler again
-            return;
+        //read-then-set on the process-global handler chain: serialise it against any other instance doing
+        //the same, so no instance is silently dropped out of the chain
+        boolean installed = false;
+        synchronized (crashHandlerLock) {
+            if (!unhandledCrashHandlerInstalled && !crashHandlerDetached) {
+                //crashHandlerDetached means this module was already torn down; installing then would put a
+                //dead instance into the process-global chain with nothing left to unlink it
+                unhandledCrashHandlerInstalled = true;
+                //get default handler
+                final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
+                previousCrashHandler = oldHandler;
+
+                installedCrashHandler = new CountlyCrashHandler(this, oldHandler);
+
+                Thread.setDefaultUncaughtExceptionHandler(installedCrashHandler);
+                installed = true;
+            }
         }
-        L.d("[ModuleCrash] Enabling unhandled crash reporting");
-        unhandledCrashHandlerInstalled = true;
-        //get default handler
-        final Thread.UncaughtExceptionHandler oldHandler = Thread.getDefaultUncaughtExceptionHandler();
 
-        Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+        //log outside the lock: informListener runs the app's LogCallback, and no other SDK lock is held
+        //while calling into app code
+        if (installed) {
+            L.d("[ModuleCrash] Enabling unhandled crash reporting");
+        }
+    }
 
-            @Override
-            public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
-                L.d("[ModuleCrash] Uncaught crash handler triggered");
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes) && configProvider.getAutomaticCrashReportingEnabled()) {
+    /**
+     * The handler this instance installs into the process-global uncaught-exception chain.
+     * <p>
+     * Static, and holds the module only weakly, because {@code halt()} can unlink from the chain only
+     * while this handler is still the process default. Once the host app (or another Countly instance)
+     * installs a handler on top, there is no way to remove a link from the middle of the chain, so this
+     * object stays there for the life of the process. A strong reference would pin the halted module,
+     * and through it the whole Countly instance, its context and its queues, forever. Delegation to the
+     * previous handler must keep working either way, so that link is held strongly.
+     */
+    private static final class CountlyCrashHandler implements Thread.UncaughtExceptionHandler {
+        private final WeakReference<ModuleCrash> moduleRef;
+        private final Thread.UncaughtExceptionHandler previous;
 
-                    String stackTrace = prepareStackTrace(e);
-                    CrashData crashData = prepareCrashData(stackTrace, false, false, null);
-                    if (!crashFilterCheck(crashData, false)) {
-                        sendCrashReportToQueue(crashData, false);
+        CountlyCrashHandler(@NonNull ModuleCrash module, @Nullable Thread.UncaughtExceptionHandler previous) {
+            this.moduleRef = new WeakReference<>(module);
+            this.previous = previous;
+        }
+
+        @Override
+        public void uncaughtException(@NonNull Thread t, @NonNull Throwable e) {
+            ModuleCrash module = moduleRef.get();
+            //a halted (or already collected) instance only delegates, its queues are torn down
+            if (module != null && !module.crashHandlerDetached) {
+                //The record pipeline runs developer code (crash filters) and allocation-heavy metric
+                //collection on a thread that is already crashing. If any of it throws, the exception must
+                //not escape this handler: the runtime would swallow it, every handler further down the
+                //chain - other Countly instances and Android's own KillApplicationHandler - would never
+                //run, no crash dialog would show, and the process would be left alive with a dead thread.
+                try {
+                    module.recordUnhandledCrash(e);
+                } catch (Throwable recordFailure) {
+                    try {
+                        module.L.e("[ModuleCrash] uncaughtException, failed to record the crash, delegating anyway [" + recordFailure + "]");
+                    } catch (Throwable ignored) {
+                        //the logger itself may run app code (log listener); nothing may stop the delegation
                     }
                 }
-
-                //if there was another handler before
-                if (oldHandler != null) {
-                    //notify it also
-                    oldHandler.uncaughtException(t, e);
-                }
             }
-        };
 
-        Thread.setDefaultUncaughtExceptionHandler(handler);
+            //if there was another handler before, notify it also
+            if (previous != null) {
+                previous.uncaughtException(t, e);
+            }
+        }
+    }
+
+    /**
+     * Records an unhandled crash on this instance. Kept off the handler itself so the handler can stay a
+     * static class with no strong link back to this module.
+     */
+    private void recordUnhandledCrash(@NonNull Throwable e) {
+        L.d("[ModuleCrash] Uncaught crash handler triggered");
+        if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes) && configProvider.getAutomaticCrashReportingEnabled()) {
+            String stackTrace = prepareStackTrace(e);
+            CrashData crashData = prepareCrashData(stackTrace, false, false, null);
+            if (!crashFilterCheck(crashData, false)) {
+                sendCrashReportToQueue(crashData, false);
+            }
+        }
     }
 
     /**
@@ -261,12 +336,12 @@ public class ModuleCrash extends ModuleBase {
 
         crashData.calculateChangedFields();
 
-        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(crashData.getBreadcrumbs(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
-        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.config_.sdkInternalLimits, L, "[ModuleCrash] sendCrashReportToQueue");
+        UtilsInternalLimits.applyInternalLimitsToBreadcrumbs(crashData.getBreadcrumbs(), _cly.sdkInternalLimits_, L, "[ModuleCrash] sendCrashReportToQueue");
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(crashData.getCrashSegmentation(), _cly.sdkInternalLimits_, L, "[ModuleCrash] sendCrashReportToQueue");
         // Stack trace line limits must not be applied to native crashes: the "stack trace" of a
         // native crash is a single-line base64 dump, so per-line truncation would corrupt the dump.
         if (!isNativeCrash) {
-            String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.config_.sdkInternalLimits.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
+            String truncatedStackTrace = UtilsInternalLimits.applyInternalLimitsToStackTraces(crashData.getStackTrace(), _cly.sdkInternalLimits_.maxStackTraceLineLength, "[ModuleCrash] sendCrashReportToQueue", L);
             crashData.setStackTrace(truncatedStackTrace);
         }
         UtilsInternalLimits.removeUnsupportedDataTypes(crashData.getCrashSegmentation(), L);
@@ -349,7 +424,7 @@ public class ModuleCrash extends ModuleBase {
             return _cly;
         }
 
-        breadcrumbHelper.addBreadcrumb(breadcrumb, _cly.config_.sdkInternalLimits.maxValueSize, _cly.config_.sdkInternalLimits.maxBreadcrumbCount);
+        breadcrumbHelper.addBreadcrumb(breadcrumb, _cly.sdkInternalLimits_.maxValueSize, _cly.sdkInternalLimits_.maxBreadcrumbCount);
         return _cly;
     }
 
@@ -375,8 +450,18 @@ public class ModuleCrash extends ModuleBase {
 
         //check for previous native crash dumps
         if (config.crashes.checkForNativeCrashDumps) {
-            //flag so that this can be turned off during testing
-            _cly.moduleCrash.checkForNativeCrashDumps(config.context);
+            //sdk-native writes dumps to one fixed process-wide path, so only the storage owner may
+            //consume them - otherwise the first instance to init claims every dump under its app key.
+            if (_cly.storageNamespace_.isEmpty()) {
+                //flag so that this can be turned off during testing
+                //called directly: _cly.moduleCrash is this very module
+                checkForNativeCrashDumps(config.context);
+            } else {
+                //Warn, not debug: reading the folder is also what deletes it, so in an app that only ever
+                //initialises named instances nothing consumes the dumps and they accumulate on disk.
+                //Initialise the default instance as well if you use native crash reporting.
+                L.w("[ModuleCrash] initFinished, skipping the native crash dump check: the process-global dump folder belongs to the default instance, so native crashes are only reported (and the dumps only deleted) when the default instance is initialised");
+            }
         }
     }
 
@@ -398,7 +483,38 @@ public class ModuleCrash extends ModuleBase {
 
     @Override
     void halt() {
+        //stop recording first, so a crash racing this teardown can not touch the dying queues. This runs
+        //before any check: Countly#tearDown reaches the module halts after the store and the connection
+        //queue are already gone, so leaving this instance recording for even a moment longer is exactly
+        //what the flag exists to prevent.
+        crashHandlerDetached = true;
 
+        //Read installedCrashHandler under the same lock that installs it, so an install racing this teardown
+        //cannot slip between the null check and the unlink. Log outside the lock: informListener runs the
+        //app's LogCallback, and no other SDK lock is ever held while calling into app code.
+        String outcome = null;
+        synchronized (crashHandlerLock) {
+            if (installedCrashHandler != null) {
+                if (Thread.getDefaultUncaughtExceptionHandler() == installedCrashHandler) {
+                    //still the process default, so restoring unlinks us entirely and makes the instance collectable
+                    Thread.setDefaultUncaughtExceptionHandler(previousCrashHandler);
+                    outcome = "[ModuleCrash] halt, restored the previously installed uncaught exception handler";
+                } else {
+                    //Another handler sits on top and there is no way to remove a link from the middle of the
+                    //chain, so ours stays there for the life of the process, neutralised. It only holds this
+                    //module weakly, so the halted instance is still collectable; it keeps delegating downstream.
+                    outcome = "[ModuleCrash] halt, another uncaught exception handler was installed on top of this one, it stays in the chain but will no longer record crashes";
+                }
+
+                installedCrashHandler = null;
+                previousCrashHandler = null;
+                unhandledCrashHandlerInstalled = false;
+            }
+        }
+
+        if (outcome != null) {
+            L.d(outcome);
+        }
     }
 
     public class Crashes {

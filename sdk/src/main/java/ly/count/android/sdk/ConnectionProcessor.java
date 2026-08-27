@@ -107,14 +107,14 @@ public class ConnectionProcessor implements Runnable {
             // for binary images, checksum will be calculated without url encoded value of the requestData
             // because they sent as form-data and server calculates it that way
             if (!hasPicturePath) {
-                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt(), L);
                 requestData += "&checksum256=" + checksum;
                 L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
                 approximateDateSize += requestData.length(); // add request data to the estimated data size
             }
         } else {
             urlStr += "?" + requestData;
-            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt(), L);
             urlStr += "&checksum256=" + checksum;
             L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
         }
@@ -188,7 +188,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
-            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt()), boundary);
+            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt(), L), boundary);
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
@@ -531,7 +531,7 @@ public class ConnectionProcessor implements Runnable {
                         }
 
                         responseCode = httpConn.getResponseCode();
-                        responseString = Utils.inputStreamToString(connInputStream);
+                        responseString = Utils.inputStreamToString(connInputStream, L);
                     }
 
                     long readingStreamTime = UtilsTime.getNanoTime() - pccTsReadingStream;

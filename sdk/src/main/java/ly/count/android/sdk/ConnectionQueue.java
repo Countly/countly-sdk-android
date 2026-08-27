@@ -33,6 +33,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -73,6 +74,15 @@ class ConnectionQueue implements RequestQueueProvider {
     protected ConsentProvider consentProvider;//link to the consent module
     protected ModuleRequestQueue moduleRequestQueue = null;//todo remove in the future
     protected DeviceInfo deviceInfo = null;//todo ?remove in the future?
+
+    // Back-reference to the owning Countly instance. Used to read per-instance state (session
+    // flags, SDK identity, init state) instead of reaching for Countly.sharedInstance(), which
+    // would always resolve to the default instance and corrupt/misread it under multi-instance.
+    protected Countly cly = null;
+
+    // Per-instance certificate/public-key pinning material (moved off Countly's former statics).
+    protected String[] publicKeyPinCertificates = null;
+    protected String[] certificatePinCertificates = null;
     StorageProvider storageProvider;
     ConfigurationProvider configProvider;
     RequestInfoProvider requestInfoProvider;
@@ -125,19 +135,19 @@ class ConnectionQueue implements RequestQueueProvider {
         // when both are set the custom factory wins and pinning is expected to be baked into it.
         if (customSSLSocketFactory != null) {
             sslSocketFactory_ = customSSLSocketFactory;
-            if (Countly.publicKeyPinCertificates != null || Countly.certificatePinCertificates != null) {
+            if (publicKeyPinCertificates != null || certificatePinCertificates != null) {
                 L.w("[ConnectionQueue] A custom SSL socket factory is set, the built-in certificate/public key pinning trust manager will not be applied");
             }
             return;
         }
 
-        if (Countly.publicKeyPinCertificates == null && Countly.certificatePinCertificates == null) {
+        if (publicKeyPinCertificates == null && certificatePinCertificates == null) {
             sslSocketFactory_ = null;
             return;
         }
 
         try {
-            TrustManager[] tm = { new CertificateTrustManager(Countly.publicKeyPinCertificates, Countly.certificatePinCertificates) };
+            TrustManager[] tm = { new CertificateTrustManager(publicKeyPinCertificates, certificatePinCertificates) };
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(null, tm, null);
             sslSocketFactory_ = sslContext.getSocketFactory();
@@ -182,7 +192,7 @@ class ConnectionQueue implements RequestQueueProvider {
         //assert baseInfoProvider.getServerURL() != null;
         //assert UtilsNetworking.isValidURL(baseInfoProvider.getServerURL());
         //assert storageProvider != null;
-        //assert Countly.publicKeyPinCertificates != null && baseInfoProvider.getServerURL().startsWith("https");
+        //assert publicKeyPinCertificates != null && baseInfoProvider.getServerURL().startsWith("https");
 
         if (context_ == null) {
             if (L != null) {
@@ -208,7 +218,7 @@ class ConnectionQueue implements RequestQueueProvider {
             }
             return false;
         }
-        if (Countly.publicKeyPinCertificates != null && !baseInfoProvider.getServerURL().startsWith("https")) {
+        if (publicKeyPinCertificates != null && !baseInfoProvider.getServerURL().startsWith("https")) {
             if (L != null) {
                 L.e("[Connection Queue] server must start with https once you specified public keys");
             }
@@ -247,7 +257,7 @@ class ConnectionQueue implements RequestQueueProvider {
             }
         }
 
-        Countly.sharedInstance().isBeginSessionSent = true;
+        cly.isBeginSessionSent = true;
 
         addRequestToQueue(data, false, null);
         tick();
@@ -365,16 +375,26 @@ class ConnectionQueue implements RequestQueueProvider {
 
         L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
 
-        // To ensure begin_session will be fully processed by the server before token_session
-        final ScheduledExecutorService worker = Executors.newSingleThreadScheduledExecutor();
-        worker.schedule(new Runnable() {
-            @Override
-            public void run() {
-                L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
-                addRequestToQueue(data, false, null);
-                tick();
-            }
-        }, 10, TimeUnit.SECONDS);
+        // To ensure begin_session will be fully processed by the server before token_session.
+        // Scheduled on this queue's own backoff scheduler, NOT a method-local executor: the local one
+        // leaked a worker thread per token refresh and outlived shutdownExecutors(), so a teardown inside
+        // the 10-second window let the task write a token request carrying the pre-teardown device id
+        // into a store that halt() had just cleared. The backoff scheduler is shutdownNow()-ed on
+        // teardown, which cancels a not-yet-started task - exactly the wanted lifecycle.
+        try {
+            backoffScheduler_.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
+                    addRequestToQueue(data, false, null);
+                    tick();
+                }
+            }, 10, TimeUnit.SECONDS);
+        } catch (RejectedExecutionException ex) {
+            //the scheduler is already shut down: this queue was discarded by a teardown, drop the token
+            //request rather than writing into a store the owning instance no longer manages
+            L.d("[Connection Queue] tokenSession, queue is already torn down, dropping the token request");
+        }
     }
 
     /**
@@ -775,8 +795,8 @@ class ConnectionQueue implements RequestQueueProvider {
         return "app_key=" + UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey())
             + "&device_id=" + UtilsNetworking.urlEncodeString(deviceId)
             + "&timestamp=" + instant.timestampMs
-            + "&sdk_version=" + Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING
-            + "&sdk_name=" + Countly.sharedInstance().COUNTLY_SDK_NAME
+            + "&sdk_version=" + cly.COUNTLY_SDK_VERSION_STRING
+            + "&sdk_name=" + cly.COUNTLY_SDK_NAME
             + "&av=" + UtilsNetworking.urlEncodeString(deviceInfo.getAppVersionWithOverride(context_, metricOverride));
     }
 
@@ -928,12 +948,33 @@ class ConnectionQueue implements RequestQueueProvider {
      * Ensures that an executor has been created for ConnectionProcessor instances to be submitted to.
      */
     void ensureExecutor() {
-        if (executor_ == null) {
+        if (executor_ == null || executor_.isShutdown()) {
             if (L != null) {
                 L.v("[ConnectionQueue] ensureExecutor, Creating new executor");
             }
             executor_ = Executors.newSingleThreadExecutor();
         }
+    }
+
+    /**
+     * Releases this queue's worker threads. Called when the owning instance is halted, which discards
+     * the whole ConnectionQueue and builds a new one on the next init - without this, every halt/init
+     * cycle and every instance would strand its request executor and backoff scheduler threads, which
+     * are non-daemon and therefore live for the rest of the process.
+     * <p>
+     * {@code shutdown()} rather than {@code shutdownNow()}: a request already being sent is allowed to
+     * finish rather than being interrupted mid-flight.
+     */
+    void shutdownExecutors() {
+        if (executor_ != null) {
+            //shutdown(), not shutdownNow(): a request already on the wire is allowed to finish rather than
+            //being interrupted mid-flight
+            executor_.shutdown();
+        }
+        //shutdownNow() for the backoff scheduler: a retry that has not started yet must NOT fire after the
+        //owning instance is gone, because tick() would then revive this discarded queue through
+        //ensureExecutor() and drain with a context that teardown already cleared
+        backoffScheduler_.shutdownNow();
     }
 
     /**
@@ -956,7 +997,7 @@ class ConnectionQueue implements RequestQueueProvider {
         boolean cpDoneIfOngoing = connectionProcessorFuture_ != null && connectionProcessorFuture_.isDone();
         L.v("[ConnectionQueue] tick, IsRQEmpty:[" + rqEmpty + "], HasOngoingProcess:[" + (connectionProcessorFuture_ == null) + "], OngoingProcess_Done:[" + cpDoneIfOngoing + "]");
 
-        if (!Countly.sharedInstance().isInitialized()) {
+        if (cly == null || !cly.isInitialized()) {
             L.e("[ConnectionQueue] tick, SDK is not initialized");
             //attempting to tick when the SDK is not initialized
             return;

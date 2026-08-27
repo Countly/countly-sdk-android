@@ -275,11 +275,18 @@ public class Utils {
 
     /**
      * Read stream into a byte array
+     * <p>
+     * Kept for source compatibility - this is public API and nothing inside the SDK calls it any more. It uses
+     * a silent logger, so a read failure is not reported anywhere; prefer {@link #readStream(InputStream, ModuleLog)}.
      *
      * @param stream input to read
      * @return stream contents or {@code null} in case of error
      */
     public static byte[] readStream(InputStream stream) {
+        return readStream(stream, new ModuleLog());
+    }
+
+    public static byte[] readStream(InputStream stream, @NonNull ModuleLog L) {
         if (stream == null) {
             return null;
         }
@@ -293,7 +300,7 @@ public class Utils {
             }
             return bytes.toByteArray();
         } catch (IOException e) {
-            Countly.sharedInstance().L.e("Couldn't read stream: " + e);
+            L.e("Couldn't read stream: " + e);
             return null;
         } finally {
             try {
@@ -304,7 +311,7 @@ public class Utils {
         }
     }
 
-    static String inputStreamToString(InputStream stream) {
+    static String inputStreamToString(InputStream stream, @NonNull ModuleLog L) {
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
 
         StringBuilder sbRes = new StringBuilder();
@@ -314,7 +321,7 @@ public class Utils {
             try {
                 streamLine = br.readLine();
             } catch (IOException e) {
-                Countly.sharedInstance().L.e("", e);
+                L.e("", e);
                 break;
             }
 

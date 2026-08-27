@@ -164,7 +164,7 @@ public class HealthCheckCounter implements HealthTracker {
             encodedData = java.net.URLEncoder.encode(encodedData, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
             // should never happen because Android guarantees UTF-8 support
-            Countly.sharedInstance().L.e("[getMetrics] encode failed, [" + ex + "]");
+            L.e("[getMetrics] encode failed, [" + ex + "]");
         }
 
         sb.append(encodedData);

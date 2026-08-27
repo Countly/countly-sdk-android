@@ -45,7 +45,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         consentProvider = this;
         config.consentProvider = this;
         L.v("[ModuleConsent] constructor, Initialising");
-        L.i("[ModuleConsent] Is consent required? [" + config.shouldRequireConsent + "]");
+        //the value ModuleConfiguration resolved for THIS instance (developer config plus the stored server
+        //behaviour settings), not the shared config object, which the SDK no longer writes to
+        final boolean resolvedRequiresConsent = cly.moduleConfiguration.currentVRequiresConsent;
+        L.i("[ModuleConsent] Is consent required? [" + resolvedRequiresConsent + "]");
 
         //setup initial consent data structure
         //initialize all features to "false"
@@ -54,8 +57,8 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         //react to given consent during init
-        if (config.shouldRequireConsent) {
-            requiresConsent = config.shouldRequireConsent;
+        if (resolvedRequiresConsent) {
+            requiresConsent = resolvedRequiresConsent;
             if (config.enabledFeatureNames == null && !config.enableAllConsents) {
                 L.i("[ModuleConsent] constructor, Consent has been required but no consent was given during init");
             } else {
@@ -152,7 +155,13 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      */
     void doPushConsentSpecialAction(final boolean consentValue) {
         L.d("[ModuleConsent] doPushConsentSpecialAction, consentValue: [" + consentValue + "]");
+        // Push is owned process-wide by the default instance. setConsentPush gates the store write; the
+        // broadcast is gated here because CountlyPush reacts to it by registering the DEFAULT's token.
         _cly.countlyStore.setConsentPush(consentValue);
+        if (!_cly.storageNamespace_.isEmpty()) {
+            L.d("[ModuleConsent] doPushConsentSpecialAction, named instance does not own push, skipping the process-global consent broadcast");
+            return;
+        }
         _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
     }
 
@@ -293,7 +302,14 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-        requiresConsent = config.shouldRequireConsent;
+        //Reached on the main thread from the server-config response, so a teardown can have nulled
+        //moduleConfiguration in between; keep the current value rather than crashing on a dying instance.
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        if (configurationModule != null) {
+            requiresConsent = configurationModule.currentVRequiresConsent;
+        } else {
+            L.w("[ModuleConsent] onSdkConfigurationChanged, the configuration module is gone, keeping the current requiresConsent value");
+        }
     }
 
     @Override

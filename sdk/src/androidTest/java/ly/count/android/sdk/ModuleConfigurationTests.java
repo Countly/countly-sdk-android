@@ -959,8 +959,9 @@ public class ModuleConfigurationTests {
             .defaults();
 
         Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
-        // Verify initial state
-        Assert.assertFalse(Countly.sharedInstance().config_.shouldRequireConsent);
+        // Verify initial state. The consent requirement is asserted on the instance, not on the config: the
+        // SDK resolves it per instance and no longer writes it back onto the developer's CountlyConfig.
+        Assert.assertFalse(Countly.sharedInstance().moduleConsent.requiresConsent);
         serverConfigBuilder.validateAgainst(Countly.sharedInstance());
 
         // use a feature that is not affected directly from the server configuration
@@ -971,7 +972,10 @@ public class ModuleConfigurationTests {
         serverConfigBuilder.consentRequired(true);
         Countly.sharedInstance().sdkIsInitialised = false;
         Countly.sharedInstance().init(TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(serverConfigBuilder.build())));
-        Assert.assertTrue(Countly.sharedInstance().config_.shouldRequireConsent);
+        Assert.assertTrue("the server's consent requirement must take effect on the instance",
+            Countly.sharedInstance().moduleConsent.requiresConsent);
+        Assert.assertFalse("...without being written back onto the developer's config, which a second instance may also hold",
+            Countly.sharedInstance().config_.shouldRequireConsent);
         serverConfigBuilder.validateAgainst(Countly.sharedInstance());
 
         Assert.assertEquals(3, TestUtils.getCurrentRQ().length); // first attribution request, empty consent, empty location
@@ -1015,9 +1019,13 @@ public class ModuleConfigurationTests {
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         Assert.assertEquals(1, TestUtils.getCountlyStore().getEventQueueSize());
 
-        validateEventInRQ("test_event", TestUtils.map(), 0, 1, 0, 3);
-        validateEventInRQ("test_event_1", TestUtils.map(), 0, 1, 1, 3);
-        validateEventInRQ("test_event_2", TestUtils.map(), 0, 1, 2, 3);
+        // Looked up by key, not by position: which slot an event lands in inside a batch depends on when the
+        // event queue was flushed relative to the session and timer machinery, and this test is about the
+        // batch SIZE the server configuration asked for, not about ordering. Asserting the index made this
+        // test fail intermittently on this branch AND on staging (measured 5/12 and 2/4 full runs).
+        validateEventInRQByKey("test_event", TestUtils.map(), 0, 1, 3);
+        validateEventInRQByKey("test_event_1", TestUtils.map(), 0, 1, 3);
+        validateEventInRQByKey("test_event_2", TestUtils.map(), 0, 1, 3);
     }
 
     /**
@@ -1283,8 +1291,34 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().feedback().reportFeedbackWidgetManually(widget, null, null);
     }
 
+    /**
+     * Server behaviour settings must be able to RAISE a developer-set internal limit, not just lower it.
+     * Precedence is SERVER > STORED > PROVIDED > DEVELOPER, so the server value wins whichever direction it
+     * moves - it is not an AND-gate or a min() of the two. Every other limits assertion in this suite happens
+     * to move the value DOWN from the SDK default, so this direction was untested.
+     */
+    @Test
+    public void internalLimits_serverCanRaiseTheDeveloperLimit() throws JSONException {
+        countlyStore.setServerConfig(new ServerConfigBuilder().defaults().keyLengthLimit(500).build());
+
+        CountlyConfig config = TestUtils.createBaseConfig().setLoggingEnabled(false);
+        config.sdkInternalLimits.setMaxKeyLength(10);
+
+        Countly countly = new Countly().init(config);
+
+        Assert.assertEquals("the server must be able to raise a developer limit; this is not an AND-gate",
+            Integer.valueOf(500), countly.sdkInternalLimits_.maxKeyLength);
+        Assert.assertEquals("the developer's config must not be rewritten by the resolution",
+            Integer.valueOf(10), config.sdkInternalLimits.maxKeyLength);
+    }
+
     private static void validateEventInRQ(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventIdx, eventCount);
+    }
+
+    /** Order-independent variant: asserts the event is in the request's batch, whatever slot it occupies. */
+    private static void validateEventInRQByKey(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventCount) throws JSONException {
+        ModuleEventsTests.validateEventInRQByKey(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventCount);
     }
 
     private void base_allFeatures(Consumer<ServerConfigBuilder> consumer, int hc, int fc, int rc, int cc, int scc) throws JSONException, InterruptedException {
