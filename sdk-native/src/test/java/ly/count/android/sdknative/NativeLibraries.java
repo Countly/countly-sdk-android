@@ -2,6 +2,9 @@ package ly.count.android.sdknative;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,9 +55,25 @@ final class NativeLibraries {
     /** The copyLibs task stages BUILD_OUTPUT_DIR here, and AGP packages this into the AAR. */
     static final File PACKAGED_DIR = new File("src/main/jniLibs");
 
+    /** The NDK revision build.sh insists on. One line, nothing else. */
+    static final File NDK_VERSION_FILE = new File("src/cpp_precompilation/ndk.version");
+
     private static final FilenameFilter SHARED_OBJECTS = (dir, name) -> name.endsWith(".so");
 
     private NativeLibraries() {
+    }
+
+    /** The NDK revision pinned in NDK_VERSION_FILE, as the NDK's source.properties spells it: "28.2.13676358". */
+    static String pinnedNdkVersion() throws IOException {
+        String version = new String(Files.readAllBytes(NDK_VERSION_FILE.toPath()), StandardCharsets.UTF_8).trim();
+        assertFalse("Empty " + NDK_VERSION_FILE.getAbsolutePath(), version.isEmpty());
+        return version;
+    }
+
+    /** The build number part of the pinned revision, which is what the NDK stamps into the libraries. */
+    static String pinnedNdkBuildNumber() throws IOException {
+        String version = pinnedNdkVersion();
+        return version.substring(version.lastIndexOf('.') + 1);
     }
 
     /** Every shared object packaged into the AAR, across all ABIs. */

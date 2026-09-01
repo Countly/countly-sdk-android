@@ -65,4 +65,7 @@ tasks.matching { it.name ==~ /test.*UnitTest/ }.configureEach {
   inputs.dir(layout.projectDirectory.dir('libs'))
     .withPropertyName('precompiledNativeLibraries')
     .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.file(layout.projectDirectory.file('src/cpp_precompilation/ndk.version'))
+    .withPropertyName('pinnedNdkVersion')
+    .withPathSensitivity(PathSensitivity.RELATIVE)
 }

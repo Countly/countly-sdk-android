@@ -13,10 +13,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * The .so files this module publishes are compiled by hand from src/cpp_precompilation, using an NDK
- * that is not pinned anywhere in the Gradle build, and committed to the repository. Nothing in the
- * build verifies them, so a rebuild that quietly changes what gets published would otherwise only
- * surface once integrators hit it.
+ * The .so files this module publishes are compiled by hand from src/cpp_precompilation with the NDK
+ * pinned in src/cpp_precompilation/ndk.version, and committed to the repository. Nothing in the
+ * Gradle build recompiles or verifies them, so a rebuild that quietly changes what gets published
+ * would otherwise only surface once integrators hit it.
  *
  * These tests cover the ways a rebuild has gone wrong or could go wrong: an ABI dropped or left
  * behind, a missing STL, a library that no longer exports the JNI entry points, debug symbols shipped
@@ -120,6 +120,35 @@ public class NativeLibraryPackagingTests {
         }
 
         assertTrue("Debug information left in the prebuilt libraries: " + failures, failures.isEmpty());
+    }
+
+    /**
+     * build.sh refuses to run with any NDK other than the one in ndk.version, and the NDK writes its
+     * release name and build number into every library it links. Reading that back closes the loop:
+     * the committed binaries provably come from the pinned toolchain, and moving to another NDK is a
+     * deliberate edit of one file rather than whatever happened to be on the maintainer's PATH.
+     */
+    @Test
+    public void nativeLibrariesWereBuiltWithThePinnedNdk() throws IOException {
+        String pinned = NativeLibraries.pinnedNdkVersion();
+        String pinnedBuildNumber = NativeLibraries.pinnedNdkBuildNumber();
+        List<String> failures = new ArrayList<>();
+
+        for (String abi : NativeLibraries.ABIS) {
+            File library = new File(new File(NativeLibraries.PACKAGED_DIR, abi), NativeLibraries.SDK_LIBRARY);
+            ElfFile elf = ElfFile.read(library);
+            String buildNumber = elf.androidNdkBuildNumber();
+
+            if (buildNumber == null) {
+                failures.add(abi + "/" + NativeLibraries.SDK_LIBRARY + " records no NDK build number in .note.android.ident");
+            } else if (!buildNumber.equals(pinnedBuildNumber)) {
+                failures.add(abi + "/" + NativeLibraries.SDK_LIBRARY + " was built with NDK " + elf.androidNdkVersion()
+                    + " (build " + buildNumber + "), not the pinned " + pinned);
+            }
+        }
+
+        assertTrue("Prebuilt libraries do not come from the NDK in " + NativeLibraries.NDK_VERSION_FILE + ": " + failures,
+            failures.isEmpty());
     }
 
     /**

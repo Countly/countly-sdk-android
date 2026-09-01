@@ -3,16 +3,22 @@ package ly.count.android.plugins
 import okhttp3.*
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.StopActionException
-
-import static groovy.io.FileType.FILES
+import org.gradle.api.tasks.TaskProvider
 
 class UploadSymbolsPluginExtension {
   String app_key = ""
   String server = ""
   String mappingFile = "outputs/mapping/release/mapping.txt"
   String dumpSymsPath = "/usr/bin"
-  String nativeObjectFilesDir = "intermediates/cmake/release/obj"
+  /**
+   * Directory of .so files to dump, relative to the build directory, where BUILD_TYPE stands for the
+   * variant's build type. Unset means the libraries AGP merges for the variant, which is what the APK
+   * ships: the module's own, still unstripped, plus the ones pulled out of AARs.
+   */
+  String nativeObjectFilesDir = null
   String noteJava = "sdk-plugin automatic upload of mapping.txt"
   String noteNative = "sdk-plugin automatic upload of breakpad symbols"
 }
@@ -82,92 +88,74 @@ class UploadSymbolsPlugin implements Plugin<Project> {
       }
     }
 
-    project.tasks.register('uploadNativeSymbols') {
-      group = "countly"
-      description = "Upload breakpad symbols folder to Countly server"
-
-      // Resolve project/extension values at configuration time to avoid
-      // capturing non-serializable Project reference in task actions
-      def buildVersion = project.android.defaultConfig.versionName
-      def appKey = ext.app_key
-      def serverUrl = ext.server
-      def noteNative = ext.noteNative
-      def dumpSymsPath = ext.dumpSymsPath
-      def objectsDirPath = "${project.buildDir}/${ext.nativeObjectFilesDir}"
-      def countlyDirStr = "${project.buildDir}/intermediates/countly"
-
-      if (!appKey || !serverUrl) {
-        logger.warn("[Countly] uploadNativeSymbols: 'app_key' or 'server' is empty. " +
-            "Make sure the countly block is configured before this task is realized. " +
-            "Disabling task.")
-        enabled = false
+    // Native symbols come from one task per application variant, fed by the libraries AGP merges for
+    // that variant. Running the task builds those libraries first, so it can never dump a stale .so
+    // that no longer matches the APK, and the directory includes what AARs contribute, such as
+    // libcountly_native.so. AGP publishes it as SingleArtifact.MERGED_NATIVE_LIBS since 8.1; on older
+    // versions, or outside an application module, a single task reads nativeObjectFilesDir as before.
+    def components = project.extensions.findByName('androidComponents')
+    def mergedNativeLibs = mergedNativeLibsArtifact(components)
+    if (project.plugins.hasPlugin('com.android.application') && mergedNativeLibs != null) {
+      def everyRelease = project.tasks.register('uploadNativeSymbols') {
+        group = "countly"
+        description = "Upload breakpad symbols of every release variant to Countly server"
       }
-
-      doLast {
-        String url = "${serverUrl}/i/crash_symbols/upload_symbol"
-        String breakpadVersion = "$dumpSymsPath/dump_syms --version".execute().getText().trim()
-
-        if (!(breakpadVersion =~ /^\d+\.\d+\+cly$/)) {
-          breakpadVersion = "0.1+bpd"
-        }
-
-        def objectsDir = new File(objectsDirPath)
-        def countlyDir = new File(countlyDirStr)
-        logger.debug("uploadNativeSymbols, Version name:[ {} ], Upload symbol url:[ {} ], objectsDir:[ {} ], countlyDirStr:[ {} ], countlyDir:[ {} ], breakpadVersion:[ {} ]", buildVersion, url, objectsDir, countlyDirStr, countlyDir, breakpadVersion)
-
-        countlyDir.deleteDir()
-        countlyDir.mkdirs()
-        def filterObjectFiles = ~/.*\.so$/
-        def i = 0
-        def processFile = {
-          i = i + 1
-          def cmd = "$dumpSymsPath/dump_syms $it"
-          println cmd
-          def proc = cmd.execute()
-          def outputStream = new StringBuffer()
-          def currentSymbolFile = new File("$countlyDirStr/current_$i")
-          proc.waitForProcessOutput(outputStream, System.err)
-          BufferedWriter bwr = new BufferedWriter(new FileWriter(currentSymbolFile))
-          bwr.write(outputStream.toString())
-          bwr.flush()
-          bwr.close()
-          def line = ""
-          currentSymbolFile.withReader { line = it.readLine() }
-          def words = line.split()
-          File symbolDir = new File("$countlyDirStr/symbols/${words[-1]}/${words[-2]}")
-          println symbolDir
-          symbolDir.mkdirs()
-          File newFile = new File("$symbolDir/${words[-1]}.sym")
-          newFile << currentSymbolFile.text
-          currentSymbolFile.delete()
-        }
-        objectsDir.traverse type: FILES, visit: processFile, nameFilter: filterObjectFiles
-        def tarFileName = "$countlyDirStr/symbols.tar.gz"
-        // Use standalone AntBuilder instead of project.ant for configuration cache compatibility
-        new groovy.ant.AntBuilder().tar(destfile: tarFileName, basedir: "$countlyDirStr", includes: "symbols/**", compression: "gzip")
-        File file = new File(tarFileName)
-        RequestBody formBody = new MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart("symbols", file.getName(),
-                RequestBody.create(MediaType.parse("text/plain"), file))
-            .addFormDataPart("platform", "android_native")
-            .addFormDataPart("app_key", appKey)
-            .addFormDataPart("build", buildVersion)
-            .addFormDataPart("note", noteNative)
-            .addFormDataPart("sym_tool_ver", breakpadVersion)
-            .build()
-        Request request = new Request.Builder().url(url).post(formBody).build()
-        logger.debug("uploadNativeSymbols, Generated request: {}", request.body().toString())
-
-        OkHttpClient client = new OkHttpClient()
-        Response response = client.newCall(request).execute()
-
-        if (response.code() != 200) {
-          logger.error("uploadNativeSymbols, An error occurred while uploading the symbols folder: {}", response.body().string())
-        } else {
-          logger.debug("uploadNativeSymbols, File upload successful")
+      components.onVariants(components.selector().all()) { variant ->
+        String variantName = variant.name
+        def upload = registerNativeUpload(project, ext, "uploadNativeSymbols${variantName.capitalize()}",
+            variantName, variant.buildType ?: variantName,
+            variant.artifacts.get(mergedNativeLibs), variant.outputs.first().versionName)
+        if (variant.buildType == 'release') {
+          everyRelease.configure { dependsOn upload }
         }
       }
+    } else {
+      if (components != null && mergedNativeLibs == null) {
+        project.logger.warn("[Countly] This Android Gradle plugin predates SingleArtifact.MERGED_NATIVE_LIBS (AGP 8.1). " +
+            "uploadNativeSymbols reads nativeObjectFilesDir and does not build the libraries first; run it right after assembling.")
+      }
+      registerNativeUpload(project, ext, 'uploadNativeSymbols', 'release', 'release', null, null)
+    }
+  }
+
+  /**
+   * Registers the upload of one variant's symbols. The configuration closure runs when the task is
+   * realized, after the build script has run its countly block, so the extension is complete by then.
+   * mergedLibs and variantVersionName are null on the fallback path, where AGP offers neither.
+   */
+  private static TaskProvider<UploadNativeSymbolsTask> registerNativeUpload(Project project, UploadSymbolsPluginExtension ext,
+      String taskName, String variantName, String buildType, Provider<Directory> mergedLibs, Provider<String> variantVersionName) {
+    project.tasks.register(taskName, UploadNativeSymbolsTask) { task ->
+      task.description = "Upload breakpad symbols of the ${variantName} variant to Countly server"
+      task.server.set(ext.server)
+      task.appKey.set(ext.app_key)
+      task.note.set(ext.noteNative)
+      task.dumpSymsPath.set(ext.dumpSymsPath)
+      task.workDir.set(project.layout.buildDirectory.dir("intermediates/countly/${variantName}"))
+
+      String defaultVersionName = project.android.defaultConfig.versionName
+      task.versionName.set(variantVersionName != null ? variantVersionName.orElse(defaultVersionName) : defaultVersionName)
+
+      if (ext.nativeObjectFilesDir != null) {
+        task.nativeLibs.set(project.layout.buildDirectory.dir(BreakpadSymbols.substituteBuildType(ext.nativeObjectFilesDir, buildType)))
+      } else if (mergedLibs != null) {
+        task.nativeLibs.set(mergedLibs)
+      } else {
+        task.nativeLibs.set(project.layout.buildDirectory.dir("intermediates/merged_native_libs/${buildType}"))
+      }
+    }
+  }
+
+  /** SingleArtifact.MERGED_NATIVE_LIBS, or null when this AGP is too old to have it. */
+  private static Object mergedNativeLibsArtifact(Object components) {
+    if (components == null) {
+      return null
+    }
+    try {
+      return Class.forName('com.android.build.api.artifact.SingleArtifact$MERGED_NATIVE_LIBS', true, components.class.classLoader)
+          .getField('INSTANCE').get(null)
+    } catch (ReflectiveOperationException ignored) {
+      return null
     }
   }
 }
