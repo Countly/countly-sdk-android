@@ -47,8 +47,10 @@ final class BreakpadSymbols {
     if (words.length < 5 || words[0] != 'MODULE') {
       throw new IllegalArgumentException("Expected a breakpad MODULE record from dump_syms, got: ${line}")
     }
-    // The file name is everything after the id, so a name with spaces in it stays whole.
-    new Module(words[1], words[2], words[3], words[4..-1].join(' '))
+    // The file name is everything after the id, so a name with spaces in it stays whole. Plain Java
+    // rather than a Groovy range: the plugin is compiled by the Groovy 4 bundled with Gradle 9, and a
+    // range compiles to a runtime call the Groovy 3 in Gradle 8 does not have.
+    new Module(words[1], words[2], words[3], String.join(' ', Arrays.copyOfRange(words, 4, words.length)))
   }
 
   /** BUILD_TYPE in nativeObjectFilesDir stands for the variant's build type, as documented. */

@@ -12,11 +12,21 @@ buildscript {
 
 android {
   namespace 'ly.count.android.sdknative'
+  // This module has no Kotlin sources. AGP 9's built-in Kotlin would still publish kotlin-stdlib, at
+  // the build's Kotlin version, as a dependency and force that Kotlin version onto every integrator.
+  enableKotlin = false
   compileSdk 37
 
   defaultConfig {
     minSdk 21
     targetSdk 37
+
+    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would force
+    // every integrator to compile against SDK 37. This module only touches Context.getCacheDir(),
+    // Log and File, so its real compile floor is its minSdk; declare that, as the sdk module does.
+    aarMetadata {
+      minCompileSdk 21
+    }
 
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
   }
