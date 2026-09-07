@@ -44,7 +44,7 @@ public class ModuleFeedbackTests {
 
     @Test
     public void parseFeedbackList_null() throws JSONException {
-        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(null);
+        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(null, new ModuleLog());
         Assert.assertNotNull(ret);
         Assert.assertEquals(0, ret.size());
     }
@@ -56,7 +56,7 @@ public class ModuleFeedbackTests {
 
         JSONObject jObj = new JSONObject(requestJson);
 
-        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
+        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj, new ModuleLog());
         Assert.assertNotNull(ret);
         Assert.assertEquals(1, ret.size());
         ValidateReturnedFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps, "fsdfsdf", "5f97284635935cc338e78200", new String[] { "/" }, ret.get(0));
@@ -69,7 +69,7 @@ public class ModuleFeedbackTests {
 
         JSONObject jObj = new JSONObject(requestJson);
 
-        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
+        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj, new ModuleLog());
         Assert.assertNotNull(ret);
         Assert.assertEquals(4, ret.size());
 
@@ -100,7 +100,7 @@ public class ModuleFeedbackTests {
 
         JSONObject jObj = new JSONObject(requestJson);
 
-        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj);
+        List<ModuleFeedback.CountlyFeedbackWidget> ret = ModuleFeedback.parseFeedbackList(jObj, new ModuleLog());
         Assert.assertNotNull(ret);
         Assert.assertEquals(6, ret.size());
 
@@ -699,7 +699,10 @@ public class ModuleFeedbackTests {
     private Activity getCurrentActivity(ModuleFeedback module) throws Exception {
         java.lang.reflect.Field field = ModuleFeedback.class.getDeclaredField("currentActivity");
         field.setAccessible(true);
-        return (Activity) field.get(module);
+        //the module holds the activity weakly (so an instance without lifecycle callbacks cannot pin
+        //a destroyed activity); unwrap to keep these identity assertions meaningful
+        java.lang.ref.WeakReference<?> ref = (java.lang.ref.WeakReference<?>) field.get(module);
+        return ref != null ? (Activity) ref.get() : null;
     }
 
     // ======== Activity reference / leak prevention tests (issue #556) ========

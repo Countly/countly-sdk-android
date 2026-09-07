@@ -1,18 +1,23 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.graphics.PixelFormat;
 import android.view.View;
 import android.view.WindowManager;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +47,8 @@ public class ContentOverlayViewTests {
 
     private ContentOverlayView overlay;
     private ActivityScenario<OverlayTestActivity> scenario;
+    //every overlay createOverlay() hands out, so tearDown can release them all - see createOverlay
+    private final List<ContentOverlayView> createdOverlays = new ArrayList<>();
 
     /**
      * Bare activity used as a host for ContentOverlayView in tests.
@@ -51,6 +58,26 @@ public class ContentOverlayViewTests {
         @Override
         protected void onCreate(@Nullable Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+        }
+    }
+
+    /**
+     * A host activity that hands out no WindowManager, so ContentOverlayView's window attach fails after
+     * the presentation guard has already been claimed. A real Activity subclass rather than a mock:
+     * mocking Activity from inside ActivityScenario.onActivity (the main thread) deadlocks.
+     * Declared in sdk/src/androidTest/AndroidManifest.xml.
+     */
+    public static class NoWindowManagerActivity extends Activity {
+        // Off until the activity is up: the framework itself needs the WindowManager to build the
+        // activity's window, so withholding it from the start would break the launch.
+        volatile boolean withholdWindowManager = false;
+
+        @Override
+        public Object getSystemService(@NonNull String name) {
+            if (withholdWindowManager && Context.WINDOW_SERVICE.equals(name)) {
+                return null;
+            }
+            return super.getSystemService(name);
         }
     }
 
@@ -71,6 +98,27 @@ public class ContentOverlayViewTests {
             } catch (Exception ignored) {
             }
             overlay = null;
+        }
+        overlay = null;
+        // Destroy every overlay this test created, not just the one the `overlay` field happens to hold:
+        // each one registered process-global orientation and activity-lifecycle callbacks in its
+        // constructor, and any that survives keeps receiving events for the rest of the instrumentation
+        // process, perturbing later classes that assert exact request-queue contents. destroy() is
+        // idempotent, so overlays a test already released are unaffected.
+        if (!createdOverlays.isEmpty()) {
+            final List<ContentOverlayView> stranded = new ArrayList<>(createdOverlays);
+            createdOverlays.clear();
+            try {
+                InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                    for (ContentOverlayView view : stranded) {
+                        try {
+                            view.destroy();
+                        } catch (Exception ignored) {
+                        }
+                    }
+                });
+            } catch (Exception ignored) {
+            }
         }
         if (scenario != null) {
             try {
@@ -105,8 +153,8 @@ public class ContentOverlayViewTests {
         landscape.url = "about:blank";
         landscape.useSafeArea = false;
 
-        return new ContentOverlayView(
-            activity, portrait, landscape,
+        ContentOverlayView created = new ContentOverlayView(
+            Countly.sharedInstance(), activity, portrait, landscape,
             activity.getResources().getConfiguration().orientation,
             callback,
             onClose != null ? onClose : () -> {
@@ -114,6 +162,12 @@ public class ContentOverlayViewTests {
             null,
             contentUrlHandler
         );
+        //Every ContentOverlayView constructor registers process-global orientation and activity-lifecycle
+        //callbacks, so one that is never destroyed keeps receiving events for the rest of the instrumentation
+        //process and perturbs later test classes that assert exact request-queue contents. Most tests here
+        //keep their overlay in a local, which tearDown can not see, so track them all centrally.
+        createdOverlays.add(created);
+        return created;
     }
 
     private Object getField(String fieldName) throws Exception {
@@ -955,7 +1009,7 @@ public class ContentOverlayViewTests {
             landscape.useSafeArea = false;
 
             overlay = new ContentOverlayView(
-                activity, portrait, landscape,
+                Countly.sharedInstance(), activity, portrait, landscape,
                 Configuration.ORIENTATION_PORTRAIT, null, () -> {
             }, null, null);
 
@@ -1164,6 +1218,116 @@ public class ContentOverlayViewTests {
             } catch (Exception e) {
                 Assert.fail("Failed to verify: " + e);
             }
+        });
+    }
+
+    /**
+     * Process-global presentation guard: only one content/feedback overlay may be presented at a
+     * time across all instances. attachToActivity claims it, close() releases it, and the presenting
+     * overlay is not "other" to itself (so it can still refresh in place).
+     */
+    @Test
+    public void presentationGuard_isProcessGlobal_releasedOnClose() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            ContentOverlayView other = createOverlay(activity); // created but never attached
+
+            overlay.attachToActivity(activity);
+            Assert.assertTrue("attach claims the presentation guard", ContentOverlayView.isOverlayPresented());
+            Assert.assertTrue("a different overlay must see one already presented", ContentOverlayView.isOtherOverlayPresented(other));
+            Assert.assertFalse("the presenting overlay is not 'other' to itself", ContentOverlayView.isOtherOverlayPresented(overlay));
+
+            overlay.close(null);
+            Assert.assertFalse("close releases the guard", ContentOverlayView.isOverlayPresented());
+            Assert.assertFalse(ContentOverlayView.isOtherOverlayPresented(other));
+
+            // the constructor registers process-global orientation and lifecycle callbacks, so an
+            // overlay that is never attached still has to be destroyed or it keeps receiving events
+            // for the rest of the test run
+            other.destroy();
+        });
+    }
+
+    /**
+     * The guard is claimed before the window attach, so an attach that then FAILS must hand it back.
+     * Otherwise nothing ever releases it - the overlay was never shown, so no close()/destroy() follows -
+     * and every later content and feedback overlay in the process is silently blocked for good.
+     */
+    @Test
+    public void presentationGuard_isReleasedWhenTheWindowAttachFails() {
+        ActivityScenario<NoWindowManagerActivity> brokenScenario = ActivityScenario.launch(NoWindowManagerActivity.class);
+        try {
+            brokenScenario.onActivity(activity -> {
+                overlay = createOverlay(activity);
+                ContentOverlayView other = createOverlay(activity); // created but never attached
+
+                // Without a WindowManager the attach cannot complete: measuring the window throws, and
+                // even if it did not, addToWindow would find no WindowManager. Either way the guard has
+                // already been claimed by then. attachToActivity rethrows so the caller's error handling
+                // is unchanged - what must NOT survive is a stranded guard.
+                activity.withholdWindowManager = true;
+                try {
+                    overlay.attachToActivity(activity);
+                } catch (RuntimeException expected) {
+                    // the attach failed loudly; that is the case under test
+                }
+
+                Assert.assertFalse("a failed attach must not leave the process-global guard claimed",
+                    ContentOverlayView.isOverlayPresented());
+                Assert.assertFalse("an overlay that never attached must not block the next one",
+                    ContentOverlayView.isOtherOverlayPresented(other));
+
+                // Both overlays registered process-global callbacks in their constructors. tearDown cannot
+                // reach either one - it destroys `overlay` only through the `scenario` field, and this test
+                // runs in a locally scoped scenario - so release both here, while the host activity is
+                // still alive and destroy() can remove a window on the main thread.
+                other.destroy();
+                overlay.destroy();
+                overlay = null;
+            });
+        } finally {
+            brokenScenario.close();
+        }
+    }
+
+    /**
+     * When the presentation guard blocks a feedback widget, the developer's callback must still be
+     * resolved. Every other early exit in the present path reports back, so a caller that awaits
+     * onFinished/onClosed before continuing would otherwise wait forever.
+     */
+    @Test
+    public void feedbackWidgetBlockedByPresentationGuard_reportsToTheDeveloperCallback() {
+        withActivity(activity -> {
+            // a foreign overlay holds the process-global guard
+            overlay = createOverlay(activity);
+            overlay.attachToActivity(activity);
+            Assert.assertTrue(ContentOverlayView.isOverlayPresented());
+
+            ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
+            widget.widgetId = "widgetBlockedByGuard";
+            widget.type = ModuleFeedback.FeedbackWidgetType.survey;
+            //a non-empty version takes the overlay path directly, with no preflight network call
+            widget.widgetVersion = "1";
+
+            final AtomicReference<String> reportedError = new AtomicReference<>(null);
+            final AtomicBoolean finishedCalled = new AtomicBoolean(false);
+            final AtomicBoolean closedCalled = new AtomicBoolean(false);
+
+            Countly.sharedInstance().feedback().presentFeedbackWidget(widget, activity, null,
+                new ModuleFeedback.FeedbackCallback() {
+                    @Override public void onClosed() {
+                        closedCalled.set(true);
+                    }
+
+                    @Override public void onFinished(String error) {
+                        finishedCalled.set(true);
+                        reportedError.set(error);
+                    }
+                });
+
+            Assert.assertTrue("the blocked widget must report back to the developer callback", finishedCalled.get());
+            Assert.assertNotNull("the callback must be told why the widget was not shown", reportedError.get());
+            Assert.assertFalse("the widget was never shown, so it must not report as closed", closedCalled.get());
         });
     }
 

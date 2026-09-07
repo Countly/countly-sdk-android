@@ -55,6 +55,9 @@ public class ConnectionQueueTests {
         Countly.sharedInstance().halt();
         Countly.sharedInstance().setLoggingEnabled(true);
         freshConnQ = new ConnectionQueue();
+        // A bare ConnectionQueue has no owning Countly; give it one so beginSession/common-request
+        // data (which read the owner's SDK identity + session flag) behave as before.
+        freshConnQ.cly = Countly.sharedInstance();
         Countly.sharedInstance().init(new CountlyConfig(TestUtils.getContext(), appKey, "http://countly.coupons.com"));
         connQ = Countly.sharedInstance().connectionQueue_;
 

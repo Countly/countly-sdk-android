@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # Gradle dependencies across every module. Dependabot opens one PR per module, so a
+  # dependency declared in several places (androidx.appcompat is in app, app-kotlin,
+  # app-benchmark and app-native) produces several PRs; check that a bump lands everywhere
+  # before closing the others.
+  #
+  # IMPORTANT: the SDK ships `minSdk 21` and promises integrators `compileSdk 34`. Several
+  # androidx artifacts moved past both of those, so their newest versions are NOT
+  # upgradeable here and are ignored below. Verify any new ignore against the real AAR
+  # metadata (`minSdkVersion` in the manifest, `minCompileSdk` in
+  # META-INF/com/android/build/gradle/aar-metadata.properties) rather than assuming.
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+    commit-message:
+      prefix: "chore(deps)"
+    ignore:
+      # minSdk 23 from 2.10.0, and lifecycle-runtime-compose 2.9.x forces consumers to
+      # compileSdk 35 through androidx family version alignment.
+      - dependency-name: "androidx.lifecycle:*"
+        versions: [">=2.9.0"]
+      # minSdk 23 from 1.8.0
+      - dependency-name: "androidx.appcompat:appcompat"
+        versions: [">=1.8.0"]
+      # minSdk 23 from 1.14.0
+      - dependency-name: "com.google.android.material:material"
+        versions: [">=1.14.0"]
+      # minSdk 23 from 1.18.0
+      - dependency-name: "androidx.core:core-ktx"
+        versions: [">=1.18.0"]
+      - dependency-name: "androidx.core:core"
+        versions: [">=1.18.0"]
+      # minSdk 23 from 25.0.0
+      - dependency-name: "com.google.firebase:firebase-messaging"
+        versions: [">=25.0.0"]
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"

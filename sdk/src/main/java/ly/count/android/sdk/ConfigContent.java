@@ -41,8 +41,11 @@ public class ConfigContent {
      * Set the URI schemes that content (and feedback widget) overlay links are allowed to open via
      * ACTION_VIEW. When a non-empty list is provided, only links whose scheme is in the list are
      * opened. When left empty (the default), any scheme except known-dangerous ones ("file",
-     * "content", "javascript", "jar", "data") is allowed, so http(s) and deep links keep working.
-     * Schemes are matched case-insensitively.
+     * "content", "javascript", "jar", "zip", "intent", "data") is allowed, so http(s) and deep links
+     * keep working. Schemes are matched case-insensitively.
+     * <p>
+     * This same list also governs which schemes may load as sub-resources (images, fonts, styles)
+     * inside the content and feedback web views, where "https" always loads.
      *
      * @param allowedIntentSchemes the URI schemes permitted for overlay links, for example ["https", "myapp"]
      * @return config content to chain calls

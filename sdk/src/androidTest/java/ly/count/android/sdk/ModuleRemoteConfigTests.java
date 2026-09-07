@@ -43,7 +43,7 @@ public class ModuleRemoteConfigTests {
 
         //set RC
         String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
-        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
         Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
@@ -166,7 +166,7 @@ public class ModuleRemoteConfigTests {
             Assert.assertEquals(0, countly.remoteConfig().getValues().size());
 
             String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
-            countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+            countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
             Assert.assertEquals(2, countly.remoteConfig().getValues().size());
             assertCValueCachedState(countly.remoteConfig().getValues(), false);
 
@@ -194,7 +194,7 @@ public class ModuleRemoteConfigTests {
             }
 
             //entering temp ID mode should trigger caching. Lack of consent should leave no impact on this
-            countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+            countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
             countly.deviceId().enableTemporaryIdMode();
 
             for (int b = 0; b < 2; b++) {
@@ -219,7 +219,7 @@ public class ModuleRemoteConfigTests {
     public void validateValuePersistence() {
         //set RC
         String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
-        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
 
         CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
         config.enableRemoteConfigValueCaching();
@@ -244,7 +244,7 @@ public class ModuleRemoteConfigTests {
 
         //set RC
         String[] rcArr = new String[] { rcEStr("a", 123), rcEStr("b", "fg") };
-        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
         Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
@@ -253,7 +253,7 @@ public class ModuleRemoteConfigTests {
 
         Assert.assertEquals(0, countly.remoteConfig().getValues().size());
 
-        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
         Assert.assertEquals("fg", countly.remoteConfig().getValue("b").value);
@@ -357,7 +357,7 @@ public class ModuleRemoteConfigTests {
         JSONArray jArrI = new JSONArray("[3,\"44\",5.1,7.7]");
         JSONObject jObjI = new JSONObject("{\"q\":6,\"w\":\"op\"}");
         String[] rcArr = new String[] { rcEStr("a", 123, false), rcEStr("b", "fg"), rcEStr("c", 222222222222L, false), rcEStr("d", 1.5d), rcEStr("e", jArrI, false), rcEStr("f", jObjI) };
-        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false).dataToString());
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
 
         Assert.assertEquals(123, countly.remoteConfig().getValue("a").value);
         Assert.assertEquals(123, countly.remoteConfig().getValueAndEnroll("a").value);
@@ -509,9 +509,9 @@ public class ModuleRemoteConfigTests {
         Countly countly = new Countly();
         countly.init(cc);
 
-        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false);
-        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("{\"b\": 33.44,\"c\": \"ww\"}", false);
-        RemoteConfigValueStore rcvs3 = RemoteConfigValueStore.dataFromString("{\"t\": {},\"87\": \"yy\"}", false);
+        RemoteConfigValueStore rcvs1 = RemoteConfigValueStore.dataFromString("{\"a\": 123,\"b\": \"fg\"}", false, new ModuleLog());
+        RemoteConfigValueStore rcvs2 = RemoteConfigValueStore.dataFromString("{\"b\": 33.44,\"c\": \"ww\"}", false, new ModuleLog());
+        RemoteConfigValueStore rcvs3 = RemoteConfigValueStore.dataFromString("{\"t\": {},\"87\": \"yy\"}", false, new ModuleLog());
 
         //check initial state
         Map<String, Object> vals = countly.remoteConfig().getAllValues();
@@ -519,7 +519,7 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals(0, vals.size());
 
         //add first values without clearing
-        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs1.values));
+        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs1.values, new ModuleLog()));
 
         vals = countly.remoteConfig().getAllValues();
         Assert.assertEquals(2, vals.size());
@@ -527,7 +527,7 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals("fg", vals.get("b"));
 
         //add second pair of values without clearing
-        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs2.values));
+        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(false, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs2.values, new ModuleLog()));
 
         vals = countly.remoteConfig().getAllValues();
         Assert.assertEquals(3, vals.size());
@@ -536,7 +536,7 @@ public class ModuleRemoteConfigTests {
         Assert.assertEquals("ww", vals.get("c"));
 
         //add third pair with full clear
-        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(true, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs3.values));
+        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(true, RemoteConfigHelper.DownloadedValuesIntoMap(rcvs3.values, new ModuleLog()));
 
         vals = countly.remoteConfig().getAllValues();
         Assert.assertEquals(2, vals.size());
@@ -559,9 +559,9 @@ public class ModuleRemoteConfigTests {
         };
         Countly countly = new Countly().init(cc);
 
-        RemoteConfigValueStore rcvsA = RemoteConfigValueStore.dataFromString("{\"k1\":123,\"k2\":\"v2\"}", false);
-        RemoteConfigValueStore rcvsB = RemoteConfigValueStore.dataFromString("{\"k2\":777,\"k3\":{}}", false);
-        RemoteConfigValueStore rcvsC = RemoteConfigValueStore.dataFromString("{\"k4\":true,\"k5\":55.5}", false);
+        RemoteConfigValueStore rcvsA = RemoteConfigValueStore.dataFromString("{\"k1\":123,\"k2\":\"v2\"}", false, new ModuleLog());
+        RemoteConfigValueStore rcvsB = RemoteConfigValueStore.dataFromString("{\"k2\":777,\"k3\":{}}", false, new ModuleLog());
+        RemoteConfigValueStore rcvsC = RemoteConfigValueStore.dataFromString("{\"k4\":true,\"k5\":55.5}", false, new ModuleLog());
 
         RemoteConfigValueStore[] arr = new RemoteConfigValueStore[] { rcvsA, rcvsB, rcvsC };
 
@@ -581,7 +581,7 @@ public class ModuleRemoteConfigTests {
                     for (int j = 0; j < MERGE_OPS; j++) {
                         RemoteConfigValueStore pick = arr[(idx + j) % arr.length];
                         boolean clear = (j % 10) == 0; // occasionally force a clear path
-                        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(clear, RemoteConfigHelper.DownloadedValuesIntoMap(pick.values));
+                        countly.moduleRemoteConfig.mergeCheckResponseIntoCurrentValues(clear, RemoteConfigHelper.DownloadedValuesIntoMap(pick.values, new ModuleLog()));
                     }
                 } catch (Exception ex) {
                     failure[0] = ex;

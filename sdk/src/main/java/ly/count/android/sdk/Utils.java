@@ -38,18 +38,18 @@ public class Utils {
     protected static final String COMM_URL = "https://countly_action_event";
 
     /**
-     * Schemes that are never dispatched to ACTION_VIEW from server-controlled content, because they
-     * can read local data or run script. Used as the default denylist when no scheme allow-list is
-     * set. "data" and "blob" are intentionally NOT here — they are inline / runtime-generated assets
-     * (images, fonts, CSS) widgets legitimately embed and cannot read app-local data, so they load
-     * in the default mode and, like any other scheme, follow an allow-list when one is configured.
+     * Schemes that server-controlled content may neither dispatch to ACTION_VIEW nor load as a
+     * WebView sub-resource, because they can read local data ("file", "content", "jar", "zip"), run
+     * script ("javascript"), redirect the intent to another component ("intent"), or carry
+     * attacker-authored bytes instead of a locatable resource ("data"). Used as the default denylist
+     * when no scheme allow-list is set.
      */
-    private static final Set<String> DANGEROUS_INTENT_SCHEMES = new HashSet<>(Arrays.asList("file", "content", "javascript", "jar"));
+    private static final Set<String> DANGEROUS_SCHEMES = new HashSet<>(Arrays.asList("file", "content", "javascript", "jar", "zip", "intent", "data"));
 
     /**
      * Scheme policy for externally-dispatched links (content overlay links, push notification links).
      * When {@code allowedSchemes} is non-empty, only those schemes are permitted (allow-list mode).
-     * Otherwise any scheme except the known-dangerous ones is permitted (deep links such as
+     * Otherwise any scheme except {@link #DANGEROUS_SCHEMES} is permitted (deep links such as
      * "myapp", "market", "tel", "mailto" stay allowed). A null scheme is never permitted.
      * {@code allowedSchemes} entries are expected to be lower-case; the scheme is matched case-insensitively.
      */
@@ -61,17 +61,15 @@ public class Utils {
         if (allowedSchemes != null && !allowedSchemes.isEmpty()) {
             return allowedSchemes.contains(normalized);
         }
-        return !DANGEROUS_INTENT_SCHEMES.contains(normalized);
+        return !DANGEROUS_SCHEMES.contains(normalized);
     }
 
     /**
      * Whether a WebView sub-resource (image, script, stylesheet, frame) with this scheme may load.
      * "https" always loads because it is how the content itself is served, so an outbound-link
      * allow-list (which may list only a custom deep-link scheme such as "myapp") does not
-     * accidentally block the page's own https assets. Every other scheme — including plain "http",
-     * "data" and "blob" — follows the shared link policy: the dangerous local/script schemes stay
-     * blocked, inline data/blob assets load in the default mode, and an allow-list (when configured)
-     * governs everything except https.
+     * accidentally block the page's own https assets. Every other scheme follows the same policy as
+     * an outbound link.
      */
     public static boolean isWebContentSchemeAllowed(String scheme, Set<String> allowedSchemes) {
         if (scheme != null && "https".equals(scheme.toLowerCase(Locale.ROOT))) {
@@ -277,11 +275,18 @@ public class Utils {
 
     /**
      * Read stream into a byte array
+     * <p>
+     * Kept for source compatibility - this is public API and nothing inside the SDK calls it any more. It uses
+     * a silent logger, so a read failure is not reported anywhere; prefer {@link #readStream(InputStream, ModuleLog)}.
      *
      * @param stream input to read
      * @return stream contents or {@code null} in case of error
      */
     public static byte[] readStream(InputStream stream) {
+        return readStream(stream, new ModuleLog());
+    }
+
+    public static byte[] readStream(InputStream stream, @NonNull ModuleLog L) {
         if (stream == null) {
             return null;
         }
@@ -295,7 +300,7 @@ public class Utils {
             }
             return bytes.toByteArray();
         } catch (IOException e) {
-            Countly.sharedInstance().L.e("Couldn't read stream: " + e);
+            L.e("Couldn't read stream: " + e);
             return null;
         } finally {
             try {
@@ -306,7 +311,7 @@ public class Utils {
         }
     }
 
-    static String inputStreamToString(InputStream stream) {
+    static String inputStreamToString(InputStream stream, @NonNull ModuleLog L) {
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
 
         StringBuilder sbRes = new StringBuilder();
@@ -316,7 +321,7 @@ public class Utils {
             try {
                 streamLine = br.readLine();
             } catch (IOException e) {
-                Countly.sharedInstance().L.e("", e);
+                L.e("", e);
                 break;
             }
 

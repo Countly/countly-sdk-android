@@ -57,15 +57,18 @@ public class FeedbackDialogWebViewClientTests {
     /** Dangerous local/script sub-resource schemes are blocked; https/http load (default denylist). */
     @Test
     public void shouldInterceptRequest_defaultDenylist() {
-        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null);
+        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null, new ModuleLog());
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png")));
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("http://example.com/a.js")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("file:///data/data/ly.count.android.sdk/shared_prefs/secret.xml")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://com.app.provider/private")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("javascript:alert(document.cookie)")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("jar:file:///x.apk!/a.html")));
-        // data:/blob: are inline / runtime-generated assets widgets embed -> load normally
-        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("zip://archive/x.html")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("intent://x/y#Intent;scheme=https;end")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:image/svg+xml;utf8,<svg/>")));
+        // blob: is a runtime-generated asset of the page itself -> not denylisted
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("blob:https://example.com/uuid")));
     }
 
@@ -73,7 +76,7 @@ public class FeedbackDialogWebViewClientTests {
     @Test
     public void shouldInterceptRequest_allowlistThreaded() {
         ModuleRatings.FeedbackDialogWebViewClient client =
-            new ModuleRatings.FeedbackDialogWebViewClient(new HashSet<>(Arrays.asList("myapp")));
+            new ModuleRatings.FeedbackDialogWebViewClient(new HashSet<>(Arrays.asList("myapp")), new ModuleLog());
         // https always loads (serves the widget itself)
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png")));
         // a listed non-web scheme loads
@@ -88,7 +91,7 @@ public class FeedbackDialogWebViewClientTests {
     /** The deprecated String overload must not NPE on a null url (a null scheme is blocked, fail-secure). */
     @Test
     public void shouldInterceptRequest_stringOverload_nullSafe() {
-        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null);
+        ModuleRatings.FeedbackDialogWebViewClient client = new ModuleRatings.FeedbackDialogWebViewClient(null, new ModuleLog());
         assertBlocked(client.shouldInterceptRequest(null, (String) null)); // null url -> null scheme -> blocked, no NPE
         assertBlocked(client.shouldInterceptRequest(null, "file:///etc/hosts"));
         Assert.assertNull(client.shouldInterceptRequest(null, "https://example.com/a.png"));

@@ -374,6 +374,34 @@ public class TestUtils {
         validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, null, 0, 1);
     }
 
+    /**
+     * Waits until the current wall-clock second has enough room left that a test cannot accidentally cross a
+     * second boundary while it runs.
+     * <p>
+     * The SDK measures durations with {@link UtilsTime#currentTimestampSeconds()}, which truncates
+     * ({@code System.currentTimeMillis() / 1000}). A view started at x.999 and stopped at x+1.001 therefore
+     * reports one whole second for two milliseconds of work, and a test that sleeps 1000ms starting from
+     * x.900 reports two. Both are pure boundary luck, not slowness, and they are why the ModuleViews duration
+     * tests failed intermittently - one of them carrying the comment "duration comes off sometimes".
+     * <p>
+     * Starting each duration-sensitive test just after a boundary removes the problem without a tolerance on
+     * the assertions and without a clock hook in production code. It costs at most half a second, and only
+     * for the tests that call it.
+     */
+    public static void alignToSecondBoundary() {
+        long remainderMs = System.currentTimeMillis() % 1000L;
+        //500ms of headroom: enough for a "no duration" test to start and stop a view, and enough that a
+        //sleep(1000) plus its overshoot still lands inside the next second
+        if (remainderMs <= 500L) {
+            return;
+        }
+        try {
+            Thread.sleep(1000L - remainderMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     public static void validateRecordEventInternalMock(EventProvider ep, String eventKey, Map<String, Object> segmentation, String idOverride, int index, Integer interactionCount) {
         validateRecordEventInternalMock(ep, eventKey, segmentation, 1, 0.0, 0.0, null, idOverride, index, interactionCount);
     }
@@ -436,6 +464,11 @@ public class TestUtils {
 
         Assert.assertTrue(cDuration >= 0);
         if (duration != null) {
+            //Exact, deliberately. Durations come from UtilsTime.currentTimestampSeconds(), which truncates
+            //(System.currentTimeMillis() / 1000), so a view spanning a second boundary reports a whole second
+            //for microseconds of work. That is handled by starting these tests inside a fresh second - see
+            //alignToSecondBoundary - rather than by loosening this assertion: "this view recorded no duration"
+            //is exactly the kind of thing these tests exist to catch.
             Assert.assertEquals(duration, cDuration);
         }
 
@@ -496,6 +529,17 @@ public class TestUtils {
     }
 
     /**
+     * A CountlyStore bound to a specific instance's storage namespace, for verifying that named
+     * instances persist their queues/device-id/config to isolated files.
+     */
+    protected static CountlyStore getCountlyStore(Countly countly) {
+        // A real (silent) ModuleLog rather than a mock: this store is only read for verification and
+        // never has its interactions verified, and a real logger keeps the helper usable on Android
+        // runtimes where the Mockito/ByteBuddy mock maker cannot inject classes.
+        return new CountlyStore(getContext(), new ModuleLog(), false, countly.storageNamespace_);
+    }
+
+    /**
      * Get current request queue from target folder
      *
      * @return array of request params
@@ -511,8 +555,21 @@ public class TestUtils {
      * @return array of request params
      */
     protected static @NonNull Map<String, String>[] getCurrentRQ(String filter) {
+        return getCurrentRQ(filter, getCountlyStore());
+    }
+
+    /**
+     * Get the request queue of a specific instance, read from that instance's namespaced storage.
+     *
+     * @return array of request params
+     */
+    protected static @NonNull Map<String, String>[] getCurrentRQ(Countly countly) {
+        return getCurrentRQ("", getCountlyStore(countly));
+    }
+
+    protected static @NonNull Map<String, String>[] getCurrentRQ(String filter, CountlyStore store) {
         //get all request files from target folder
-        String[] requests = getCountlyStore().getRequests();
+        String[] requests = store.getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 

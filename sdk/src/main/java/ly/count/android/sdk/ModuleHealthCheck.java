@@ -49,9 +49,9 @@ class ModuleHealthCheck extends ModuleBase {
             return;
         }
 
-        // why _cly? because module health is created last. So device id provider
-        // call order to module device id is before module health check and device id provider is module device id
-        if (_cly.config_.deviceIdProvider.isTemporaryIdEnabled()) {
+        // this module is constructed before ModuleDeviceId, so its own deviceIdProvider is filled in by
+        // the provider wiring block in Countly#init rather than by the ModuleBase constructor
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
             //temporary id mode enabled, abort
             L.d("[ModuleHealthCheck] sendHealthCheck, sending health info of the SDK to server is aborted, temporary device ID mode is set");
             return;

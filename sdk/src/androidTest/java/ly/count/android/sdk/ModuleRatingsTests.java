@@ -128,7 +128,7 @@ public class ModuleRatingsTests {
         StorageProvider cs = mCountly.connectionQueue_.getStorageProvider();
         cs.setStarRatingPreferences("./{}23[]d");
         Assert.assertEquals("./{}23[]d", cs.getStarRatingPreferences());
-        ModuleRatings.StarRatingPreferences srp = ModuleRatings.loadStarRatingPreferences(cs);
+        ModuleRatings.StarRatingPreferences srp = ModuleRatings.loadStarRatingPreferences(cs, new ModuleLog());
 
         Assert.assertEquals("", srp.appVersion);
         Assert.assertEquals(5, srp.sessionLimit);
@@ -282,7 +282,7 @@ public class ModuleRatingsTests {
     //
     //    ModuleRatings mr = new ModuleRatings(mCountly, config);
     //
-    //    ModuleRatings.StarRatingPreferences srp = ModuleRatings.loadStarRatingPreferences(sp);
+    //    ModuleRatings.StarRatingPreferences srp = ModuleRatings.loadStarRatingPreferences(sp, new ModuleLog());
     //
     //    Assert.assertTrue(mr.getIfStarRatingShouldBeShownAutomatically());
     //    Assert.assertTrue(srp.automaticRatingShouldBeShown);

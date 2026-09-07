@@ -455,7 +455,7 @@ public class ModuleUserProfileTests {
         mCountly.userProfile().setProperty("hair_skin_tone", "yellow");
         mCountly.userProfile().setProperty("picturePath", "Test Test");
         Assert.assertEquals(2, mCountly.moduleUserProfile.custom.size());
-        Assert.assertNull(ModuleUserProfile.picturePath);
+        Assert.assertNull(mCountly.moduleUserProfile.picturePath);
         Assert.assertEquals("black", mCountly.moduleUserProfile.custom.get("hair_color"));
         Assert.assertEquals("yellow", mCountly.moduleUserProfile.custom.get("hair_skin_"));
     }

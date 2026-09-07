@@ -78,7 +78,7 @@ public class CountlyPushActivity extends Activity {
     /**
      * Whether a notification link may be opened via ACTION_VIEW, per the shared scheme policy:
      * with a non-empty allow-list only those schemes pass; otherwise any scheme except the known
-     * dangerous ones (file/content/javascript/jar/data) passes, so deep links keep working.
+     * dangerous ones (file/content/javascript/jar/zip/intent/data) passes, so deep links keep working.
      */
     static boolean isLinkSchemeAllowed(Uri link, Set<String> allowedSchemes) {
         return Utils.isExternalSchemeAllowed(link == null ? null : link.getScheme(), allowedSchemes);

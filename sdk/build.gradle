@@ -58,23 +58,23 @@ android {
   testNamespace 'ly.count.android.sdk.test'
 }
 
-def mockitoVersion = "4.11.0"
+def mockitoVersion = "5.23.0"
 
 dependencies {
   api fileTree(dir: 'libs', include: ['*.jar'])
-  implementation 'androidx.annotation:annotation:1.6.0'
-  implementation 'androidx.lifecycle:lifecycle-common:2.6.1'
-  implementation 'androidx.lifecycle:lifecycle-process:2.6.1'
+  implementation 'androidx.annotation:annotation:1.10.0'
+  implementation 'androidx.lifecycle:lifecycle-common:2.8.7'
+  implementation 'androidx.lifecycle:lifecycle-process:2.8.7'
 
   implementation "androidx.multidex:multidex:2.0.1" //required for as long the min SDK version is smaller than 21
 
-  androidTestImplementation 'androidx.test:runner:1.5.2'
-  androidTestImplementation 'androidx.test:rules:1.5.0'
-  androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+  androidTestImplementation 'androidx.test:runner:1.7.0'
+  androidTestImplementation 'androidx.test:rules:1.7.0'
+  androidTestImplementation 'androidx.test.ext:junit:1.3.0'
   androidTestImplementation 'junit:junit:4.13.2'
 
   androidTestImplementation "org.mockito:mockito-android:${mockitoVersion}"
-  androidTestImplementation "com.squareup.okhttp3:mockwebserver:4.12.0"
+  androidTestImplementation "com.squareup.okhttp3:mockwebserver:5.5.0"
 }
 
 //Plugin for generating test coverage reports.

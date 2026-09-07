@@ -44,6 +44,16 @@ public class App extends Application {
 
     private final static long applicationStartTimestamp = System.currentTimeMillis();
 
+    // Exposed so example activities (such as the multi-instance demo) can spin up additional named
+    // instances pointed at the same server and app key without duplicating the configuration.
+    public static String getServerUrl() {
+        return COUNTLY_SERVER_URL;
+    }
+
+    public static String getAppKey() {
+        return COUNTLY_APP_KEY;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();

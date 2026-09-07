@@ -196,10 +196,15 @@ public class CrashData {
         assert breadcrumbs != null;
         assert crashMetrics != null;
 
-        checksumArrayToSet[0] = UtilsNetworking.sha256Hash(stackTrace);
-        checksumArrayToSet[1] = UtilsNetworking.sha256Hash(crashSegmentation.toString());
-        checksumArrayToSet[2] = UtilsNetworking.sha256Hash(breadcrumbs.toString());
-        checksumArrayToSet[3] = UtilsNetworking.sha256Hash(crashMetrics.toString());
-        checksumArrayToSet[4] = UtilsNetworking.sha256Hash(fatal + "");
+        //CrashData is public API the host app can construct, so there is no SDK instance here to attribute a
+        //log to - hence a silent logger, created explicitly rather than hidden behind an overload. sha256Hash
+        //swallows any Throwable (a missing SHA-256 provider, or an OOM on a very large stack trace), so
+        //nothing here can fail loudly either way.
+        final ModuleLog L = new ModuleLog();
+        checksumArrayToSet[0] = UtilsNetworking.sha256Hash(stackTrace, L);
+        checksumArrayToSet[1] = UtilsNetworking.sha256Hash(crashSegmentation.toString(), L);
+        checksumArrayToSet[2] = UtilsNetworking.sha256Hash(breadcrumbs.toString(), L);
+        checksumArrayToSet[3] = UtilsNetworking.sha256Hash(crashMetrics.toString(), L);
+        checksumArrayToSet[4] = UtilsNetworking.sha256Hash(fatal + "", L);
     }
 }
