@@ -122,26 +122,30 @@ class UploadSymbolsPlugin implements Plugin<Project> {
    * Registers the upload of one variant's symbols. The configuration closure runs when the task is
    * realized, after the build script has run its countly block, so the extension is complete by then.
    * mergedLibs and variantVersionName are null on the fallback path, where AGP offers neither.
+   *
+   * The countly block is one block for the whole project, so its values are conventions rather than
+   * set values: a build that gives one variant its own app_key or server, by configuring that
+   * variant's task, keeps it whichever way round Gradle happens to run the two configurations.
    */
   private static TaskProvider<UploadNativeSymbolsTask> registerNativeUpload(Project project, UploadSymbolsPluginExtension ext,
       String taskName, String variantName, String buildType, Provider<Directory> mergedLibs, Provider<String> variantVersionName) {
     project.tasks.register(taskName, UploadNativeSymbolsTask) { task ->
       task.description = "Upload breakpad symbols of the ${variantName} variant to Countly server"
-      task.server.set(ext.server)
-      task.appKey.set(ext.app_key)
-      task.note.set(ext.noteNative)
-      task.dumpSymsPath.set(ext.dumpSymsPath)
+      task.server.convention(ext.server)
+      task.appKey.convention(ext.app_key)
+      task.note.convention(ext.noteNative)
+      task.dumpSymsPath.convention(ext.dumpSymsPath)
       task.workDir.set(project.layout.buildDirectory.dir("intermediates/countly/${variantName}"))
 
       String defaultVersionName = project.android.defaultConfig.versionName
-      task.versionName.set(variantVersionName != null ? variantVersionName.orElse(defaultVersionName) : defaultVersionName)
+      task.versionName.convention(variantVersionName != null ? variantVersionName.orElse(defaultVersionName) : defaultVersionName)
 
       if (ext.nativeObjectFilesDir != null) {
-        task.nativeLibs.set(project.layout.buildDirectory.dir(BreakpadSymbols.substituteBuildType(ext.nativeObjectFilesDir, buildType)))
+        task.nativeLibs.convention(project.layout.buildDirectory.dir(BreakpadSymbols.substituteBuildType(ext.nativeObjectFilesDir, buildType)))
       } else if (mergedLibs != null) {
-        task.nativeLibs.set(mergedLibs)
+        task.nativeLibs.convention(mergedLibs)
       } else {
-        task.nativeLibs.set(project.layout.buildDirectory.dir("intermediates/merged_native_libs/${buildType}"))
+        task.nativeLibs.convention(project.layout.buildDirectory.dir("intermediates/merged_native_libs/${buildType}"))
       }
     }
   }
