@@ -12,6 +12,14 @@ plugins {
   id 'groovy'
 }
 
+// Gradle only resolves a plugin when the JVM running the build is at least the bytecode level it
+// declares, so compile to 17, the floor AGP 8+ already imposes on integrators, rather than to
+// whatever JDK happens to run the release build.
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 gradlePlugin {
   plugins {
     uploadSymbolPlugin {
@@ -29,6 +37,8 @@ dependencies {
   implementation gradleApi()
   implementation localGroovy()
   implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+  testImplementation 'junit:junit:4.13.2'
 }
 
 apply plugin: "com.vanniktech.maven.publish"

@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -86,7 +85,7 @@ public class ModuleContent extends ModuleBase {
     }
 
     @Override
-    void initFinished(@NotNull CountlyConfig config) {
+    void initFinished(@NonNull CountlyConfig config) {
         if (configProvider.getContentZoneEnabled()) {
             enterContentZoneInternal(null, 0, null);
         }

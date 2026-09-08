@@ -6,7 +6,13 @@
   Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
-* Updated the `androidx.annotation` dependency to 1.10.0, the `androidx.lifecycle` dependencies to 2.8.7, and the symbol upload plugin's OkHttp dependency to 4.12.0.
+* Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
+* Removed the unused `androidx.multidex:multidex` dependency, which the minimum SDK of 21 has not needed.
+
+* Fixed regressions where the SDK forced a newer build toolchain on integrators:
+  * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
+  * it was compiled to Java 11 bytecode instead of Java 8, which older Android Gradle Plugin versions cannot read.
+  * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, lower than any release since 23.8.0 accepted, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
 
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
