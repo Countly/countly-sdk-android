@@ -5,7 +5,7 @@ updates:
   # app-benchmark and app-native) produces several PRs; check that a bump lands everywhere
   # before closing the others.
   #
-  # IMPORTANT: the SDK ships `minSdk 21` and promises integrators `compileSdk 34`. Several
+  # IMPORTANT: the SDK ships `minSdk 21` and promises integrators `compileSdk 24`. Several
   # androidx artifacts moved past both of those, so their newest versions are NOT
   # upgradeable here and are ignored below. Verify any new ignore against the real AAR
   # metadata (`minSdkVersion` in the manifest, `minCompileSdk` in
@@ -21,10 +21,13 @@ updates:
     commit-message:
       prefix: "chore(deps)"
     ignore:
-      # minSdk 23 from 2.10.0, and lifecycle-runtime-compose 2.9.x forces consumers to
-      # compileSdk 35 through androidx family version alignment.
+      # 2.4+ pulls androidx.startup and declares minCompileSdk 31 (2.6+: 33, 2.7+: 34), which the
+      # consumer-side AAR check applies transitively; 2.3.1 is the newest with no floor.
       - dependency-name: "androidx.lifecycle:*"
-        versions: [">=2.9.0"]
+        versions: [">=2.4.0"]
+      # 1.4+ depends on kotlin-stdlib and would put it back into every integrator's graph.
+      - dependency-name: "androidx.annotation:annotation"
+        versions: [">=1.4.0"]
       # minSdk 23 from 1.8.0
       - dependency-name: "androidx.appcompat:appcompat"
         versions: [">=1.8.0"]

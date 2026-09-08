@@ -28,3 +28,50 @@ allprojects {
     mavenCentral()
   }
 }
+
+// What every published library module (:sdk, :sdk-native) promises integrators, in one place: 26.1.5
+// shipped with AGP 9 defaults that silently raised what apps had to build with, and the fix landed in
+// one module but not the other. The contract is Java 8 bytecode, no Kotlin standard library in the POM,
+// and an explicitly declared compile floor; verifyConsumerContract fails `check` when any of it drifts.
+subprojects {
+  plugins.withId('com.android.library') {
+    android {
+      // No library module has Kotlin sources; AGP 9's built-in Kotlin would still add kotlin-stdlib to
+      // the POM at the build's Kotlin version and force that version onto every integrator.
+      enableKotlin = false
+      // Older Gradle and AGP releases cannot read class files newer than Java 8; AGP 9 defaults to 11.
+      compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+      }
+    }
+
+    def verifyConsumerContract = tasks.register('verifyConsumerContract') {
+      description = 'Fails if the published AAR/POM would force a newer toolchain on integrators.'
+      dependsOn 'bundleReleaseAar', 'generatePomFileForMavenPublication'
+      def aar = layout.buildDirectory.file("outputs/aar/${project.name}-release.aar")
+      def pom = layout.buildDirectory.file('publications/maven/pom-default.xml')
+      inputs.files(aar, pom)
+      doLast {
+        def problems = []
+        def declared = android.defaultConfig.aarMetadata.minCompileSdk
+        if (declared == null) problems << 'aarMetadata.minCompileSdk is not declared, so AGP would publish compileSdk as the floor'
+        new java.util.zip.ZipFile(aar.get().asFile).withCloseable { zip ->
+          def props = new Properties(); props.load(zip.getInputStream(zip.getEntry('META-INF/com/android/build/gradle/aar-metadata.properties')))
+          if (declared != null && props.getProperty('minCompileSdk') != declared.toString()) problems << "aar-metadata minCompileSdk=${props.getProperty('minCompileSdk')} but the module declares ${declared}"
+          def classes = new java.util.zip.ZipInputStream(zip.getInputStream(zip.getEntry('classes.jar')))
+          def entry
+          while ((entry = classes.nextEntry) != null) {
+            if (!entry.name.endsWith('.class')) continue
+            def bytes = classes.readAllBytes()
+            int major = ((bytes[6] & 0xff) << 8) | (bytes[7] & 0xff)
+            if (major > 52) { problems << "${entry.name} is class file version ${major}; Java 8 is 52"; break }
+          }
+        }
+        if (pom.get().asFile.text.contains('kotlin-stdlib')) problems << 'POM declares a kotlin-stdlib dependency'
+        if (!problems.isEmpty()) throw new GradleException("Consumer contract broken in :${project.name}:\n  " + problems.join('\n  '))
+      }
+    }
+    tasks.named('check') { dependsOn verifyConsumerContract }
+  }
+}

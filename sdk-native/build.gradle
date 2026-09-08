@@ -12,26 +12,16 @@ buildscript {
 
 android {
   namespace 'ly.count.android.sdknative'
-  // This module has no Kotlin sources. AGP 9's built-in Kotlin would still publish kotlin-stdlib, at
-  // the build's Kotlin version, as a dependency and force that Kotlin version onto every integrator.
-  enableKotlin = false
+  // Kotlin, bytecode level and the consumer contract check for library modules are set once in the
+  // root build.gradle, so :sdk and :sdk-native cannot drift apart again.
   compileSdk 37
-  // Every release up to 26.1.4 shipped Java 8 bytecode (class file 52). AGP 9 defaults compileOptions
-  // to Java 11, which silently raised that to 55 in 26.1.5 and breaks integrators whose Gradle/AGP is
-  // too old to read it. The code needs nothing above Java 8, so pin the floor we have always shipped
-  // instead of inheriting whatever the current AGP defaults to.
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-  }
 
   defaultConfig {
     minSdk 21
     targetSdk 37
 
-    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would force
-    // every integrator to compile against SDK 37. This module only touches Context.getCacheDir(),
-    // Log and File, so its real compile floor is its minSdk; declare that, as the sdk module does.
+    // The compile floor integrators get is the runtime floor: this module only touches
+    // Context.getCacheDir(), Log and File. verifyConsumerContract checks this.
     aarMetadata {
       minCompileSdk 21
     }
