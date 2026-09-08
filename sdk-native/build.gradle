@@ -16,6 +16,14 @@ android {
   // the build's Kotlin version, as a dependency and force that Kotlin version onto every integrator.
   enableKotlin = false
   compileSdk 37
+  // Every release up to 26.1.4 shipped Java 8 bytecode (class file 52). AGP 9 defaults compileOptions
+  // to Java 11, which silently raised that to 55 in 26.1.5 and breaks integrators whose Gradle/AGP is
+  // too old to read it. The code needs nothing above Java 8, so pin the floor we have always shipped
+  // instead of inheriting whatever the current AGP defaults to.
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
 
   defaultConfig {
     minSdk 21

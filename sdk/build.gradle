@@ -13,21 +13,36 @@ buildscript {
 
 android {
   namespace 'ly.count.android.sdk'
+  // This module has no Kotlin sources. AGP 9's built-in Kotlin would still publish kotlin-stdlib, at
+  // the build's Kotlin version, as a compile-scope dependency and force that Kotlin version onto every
+  // integrator. 26.1.5 shipped that way (kotlin-stdlib 2.4.0) and blocked apps pinned to older Kotlin.
+  enableKotlin = false
   compileSdk 37
+  // Every release up to 26.1.4 shipped Java 8 bytecode (class file 52). AGP 9 defaults compileOptions
+  // to Java 11, which silently raised that to 55 in 26.1.5 and breaks integrators whose Gradle/AGP is
+  // too old to read it. The code needs nothing above Java 8, so pin the floor we have always shipped
+  // instead of inheriting whatever the current AGP defaults to.
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
+  }
   buildToolsVersion "37.0.0"
 
   defaultConfig {
     minSdk 21
     targetSdk 37
 
-    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would
-    // force every integrator to compile against SDK 37. The SDK's real compile floor is 34
-    // (Build.VERSION_CODES.UPSIDE_DOWN_CAKE / WindowMetrics.getDensity()), so declare that
-    // instead and keep integrators off a needless toolchain bump. All prior releases shipped
-    // with no floor (minCompileSdk=1).
+    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would force
+    // every integrator to compile against SDK 37. Every release up to 26.1.4 shipped with no floor,
+    // and customers outside Google Play build with old toolchains, so declare the runtime minimum.
+    // Our own code builds for any consumer from 21 up: the few platform classes it references above
+    // that sit behind SDK_INT checks and are listed in consumer-rules.pro so R8 does not reject them.
+    // The androidx dependencies are pinned to versions that declare no floor of their own, because
+    // the consumer-side check applies to every AAR in the graph, not just ours.
     aarMetadata {
-      minCompileSdk 34
+      minCompileSdk 21
     }
+    consumerProguardFiles 'consumer-rules.pro'
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
     testHandleProfiling true
@@ -62,9 +77,12 @@ def mockitoVersion = "5.23.0"
 
 dependencies {
   api fileTree(dir: 'libs', include: ['*.jar'])
-  implementation 'androidx.annotation:annotation:1.10.0'
-  implementation 'androidx.lifecycle:lifecycle-common:2.8.7'
-  implementation 'androidx.lifecycle:lifecycle-process:2.8.7'
+  // Pinned to the newest versions that impose no compile floor on integrators (see aarMetadata):
+  // lifecycle 2.4+ makes consumers compile against SDK 31 or higher, 2.6+ 33, 2.7+ 34, and
+  // annotation 1.10 raises the transitive kotlin-stdlib every integrator receives to 2.1.x.
+  implementation 'androidx.annotation:annotation:1.6.0'
+  implementation 'androidx.lifecycle:lifecycle-common:2.3.1'
+  implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
 
   implementation "androidx.multidex:multidex:2.0.1" //required for as long the min SDK version is smaller than 21
 
