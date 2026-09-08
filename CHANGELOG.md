@@ -1,3 +1,9 @@
+## 26.1.6-nw
+* Fixed regressions where the SDK forced a newer build toolchain on integrators:
+  * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
+  * it was compiled to Java 11 bytecode instead of Java 8, which older Android Gradle Plugin versions cannot read.
+  * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
+
 ## 26.1.5-nw
 Released as `ly.count.android:sdk-nw:26.1.5`. See the "The `sdk-nw` artifact" section of the README for what this build changes.
 

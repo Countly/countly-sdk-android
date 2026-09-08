@@ -50,10 +50,9 @@ Everything else is identical to `ly.count.android:sdk`: the same source, the sam
 Switching is a one line dependency change and requires no changes to your imports or code.
 
 ```gradle
-implementation 'ly.count.android:sdk-nw:26.1.5'
+implementation 'ly.count.android:sdk-nw:26.1.6'
 ```
 
-Version numbers match the regular release they were built from, so `ly.count.android:sdk-nw:26.1.5` contains the same SDK as `ly.count.android:sdk:26.1.5`.
 Depend on either `ly.count.android:sdk` or `ly.count.android:sdk-nw`, never both, because they contain the same classes.
 Applications that need the WebView based UI, such as the Content feature or Feedback Widgets, should use `ly.count.android:sdk`.
 

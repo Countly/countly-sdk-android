@@ -26,14 +26,22 @@ android {
     minSdk 21
     targetSdk 37
 
-    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would
-    // force every integrator to compile against SDK 37. The SDK's real compile floor is 34
-    // (Build.VERSION_CODES.UPSIDE_DOWN_CAKE / WindowMetrics.getDensity()), so declare that
-    // instead and keep integrators off a needless toolchain bump. All prior releases shipped
-    // with no floor (minCompileSdk=1).
+    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would force
+    // every integrator to compile against SDK 37; 26.1.5 then declared 34. Customers outside Google
+    // Play build with old toolchains, so declare the lowest floor that is actually safe. That is 24,
+    // not the runtime minimum of 21, for two independent reasons. First, below 24 an integrator's
+    // R8 cannot see that our WebViewClient methods override platform callbacks introduced in API
+    // 23/24 and silently deletes them from a minified app; the sdk-nw artifact compiles that UI
+    // out, so there only the second reason applies. Second, StorageVolume (API 24), used by the
+    // disk metrics, is the newest platform class our live code references that consumer-rules.pro
+    // does not cover; at 24 it needs no rule. Everything newer sits behind SDK_INT checks and is
+    // listed in consumer-rules.pro so R8 does not reject it. The androidx dependencies are pinned
+    // to versions that declare no floor of their own, because the consumer-side check applies to
+    // every AAR in the graph, not just ours.
     aarMetadata {
-      minCompileSdk 34
+      minCompileSdk 24
     }
+    consumerProguardFiles 'consumer-rules.pro'
 
     testInstrumentationRunner 'ly.count.android.sdk.test.InstrumentationTestRunner'
 
@@ -103,11 +111,12 @@ def mockitoVersion = "4.11.0"
 
 dependencies {
   api fileTree(dir: 'libs', include: ['*.jar'])
-  implementation 'androidx.annotation:annotation:1.6.0'
-  implementation 'androidx.lifecycle:lifecycle-common:2.6.1'
-  implementation 'androidx.lifecycle:lifecycle-process:2.6.1'
-
-  implementation "androidx.multidex:multidex:2.0.1" //required for as long the min SDK version is smaller than 21
+  // Pinned to the newest versions that impose no compile floor and pull no Kotlin standard library
+  // (see aarMetadata): lifecycle 2.4+ makes consumers compile against SDK 31 or higher, 2.6+ 33,
+  // 2.7+ 34; annotation 1.4+ depends on kotlin-stdlib. multidex is gone because minSdk is 21.
+  implementation 'androidx.annotation:annotation:1.3.0'
+  implementation 'androidx.lifecycle:lifecycle-common:2.3.1'
+  implementation 'androidx.lifecycle:lifecycle-process:2.3.1'
 
   androidTestImplementation 'androidx.test:runner:1.5.2'
   androidTestImplementation 'androidx.test:rules:1.5.0'
