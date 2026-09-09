@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.5";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.6";
     /**
      * Used as request meta data on every request
      * This is the "sdk-nw" branch, so the name carries the "-nw" marker to tell it apart on the server
