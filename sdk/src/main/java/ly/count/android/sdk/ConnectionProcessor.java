@@ -361,6 +361,7 @@ public class ConnectionProcessor implements Runnable {
     public void run() {
         long wholeQueueStart = UtilsTime.getNanoTime();
         while (true) {
+            L.setOwnTransportWork(false);
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
             long pccTsStartTempIdCheck = 0L;
@@ -407,6 +408,9 @@ public class ConnectionProcessor implements Runnable {
             // get first request in a separate variable to modify and keep the original intact
             final String originalRequest = storedRequests[0];
             String requestData = originalRequest;//todo rework to another param approach
+
+            //lines logged while sending a log batch are not gathered, or every tick would upload a batch about the last one
+            L.setOwnTransportWork(originalRequest.contains("&" + ModuleLog.transportMarker));
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
@@ -672,6 +676,7 @@ public class ConnectionProcessor implements Runnable {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_10_NetworkWholeQueue", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
         }
+        L.setOwnTransportWork(false);
         long wholeQueueTime = UtilsTime.getNanoTime() - wholeQueueStart;
         L.v("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
     }
@@ -713,6 +718,33 @@ public class ConnectionProcessor implements Runnable {
 
     String getServerURL() {
         return serverURL_;
+    }
+
+    /** Bare GET for a connection test probe: this instance's SSL factory and headers, no cache, redirects not followed. */
+    synchronized @NonNull HttpURLConnection urlConnectionForProbe(@NonNull String url, int timeoutMs) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+
+        if (sslSocketFactory_ != null && conn instanceof HttpsURLConnection) {
+            ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory_);
+        }
+
+        conn.setRequestMethod("GET");
+        conn.setInstanceFollowRedirects(false);
+        conn.setUseCaches(false);
+        conn.setConnectTimeout(timeoutMs);
+        conn.setReadTimeout(timeoutMs);
+        conn.setDoInput(true);
+        conn.setDoOutput(false);
+
+        if (requestHeaderCustomValues_ != null) {
+            for (Map.Entry<String, String> e : requestHeaderCustomValues_.entrySet()) {
+                if (e.getKey() != null && e.getValue() != null && !e.getKey().isEmpty()) {
+                    conn.addRequestProperty(e.getKey(), e.getValue());
+                }
+            }
+        }
+
+        return conn;
     }
 
     // for unit testing

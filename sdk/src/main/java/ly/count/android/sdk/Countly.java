@@ -252,6 +252,7 @@ public class Countly {
     ModuleConfiguration moduleConfiguration = null;
     ModuleHealthCheck moduleHealthCheck = null;
     ModuleContent moduleContent = null;
+    ModuleConnectionTest moduleConnectionTest = null;
 
     //reference to countly store
     CountlyStore countlyStore;
@@ -1010,6 +1011,7 @@ public class Countly {
             moduleFeedback = new ModuleFeedback(this, config);
             moduleAttribution = new ModuleAttribution(this, config);
             moduleContent = new ModuleContent(this, config);
+            moduleConnectionTest = new ModuleConnectionTest(this, config);
 
             modules.clear();
             modules.add(moduleConfiguration);
@@ -1028,6 +1030,7 @@ public class Countly {
             modules.add(moduleFeedback);
             modules.add(moduleAttribution);
             modules.add(moduleContent);
+            modules.add(moduleConnectionTest);
 
             modules.add(moduleHealthCheck);//set this at the end to detect any health issues with other modules before sending the report
 
@@ -1053,6 +1056,9 @@ public class Countly {
             baseInfoProvider = config.baseInfoProvider;
             requestQueueProvider = config.requestQueueProvider;
             L.setHealthChecker(config.healthTracker);
+            //the logger has been capturing the SDK's own log lines since the first one, hand it what it needs to act on
+            //the log gathering directive that the configuration module has parsed by now
+            L.setLogGatheringProviders(config.configProvider, config.consentProvider, config.requestQueueProvider);
 
             L.i("[Init] Finished initialising modules");
 
@@ -1265,6 +1271,7 @@ public class Countly {
             //another instance built from the same config) resets a value only if it still holds this, so the
             //SDK's own write-backs are undone while anything the developer changed in between is honoured.
             config.derivedFieldSnapshot.captureApplied(config);
+            L.onSdkInitFinished();
 
             L.i("[Init] Finished initialising SDK");
             }
@@ -1542,6 +1549,8 @@ public class Countly {
         }
         modules.clear();
 
+        L.haltLogGathering();
+
         //A dispatch that passed the tearingDown gate a moment before this method set it can still be running
         //on the main thread while these fields go null, and modules reach each other through _cly. That is
         //what crashed a CI run (ModuleSessions.endSessionInternal -> _cly.moduleViews.resetFirstView()).
@@ -1566,6 +1575,7 @@ public class Countly {
         moduleConfiguration = null;
         moduleHealthCheck = null;
         moduleContent = null;
+        moduleConnectionTest = null;
 
         // Reset configuration values that may have been changed during runtime
         loggingForcedOffForProduction = false;
@@ -1774,6 +1784,11 @@ public class Countly {
         if (moduleHealthCheck != null) {
             moduleHealthCheck.onActivityStopped(activityCount_);
         }
+
+        if (activityCount_ == 0) {
+            //the app itself is in the background now, not just moving between activities
+            L.onAppEnteredBackground();
+        }
     }
 
     public synchronized void onConfigurationChangedInternal(Configuration newConfig) {
@@ -1863,6 +1878,9 @@ public class Countly {
 
             //on every timer tick we save the user profile if it was changed
             moduleUserProfile.saveInternal();
+
+            //on every timer tick we upload the gathered SDK log lines, for a buffer that never reaches the batch size
+            L.flushGatheredLogs();
 
             requestQueueProvider.tick();
         }

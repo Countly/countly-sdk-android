@@ -2,8 +2,11 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -66,6 +69,24 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyREventSegmentationWhitelist = "esw"; // json
     final static String keyRJourneyTriggerEvents = "jte";
     final static String keyRJourneyTriggerViews = "jtv";
+    final static String keyRLogGathering = "lg"; //top level key, a sibling of 'c', not a member of it
+    final static String keyRConnectionTest = "ct"; //top level key, a sibling of 'c', read from a live response and never stored
+
+    //top level keys of the response that this SDK supports. Anything else that arrives next to them is ignored
+    final static Set<String> supportedTopLevelKeys = new HashSet<>(Arrays.asList(keyRVersion, keyRTimestamp, keyRConfig, keyRLogGathering));
+
+    //keys inside the 'lg' log gathering directive
+    final static String keyLGEnabled = "e";
+    final static String keyLGId = "i";
+    final static String keyLGLevels = "l";
+    final static String keyLGBatchSize = "b";
+
+    //log gathering bounds and defaults
+    final static String logGatheringAllLevels = "ewidv";
+    final static int logGatheringDefaultBatchSize = 100;
+    final static int logGatheringMinBatchSize = 10;
+    //buffer ceiling, and so the largest batch the server may ask for: a bigger batch would never fill
+    final static int logGatheringMaxBufferedLines = 500;
 
     // FLAGS
     boolean currentVTracking = true;
@@ -109,6 +130,25 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     int currentVDropAgeHours;
     boolean currentVRequiresConsent;
     int currentVZoneTimerInterval;
+    /**
+     * Tri state of the per user log gathering directive, the top level 'lg' key.
+     * UNDECIDED - no directive has been seen yet, so it is not known whether this device should gather logs.
+     * Only a stored (or developer provided) configuration without an 'lg' key leaves the SDK here.
+     * GATHERING - a directive with 'e' true and a usable gather id was received.
+     * NOT_GATHERING - a server response decided against gathering: it carried no 'lg', an unusable one, or one with
+     * 'e' false. Disabled configuration requests land here too, because then no response can ever arrive.
+     */
+    enum LogGatheringState {
+        UNDECIDED,
+        GATHERING,
+        NOT_GATHERING
+    }
+
+    // LOG GATHERING ('lg', parsed from the top level object, never from the inner 'c')
+    @NonNull LogGatheringState currentVLogGatheringState = LogGatheringState.UNDECIDED;
+    @Nullable String currentVLogGatheringId = null;
+    @NonNull String currentVLogGatheringLevels = logGatheringAllLevels;
+    int currentVLogGatheringBatchSize = logGatheringDefaultBatchSize;
 
     // SERVER CONFIGURATION PARAMS
     Integer serverConfigUpdateInterval; // in hours
@@ -156,8 +196,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         //load the previously saved configuration
         loadConfigFromStorage(config.sdkBehaviorSettings);
 
-        //update the config variables according to the new state
-        updateConfigVariables(config);
+        //update the config variables according to the new state. No server response yet, so log gathering is only
+        //decided here when requests are disabled and no response can ever come
+        updateConfigVariables(config, null);
     }
 
     @Override
@@ -251,11 +292,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return extractValue(key, sb, currentValue, defaultValue, Boolean.class, null);
     }
 
-    //update the config variables according to the current config obj state
-    private void updateConfigVariables(@NonNull final CountlyConfig clyConfig) {
-        L.v("[ModuleConfiguration] updateConfigVariables");
+    /**
+     * Update the config variables according to the current config obj state
+     *
+     * @param clyConfig config of the SDK
+     * @param serverResponse the freshly downloaded response, or null when the values were restored from storage or
+     * provided at init. Only a server response decides the log gathering directive, see {@link #updateLogGatheringDirective(JSONObject)}.
+     */
+    private void updateConfigVariables(@NonNull final CountlyConfig clyConfig, @Nullable final JSONObject serverResponse) {
+        L.v("[ModuleConfiguration] updateConfigVariables, from server response:[" + (serverResponse != null) + "]");
+
+        //the directive is a top level key read off the live response itself, so it applies even when the inner 'c'
+        //object was rejected and nothing was stored
+        updateLogGatheringDirective(serverResponse);
+
         if (latestRetrievedConfiguration == null) {
-            //no config, don't continue
             return;
         }
 
@@ -305,11 +356,129 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         updateListingFilters();
 
-        String updatedValues = sb.toString();
+        notifyIfConfigurationChanged(sb, clyConfig);
+    }
+
+    /**
+     * Broadcast the change to every module through the single existing notification path, if anything changed at all
+     */
+    private void notifyIfConfigurationChanged(@NonNull final StringBuilder changedValues, @NonNull final CountlyConfig clyConfig) {
+        String updatedValues = changedValues.toString();
         if (!updatedValues.isEmpty()) {
             L.i("[ModuleConfiguration] updateConfigVariables, SDK configuration has changed, notifying the SDK, new values: [" + updatedValues + "]");
             _cly.onSdkConfigurationChanged(clyConfig);
         }
+    }
+
+    /**
+     * Applies the top level 'lg' directive of a live response, shapes {"e":false} or {"e":true,"i":id,"l":"ewidv","b":100}.
+     * Only a live response decides: a stored directive leaves the SDK undecided, a response without a usable 'lg' or
+     * disabled config requests decide off. serverResponse is null on the storage/init path.
+     */
+    private void updateLogGatheringDirective(@Nullable final JSONObject serverResponse) {
+        readLogGatheringDirective(serverResponse);
+        L.applyLogGatheringDirective(serverResponse == null ? "init" : "server response");
+    }
+
+    /** Decides the log gathering state, see {@link #updateLogGatheringDirective(JSONObject)} for the rules. */
+    private void readLogGatheringDirective(@Nullable final JSONObject serverResponse) {
+        if (serverConfigRequestsDisabled) {
+            //without configuration requests no directive can ever arrive or be renewed, so nothing can ever be
+            //gathered. That is a decision, and it spares the logger a buffer that would never be adopted
+            L.d("[ModuleConfiguration] readLogGatheringDirective, SDK behaviour settings requests are disabled, log gathering can never be armed");
+            setLogGatheringOff();
+            return;
+        }
+
+        if (serverResponse == null) {
+            //a stored directive decides nothing, a run only ever uploads the lines it gathered itself
+            L.d("[ModuleConfiguration] readLogGatheringDirective, not a server response, log gathering stays undecided");
+            return;
+        }
+
+        JSONObject directive = serverResponse.optJSONObject(keyRLogGathering);
+        if (directive == null) {
+            //the server has spoken and it sent no usable directive, that decides gathering off
+            L.d("[ModuleConfiguration] readLogGatheringDirective, server response had no usable '" + keyRLogGathering + "', log gathering is off");
+            setLogGatheringOff();
+            return;
+        }
+
+        if (!Boolean.TRUE.equals(directive.opt(keyLGEnabled))) {
+            L.d("[ModuleConfiguration] readLogGatheringDirective, directive says log gathering is off");
+            setLogGatheringOff();
+            return;
+        }
+
+        Object gatherIdRaw = directive.opt(keyLGId);
+        String gatherId = gatherIdRaw instanceof String ? ((String) gatherIdRaw).trim() : "";
+        if (gatherId.isEmpty()) {
+            //without the id the server would reject every uploaded batch, so this is not a usable directive
+            L.d("[ModuleConfiguration] readLogGatheringDirective, directive enables log gathering but carries no usable '" + keyLGId + "', log gathering is off");
+            setLogGatheringOff();
+            return;
+        }
+
+        currentVLogGatheringState = LogGatheringState.GATHERING;
+        currentVLogGatheringId = gatherId;
+        currentVLogGatheringLevels = sanitizeLogGatheringLevels(directive.opt(keyLGLevels));
+        currentVLogGatheringBatchSize = sanitizeLogGatheringBatchSize(directive.opt(keyLGBatchSize));
+        L.d("[ModuleConfiguration] readLogGatheringDirective, log gathering is on, id:[" + currentVLogGatheringId + "], levels:[" + currentVLogGatheringLevels + "], batch size:[" + currentVLogGatheringBatchSize + "]");
+    }
+
+    /** No response can arrive this run (failed fetch, temporary device ID), which decides against gathering. */
+    private void decideLogGatheringOffIfUndecided(@NonNull final String reason) {
+        if (currentVLogGatheringState == LogGatheringState.UNDECIDED) {
+            L.d("[ModuleConfiguration] decideLogGatheringOffIfUndecided, " + reason + ", log gathering is off");
+            setLogGatheringOff();
+            L.applyLogGatheringDirective(reason);
+        }
+    }
+
+    private void setLogGatheringOff() {
+        currentVLogGatheringState = LogGatheringState.NOT_GATHERING;
+        currentVLogGatheringId = null;
+        currentVLogGatheringLevels = logGatheringAllLevels;
+        currentVLogGatheringBatchSize = logGatheringDefaultBatchSize;
+    }
+
+    /**
+     * Keeps only the level characters this SDK knows, in the order the server sent them, without duplicates.
+     * Falls back to every level if the value is missing, not a string, or has nothing usable left after filtering.
+     */
+    @NonNull private String sanitizeLogGatheringLevels(@Nullable final Object levelsRaw) {
+        if (!(levelsRaw instanceof String)) {
+            return logGatheringAllLevels;
+        }
+
+        String levels = (String) levelsRaw;
+        StringBuilder filtered = new StringBuilder();
+        for (int i = 0; i < levels.length(); i++) {
+            char level = Character.toLowerCase(levels.charAt(i));
+            if (logGatheringAllLevels.indexOf(level) > -1 && filtered.indexOf(String.valueOf(level)) < 0) {
+                filtered.append(level);
+            }
+        }
+
+        if (filtered.length() == 0) {
+            L.d("[ModuleConfiguration] sanitizeLogGatheringLevels, no usable level in [" + levels + "], falling back to [" + logGatheringAllLevels + "]");
+            return logGatheringAllLevels;
+        }
+
+        return filtered.toString();
+    }
+
+    /**
+     * Clamps the batch size into [logGatheringMinBatchSize, logGatheringMaxBufferedLines],
+     * falling back to logGatheringDefaultBatchSize if the value is missing or not a number.
+     */
+    private int sanitizeLogGatheringBatchSize(@Nullable final Object batchSizeRaw) {
+        if (!(batchSizeRaw instanceof Number)) {
+            return logGatheringDefaultBatchSize;
+        }
+
+        int batchSize = ((Number) batchSizeRaw).intValue();
+        return Math.min(logGatheringMaxBufferedLines, Math.max(logGatheringMinBatchSize, batchSize));
     }
 
     private void updateListingFilters() {
@@ -413,6 +582,10 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
     }
 
+    /**
+     * Requires 'v', 't' and an object 'c'. The key count is not checked: unknown top level keys are dropped in
+     * {@link #saveAndStoreDownloadedConfig(JSONObject)} instead of rejecting the whole payload.
+     */
     boolean validateServerConfig(@NonNull JSONObject config) {
         JSONObject newInner = config.optJSONObject(keyRConfig);
 
@@ -426,11 +599,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         } else if (!config.has(keyRConfig)) {
             L.w("[ModuleConfiguration] validateServerConfig, Retrieved configuration does not has a 'configuration' field. Config will be ignored.");
             return false;
-        } else if (config.length() != 3) {
-            L.w("[ModuleConfiguration] validateServerConfig, Retrieved configuration does not have the expected number of keys. Config will be ignored.");
-            return false;
-        } else if (newInner == null || newInner.length() == 0) {
-            L.d("[ModuleConfiguration] validateServerConfig, Config rejected: inner 'c' object is invalid or empty.");
+        } else if (newInner == null) {
+            L.d("[ModuleConfiguration] validateServerConfig, Config rejected: inner 'c' is not an object.");
             return false;
         }
 
@@ -549,12 +719,41 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             }
         }
 
-        // Merge timestamp and version
-        try {
-            latestRetrievedConfigurationFull.put(keyRTimestamp, config.get(keyRTimestamp));
-            latestRetrievedConfigurationFull.put(keyRVersion, config.get(keyRVersion));
-        } catch (JSONException e) {
-            L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Failed to merge version/timestamp.", e);
+        // Merge the supported top level keys: version, timestamp and the log gathering directive.
+        // Only these are carried over, everything else that sits next to them is left behind on purpose.
+        for (String key : supportedTopLevelKeys) {
+            if (keyRConfig.equals(key)) {
+                continue; //the inner config object is merged key by key further down
+            }
+
+            try {
+                if (config.has(key)) {
+                    latestRetrievedConfigurationFull.put(key, config.get(key));
+                } else {
+                    //a key the new config does not carry must not survive from the previous one, an old gather id would be used against a directive that no longer exists
+                    latestRetrievedConfigurationFull.remove(key);
+                }
+            } catch (JSONException e) {
+                L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Failed to merge top level key: " + key, e);
+            }
+        }
+
+        // unsupported top level keys are dropped quietly, never stored ('ct' is already stripped before validation)
+        List<String> unsupportedTopLevelKeys = new ArrayList<>();
+        Iterator<String> topLevelKeys = config.keys();
+        while (topLevelKeys.hasNext()) {
+            String key = topLevelKeys.next();
+            if (!supportedTopLevelKeys.contains(key)) {
+                unsupportedTopLevelKeys.add(key);
+            }
+        }
+
+        if (!unsupportedTopLevelKeys.isEmpty()) {
+            L.d("[ModuleConfiguration] saveAndStoreDownloadedConfig, ignoring unsupported top level keys: " + unsupportedTopLevelKeys);
+            for (String key : unsupportedTopLevelKeys) {
+                //when the stored config is reloaded 'config' and the stored object are the same instance, so make sure such a key is not kept around
+                latestRetrievedConfigurationFull.remove(key);
+            }
         }
 
         removeListingFilterKeysFromConfig(newInner);
@@ -619,7 +818,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * "heartbeat":61,
      * "event_queue":11,
      * "request_queue":1001
-     * }
+     * },
+     * "lg":{"e":true,"i":"gatherId","l":"ewidv","b":100}
      * }
      */
     void fetchConfigFromServer(@NonNull CountlyConfig config) {
@@ -634,24 +834,67 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         if (deviceIdProvider.isTemporaryIdEnabled()) {
             //temporary id mode enabled, abort
             L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, temporary device ID mode is set");
+            decideLogGatheringOffIfUndecided("temporary device ID mode, no server response this run");
             return;
         }
 
         lastServerConfigFetchTimestamp = UtilsTime.currentTimestampMs();
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
+        final long fetchStartNs = System.nanoTime();
 
         immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, true, checkResponse -> {
             if (checkResponse == null) {
                 L.w("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");
+                decideLogGatheringOffIfUndecided("server config fetch failed");
                 return;
             }
 
             L.d("[ModuleConfiguration] Retrieved configuration response: [" + checkResponse + "]");
 
+            //read only here, from a live response, and stripped before the config is cached
+            long fetchLatencyMs = (System.nanoTime() - fetchStartNs) / 1_000_000L;
+            boolean connectionTestArmed = extractConnectionTestFlag(checkResponse);
+
             saveAndStoreDownloadedConfig(checkResponse);
-            updateConfigVariables(config);
+            updateConfigVariables(config, checkResponse);
+
+            if (connectionTestArmed) {
+                notifyConnectionTestArmed(fetchLatencyMs);
+            }
         }, L);
+    }
+
+    /** Reads and removes the 'ct' flag from a live response, so it is never cached and can never re-arm from storage. */
+    static boolean extractConnectionTestFlag(@Nullable JSONObject serverConfigResponse) {
+        if (serverConfigResponse == null || !serverConfigResponse.has(keyRConnectionTest)) {
+            return false;
+        }
+
+        Object value = serverConfigResponse.remove(keyRConnectionTest);
+        if (value == null || JSONObject.NULL.equals(value)) {
+            return false;
+        }
+        if (value instanceof Boolean) {
+            return (Boolean) value;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue() != 0;
+        }
+        if (value instanceof String) {
+            String s = ((String) value).trim();
+            return !s.isEmpty() && !s.equals("0") && !s.equalsIgnoreCase("false");
+        }
+        return true;
+    }
+
+    private void notifyConnectionTestArmed(final long fetchLatencyMs) {
+        ModuleConnectionTest connectionTest = _cly.moduleConnectionTest;
+        if (connectionTest == null) {
+            L.d("[ModuleConfiguration] notifyConnectionTestArmed, instance torn down before the response arrived, ignoring");
+            return;
+        }
+        connectionTest.startBattery(fetchLatencyMs);
     }
 
     void fetchIfTimeIsUpForFetchingServerConfig() {
@@ -771,5 +1014,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public Set<String> getJourneyTriggerViews() {
         return currentVJourneyTriggerViews;
+    }
+
+    @Override @NonNull public LogGatheringState getLogGatheringState() {
+        return currentVLogGatheringState;
+    }
+
+    @Override @Nullable public String getLogGatheringId() {
+        return currentVLogGatheringId;
+    }
+
+    @Override @NonNull public String getLogGatheringLevels() {
+        return currentVLogGatheringLevels;
+    }
+
+    @Override public int getLogGatheringBatchSize() {
+        return currentVLogGatheringBatchSize;
     }
 }
