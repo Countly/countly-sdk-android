@@ -27,6 +27,11 @@ interface RequestQueueProvider {
 
     void sendCrashReport(@NonNull final String crashData, final boolean nonFatalCrash);
 
+    /**
+     * @return true if the batch was queued, false if the queue refused it and the caller still owns the lines
+     */
+    boolean sendSdkLogs(@NonNull final String logBatch);
+
     void recordEvents(final String events);
 
     void recordEvents(final String events, @Nullable InternalRequestCallback callback);
@@ -44,6 +49,8 @@ interface RequestQueueProvider {
     void sendDirectRequest(@NonNull final Map<String, String> requestData);
 
     void sendMetricsRequest(@NonNull String preparedMetrics);
+
+    void sendConnectionTestResults(@NonNull String resultsJson);
 
     void enrollToKeys(@NonNull String[] keys);
 

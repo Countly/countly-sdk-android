@@ -564,6 +564,28 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
+    /** Queues one 'sdk_logs' batch. Consent is checked by the caller, which holds the lines back until it is given. */
+    public boolean sendSdkLogs(@NonNull final String logBatch) {
+        return queueSingleParamRequest("sendSdkLogs", ModuleLog.keySdkLogs, logBatch);
+    }
+
+    /** Queues the common parameters plus one URL encoded value and kicks the queue. Returns false if refused. */
+    private boolean queueSingleParamRequest(@NonNull final String caller, @NonNull final String key, @NonNull final String rawValue) {
+        if (!checkInternalState()) {
+            return false;
+        }
+        if (!configProvider.getTrackingEnabled()) {
+            //the store would drop it anyway, tell the caller so it can keep what it was about to send
+            L.d("[ConnectionQueue] " + caller + ", tracking is disabled, request not queued");
+            return false;
+        }
+        L.d("[ConnectionQueue] " + caller);
+
+        addRequestToQueue(prepareCommonRequestData() + "&" + key + "=" + UtilsNetworking.urlEncodeString(rawValue), false, null);
+        tick();
+        return true;
+    }
+
     /**
      * Send a direct request to server
      * We have encoded each key and value as http url encoded.
@@ -609,6 +631,12 @@ class ConnectionQueue implements RequestQueueProvider {
         L.d("[ConnectionQueue] sendMetricsRequest");
         addRequestToQueue(prepareCommonRequestData() + "&metrics=" + preparedMetrics, false, null);
         tick();
+    }
+
+    /** Queues the connection test report as its own request. No consent gate, the report carries no user data. */
+    @Override
+    public void sendConnectionTestResults(@NonNull String resultsJson) {
+        queueSingleParamRequest("sendConnectionTestResults", ModuleConnectionTest.keyResults, resultsJson);
     }
 
     /**
@@ -983,9 +1011,10 @@ class ConnectionQueue implements RequestQueueProvider {
      * Does nothing if there is connection queue data or if a ConnectionProcessor
      * is already running.
      * <br>
-     * Should only be called if SDK is initialized
+     * Should only be called if SDK is initialized.
+     * Synchronized: the log delivery and connection test threads call it too, and a race would submit two processors.
      */
-    public void tick() {
+    public synchronized void tick() {
         //todo enable later
         //assert storageProvider != null;
         if (backoff_.get()) {

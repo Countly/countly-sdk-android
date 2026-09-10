@@ -11,6 +11,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
 
+import static ly.count.android.sdk.ModuleConfiguration.keyLGBatchSize;
+import static ly.count.android.sdk.ModuleConfiguration.keyLGEnabled;
+import static ly.count.android.sdk.ModuleConfiguration.keyLGId;
+import static ly.count.android.sdk.ModuleConfiguration.keyLGLevels;
 import static ly.count.android.sdk.ModuleConfiguration.keyRAutomaticCrashReporting;
 import static ly.count.android.sdk.ModuleConfiguration.keyRAutomaticSessionTracking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRAutomaticViewTracking;
@@ -35,6 +39,7 @@ import static ly.count.android.sdk.ModuleConfiguration.keyRLimitTraceLength;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitTraceLine;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLimitValueSize;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLocationTracking;
+import static ly.count.android.sdk.ModuleConfiguration.keyRLogGathering;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLogging;
 import static ly.count.android.sdk.ModuleConfiguration.keyRNetworking;
 import static ly.count.android.sdk.ModuleConfiguration.keyRRefreshContentZone;
@@ -54,11 +59,17 @@ import static ly.count.android.sdk.ModuleConfiguration.keyRViewTracking;
 
 class ServerConfigBuilder {
     final Map<String, Object> config;
+    /**
+     * Keys that sit NEXT to 'c' in the response, not inside it. Holds both the ones this SDK supports, like the
+     * 'lg' log gathering directive, and the ones it does not, like the 'ct' connection test flag.
+     */
+    final Map<String, Object> topLevelKeys;
     private long timestamp;
     private String version;
 
     public ServerConfigBuilder() {
         config = new HashMap<>();
+        topLevelKeys = new HashMap<>();
         timestamp = System.currentTimeMillis();
         version = "1";
     }
@@ -266,6 +277,59 @@ class ServerConfigBuilder {
         return this;
     }
 
+    /**
+     * Sets any top level key of the response, a sibling of 'c' and not a member of it.
+     * Use it for the keys this SDK does not support, for example the 'ct' connection test flag, to build a response
+     * that the SDK has to tolerate.
+     */
+    ServerConfigBuilder topLevelKey(String key, Object value) {
+        topLevelKeys.put(key, value);
+        return this;
+    }
+
+    /**
+     * Top level 'lg' directive that tells this device NOT to gather its SDK logs: {"e":false}
+     */
+    ServerConfigBuilder logGatheringOff() throws JSONException {
+        return logGatheringDirective(false, null, null, null);
+    }
+
+    /**
+     * Top level 'lg' directive that tells this device to gather its SDK logs, with every field filled in:
+     * {"e":true,"i":gatherId,"l":levels,"b":batchSize}
+     */
+    ServerConfigBuilder logGatheringOn(String gatherId, String levels, int batchSize) throws JSONException {
+        return logGatheringDirective(true, gatherId, levels, batchSize);
+    }
+
+    /**
+     * Top level 'lg' directive assembled from raw values, so that the malformed shapes the server should never send
+     * can be built too. Any value given as null is left out of the directive instead of being written as JSON null.
+     */
+    ServerConfigBuilder logGatheringDirective(Object enabled, Object gatherId, Object levels, Object batchSize) throws JSONException {
+        JSONObject directive = new JSONObject();
+        putIfNotNull(directive, keyLGEnabled, enabled);
+        putIfNotNull(directive, keyLGId, gatherId);
+        putIfNotNull(directive, keyLGLevels, levels);
+        putIfNotNull(directive, keyLGBatchSize, batchSize);
+        return topLevelKey(keyRLogGathering, directive);
+    }
+
+    /**
+     * Builds a response that carries no 'lg' directive at all, which is a different case from one that carries a
+     * directive saying no
+     */
+    ServerConfigBuilder withoutLogGathering() {
+        topLevelKeys.remove(keyRLogGathering);
+        return this;
+    }
+
+    private static void putIfNotNull(JSONObject target, String key, Object value) throws JSONException {
+        if (value != null) {
+            target.put(key, value);
+        }
+    }
+
     boolean refreshContentZone() {
         Object val = config.get(keyRRefreshContentZone);
         return val == null || (boolean) val;
@@ -326,6 +390,12 @@ class ServerConfigBuilder {
         jsonObject.put(keyRTimestamp, timestamp);
         jsonObject.put(keyRVersion, version);
         jsonObject.put(keyRConfig, new JSONObject(config));
+
+        //everything that sits next to 'c' rather than inside it
+        for (Map.Entry<String, Object> topLevelKey : topLevelKeys.entrySet()) {
+            jsonObject.put(topLevelKey.getKey(), topLevelKey.getValue());
+        }
+
         return jsonObject;
     }
 
