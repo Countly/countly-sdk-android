@@ -193,7 +193,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
      * The readable part is capped at {@link #MAX_NAMESPACE_PREFIX_LENGTH} characters; the hash is
      * always computed over the full name, so two long names sharing a prefix still get distinct files.
      */
-    static String sanitizeNamespace(String name) {
+    public static String sanitizeNamespace(String name) {
         if (name == null || name.isEmpty()) {
             return "";
         }

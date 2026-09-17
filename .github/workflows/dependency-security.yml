@@ -54,6 +54,10 @@ jobs:
       # The Android Gradle Plugin cannot configure the projects without an SDK present.
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          # The action's default is "tools platform-tools", but Google has removed the
+          # obsolete "tools" package from the SDK repository, so the default now fails.
+          packages: platform-tools
 
       - name: Resolve dependencies for every module
         run: |
@@ -158,6 +162,8 @@ jobs:
           java-version: '17'
           distribution: 'corretto'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Submit resolved dependency graph to GitHub
         uses: gradle/actions/dependency-submission@v4
         env:
