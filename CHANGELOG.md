@@ -8,6 +8,7 @@
 * Added support for the SDK connection test. When the server asks for it, the SDK checks that it can reach every endpoint it depends on and reports the results.
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
+* Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
 * Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
 * Removed the unused `androidx.multidex:multidex` dependency, which the minimum SDK of 21 has not needed.
 
