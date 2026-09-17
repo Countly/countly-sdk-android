@@ -40,7 +40,11 @@ jobs:
           distribution: ${{ env.JAVA_DIST }}
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2.0.10
+        uses: android-actions/setup-android@v3
+        with:
+          # The action's default is "tools platform-tools", but Google has removed the
+          # obsolete "tools" package from the SDK repository, so the default now fails.
+          packages: platform-tools
 
       - name: Start ADB Server
         run: adb start-server
