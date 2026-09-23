@@ -1,4 +1,5 @@
 ## XX.XX.XX
+
 * Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
 
   `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
@@ -9,6 +10,8 @@
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
 * Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
+* Added support for the large icon of push notifications, and it is available through `CountlyPush.Message.largeIcon()`.
+* Added support for push notification collapse keys, and it is available through `CountlyPush.Message.collapseKey()`.
 * Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
 * Removed the unused `androidx.multidex:multidex` dependency, which the minimum SDK of 21 has not needed.
 

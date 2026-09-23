@@ -13,10 +13,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,10 +38,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import ly.count.android.sdk.Countly;
@@ -77,6 +83,21 @@ public class CountlyPush {
      * Maximum attempts to download a media for a rich push
      */
     static int MEDIA_DOWNLOAD_ATTEMPTS = 3;
+
+    /**
+     * Largest width or height, in pixels, a notification large icon is kept at
+     */
+    static final int LARGE_ICON_MAX_SIZE = 256;
+
+    /**
+     * Prefix of the notification tag used for messages that carry a collapse key
+     */
+    static final String COLLAPSE_TAG_PREFIX = "ly.count.android.sdk.CountlyPush.collapse.";
+
+    /**
+     * Notification ID used together with the collapse tag, the tag alone tells collapsed notifications apart
+     */
+    static final int COLLAPSE_NOTIFICATION_ID = 0;
 
     /**
      * @deprecated No longer used. Setting this field has no effect. Enable the additional intent
@@ -140,6 +161,26 @@ public class CountlyPush {
          * @return message media URL or {@code null} if no media specified
          */
         URL media();
+
+        /**
+         * Large icon shown next to the notification text. Either an http(s) URL of an image, or the
+         * name of a drawable or mipmap resource in the app.
+         *
+         * @return large icon string or {@code null} if no large icon specified
+         */
+        default String largeIcon() {
+            return null;
+        }
+
+        /**
+         * Collapse key of this message. A notification whose message has the same collapse key as a
+         * notification already shown replaces it instead of being shown next to it.
+         *
+         * @return collapse key string or {@code null} if no collapse key specified
+         */
+        default String collapseKey() {
+            return null;
+        }
 
         /**
          * List of buttons to display along this message if any
@@ -442,24 +483,56 @@ public class CountlyPush {
             }
         }
 
-        if (msg.media() != null) {
-            loadImage(context, msg, new BitmapCallback() {
-                @Override
-                public void call(Bitmap bitmap) {
-                    if (bitmap != null) {
-                        builder.setStyle(new Notification.BigPictureStyle()
-                            .bigPicture(bitmap)
-                            .setBigContentTitle(msg.title())
-                            .setSummaryText(msg.message()));
-                    }
-                    manager.notify(msg.id().hashCode(), builder.build());
+        loadLargeIcon(context, msg.largeIcon(), new BitmapCallback() {
+            @Override
+            public void call(final Bitmap largeIcon) {
+                if (largeIcon != null) {
+                    builder.setLargeIcon(largeIcon);
                 }
-            }, 1);
-        } else {
-            manager.notify(msg.id().hashCode(), builder.build());
-        }
+
+                if (msg.media() != null) {
+                    loadImage(context, msg, new BitmapCallback() {
+                        @Override
+                        public void call(Bitmap bitmap) {
+                            if (bitmap != null) {
+                                Notification.BigPictureStyle style = new Notification.BigPictureStyle()
+                                    .bigPicture(bitmap)
+                                    .setBigContentTitle(msg.title())
+                                    .setSummaryText(msg.message());
+                                if (largeIcon != null) {
+                                    style.bigLargeIcon((Bitmap) null);
+                                }
+                                builder.setStyle(style);
+                            }
+                            postNotification(manager, msg, builder.build());
+                        }
+                    });
+                } else {
+                    postNotification(manager, msg, builder.build());
+                }
+            }
+        });
 
         return Boolean.TRUE;
+    }
+
+    /**
+     * Posts the notification of a message. A message with a collapse key is posted under a tag
+     * derived from that key, so a later message with the same key replaces it. Any other message
+     * keeps a notification of its own, identified by its message ID.
+     *
+     * @param manager notification manager to post with
+     * @param msg message the notification was built from
+     * @param notification notification to post
+     */
+    private static void postNotification(@NonNull NotificationManager manager, @NonNull Message msg, @NonNull Notification notification) {
+        String collapseKey = msg.collapseKey();
+        if (collapseKey != null) {
+            Countly.sharedInstance().L.d("[CountlyPush, postNotification] Posting notification under collapse key [" + collapseKey + "]");
+            manager.notify(COLLAPSE_TAG_PREFIX + collapseKey, COLLAPSE_NOTIFICATION_ID, notification);
+        } else {
+            manager.notify(msg.id().hashCode(), notification);
+        }
     }
 
     // package-private (not private) so the config -> intent-extra wiring is unit-testable.
@@ -636,7 +709,7 @@ public class CountlyPush {
 
                 builder.create().show();
             }
-        }, 1);
+        });
         return Boolean.TRUE;
     }
 
@@ -951,60 +1024,180 @@ public class CountlyPush {
         void call(Bitmap bitmap);
     }
 
-    private static void loadImage(@NonNull final Context context, @NonNull final Message msg, @NonNull final BitmapCallback callback, final int attempt) {
+    /**
+     * Scales a large icon down so its longer side is at most {@link #LARGE_ICON_MAX_SIZE}, keeping
+     * the aspect ratio. The system shows large icons at around 64dp, and Android versions before 9
+     * pass the bitmap to the notification service at full size, where an oversized one can exceed
+     * the binder transaction limit and fail to be shown.
+     *
+     * @param bitmap icon to scale
+     * @return the scaled bitmap, or the given one if it already fits
+     */
+    static Bitmap scaleLargeIcon(@NonNull Bitmap bitmap) {
+        int longer = Math.max(bitmap.getWidth(), bitmap.getHeight());
+        if (longer <= LARGE_ICON_MAX_SIZE) {
+            return bitmap;
+        }
+        float ratio = (float) LARGE_ICON_MAX_SIZE / longer;
+        int width = Math.max(1, Math.round(bitmap.getWidth() * ratio));
+        int height = Math.max(1, Math.round(bitmap.getHeight() * ratio));
+        return Bitmap.createScaledBitmap(bitmap, width, height, true);
+    }
+
+    /**
+     * Downloads the media of a message in the background and hands the decoded bitmap to the
+     * callback on the main thread. The callback receives {@code null} when the message has no media
+     * or it could not be downloaded.
+     *
+     * @param context context whose main thread the callback runs on
+     * @param msg message whose media to download
+     * @param callback receives the bitmap
+     */
+    private static void loadImage(@NonNull final Context context, @NonNull final Message msg, @NonNull final BitmapCallback callback) {
         Utils.runInBackground(new Runnable() {
             @Override public void run() {
-                final Bitmap[] bitmap = { null };
-
-                if (msg.media() != null) {
-                    HttpURLConnection connection = null;
-                    InputStream input = null;
-                    try {
-                        connection = (HttpURLConnection) msg.media().openConnection();
-                        connection.setDoInput(true);
-                        connection.setConnectTimeout(MEDIA_DOWNLOAD_TIMEOUT);
-                        connection.setReadTimeout(MEDIA_DOWNLOAD_TIMEOUT);
-                        connection.connect();
-                        input = connection.getInputStream();
-                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                        byte[] buf = new byte[16384];
-                        int read;
-                        while ((read = input.read(buf, 0, buf.length)) != -1) {
-                            bytes.write(buf, 0, read);
-                        }
-                        bytes.flush();
-
-                        byte[] data = bytes.toByteArray();
-                        bitmap[0] = BitmapFactory.decodeByteArray(data, 0, data.length);
-                    } catch (Exception e) {
-                        Countly.sharedInstance().L.e("[CountlyPush] loadImage, Cannot download message media ", e);
-                        if (attempt < MEDIA_DOWNLOAD_ATTEMPTS) {
-                            loadImage(context, msg, callback, attempt + 1);
-                            return;
-                        }
-                    } finally {
-                        if (input != null) {
-                            try {
-                                input.close();
-                            } catch (IOException ignored) {
-                            }
-                        }
-                        if (connection != null) {
-                            try {
-                                connection.disconnect();
-                            } catch (Throwable ignored) {
-                            }
-                        }
-                    }
-                }
-
+                final Bitmap bitmap = msg.media() == null ? null : downloadBitmap(msg.media(), "message media");
                 new Handler(context.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
-                        callback.call(bitmap[0]);
+                        callback.call(bitmap);
                     }
                 });
             }
         });
+    }
+
+    /**
+     * Resolves the large icon of a message and hands it to the callback. An http(s) URL is
+     * downloaded in the background and the callback runs on the main thread; any other value is
+     * looked up as a drawable or mipmap resource of the app and the callback runs right away, as it
+     * does when there is no large icon. The callback receives {@code null} when the icon cannot be
+     * resolved, so the notification is still shown without it.
+     *
+     * @param context context to resolve resources in and whose main thread the callback runs on
+     * @param largeIcon large icon value of the message, may be {@code null}
+     * @param callback receives the icon, scaled with {@link #scaleLargeIcon(Bitmap)}
+     */
+    private static void loadLargeIcon(@NonNull final Context context, @Nullable final String largeIcon, @NonNull final BitmapCallback callback) {
+        if (largeIcon == null) {
+            callback.call(null);
+            return;
+        }
+
+        String lowerCase = largeIcon.toLowerCase(Locale.ROOT);
+        if (!lowerCase.startsWith("http://") && !lowerCase.startsWith("https://")) {
+            Bitmap bitmap = largeIconFromResource(context, largeIcon);
+            callback.call(bitmap == null ? null : scaleLargeIcon(bitmap));
+            return;
+        }
+
+        final URL url;
+        try {
+            url = new URL(largeIcon);
+        } catch (MalformedURLException e) {
+            Countly.sharedInstance().L.w("[CountlyPush] loadLargeIcon, Bad large icon URL [" + largeIcon + "], ignoring");
+            callback.call(null);
+            return;
+        }
+
+        Utils.runInBackground(new Runnable() {
+            @Override public void run() {
+                Bitmap downloaded = downloadBitmap(url, "large icon");
+                final Bitmap bitmap = downloaded == null ? null : scaleLargeIcon(downloaded);
+                new Handler(context.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.call(bitmap);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Looks up a large icon given as the name of a drawable or mipmap resource of the app. Vector
+     * and other non-bitmap drawables are drawn into a bitmap at their intrinsic size.
+     *
+     * @param context context of the app that owns the resource
+     * @param name resource name, without the type prefix
+     * @return the icon bitmap, or {@code null} if no such resource exists or it cannot be drawn
+     */
+    private static Bitmap largeIconFromResource(@NonNull Context context, @NonNull String name) {
+        try {
+            Resources resources = context.getResources();
+            int id = resources.getIdentifier(name, "drawable", context.getPackageName());
+            if (id == 0) {
+                id = resources.getIdentifier(name, "mipmap", context.getPackageName());
+            }
+            if (id == 0) {
+                Countly.sharedInstance().L.w("[CountlyPush] largeIconFromResource, No drawable or mipmap resource named [" + name + "], showing the notification without a large icon");
+                return null;
+            }
+
+            Drawable drawable = resources.getDrawable(id, context.getTheme());
+            if (drawable instanceof BitmapDrawable && ((BitmapDrawable) drawable).getBitmap() != null) {
+                return ((BitmapDrawable) drawable).getBitmap();
+            }
+
+            int width = drawable.getIntrinsicWidth() > 0 ? drawable.getIntrinsicWidth() : LARGE_ICON_MAX_SIZE;
+            int height = drawable.getIntrinsicHeight() > 0 ? drawable.getIntrinsicHeight() : LARGE_ICON_MAX_SIZE;
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, width, height);
+            drawable.draw(canvas);
+            return bitmap;
+        } catch (Throwable t) {
+            Countly.sharedInstance().L.w("[CountlyPush] largeIconFromResource, Cannot load large icon resource [" + name + "], showing the notification without a large icon", t);
+            return null;
+        }
+    }
+
+    /**
+     * Downloads and decodes an image, retrying up to {@link #MEDIA_DOWNLOAD_ATTEMPTS} times. Must be
+     * called off the main thread.
+     *
+     * @param url image URL
+     * @param what what the image is, for logging
+     * @return the decoded bitmap, or {@code null} if it could not be downloaded or decoded
+     */
+    private static Bitmap downloadBitmap(@NonNull URL url, @NonNull String what) {
+        for (int attempt = 1; attempt <= MEDIA_DOWNLOAD_ATTEMPTS; attempt++) {
+            HttpURLConnection connection = null;
+            InputStream input = null;
+            try {
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setDoInput(true);
+                connection.setConnectTimeout(MEDIA_DOWNLOAD_TIMEOUT);
+                connection.setReadTimeout(MEDIA_DOWNLOAD_TIMEOUT);
+                connection.connect();
+                input = connection.getInputStream();
+                ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                byte[] buf = new byte[16384];
+                int read;
+                while ((read = input.read(buf, 0, buf.length)) != -1) {
+                    bytes.write(buf, 0, read);
+                }
+                bytes.flush();
+
+                byte[] data = bytes.toByteArray();
+                return BitmapFactory.decodeByteArray(data, 0, data.length);
+            } catch (Exception e) {
+                Countly.sharedInstance().L.e("[CountlyPush] downloadBitmap, Cannot download " + what + ", attempt [" + attempt + "]", e);
+            } finally {
+                if (input != null) {
+                    try {
+                        input.close();
+                    } catch (IOException ignored) {
+                    }
+                }
+                if (connection != null) {
+                    try {
+                        connection.disconnect();
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
