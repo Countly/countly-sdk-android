@@ -1,5 +1,4 @@
-## XX.XX.XX
-
+## XX.XX.XX 
 * Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
 
   `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
