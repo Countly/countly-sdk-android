@@ -2149,6 +2149,40 @@ public class ModuleViewsTests {
         Assert.assertEquals(8, TestUtils.getCurrentRQ().length);
     }
 
+    /**
+     * "startView" with a bg/fg switch
+     * - Validate that the ID returned by "startView" still resolves after the view was closed on background
+     * and reopened on foreground under a new ID
+     * - Validate that "stopViewWithID" with that ID closes the view instead of being ignored
+     * - Validate that no ID of a stopped view is kept around
+     */
+    @Test
+    public void startView_viewIDResolvesAfterBackgroundForeground() {
+        CountlyConfig countlyConfig = TestUtils.createBaseConfig(TestUtils.getContext());
+        countlyConfig.setEventQueueSizeToSend(1);
+
+        Countly countly = new Countly().init(countlyConfig);
+
+        Activity activity = mock(Activity.class);
+        countly.onStart(activity);
+
+        String viewID = countly.views().startView("test");
+        Assert.assertTrue(countly.moduleViews.viewDataMap.containsKey(viewID));
+
+        countly.onStop();
+        countly.onStart(activity);
+
+        String currentViewID = countly.moduleViews.currentIDFor(viewID);
+        Assert.assertNotEquals(viewID, currentViewID);
+        Assert.assertTrue(countly.moduleViews.viewDataMap.containsKey(currentViewID));
+        Assert.assertFalse(countly.moduleViews.viewDataMap.containsKey(viewID));
+
+        countly.views().stopViewWithID(viewID);
+
+        Assert.assertTrue(countly.moduleViews.viewDataMap.isEmpty());
+        Assert.assertTrue(countly.moduleViews.restartedViewIDs.isEmpty());
+    }
+
     static void validateView(String viewName, Double viewDuration, int idx, int size, boolean start, boolean visit, Map<String, Object> customSegmentation, String id, String pvid) throws JSONException {
         validateView(viewName, viewDuration, idx, size, start, visit, customSegmentation, id, pvid, null);
     }

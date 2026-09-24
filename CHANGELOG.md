@@ -17,6 +17,8 @@
   * it was compiled to Java 11 bytecode instead of Java 8, which older Android Gradle Plugin versions cannot read.
   * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, lower than any release since 23.8.0 accepted, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
 
+* Fixed an issue where a view ID stopped working after the app was backgrounded and foregrounded. The view was reopened under a new ID, so `stopViewWithID`, `pauseViewWithID`, `resumeViewWithID`, and `addSegmentationToViewWithID` no longer recognized the ID returned by `startView`, and the view stayed open.
+
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
 * Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.
