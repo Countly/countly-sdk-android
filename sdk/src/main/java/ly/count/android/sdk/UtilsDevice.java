@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Insets;
 import android.graphics.Rect;
+import android.hardware.display.DisplayManager;
 import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -73,12 +74,22 @@ class UtilsDevice {
         return url + (url.contains("?") ? "&" : "?") + "th=" + theme;
     }
 
+    /**
+     * Returns the screen metrics used for the resolution metric and for sizing content and
+     * feedback widgets. Reads them through the WindowManager that {@link #obtainWindowManager}
+     * resolves, and through DisplayManager when it resolves none.
+     *
+     * @param context context the metrics are requested with, usually the Application context
+     * @return the resolved metrics
+     */
     @NonNull
     static DisplayMetrics getDisplayMetrics(@NonNull final Context context) {
         final WindowManager wm = obtainWindowManager(context);
         final DisplayMetrics metrics = new DisplayMetrics();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (wm == null) {
+            applyDisplayMetrics(context, metrics);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             applyWindowMetrics(context, wm, metrics);
         } else {
             applyLegacyMetrics(context, wm, metrics);
@@ -86,29 +97,56 @@ class UtilsDevice {
         return metrics;
     }
 
-    // On API 31+, getSystemService(WINDOW_SERVICE) from a non-UI context trips
-    // StrictMode#detectIncorrectContextUse. Prefer a UI context when one is
-    // available (held foreground Activity, then createWindowContext fallback)
-    // and only resolve WindowManager from it.
-    @NonNull
+    /**
+     * Resolves WindowManager from a visual context: the given context when it is an Activity,
+     * otherwise the held foreground Activity. From API 30, StrictMode reports reading WindowManager
+     * from a non-visual context such as the Application, so null is returned there when no Activity
+     * is available. Older versions have no such check, so the given context is used there.
+     *
+     * @param context context the metrics are requested with
+     * @return the WindowManager to read metrics from, or null when there is no visual context on API 30+
+     */
+    @Nullable
     private static WindowManager obtainWindowManager(@NonNull Context context) {
         if (context instanceof Activity) {
             return (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            Activity held = CountlyActivityHolder.getInstance().getActivity();
-            if (held != null) {
-                return (WindowManager) held.getSystemService(Context.WINDOW_SERVICE);
-            }
-            try {
-                Context uiContext = context.createWindowContext(
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY, null);
-                return (WindowManager) uiContext.getSystemService(Context.WINDOW_SERVICE);
-            } catch (Throwable ignored) {
-                // Fall through to original context if window context creation is rejected.
+        Activity held = CountlyActivityHolder.getInstance().getActivity();
+        if (held != null) {
+            return (WindowManager) held.getSystemService(Context.WINDOW_SERVICE);
+        }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            return (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        }
+        return null;
+    }
+
+    /**
+     * Fills the metrics with the default display's real size, read through DisplayManager, which is
+     * not a visual service and can be used from the Application context. The display cutout's safe
+     * insets are subtracted, as the WindowManager path does. Falls back to the context's resource
+     * metrics when the display can not be resolved.
+     *
+     * @param context context to resolve DisplayManager and resources from
+     * @param outMetrics metrics to fill
+     */
+    @SuppressWarnings("deprecation")
+    private static void applyDisplayMetrics(@NonNull Context context, @NonNull DisplayMetrics outMetrics) {
+        final DisplayManager dm = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
+        final Display display = dm != null ? dm.getDisplay(Display.DEFAULT_DISPLAY) : null;
+        if (display == null) {
+            outMetrics.setTo(context.getResources().getDisplayMetrics());
+            return;
+        }
+        display.getRealMetrics(outMetrics);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            final DisplayCutout displayCutout = display.getCutout();
+            if (displayCutout != null) {
+                outMetrics.widthPixels -= displayCutout.getSafeInsetLeft() + displayCutout.getSafeInsetRight();
+                outMetrics.heightPixels -= displayCutout.getSafeInsetTop() + displayCutout.getSafeInsetBottom();
             }
         }
-        return (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
     }
 
     @TargetApi(Build.VERSION_CODES.R)

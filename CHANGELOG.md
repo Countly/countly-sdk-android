@@ -1,3 +1,8 @@
+## XX.XX.XX
+* Mitigated issues where display metrics collection caused `IncorrectContextUseViolation` StrictMode warnings:
+  * on Android 11, whenever display metrics were collected.
+  * on Android 12 and above, when no Activity was in the foreground, for example for a remote config download during init, a crash report, or a manually started session.
+
 ## 26.1.6-nw
 * Fixed regressions where the SDK forced a newer build toolchain on integrators:
   * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
