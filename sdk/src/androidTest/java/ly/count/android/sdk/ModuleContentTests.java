@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
@@ -17,6 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -427,5 +429,98 @@ public class ModuleContentTests {
         } finally {
             CountlyActivityHolder.getInstance().clearActivity(darkActivity);
         }
+    }
+
+    // ======== global content segmentation ========
+
+    private Countly initForGlobalSegmentation() {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.disableHealthCheck();
+        config.immediateRequestGenerator = createCapturingIRGenerator();
+
+        mCountly = new Countly();
+        mCountly.init(config);
+        mCountly.moduleContent.countlyTimer = null;
+        return mCountly;
+    }
+
+    private ModuleFeedback.CountlyFeedbackWidget npsWidget() {
+        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
+        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
+        widgetInfo.widgetId = "1234";
+        widgetInfo.name = "someName";
+        return widgetInfo;
+    }
+
+    /**
+     * The global content segmentation is added to a feedback widget event, the widget's own keys and
+     * the answers it reports win over a global value with the same key, and setting 'null' clears it.
+     */
+    @Test
+    public void globalContentSegmentation_stampsFeedbackWidgetEventsWithoutOverridingTheirKeys() {
+        Countly countly = initForGlobalSegmentation();
+        EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+
+        Map<String, Object> globalSegmentation = new HashMap<>();
+        globalSegmentation.put("screen", "checkout");
+        globalSegmentation.put("step", 3);
+        globalSegmentation.put("rating", "should lose to the answer");
+        countly.contents().setGlobalContentSegmentation(globalSegmentation);
+
+        Map<String, Object> widgetResult = new HashMap<>();
+        widgetResult.put("rating", 4);
+        countly.feedback().reportFeedbackWidgetManually(npsWidget(), null, widgetResult);
+
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("screen", "checkout");
+        expected.put("step", 3);
+        expected.put("platform", "android");
+        expected.put("app_version", "1.0");
+        expected.put("widget_id", "1234");
+        expected.put("rating", 4);
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+
+        countly.contents().setGlobalContentSegmentation(null);
+        countly.feedback().reportFeedbackWidgetManually(npsWidget(), null, widgetResult);
+
+        expected.remove("screen");
+        expected.remove("step");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+    }
+
+    /**
+     * A global value for a key the events build themselves is dropped when it is set, a later call
+     * replaces the whole segmentation rather than merging into it, and neither a session ending nor a
+     * new one starting forgets what was set.
+     */
+    @Test
+    public void globalContentSegmentation_dropsReservedKeysAndSurvivesASessionRestart() {
+        Countly countly = initForGlobalSegmentation();
+        EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+
+        Map<String, Object> globalSegmentation = new HashMap<>();
+        globalSegmentation.put("widget_id", "hijacked");
+        globalSegmentation.put("platform", "hijacked");
+        globalSegmentation.put("app_version", "hijacked");
+        globalSegmentation.put("closed", "hijacked");
+        globalSegmentation.put("screen", "settings");
+        countly.contents().setGlobalContentSegmentation(globalSegmentation);
+
+        Map<String, Object> replacement = new HashMap<>();
+        replacement.put("state", "logged_in");
+        countly.contents().setGlobalContentSegmentation(replacement);
+
+        countly.sessions().endSession();
+        countly.sessions().beginSession();
+
+        countly.moduleFeedback.reportFeedbackWidgetCancelButton(npsWidget());
+
+        Map<String, Object> expected = new HashMap<>();
+        expected.put("state", "logged_in");
+        expected.put("platform", "android");
+        expected.put("app_version", "1.0");
+        expected.put("widget_id", "1234");
+        expected.put("closed", "1");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
     }
 }

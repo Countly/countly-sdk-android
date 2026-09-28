@@ -11,7 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,6 +41,14 @@ public class ModuleContent extends ModuleBase {
     // Buffered content when no activity is available
     private Map<Integer, TransparentActivityConfig> pendingContentConfigs;
 
+    //Swapped wholesale instead of mutated: events are recorded from the main thread while the setter can be
+    //called from any thread, and a replaced reference is always a fully built map - clearing and refilling
+    //one in place would let an event in between be stamped with half of the new segmentation.
+    @NonNull private volatile Map<String, Object> globalContentSegmentation = Collections.emptyMap();
+
+    //the keys the content and feedback widget events build themselves, which a global value must not replace
+    private final static String[] reservedSegmentationKeysContent = { "platform", "app_version", "widget_id", "closed" };
+
     private @Nullable Activity getCurrentActivity() {
         return currentActivity != null ? currentActivity.get() : null;
     }
@@ -59,6 +69,57 @@ public class ModuleContent extends ModuleBase {
         if (!webViewEnabled) {
             L.i("[ModuleContent] WebView is disabled via configuration, content overlay will not be shown");
         }
+    }
+
+    /**
+     * Sanitizes the given segmentation and makes it the segmentation added to every content and
+     * feedback widget event of this instance. It lives for as long as the instance does, so it
+     * survives a session ending and a new one starting, and it is never written to storage.
+     *
+     * @param segmentation the map given by the developer, 'null' or empty clears the stored one
+     */
+    void setGlobalContentSegmentationInternal(@Nullable Map<String, Object> segmentation) {
+        L.d("[ModuleContent] Calling setGlobalContentSegmentationInternal with[" + (segmentation == null ? "null" : segmentation.size()) + "] entries");
+
+        if (segmentation == null || segmentation.isEmpty()) {
+            globalContentSegmentation = Collections.emptyMap();
+            return;
+        }
+
+        //copy first: the helpers below truncate keys/values and drop entries past the limit IN PLACE, and
+        //this is the developer's own map held by reference
+        Map<String, Object> sanitized = new LinkedHashMap<>(segmentation);
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(sanitized, reservedSegmentationKeysContent, "[ModuleContent] setGlobalContentSegmentationInternal, ", L);
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(sanitized, _cly.sdkInternalLimits_, L, "[ModuleContent] setGlobalContentSegmentationInternal");
+
+        globalContentSegmentation = sanitized;
+    }
+
+    /**
+     * Puts the instance's global content segmentation underneath the segmentation an event built for
+     * itself. The event's own entries win, so a global value can never replace a key like "widget_id"
+     * or an answer reported by a feedback widget.
+     *
+     * @param cly the instance recording the event
+     * @param eventSegmentation the segmentation the content or feedback widget event built for itself
+     * @return the merged segmentation, or eventSegmentation itself when there is nothing to add
+     */
+    @NonNull static Map<String, Object> withGlobalContentSegmentation(@Nullable Countly cly, @NonNull Map<String, Object> eventSegmentation) {
+        //read once into a local: a teardown on another thread nulls the module fields, and a missing content
+        //module means there is no global segmentation, which is the same answer an initialised one would give
+        ModuleContent contentModule = cly == null ? null : cly.moduleContent;
+        if (contentModule == null) {
+            return eventSegmentation;
+        }
+
+        Map<String, Object> globalSegmentation = contentModule.globalContentSegmentation;
+        if (globalSegmentation.isEmpty()) {
+            return eventSegmentation;
+        }
+
+        Map<String, Object> merged = new LinkedHashMap<>(globalSegmentation);
+        merged.putAll(eventSegmentation);
+        return merged;
     }
 
     @Override
@@ -673,6 +734,20 @@ public class ModuleContent extends ModuleBase {
             }
 
             refreshContentZoneInternal(true);
+        }
+
+        /**
+         * Sets a segmentation recorded with every content and feedback widget event, on top of the
+         * keys those events already report. It is kept for as long as the app runs, including when a
+         * session ends and a new one starts, and it is not restored after an app restart.
+         *
+         * @param segmentation Map<String, Object> - global content segmentation, 'null' clears it
+         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         */
+        public void setGlobalContentSegmentation(@Nullable Map<String, Object> segmentation) {
+            L.i("[Content] Calling setGlobalContentSegmentation sg[" + (segmentation == null ? segmentation : segmentation.size()) + "]");
+
+            setGlobalContentSegmentationInternal(segmentation);
         }
     }
 }
