@@ -355,14 +355,12 @@ public class ModuleCrash extends ModuleBase {
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (!configProvider.getCrashReportingEnabled()) {
-            L.d("[ModuleCrash] initFinished, Crash reporting is disabled in the server configuration");
-            return;
-        }
+        // resolved even while the server configuration disables crash reporting, as it can enable it later
+        Utils.runInBackground(deviceInfo::prefetchDiskBackedMetrics);
 
         //enable unhandled crash reporting
         if (!configProvider.getCrashReportingEnabled()) {
-            L.w("[ModuleCrash] initFinished, Crash reporting is disabled in the server configuration");
+            L.d("[ModuleCrash] initFinished, Crash reporting is disabled in the server configuration");
             return;
         }
 

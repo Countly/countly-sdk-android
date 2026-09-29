@@ -1,3 +1,9 @@
+## XX.XX.XX
+* Mitigated issues where the SDK caused StrictMode violations:
+  * `IncorrectContextUseViolation` when collecting display metrics on Android 11, or on newer versions when no Activity was in the foreground.
+  * `UntaggedSocketViolation` for its network requests, as their sockets were not tagged.
+  * disk reads on the main thread for the root and total RAM metrics when a crash was recorded.
+
 ## 26.1.6-nw
 * Fixed regressions where the SDK forced a newer build toolchain on integrators:
   * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
