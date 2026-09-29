@@ -1,4 +1,13 @@
 ## XX.XX.XX
+* !! Major breaking change !! New versions of the SDK are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
+  ```groovy
+  maven {
+    url = 'https://maven.countly.com'
+    content { includeGroupByRegex 'ly\\.count\\..*' }
+  }
+  ```
+  Versions released before this one stay available on Maven Central. The files are signed with the same key as before (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
+* ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Use the latest version of each instead of the SDK's version number.
 * Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
 
   `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 

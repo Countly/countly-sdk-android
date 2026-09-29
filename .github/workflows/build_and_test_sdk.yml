@@ -14,10 +14,12 @@ on:
     branches:
       - master
       - staging
+      - staging-nw
   pull_request:
     branches:
       - master
       - staging
+      - staging-nw
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -69,6 +71,10 @@ jobs:
         if: always()
         run: ./gradlew sdk-native:build
 
+      - name: Build and Test the Symbol Upload Plugin
+        if: always()
+        run: ./gradlew upload-plugin:build
+
       - name: Run the Android Unit Tests
         if: always()
         run: ./gradlew sdk:connectedAndroidTest
@@ -82,3 +88,4 @@ jobs:
           files: |
             sdk/build/outputs/androidTest-results/**/*.xml
             sdk-native/build/test-results/**/*.xml
+            upload-plugin/build/test-results/**/*.xml
