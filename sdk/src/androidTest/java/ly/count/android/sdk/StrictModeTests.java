@@ -1,8 +1,11 @@
 package ly.count.android.sdk;
 
+import android.content.Context;
 import android.net.TrafficStats;
 import android.os.Build;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.Lifecycle;
+import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.File;
 import java.io.IOException;
@@ -136,6 +139,33 @@ public class StrictModeTests {
         Assert.assertNotNull(crash);
         Assert.assertTrue(crash.getString("_root").equals("true") || crash.getString("_root").equals("false"));
         Assert.assertTrue(Long.parseLong(crash.getString("_ram_total")) > 0);
+    }
+
+    /**
+     * A real Activity starting with automatic sessions begins the session from the lifecycle
+     * callbacks, which collect the display metrics with the Application context. StrictMode reports
+     * no incorrect context use, and the begin_session request still carries the resolution.
+     */
+    @Test
+    public void activityStart_beginsSessionWithoutIncorrectContextUse() throws Exception {
+        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R);
+        recorder = StrictModeRecorder.startVm("IncorrectContextUseViolation", () -> TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE));
+        new Countly().init(TestUtils.createBaseConfig().setApplication(TestUtils.getApplication()));
+
+        try (ActivityScenario<ContentOverlayViewTests.OverlayTestActivity> scenario = ActivityScenario.launch(ContentOverlayViewTests.OverlayTestActivity.class)) {
+            Assert.assertEquals(Lifecycle.State.RESUMED, scenario.getState());
+        }
+
+        List<String> sdkViolations = recorder.violationsThrough("ly.count.android.sdk.");
+        Assert.assertTrue("incorrect context use: " + sdkViolations, sdkViolations.isEmpty());
+        String resolution = null;
+        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
+            if (request.containsKey("begin_session")) {
+                resolution = new JSONObject(request.get("metrics")).getString("_resolution");
+            }
+        }
+        Assert.assertNotNull("no begin_session request", resolution);
+        Assert.assertTrue(resolution, resolution.matches("\\d+x\\d+"));
     }
 
     /**
