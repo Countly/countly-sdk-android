@@ -6,7 +6,6 @@ import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
@@ -433,23 +432,14 @@ public class ModuleContentTests {
 
     // ======== global content segmentation ========
 
+    /**
+     * Initializes an instance with manual session control whose immediate requests are captured
+     * instead of sent.
+     */
     private Countly initForGlobalSegmentation() {
-        CountlyConfig config = TestUtils.createBaseConfig();
-        config.disableHealthCheck();
-        config.immediateRequestGenerator = createCapturingIRGenerator();
-
-        mCountly = new Countly();
-        mCountly.init(config);
-        mCountly.moduleContent.countlyTimer = null;
-        return mCountly;
-    }
-
-    private ModuleFeedback.CountlyFeedbackWidget npsWidget() {
-        ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
-        widgetInfo.type = ModuleFeedback.FeedbackWidgetType.nps;
-        widgetInfo.widgetId = "1234";
-        widgetInfo.name = "someName";
-        return widgetInfo;
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createCapturingIRGenerator());
+        config.disableHealthCheck().enableManualSessionControl();
+        return new Countly().init(config);
     }
 
     /**
@@ -460,28 +450,18 @@ public class ModuleContentTests {
     public void globalContentSegmentation_stampsFeedbackWidgetEventsWithoutOverridingTheirKeys() {
         Countly countly = initForGlobalSegmentation();
         EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+        ModuleFeedback.CountlyFeedbackWidget widget = ModuleFeedbackTests.createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
+        Map<String, Object> widgetResult = TestUtils.map("rating", 4);
 
-        Map<String, Object> globalSegmentation = new HashMap<>();
-        globalSegmentation.put("screen", "checkout");
-        globalSegmentation.put("step", 3);
-        globalSegmentation.put("rating", "should lose to the answer");
-        countly.contents().setGlobalContentSegmentation(globalSegmentation);
+        countly.contents().setGlobalContentSegmentation(TestUtils.map("screen", "checkout", "step", 3, "rating", "should lose to the answer"));
+        countly.feedback().reportFeedbackWidgetManually(widget, null, widgetResult);
 
-        Map<String, Object> widgetResult = new HashMap<>();
-        widgetResult.put("rating", 4);
-        countly.feedback().reportFeedbackWidgetManually(npsWidget(), null, widgetResult);
-
-        Map<String, Object> expected = new HashMap<>();
-        expected.put("screen", "checkout");
-        expected.put("step", 3);
-        expected.put("platform", "android");
-        expected.put("app_version", "1.0");
-        expected.put("widget_id", "1234");
-        expected.put("rating", 4);
+        Map<String, Object> expected = TestUtils.map("screen", "checkout", "step", 3, "rating", 4);
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
         verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
 
         countly.contents().setGlobalContentSegmentation(null);
-        countly.feedback().reportFeedbackWidgetManually(npsWidget(), null, widgetResult);
+        countly.feedback().reportFeedbackWidgetManually(widget, null, widgetResult);
 
         expected.remove("screen");
         expected.remove("step");
@@ -489,39 +469,38 @@ public class ModuleContentTests {
     }
 
     /**
-     * A global value for a key the events build themselves is dropped when it is set, the caller's own
-     * map is left untouched by that sanitisation, a later call replaces the whole segmentation rather
-     * than merging into it, and neither a session ending nor a new one starting forgets what was set.
+     * A global value for a key the events build themselves is dropped when it is set, so a global
+     * "closed" never marks an answered widget as closed, the caller's own map is left untouched by that
+     * sanitisation, a later call replaces the whole segmentation rather than merging into it, and
+     * neither a session ending nor a new one starting forgets what was set.
      */
     @Test
     public void globalContentSegmentation_dropsReservedKeysAndSurvivesASessionRestart() {
         Countly countly = initForGlobalSegmentation();
         EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+        ModuleFeedback.CountlyFeedbackWidget widget = ModuleFeedbackTests.createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
 
-        Map<String, Object> globalSegmentation = new HashMap<>();
-        globalSegmentation.put("widget_id", "hijacked");
-        globalSegmentation.put("platform", "hijacked");
-        globalSegmentation.put("app_version", "hijacked");
-        globalSegmentation.put("closed", "hijacked");
-        globalSegmentation.put("screen", "settings");
+        Map<String, Object> globalSegmentation = TestUtils.map("widget_id", "hijacked", "platform", "hijacked", "app_version", "hijacked", "closed", "hijacked", "screen", "settings");
         countly.contents().setGlobalContentSegmentation(globalSegmentation);
         Assert.assertEquals(5, globalSegmentation.size());
 
-        Map<String, Object> replacement = new HashMap<>();
-        replacement.put("state", "logged_in");
-        countly.contents().setGlobalContentSegmentation(replacement);
+        countly.feedback().reportFeedbackWidgetManually(widget, null, TestUtils.map("rating", 4));
 
+        Map<String, Object> expected = TestUtils.map("screen", "settings", "rating", 4);
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+
+        countly.contents().setGlobalContentSegmentation(TestUtils.map("state", "logged_in"));
+
+        countly.sessions().beginSession();
         countly.sessions().endSession();
         countly.sessions().beginSession();
+        Assert.assertTrue(countly.moduleSessions.sessionIsRunning());
 
-        countly.moduleFeedback.reportFeedbackWidgetCancelButton(npsWidget());
+        countly.moduleFeedback.reportFeedbackWidgetCancelButton(widget);
 
-        Map<String, Object> expected = new HashMap<>();
-        expected.put("state", "logged_in");
-        expected.put("platform", "android");
-        expected.put("app_version", "1.0");
-        expected.put("widget_id", "1234");
-        expected.put("closed", "1");
+        expected = TestUtils.map("state", "logged_in", "closed", "1");
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
         verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
     }
 }
