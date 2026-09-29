@@ -1,0 +1,242 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "production publishes to maven.countly.com; test is a dry run against maven-test.countly.com"
+        type: choice
+        options: [production, test]
+        default: production
+
+permissions: {}
+
+concurrency:
+  group: maven-publish
+  cancel-in-progress: false
+  queue: max
+
+env:
+  TAG: ${{ github.ref_name }}
+  TARGET: ${{ inputs.target || 'production' }}
+
+jobs:
+  plan:
+    name: Plan and check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      checks: read
+    outputs:
+      environment: ${{ steps.plan.outputs.environment }}
+      check_tasks: ${{ steps.plan.outputs.check_tasks }}
+      publish_tasks: ${{ steps.plan.outputs.publish_tasks }}
+      published_modules: ${{ steps.plan.outputs.published_modules }}
+    steps:
+      - name: Only tags can be released
+        if: github.ref_type != 'tag'
+        run: |
+          echo "::error::Run the release workflow on a tag, not on a branch."
+          exit 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read the GitHub release
+        id: release
+        if: env.TARGET == 'production'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          prerelease=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq .isPrerelease)
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+      - name: Plan
+        id: plan
+        run: python3 .github/release/release.py plan --tag "$TAG" --target "$TARGET" --commit "$GITHUB_SHA" --prerelease "${{ steps.release.outputs.prerelease || 'unknown' }}" --out plan.json
+      - name: The tag commit is on the release branch
+        if: env.TARGET == 'production'
+        run: python3 .github/release/release.py check-branch --plan plan.json --commit "$GITHUB_SHA"
+      - name: Version numbers match the tag
+        run: python3 .github/release/release.py check-sources --plan plan.json
+      - name: The version is not published yet
+        run: python3 .github/release/release.py check-absent --plan plan.json --target "$TARGET" --nocache "${{ github.run_id }}"
+      - name: Required checks passed on the tag commit
+        if: env.TARGET == 'production'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?per_page=100" > check-runs.json
+          python3 .github/release/release.py check-required --check-runs check-runs.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: plan
+          path: plan.json
+          retention-days: 7
+          if-no-files-found: error
+
+  build:
+    name: Build and check
+    needs: plan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: plan
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: corretto
+          java-version: '17'
+      - name: Record the JDK
+        run: |
+          echo '### JDK' >> "$GITHUB_STEP_SUMMARY"
+          java -version 2>&1 | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools platforms;android-24 platforms;android-37.0 build-tools;30.0.3 build-tools;37.0.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          cache-disabled: true
+          gradle-version: '7.5'
+      - name: Test and check the modules
+        run: ./gradlew --no-daemon --no-build-cache --no-configuration-cache ${{ needs.plan.outputs.check_tasks }}
+      - name: Publish into the staging folder
+        run: ./gradlew --no-daemon --no-build-cache --no-configuration-cache ${{ needs.plan.outputs.publish_tasks }} -PRELEASE_SIGNING_ENABLED=false
+      - name: Stage the release and check its files
+        run: python3 .github/release/release.py stage --plan plan.json --staging build/release-staging --commit "$GITHUB_SHA" --target "$TARGET" --manifest release-manifest.json
+      - name: Check the SBOMs against the CycloneDX 1.6 schema
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/cyclonedx" https://github.com/CycloneDX/cyclonedx-cli/releases/download/v0.33.1/cyclonedx-linux-x64
+          echo "bfc8b2538da86fe239bc53658bbb63c1c8c510a293c1e6891aa5bea5d3c58746  $RUNNER_TEMP/cyclonedx" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/cyclonedx"
+          python3 .github/release/release.py validate-sbom --plan plan.json --staging build/release-staging --cli "$RUNNER_TEMP/cyclonedx"
+      - name: Check what the release promises integrators
+        run: python3 .github/release/release.py contract --plan plan.json --staging build/release-staging
+      - name: Clean projects build against the staged release
+        run: python3 .github/release/release.py consumer --plan plan.json --staging build/release-staging
+      - name: Scan the published dependencies
+        env:
+          OSV_FAIL_ON: high
+          OSV_BLOCKING_SCOPES: published
+        run: |
+          ./gradlew -q --no-daemon --no-configuration-cache --init-script .github/scripts/dependency-report.init.gradle "-DpublishedModules=${{ needs.plan.outputs.published_modules }}" printResolvedDependencies > resolved-dependencies.txt
+          python3 .github/scripts/osv_scan.py < resolved-dependencies.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: staged-release
+          path: |
+            build/release-staging
+            release-manifest.json
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    name: Approve, sign and upload
+    needs: [plan, build]
+    runs-on: ubuntu-24.04
+    environment: ${{ needs.plan.outputs.environment }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: plan
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: staged-release
+      - name: The files are exactly what the build produced
+        run: python3 .github/release/release.py verify-manifest --manifest release-manifest.json --staging build/release-staging
+      - name: Sign and check the signatures
+        env:
+          GNUPGHOME: ${{ runner.temp }}/gnupg
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_KEY_PASSPHRASE: ${{ secrets.SIGNING_KEY_PASSPHRASE }}
+        run: |
+          mkdir -m 700 "$GNUPGHOME"
+          printf '%s\n' "$SIGNING_KEY" | gpg --batch --import
+          python3 .github/release/release.py sign --staging build/release-staging --target "$TARGET" --public-key-out signing-public-key.asc
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: signing-public-key
+          path: signing-public-key.asc
+          retention-days: 7
+          overwrite: true
+          if-no-files-found: error
+      - name: Upload to R2 and rewrite the index
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+        run: |
+          python3 .github/release/release.py upload --plan plan.json --staging build/release-staging
+          python3 .github/release/release.py index --plan plan.json
+      - name: Remove the signing key
+        if: always()
+        env:
+          GNUPGHOME: ${{ runner.temp }}/gnupg
+        run: |
+          gpgconf --kill gpg-agent || true
+          rm -rf "$GNUPGHOME"
+
+  verify:
+    name: Verify from the public address
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: plan
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: staged-release
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: signing-public-key
+      - name: Files, signatures and index
+        run: python3 .github/release/release.py verify-public --plan plan.json --manifest release-manifest.json --target "$TARGET" --nocache "${{ github.run_id }}-${{ github.run_attempt }}" --work "${{ runner.temp }}/downloaded" --public-key signing-public-key.asc
+
+  announce:
+    name: Announce
+    needs: verify
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    runs-on: ubuntu-24.04
+    permissions: {}
+    steps:
+      - name: Slack
+        uses: slackapi/slack-github-action@007b2c3c751a190b6f0f040e47ed024deaa72844 # v1.23.0
+        with:
+          payload: |
+            {
+              "repository": "${{ github.repository }}",
+              "tag_name": "${{ github.event.release.tag_name }}",
+              "actor": "${{ github.actor }}",
+              "body": ${{ toJSON(github.event.release.body) }},
+              "html_url": "${{ github.event.release.html_url }}"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_RELEASE }}
+      - name: Discord
+        uses: sarisia/actions-status-discord@9904e3130b8905d5b973df25623f17672dcb3466 # v1.13.0
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          nodetail: true
+          title: New ${{ github.repository }} version ${{ github.event.release.tag_name }} published by ${{ github.actor }}
+          description: |
+            Release URL: ${{ github.event.release.html_url }}
+            Click [here](https://github.com/Countly/countly-server/blob/master/CHANGELOG.md) to view the change log.
+            `${{ github.event.release.body }}`
