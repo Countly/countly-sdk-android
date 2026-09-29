@@ -1,0 +1,18 @@
+def countlyRepository = gradle.startParameter.projectProperties['countlyRepository']
+
+dependencyResolutionManagement {
+  repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+  repositories {
+    exclusiveContent {
+      forRepository {
+        maven { url = countlyRepository }
+      }
+      filter { includeGroupByRegex 'ly\\.count\\..*' }
+    }
+    google()
+    mavenCentral()
+  }
+}
+
+rootProject.name = 'countly-consumer'
+include ':app'

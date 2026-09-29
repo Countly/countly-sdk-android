@@ -1,0 +1,91 @@
+name: Release tools
+
+on:
+  pull_request:
+  push:
+    branches: [master, staging, staging-nw]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Release tools tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Unit tests
+        working-directory: .github/release
+        run: python3 -m unittest discover -s tests -t . -v
+
+  lint:
+    name: Release workflow lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/actionlint.tar.gz" https://github.com/rhysd/actionlint/releases/download/v1.7.12/actionlint_1.7.12_linux_amd64.tar.gz
+          echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/actionlint.tar.gz" -C "$RUNNER_TEMP" actionlint
+          # actionlint 1.7.12 predates the concurrency queue key GitHub added in May 2026 (rhysd/actionlint#654).
+          "$RUNNER_TEMP/actionlint" -ignore 'unexpected key "queue" for "concurrency" section' .github/workflows/release.yml .github/workflows/release-tools.yml
+      - name: zizmor
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/zizmor.tar.gz" https://github.com/zizmorcore/zizmor/releases/download/v1.30.1/zizmor-x86_64-unknown-linux-gnu.tar.gz
+          echo "e65324f4430c2717591937edcec90ccbefaf14c174f8ec9415e03ca875b46e1a  $RUNNER_TEMP/zizmor.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/zizmor.tar.gz" -C "$RUNNER_TEMP" zizmor
+          # The informational findings are expansions of the plan's Gradle task lists, which come from config.json in the same checkout.
+          "$RUNNER_TEMP/zizmor" --offline --min-severity low .github/workflows/release.yml .github/workflows/release-tools.yml
+
+  tags:
+    name: Tags this branch releases
+    runs-on: ubuntu-24.04
+    outputs:
+      tags: ${{ steps.tags.outputs.tags }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Read the version files
+        id: tags
+        env:
+          BRANCH: ${{ github.base_ref || github.ref_name }}
+        run: python3 .github/release/release.py checkout-tags --branch "$BRANCH"
+
+  checks:
+    name: Release checks (${{ matrix.tag }})
+    needs: tags
+    if: needs.tags.outputs.tags != '[]'
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        tag: ${{ fromJSON(needs.tags.outputs.tags) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: corretto
+          java-version: '17'
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+        with:
+          packages: platform-tools platforms;android-37 build-tools;37.0.0
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - name: Plan
+        id: plan
+        env:
+          TAG: ${{ matrix.tag }}
+        run: python3 .github/release/release.py plan --tag "$TAG" --target test --out plan.json
+      - name: Publish into the staging folder
+        run: ./gradlew --no-configuration-cache ${{ steps.plan.outputs.publish_tasks }} -PRELEASE_SIGNING_ENABLED=false
+      - name: Stage the release and check its files
+        run: python3 .github/release/release.py stage --plan plan.json --staging build/release-staging --commit "$GITHUB_SHA" --target test --manifest release-manifest.json
+      - name: Check what the release promises integrators
+        run: python3 .github/release/release.py contract --plan plan.json --staging build/release-staging

@@ -1,3 +1,7 @@
+## XX.XX.XX
+* !! Major breaking change !! New versions of `sdk-native` are published at `https://maven.countly.com` instead of Maven Central. Add the repository as described in the SDK's CHANGELOG; versions released before this one stay available on Maven Central.
+* ! Minor breaking change ! `sdk-native` now has its own version number and is released only when it changes. Use its latest version instead of the SDK's version number.
+
 ## 26.1.6
 * Updated the bundled Breakpad crash reporter to latest.
 
