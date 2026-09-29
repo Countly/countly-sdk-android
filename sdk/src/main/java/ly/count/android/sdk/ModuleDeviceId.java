@@ -20,6 +20,10 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         boolean customIDWasProvided = config.deviceID != null;
 
+        if (config.clearStoredDeviceId) {
+            clearStoredDeviceId();
+        }
+
         if (config.temporaryDeviceIdEnabled && !customIDWasProvided) {
             //if we want to use temporary ID mode and no developer custom ID is provided
             //then we override that custom ID to set the temporary mode
@@ -49,6 +53,19 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         }
 
         deviceIdInterface = new DeviceId();
+    }
+
+    /**
+     * Forgets the device ID that previous SDK runs stored. The generated ID cache is cleared as well, otherwise a
+     * regenerated OPEN_UDID would come back with the same value as before and the clearing would look like it did
+     * nothing.
+     */
+    private void clearStoredDeviceId() {
+        L.w("[ModuleDeviceId] clearStoredDeviceId, clearing the stored device ID, a new one will be resolved for this init");
+
+        storageProvider.setDeviceID(null);
+        storageProvider.setDeviceIDType(null);
+        _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().remove(PREF_KEY).apply();
     }
 
     void replaceTempIDWithRealIDinRQ(@NonNull String targetDeviceId) {

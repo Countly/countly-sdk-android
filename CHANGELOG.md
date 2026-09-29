@@ -1,4 +1,7 @@
 ## XX.XX.XX
+* Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
+* Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
+
 * Mitigated issues where the SDK caused StrictMode violations:
   * `IncorrectContextUseViolation` when collecting display metrics on Android 11, or on newer versions when no Activity was in the foreground.
   * `UntaggedSocketViolation` for its network requests, as their sockets were not tagged.

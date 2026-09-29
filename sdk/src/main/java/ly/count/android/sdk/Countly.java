@@ -430,6 +430,11 @@ public class Countly {
                 config.sdkInternalLimits.maxValueSize = maxValueSizeDefault;
             }
 
+            if (config.sdkInternalLimits.maxValueSizePicture < 1) {
+                config.sdkInternalLimits.maxValueSizePicture = 1;
+                L.w("[Init] provided 'maxValueSizePicture' is less than '1'. Setting it to '1'.");
+            }
+
             if (config.sdkInternalLimits.maxSegmentationValues != null) {
                 if (config.sdkInternalLimits.maxSegmentationValues < 1) {
                     config.sdkInternalLimits.maxSegmentationValues = 1;
