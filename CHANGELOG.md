@@ -1,4 +1,13 @@
-## XX.XX.XX 
+## XX.XX.XX
+* !! Major breaking change !! New versions of the SDK are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
+  ```groovy
+  maven {
+    url = 'https://maven.countly.com'
+    content { includeGroupByRegex 'ly\\.count\\..*' }
+  }
+  ```
+  Versions released before this one stay available on Maven Central. The files are signed with the same key as before (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
+* ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Use the latest version of each instead of the SDK's version number.
 * Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
 
   `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
@@ -18,6 +27,11 @@
   * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
   * it was compiled to Java 11 bytecode instead of Java 8, which older Android Gradle Plugin versions cannot read.
   * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, lower than any release since 23.8.0 accepted, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
+* Mitigated issues where the SDK caused StrictMode violations:
+  * `IncorrectContextUseViolation` when collecting display metrics on Android 11, or on newer versions when no Activity was in the foreground.
+  * `IncorrectContextUseViolation` when showing content or a feedback widget on Android 11.
+  * `UntaggedSocketViolation` for its network requests, as their sockets were not tagged.
+  * disk reads on the main thread for the root and total RAM metrics when a crash was recorded.
 
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.

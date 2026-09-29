@@ -1,0 +1,20 @@
+buildscript {
+  def countlyRepository = gradle.startParameter.projectProperties['countlyRepository']
+  def pluginVersion = gradle.startParameter.projectProperties['countlyPluginVersion']
+  repositories {
+    exclusiveContent {
+      forRepository {
+        maven { url = countlyRepository }
+      }
+      filter { includeGroupByRegex 'ly\\.count\\..*' }
+    }
+    google()
+    mavenCentral()
+  }
+  dependencies {
+    classpath "com.android.tools.build:gradle:${gradle.startParameter.projectProperties['agpVersion']}"
+    if (pluginVersion != null) {
+      classpath "ly.count.android:sdk-plugin:${pluginVersion}"
+    }
+  }
+}
