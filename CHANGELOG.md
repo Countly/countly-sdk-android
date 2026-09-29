@@ -1,4 +1,4 @@
-## 0.0.1
+## 0.0.2
 * !! Major breaking change !! New versions of the SDK are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
   ```groovy
   maven {
