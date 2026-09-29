@@ -66,7 +66,7 @@ public class UtilsTests {
     public void APITargeting() {
         //The supported versions should be above this value
         Assert.assertTrue(Build.VERSION.SDK_INT >= 21);
-        Assert.assertTrue(Build.VERSION.SDK_INT <= 34);
+        Assert.assertTrue(Build.VERSION.SDK_INT <= 37);
     }
 
     /**

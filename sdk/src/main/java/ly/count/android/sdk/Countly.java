@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.6";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.7";
     /**
      * Used as request meta data on every request
      * This is the "sdk-nw" branch, so the name carries the "-nw" marker to tell it apart on the server
@@ -428,6 +428,11 @@ public class Countly {
                 L.i("[Init] provided 'maxValueSize' override:[" + config.sdkInternalLimits.maxValueSize + "]");
             } else {
                 config.sdkInternalLimits.maxValueSize = maxValueSizeDefault;
+            }
+
+            if (config.sdkInternalLimits.maxValueSizePicture < 1) {
+                config.sdkInternalLimits.maxValueSizePicture = 1;
+                L.w("[Init] provided 'maxValueSizePicture' is less than '1'. Setting it to '1'.");
             }
 
             if (config.sdkInternalLimits.maxSegmentationValues != null) {
