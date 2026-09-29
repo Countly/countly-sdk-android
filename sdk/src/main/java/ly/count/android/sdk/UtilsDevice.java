@@ -107,7 +107,7 @@ class UtilsDevice {
      * @return the WindowManager to read metrics from, or null when there is no visual context on API 30+
      */
     @Nullable
-    private static WindowManager obtainWindowManager(@NonNull Context context) {
+    static WindowManager obtainWindowManager(@NonNull Context context) {
         if (context instanceof Activity) {
             return (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         }
@@ -131,7 +131,7 @@ class UtilsDevice {
      * @param outMetrics metrics to fill
      */
     @SuppressWarnings("deprecation")
-    private static void applyDisplayMetrics(@NonNull Context context, @NonNull DisplayMetrics outMetrics) {
+    static void applyDisplayMetrics(@NonNull Context context, @NonNull DisplayMetrics outMetrics) {
         final DisplayManager dm = (DisplayManager) context.getSystemService(Context.DISPLAY_SERVICE);
         final Display display = dm != null ? dm.getDisplay(Display.DEFAULT_DISPLAY) : null;
         if (display == null) {

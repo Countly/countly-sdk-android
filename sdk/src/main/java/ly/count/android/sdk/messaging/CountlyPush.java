@@ -17,6 +17,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.net.TrafficStats;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -77,6 +78,12 @@ public class CountlyPush {
      * Maximum attempts to download a media for a rich push
      */
     static int MEDIA_DOWNLOAD_ATTEMPTS = 3;
+
+    /**
+     * Tag the rich push media download socket is attributed to in network usage statistics, the
+     * same value as the core SDK's UtilsNetworking.SOCKET_TAG, which is not visible from this package.
+     */
+    private static final int MEDIA_DOWNLOAD_SOCKET_TAG = 0x434C59;
 
     /**
      * @deprecated No longer used. Setting this field has no effect. Enable the additional intent
@@ -959,6 +966,8 @@ public class CountlyPush {
                 if (msg.media() != null) {
                     HttpURLConnection connection = null;
                     InputStream input = null;
+                    int previousSocketTag = TrafficStats.getThreadStatsTag();
+                    TrafficStats.setThreadStatsTag(MEDIA_DOWNLOAD_SOCKET_TAG);
                     try {
                         connection = (HttpURLConnection) msg.media().openConnection();
                         connection.setDoInput(true);
@@ -995,6 +1004,7 @@ public class CountlyPush {
                             } catch (Throwable ignored) {
                             }
                         }
+                        TrafficStats.setThreadStatsTag(previousSocketTag);
                     }
                 }
 

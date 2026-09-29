@@ -7,9 +7,7 @@ import android.content.res.Resources;
 import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.os.Build;
-import android.os.StrictMode;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
 import android.view.DisplayCutout;
 import android.view.WindowInsets;
@@ -41,26 +39,33 @@ import static org.mockito.Mockito.when;
 @RunWith(AndroidJUnit4.class)
 public class UtilsDeviceTests {
 
-    private final List<String> incorrectContextUses = new CopyOnWriteArrayList<>();
-    private StrictMode.VmPolicy previousVmPolicy;
+    private StrictModeRecorder recorder;
+    private DisplayCutout savedCutout;
 
     /**
      * getThemeMode, appendThemeParam and getDisplayMetrics prefer the foreground Activity, and the
-     * request queue is shared by every test in the process, so each test starts with no held
-     * Activity and an empty queue.
+     * request queue and the cutout cached from an earlier Activity are shared by every test in the
+     * process, so each test starts with no held Activity, an empty queue and no cached cutout.
      */
     @Before
     public void setUp() {
         TestUtils.getCountlyStore().clear();
         clearForegroundActivity();
+        savedCutout = UtilsDevice.cutout;
+        UtilsDevice.cutout = null;
     }
 
+    /**
+     * Clears the held Activity, stops StrictMode recording and gives back the cutout cached before
+     * the test.
+     */
     @After
     public void tearDown() {
         clearForegroundActivity();
-        if (previousVmPolicy != null) {
-            StrictMode.setVmPolicy(previousVmPolicy);
-            previousVmPolicy = null;
+        UtilsDevice.cutout = savedCutout;
+        if (recorder != null) {
+            recorder.stop();
+            recorder = null;
         }
     }
 
@@ -160,7 +165,7 @@ public class UtilsDeviceTests {
         countly.requestQueue().recordMetrics(null);
         countly.crashes().recordHandledException(new Exception("recorded without an Activity"));
 
-        Assert.assertTrue("unexpected incorrect context use: " + incorrectContextUses, incorrectContextUses.isEmpty());
+        assertNoIncorrectContextUse();
 
         String expected = defaultDisplayResolution();
         String remoteConfigRequest = null;
@@ -170,7 +175,7 @@ public class UtilsDeviceTests {
             }
         }
         Assert.assertNotNull(remoteConfigRequest);
-        Assert.assertEquals(expected, resolutionIn(queryParam(remoteConfigRequest, "metrics")));
+        Assert.assertEquals(expected, resolutionIn(UtilsNetworking.urlDecodeString(TestUtils.getParamValueFromRequest(remoteConfigRequest, "metrics"))));
 
         List<String> storedResolutions = new ArrayList<>();
         for (Map<String, String> request : TestUtils.getCurrentRQ()) {
@@ -218,7 +223,7 @@ public class UtilsDeviceTests {
         Assert.assertEquals("1", stored[0].get("begin_session"));
         Assert.assertEquals(expected, resolutionIn(stored[0].get("metrics")));
         verify(activity, atLeastOnce()).getSystemService(Context.WINDOW_SERVICE);
-        Assert.assertTrue("unexpected incorrect context use: " + incorrectContextUses, incorrectContextUses.isEmpty());
+        assertNoIncorrectContextUse();
     }
 
     /**
@@ -247,27 +252,48 @@ public class UtilsDeviceTests {
         }
     }
 
+    // ======== SafeAreaCalculator ========
+
     /**
-     * Routes StrictMode's incorrect context use reports into {@link #incorrectContextUses} and
-     * checks that this device reports one, so an empty list afterwards means nothing read
-     * WindowManager from the Application context. detectAll is used because on API 30
-     * detectIncorrectContextUse is not public and is only enabled through it.
+     * Without an Activity, the content safe area is the default display's size in both
+     * orientations with no insets, and nothing reads WindowManager from the Application context.
+     */
+    @Test
+    public void calculateSafeAreaDimensions_withoutActivity_usesDisplaySizeWithoutIncorrectContextUse() {
+        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R);
+        startRecordingIncorrectContextUse();
+
+        SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(TestUtils.getContext(), new ModuleLog());
+
+        assertNoIncorrectContextUse();
+        String[] size = defaultDisplayResolution().split("x");
+        int currentWidth = Integer.parseInt(size[0]);
+        int currentHeight = Integer.parseInt(size[1]);
+        boolean portrait = TestUtils.getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+        int portraitWidth = portrait ? currentWidth : currentHeight;
+        int portraitHeight = portrait ? currentHeight : currentWidth;
+        Assert.assertEquals(Arrays.asList(portraitWidth, portraitHeight, portraitHeight, portraitWidth, 0, 0, 0, 0), Arrays.asList(
+            safeArea.portraitWidth, safeArea.portraitHeight, safeArea.landscapeWidth, safeArea.landscapeHeight,
+            safeArea.portraitTopOffset, safeArea.landscapeTopOffset, safeArea.portraitLeftOffset, safeArea.landscapeLeftOffset));
+    }
+
+    /**
+     * Records StrictMode's incorrect context use reports for the rest of the test, after checking
+     * this device reports one for WindowManager read from the Application context.
      */
     @RequiresApi(Build.VERSION_CODES.R)
     private void startRecordingIncorrectContextUse() {
-        previousVmPolicy = StrictMode.getVmPolicy();
-        StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
-            .detectAll()
-            .penaltyListener(Runnable::run, violation -> {
-                if ("IncorrectContextUseViolation".equals(violation.getClass().getSimpleName())) {
-                    incorrectContextUses.add(Log.getStackTraceString(violation));
-                }
-            })
-            .build());
+        recorder = StrictModeRecorder.startVm("IncorrectContextUseViolation", () -> TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE));
+    }
 
-        TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE);
-        Assert.assertEquals("this device does not report incorrect context use", 1, incorrectContextUses.size());
-        incorrectContextUses.clear();
+    /**
+     * Fails when SDK code read WindowManager from a non-visual context since recording started.
+     */
+    private void assertNoIncorrectContextUse() {
+        if (recorder != null) {
+            List<String> sdkViolations = recorder.violationsThrough("ly.count.android.sdk.");
+            Assert.assertTrue("unexpected incorrect context use: " + sdkViolations, sdkViolations.isEmpty());
+        }
     }
 
     /**
@@ -287,17 +313,6 @@ public class UtilsDeviceTests {
                 return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(null);
             }
         };
-    }
-
-    /** Returns the URL-decoded value of the given parameter in a request query string, or null when it is absent. */
-    private static String queryParam(@NonNull String requestData, @NonNull String key) {
-        for (String pair : requestData.split("&")) {
-            String[] keyValue = pair.split("=", 2);
-            if (keyValue.length == 2 && keyValue[0].equals(key)) {
-                return UtilsNetworking.urlDecodeString(keyValue[1]);
-            }
-        }
-        return null;
     }
 
     /** Reads the resolution metric out of a metrics or crash JSON object. */

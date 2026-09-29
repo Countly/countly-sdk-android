@@ -2,6 +2,8 @@
 * Mitigated issues where display metrics collection caused `IncorrectContextUseViolation` StrictMode warnings:
   * on Android 11, whenever display metrics were collected.
   * on Android 12 and above, when no Activity was in the foreground, for example for a remote config download during init, a crash report, or a manually started session.
+* Mitigated an issue where the SDK's network requests opened untagged sockets, which StrictMode reports as `UntaggedSocketViolation`. The sockets are now tagged for network usage statistics.
+* Mitigated an issue where recording a crash on the main thread read the disk for the root and total RAM metrics, which StrictMode reports as a disk read. Both are now resolved in the background during init.
 
 ## 26.1.6-nw
 * Fixed regressions where the SDK forced a newer build toolchain on integrators:
