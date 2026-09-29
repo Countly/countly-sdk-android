@@ -1092,7 +1092,13 @@ public class CountlyConfig {
         return this;
     }
 
-    protected synchronized CountlyConfig disableHealthCheck() {
+    /**
+     * Disable the health check request that the SDK sends to the server once per initialization.
+     * That request reports the SDK's error and warning log counts, the last failed request's status code and error, and back off counts.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
         return this;
     }
