@@ -16,7 +16,7 @@
 * Added support for server requested SDK log gathering. When the server asks for it, the SDK uploads its own internal log lines, even if logging is disabled.
 * Added support for the SDK connection test. When the server asks for it, the SDK checks that it can reach every endpoint it depends on and reports the results.
 * Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
-* Added a new method `Countly.sharedInstance().contents().setGlobalContentSegmentation(Map)` that sets a segmentation recorded with every content and feedback widget event. It is kept for as long as the app runs, including across sessions, and is not restored after an app restart. The keys those events already report are not overridden, and keys the server reads as widget answers are dropped.
+* Added a new method `Countly.sharedInstance().contents().setGlobalContentSegmentation(Map)` for adding a segmentation to content and feedback widget events. It is kept in memory until the app restarts.
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
 * Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
 * Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
