@@ -4,8 +4,8 @@
 StrictModeAuditListener writes one strictmode-violations.tsv per device. Each violation is
 attributed to its deepest frame that belongs to the SDK's main sources. Violations whose SDK frames
 all belong to test code are ignored. A violation fails the check unless an allowlist entry matches
-its policy, type and attributed method, and, when the entry names test classes, the test that
-raised it.
+its policy, type and attributed method ('Class.*' matches every method of the class), and, when
+the entry names test classes, the test that raised it.
 
 Usage:
     strictmode_audit.py --sources sdk/src/main/java --allowlist .github/strictmode-allowlist.txt DIR...
@@ -34,7 +34,7 @@ def main_classes(source_root):
 
 
 def load_allowlist(path):
-    """Parses '<policy> <violation> <Class.method> [tests=A,B]' lines, '#' starts a comment."""
+    """Parses '<policy> <violation> <Class.method or Class.*> [tests=A,B]' lines, '#' starts a comment."""
     entries = []
     with open(path) as handle:
         for number, raw in enumerate(handle, 1):
@@ -74,10 +74,17 @@ def attribute(frames, mains):
     return None, None
 
 
+def site_matches(pattern, site):
+    """Whether an allowlist site, 'Class.method' or 'Class.*' for every method, covers the site."""
+    if pattern.endswith(".*"):
+        return site.startswith(pattern[:-1])
+    return pattern == site
+
+
 def matching_entry(entries, policy, violation, site, test_class):
     """The first allowlist entry covering the violation, or None."""
     for entry in entries:
-        if entry["policy"] == policy and entry["type"] == violation and entry["site"] == site:
+        if entry["policy"] == policy and entry["type"] == violation and site_matches(entry["site"], site):
             if not entry["tests"] or test_class in entry["tests"]:
                 return entry
     return None
@@ -168,8 +175,8 @@ def main():
     unused = [e for e in entries if e["hits"] == 0]
     if unused:
         report.append("")
-        report.append("Allowlist entries not seen in this run, remove them once the site is gone: %s"
-                      % ", ".join("line %d `%s`" % (e["line"], e["site"]) for e in unused))
+        report.append("Allowlist entries not seen in this run, some sites depend on timing, so remove one only "
+                      "when its code is gone: %s" % ", ".join("line %d `%s`" % (e["line"], e["site"]) for e in unused))
 
     text = "\n".join(report) + "\n"
     print(text)
