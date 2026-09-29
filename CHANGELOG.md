@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 26.1.7-nw
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
 * Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
 
