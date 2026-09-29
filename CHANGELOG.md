@@ -25,12 +25,11 @@
   * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
   * it was compiled to Java 11 bytecode instead of Java 8, which older Android Gradle Plugin versions cannot read.
   * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, lower than any release since 23.8.0 accepted, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
-* Mitigated issues where display metrics collection caused `IncorrectContextUseViolation` StrictMode warnings:
-  * on Android 11, whenever display metrics were collected.
-  * on Android 12 and above, when no Activity was in the foreground, for example for a remote config download during init, a crash report, a manually started session, or a content request.
-* Mitigated an issue where showing content or a feedback widget on Android 11 caused `IncorrectContextUseViolation` StrictMode warnings.
-* Mitigated an issue where the SDK's network requests opened untagged sockets, which StrictMode reports as `UntaggedSocketViolation`. The sockets are now tagged for network usage statistics.
-* Mitigated an issue where recording a crash on the main thread read the disk for the root and total RAM metrics, which StrictMode reports as a disk read. Both are now resolved in the background during init.
+* Mitigated issues where the SDK caused StrictMode violations:
+  * `IncorrectContextUseViolation` when collecting display metrics on Android 11, or on newer versions when no Activity was in the foreground.
+  * `IncorrectContextUseViolation` when showing content or a feedback widget on Android 11.
+  * `UntaggedSocketViolation` for its network requests, as their sockets were not tagged.
+  * disk reads on the main thread for the root and total RAM metrics when a crash was recorded.
 
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
