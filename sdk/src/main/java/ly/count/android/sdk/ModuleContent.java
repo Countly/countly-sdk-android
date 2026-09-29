@@ -41,13 +41,12 @@ public class ModuleContent extends ModuleBase {
     // Buffered content when no activity is available
     private Map<Integer, TransparentActivityConfig> pendingContentConfigs;
 
-    //Swapped wholesale instead of mutated: events are recorded from the main thread while the setter can be
-    //called from any thread, and a replaced reference is always a fully built map - clearing and refilling
-    //one in place would let an event in between be stamped with half of the new segmentation.
+    //Swapped wholesale instead of mutated: the setter can be called from any thread while events are recorded
+    //from the main thread, so refilling a shared map in place would stamp an event with half a segmentation.
     @NonNull private volatile Map<String, Object> globalContentSegmentation = Collections.emptyMap();
 
     //the keys the content and feedback widget events build themselves, which a global value must not replace
-    private final static String[] reservedSegmentationKeysContent = { "platform", "app_version", "widget_id", "closed" };
+    private static final String[] reservedSegmentationKeysContent = { "platform", "app_version", "widget_id", "closed" };
 
     private @Nullable Activity getCurrentActivity() {
         return currentActivity != null ? currentActivity.get() : null;
@@ -104,10 +103,9 @@ public class ModuleContent extends ModuleBase {
      * @param eventSegmentation the segmentation the content or feedback widget event built for itself
      * @return the merged segmentation, or eventSegmentation itself when there is nothing to add
      */
-    @NonNull static Map<String, Object> withGlobalContentSegmentation(@Nullable Countly cly, @NonNull Map<String, Object> eventSegmentation) {
-        //read once into a local: a teardown on another thread nulls the module fields, and a missing content
-        //module means there is no global segmentation, which is the same answer an initialised one would give
-        ModuleContent contentModule = cly == null ? null : cly.moduleContent;
+    @NonNull static Map<String, Object> withGlobalContentSegmentation(@NonNull Countly cly, @NonNull Map<String, Object> eventSegmentation) {
+        //read once into a local: a teardown on another thread nulls the module fields mid call
+        ModuleContent contentModule = cly.moduleContent;
         if (contentModule == null) {
             return eventSegmentation;
         }

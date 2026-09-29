@@ -489,9 +489,9 @@ public class ModuleContentTests {
     }
 
     /**
-     * A global value for a key the events build themselves is dropped when it is set, a later call
-     * replaces the whole segmentation rather than merging into it, and neither a session ending nor a
-     * new one starting forgets what was set.
+     * A global value for a key the events build themselves is dropped when it is set, the caller's own
+     * map is left untouched by that sanitisation, a later call replaces the whole segmentation rather
+     * than merging into it, and neither a session ending nor a new one starting forgets what was set.
      */
     @Test
     public void globalContentSegmentation_dropsReservedKeysAndSurvivesASessionRestart() {
@@ -505,6 +505,7 @@ public class ModuleContentTests {
         globalSegmentation.put("closed", "hijacked");
         globalSegmentation.put("screen", "settings");
         countly.contents().setGlobalContentSegmentation(globalSegmentation);
+        Assert.assertEquals(5, globalSegmentation.size());
 
         Map<String, Object> replacement = new HashMap<>();
         replacement.put("state", "logged_in");
