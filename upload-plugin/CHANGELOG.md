@@ -1,4 +1,4 @@
-## XX.XX.XX
+## 0.0.1
 * !! Major breaking change !! New versions of the plugin are published at `https://maven.countly.com` instead of Maven Central. Add the repository where Gradle looks for the plugin: to `pluginManagement { repositories { ... } }` in `settings.gradle` when you apply it in a `plugins { }` block, or to `buildscript { repositories { ... } }` when it is on the `buildscript` classpath. Versions released before this one stay available on Maven Central.
 * ! Minor breaking change ! The plugin now has its own version number and is released only when it changes. Use its latest version instead of the SDK's version number.
 
