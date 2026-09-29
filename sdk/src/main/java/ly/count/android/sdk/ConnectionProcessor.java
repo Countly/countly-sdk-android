@@ -357,8 +357,23 @@ public class ConnectionProcessor implements Runnable {
         return 82 + boundary.length() + approximateDataSize + file.getName().length() + contentType.length(); // 78 is the length of the static parts of the entry
     }
 
+    /**
+     * Works through the stored request queue with the sockets of this thread tagged as the SDK's.
+     */
     @Override
     public void run() {
+        int previousSocketTag = UtilsNetworking.tagSocketsOfThread();
+        try {
+            processRequestQueue();
+        } finally {
+            UtilsNetworking.restoreSocketTag(previousSocketTag);
+        }
+    }
+
+    /**
+     * Works through the stored request queue, sending the requests in order.
+     */
+    private void processRequestQueue() {
         long wholeQueueStart = UtilsTime.getNanoTime();
         while (true) {
             long pccTsStartWholeQueue = 0L;
@@ -624,8 +639,8 @@ public class ConnectionProcessor implements Runnable {
                     L.d("[ConnectionProcessor] Got exception while trying to submit request data: [" + requestData + "] [" + e + "]");
                     if (requestCallback != null) {
                         requestCallback.onRequestCompleted(e.getMessage(), false);
+                        internalRequestCallbacks_.remove(callbackID);
                     }
-                    internalRequestCallbacks_.remove(callbackID);
                     // if exception occurred, stop processing, let next tick take care of retrying
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_11_NetworkWholeQueueException", UtilsTime.getNanoTime() - pccTsStartWholeQueue);

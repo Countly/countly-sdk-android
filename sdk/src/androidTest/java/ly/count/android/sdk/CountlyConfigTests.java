@@ -274,7 +274,9 @@ public class CountlyConfigTests {
         Assert.assertNull(config.starRatingTextMessage);
         Assert.assertNull(config.starRatingTextTitle);
         Assert.assertFalse(config.loggingEnabled);
-        Assert.assertFalse(config.disableSDKLoggingInProduction);
+        //this branch enforces both, so their defaults are inverted compared to the regular SDK
+        Assert.assertTrue(config.disableSDKLoggingInProduction);
+        Assert.assertFalse(config.webViewEnabled);
         Assert.assertFalse(config.crashes.enableUnhandledCrashReporting);
         Assert.assertFalse(config.enableAutomaticViewTracking);
         Assert.assertFalse(config.autoTrackingUseShortName);

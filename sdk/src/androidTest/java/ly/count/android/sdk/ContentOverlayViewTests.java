@@ -1262,8 +1262,8 @@ public class ContentOverlayViewTests {
      * Activity, that Activity stays GC-pinned for the overlay's full lifetime.
      *
      * The exact context type is API-dependent (see ContentOverlayView#resolveOverlayContext):
-     *   - Pre-API 31: Application context.
-     *   - API 31+: createConfigurationContext from the Activity — a ContextImpl
+     *   - Pre-API 30: Application context.
+     *   - API 30+: createConfigurationContext from the Activity, a ContextImpl
      *     wrapper that holds an IBinder token, not the Activity instance, so
      *     GC isn't blocked. Required for StrictMode#detectIncorrectContextUse.
      *
@@ -1283,8 +1283,8 @@ public class ContentOverlayViewTests {
                 activity, overlay.getContext());
             Assert.assertSame(
                 "ContentOverlayView.mContext must resolve to the same Application as the "
-                    + "constructing Activity (Application directly on <API 31, "
-                    + "ConfigurationContext-of-Activity on API 31+).",
+                    + "constructing Activity (Application directly on <API 30, "
+                    + "ConfigurationContext-of-Activity on API 30+).",
                 activity.getApplicationContext(),
                 overlay.getContext().getApplicationContext());
         });

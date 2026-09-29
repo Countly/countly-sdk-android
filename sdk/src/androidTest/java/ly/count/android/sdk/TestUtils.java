@@ -43,8 +43,9 @@ public class TestUtils {
     public final static String commonURL = "http://test.count.ly";
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
-    public final static String SDK_NAME = "java-native-android";
-    public final static String SDK_VERSION = "26.1.5";
+    //matches what the SDK reports on this branch
+    public final static String SDK_NAME = "java-native-android-nw";
+    public final static String SDK_VERSION = "26.1.6";
     public static final int MAX_THREAD_COUNT_PER_STACK_TRACE = 50;
 
     public static class Activity2 extends Activity {

@@ -12,6 +12,14 @@ plugins {
   id 'groovy'
 }
 
+// Integrators run this plugin inside their own Gradle, on whatever JDK their build uses. Compile it
+// for Java 8 so a Gradle on JDK 11 can still resolve and load it (module metadata records the JVM
+// target as a hard requirement); earlier releases declared whatever JDK happened to run the release build.
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}
+
 gradlePlugin {
   plugins {
     uploadSymbolPlugin {

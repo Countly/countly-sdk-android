@@ -14,10 +14,12 @@ on:
     branches:
       - master
       - staging
+      - staging-nw
   pull_request:
     branches:
       - master
       - staging
+      - staging-nw
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -40,7 +42,11 @@ jobs:
           distribution: ${{ env.JAVA_DIST }}
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2.0.10
+        uses: android-actions/setup-android@v3
+        with:
+          # The action's default is "tools platform-tools", but Google has removed the
+          # obsolete "tools" package from the SDK repository, so the default now fails.
+          packages: platform-tools
 
       - name: Start ADB Server
         run: adb start-server
@@ -73,8 +79,8 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          check_name: "Unit Test Results :rocket:"
-          comment_title: "Unit Test Results :rocket:"
+          check_name: "Unit Test Results (nw) :rocket:"
+          comment_title: "Unit Test Results (nw) :rocket:"
           files: |
             sdk/build/outputs/androidTest-results/**/*.xml
             sdk-native/build/test-results/**/*.xml
