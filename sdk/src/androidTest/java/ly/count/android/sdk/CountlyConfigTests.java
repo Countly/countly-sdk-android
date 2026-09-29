@@ -129,6 +129,7 @@ public class CountlyConfigTests {
         config.setConsentEnabled(fn);
         config.setHttpPostForced(true);
         config.enableTemporaryDeviceIdMode();
+        config.enableClearStoredDeviceId();
         config.setCrashFilterCallback(callback);
         config.setParameterTamperingProtectionSalt(s[6]);
         config.setAutomaticViewSegmentation(vs);
@@ -182,6 +183,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
         Assert.assertTrue(config.temporaryDeviceIdEnabled);
+        Assert.assertTrue(config.clearStoredDeviceId);
         Assert.assertEquals(callback, config.crashFilterCallback);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.globalViewSegmentation);
@@ -286,6 +288,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);
         Assert.assertFalse(config.temporaryDeviceIdEnabled);
+        Assert.assertFalse(config.clearStoredDeviceId);
         Assert.assertNull(config.crashes.globalCrashFilterCallback);
         Assert.assertNull(config.tamperingProtectionSalt);
         Assert.assertNull(config.globalViewSegmentation);

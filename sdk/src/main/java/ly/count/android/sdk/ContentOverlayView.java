@@ -64,16 +64,14 @@ class ContentOverlayView extends FrameLayout {
 
     // Returns a Context suitable for constructing the overlay's Views without retaining
     // a strong Java reference to the constructing Activity:
-    //   - Pre-API 31: Application context (current behavior; no StrictMode UI-context check exists).
-    //   - API 31+: createConfigurationContext from the Activity. The returned ContextImpl is a
+    //   - Pre-API 30: Application context (no StrictMode UI-context check exists).
+    //   - API 30+: createConfigurationContext from the Activity. The returned ContextImpl is a
     //     lightweight wrapper that does not strongly retain the Activity instance — only an
     //     IBinder activity token, which does not pin the Activity for GC.
-    // Note: createConfigurationContext does not produce a UI context per Android's mIsUiContext
-    // contract; the StrictMode#detectIncorrectContextUse fix for getSystemService(WINDOW_SERVICE)
-    // lives in UtilsDevice.obtainWindowManager (which uses createWindowContext as a fallback).
+    // It keeps the Activity's UI context status, which StrictMode#detectIncorrectContextUse requires of Views built on it.
     @NonNull
     private static Context resolveOverlayContext(@NonNull Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             try {
                 return activity.createConfigurationContext(activity.getResources().getConfiguration());
             } catch (Throwable ignored) {
@@ -92,7 +90,7 @@ class ContentOverlayView extends FrameLayout {
         @Nullable Set<String> allowedLinkSchemes,
         @Nullable ContentUrlHandler contentUrlHandler) {
         // View.mContext must not pin the constructing activity (overlay outlives activity
-        // transitions; window attachment uses currentHostActivity). On API 31+ we additionally
+        // transitions; window attachment uses currentHostActivity). On API 30+ we additionally
         // need a UI context to satisfy StrictMode#detectIncorrectContextUse — see
         // resolveOverlayContext above.
         super(resolveOverlayContext(activity));
@@ -840,7 +838,7 @@ class ContentOverlayView extends FrameLayout {
     }
 
     // Dispatches an ACTION_VIEW intent for a URL originating from web content, gated by the shared
-    // scheme policy: with no allow-list the dangerous schemes (file/content/javascript/jar/data) are
+    // scheme policy: with no allow-list the dangerous schemes (file/content/javascript/jar/zip/intent/data) are
     // blocked while http(s) and deep links are allowed; with an allow-list configured, only those
     // schemes pass. Component/selector and flags are cleared so the intent cannot be redirected to a
     // specific (possibly internal) target.
@@ -1244,7 +1242,7 @@ class ContentOverlayView extends FrameLayout {
     private WebView createWebView(@NonNull Activity activity, @NonNull TransparentActivityConfig config) {
         // WebView's mContext must not retain the constructing activity, since the overlay
         // (and its WebView) outlives activity transitions. Activity-specific operations route
-        // through currentHostActivity. See resolveOverlayContext for the API 31+ UI-context handling.
+        // through currentHostActivity. See resolveOverlayContext for the API 30+ UI-context handling.
         WebView wv = new CountlyWebView(resolveOverlayContext(activity));
         wv.setVisibility(View.INVISIBLE);
         LayoutParams webLayoutParams = new LayoutParams(

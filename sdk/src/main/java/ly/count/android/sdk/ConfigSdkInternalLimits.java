@@ -71,6 +71,20 @@ public class ConfigSdkInternalLimits {
     }
 
     /**
+     * Set the maximum size of the user profile picture URL or path, which is not covered by
+     * {@link #setMaxValueSize(int)} because a picture URL is regularly longer than any other value.
+     * Default value is 4096.
+     * If the picture value exceeds the set limit, it will be truncated.
+     *
+     * @param maxValueSizePicture to set
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized ConfigSdkInternalLimits setMaxValueSizePicture(int maxValueSizePicture) {
+        this.maxValueSizePicture = maxValueSizePicture;
+        return this;
+    }
+
+    /**
      * Set the maximum amount of stack trace lines that can be recorded per thread.
      * Default value is 30.
      *

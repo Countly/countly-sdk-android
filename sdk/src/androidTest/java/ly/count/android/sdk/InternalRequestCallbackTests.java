@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -322,6 +323,46 @@ public class InternalRequestCallbackTests {
         Assert.assertTrue("Callback should be invoked on exception", callbackInvoked.get());
         Assert.assertFalse("Should indicate failure", wasSuccess.get());
         Assert.assertFalse("Callback should be removed", callbackMap.containsKey(callbackId));
+    }
+
+    /**
+     * Integration test: Request without a callback that fails with a connection exception ends the
+     * queue run normally and stays queued for the next attempt
+     */
+    @Test
+    public void integration_connectionExceptionWithoutCallback_keepsRequestQueued() throws IOException {
+        Map<String, InternalRequestCallback> callbackMap = new ConcurrentHashMap<>();
+
+        CountlyStore mockStore = mock(CountlyStore.class);
+        DeviceIdProvider mockDeviceId = mock(DeviceIdProvider.class);
+        ModuleLog moduleLog = mock(ModuleLog.class);
+        HealthTracker healthTracker = mock(HealthTracker.class);
+
+        ConnectionProcessor cp = new ConnectionProcessor(
+            "http://test-server.com",
+            mockStore,
+            mockDeviceId,
+            createConfigurationProvider(),
+            createRequestInfoProvider(),
+            null,
+            null,
+            moduleLog,
+            healthTracker,
+            Mockito.mock(Runnable.class),
+            callbackMap
+        );
+        cp = spy(cp);
+
+        String requestData = "app_key=test&device_id=123";
+        when(mockStore.getRequests()).thenReturn(new String[] { requestData });
+        when(mockDeviceId.getDeviceId()).thenReturn("123");
+
+        // Mock connection that returns null (causes exception)
+        doReturn(null).when(cp).urlConnectionForServerRequest(anyString(), Mockito.isNull());
+
+        cp.run();
+
+        verify(mockStore, never()).removeRequest(requestData);
     }
 
     // ==========================================

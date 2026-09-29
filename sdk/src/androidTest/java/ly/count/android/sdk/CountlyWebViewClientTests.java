@@ -391,9 +391,9 @@ public class CountlyWebViewClientTests {
     /**
      * "shouldInterceptRequest" must block every local-data / script scheme an attacker could use to
      * read local data or run script from a content sub-resource (img/iframe/script/xhr): file://,
-     * content://, javascript:, jar:file://, plus a file:// pointing at app-private storage. "data:"
-     * and "blob:" are NOT blocked here — they are inline / runtime-generated assets widgets embed
-     * (covered by shouldInterceptRequest_inlineAssetSchemes_allowed).
+     * content://, javascript:, jar:file://, zip://, intent://, data:, plus a file:// pointing at
+     * app-private storage. "blob:" is NOT blocked — it is a runtime-generated asset of the page
+     * itself (covered by shouldInterceptRequest_inlineAssetSchemes_defaultAllowedAllowlistGoverned).
      */
     @Test
     public void shouldInterceptRequest_nonWebSchemes_blocked() {
@@ -403,24 +403,27 @@ public class CountlyWebViewClientTests {
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://media/external/images/media/1", false)));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("javascript:alert(document.cookie)", false)));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("jar:file:///data/app/x.apk!/a.html", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("zip://archive/x.html", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("intent://x/y#Intent;scheme=https;end", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:text/html,<script>1</script>", false)));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:image/svg+xml;utf8,<svg/>", false)));
         // also blocked for a main-frame request, not just sub-resources
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("file:///data/data/ly.count.android.sdk/databases/countly.db", true)));
     }
 
     /**
-     * "data:" and "blob:" sub-resources (inline images/fonts/CSS and runtime-generated assets that
-     * widgets legitimately embed) load in the default (no allow-list) mode, but like any other
-     * non-https scheme they are blocked in allow-list mode unless the integrator lists them.
+     * "blob:" sub-resources (runtime-generated assets of the page itself) load in the default (no
+     * allow-list) mode, but like any other non-https scheme they are blocked in allow-list mode
+     * unless the integrator lists them. "data:" is denylisted and only an allow-list opts it back in.
      */
     @Test
     public void shouldInterceptRequest_inlineAssetSchemes_defaultAllowedAllowlistGoverned() {
-        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=", false)));
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("blob:https://example.com/uuid", false)));
-        // allow-list mode governs data/blob (not force-allowed): blocked unless listed
+        // allow-list mode governs blob (not force-allowed): blocked unless listed
         CountlyWebViewClient allowlisted = new CountlyWebViewClient(new HashSet<>(Arrays.asList("myapp")));
-        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=", false)));
         assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("blob:https://example.com/uuid", false)));
-        // https still always loads, and an explicitly listed inline scheme loads
+        assertBlocked(allowlisted.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=", false)));
+        // https still always loads, and an explicitly listed scheme loads even when denylisted
         Assert.assertNull(allowlisted.shouldInterceptRequest(null, fakeRequest("https://example.com/a.png", false)));
         CountlyWebViewClient dataAllowed = new CountlyWebViewClient(new HashSet<>(Arrays.asList("data")));
         Assert.assertNull(dataAllowed.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=", false)));

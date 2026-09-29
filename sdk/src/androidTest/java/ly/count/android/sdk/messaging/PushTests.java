@@ -169,9 +169,22 @@ public class PushTests {
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("content://app.provider/secret"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("javascript:alert(1)"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("jar:file:///x.apk!/a.html"), null));
+        Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("data:text/html;base64,PHNjcmlwdD4x"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("FILE:///x"), null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(null, null));
         Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("/no/scheme/path"), null));
+    }
+
+    /**
+     * Archive and intent-redirection schemes are blocked too, while "blob:" (a runtime-generated
+     * asset of a page, never a notification link target) stays allowed.
+     */
+    @Test
+    public void isLinkSchemeAllowed_defaultBlocksArchiveAndIntentSchemes() {
+        Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("zip://archive/x"), null));
+        Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("intent://x/y#Intent;scheme=https;package=com.evil;end"), null));
+        Assert.assertFalse(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("INTENT://x/y"), null));
+        Assert.assertTrue(CountlyPushActivity.isLinkSchemeAllowed(Uri.parse("blob:https://example.com/uuid"), null));
     }
 
     /**

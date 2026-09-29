@@ -106,7 +106,8 @@ public class CountlyConfigPush {
      * Set the URI schemes that notification links are allowed to open via ACTION_VIEW. When a
      * non-empty list is provided, only links whose scheme is in the list are opened. When left
      * empty (the default), any scheme except known-dangerous ones ("file", "content", "javascript",
-     * "jar", "data") is allowed, so http(s) and deep links keep working. Matched case-insensitively.
+     * "jar", "zip", "intent", "data") is allowed, so http(s) and deep links keep working. Matched
+     * case-insensitively.
      *
      * @param allowedIntentSchemes the URI schemes permitted for notification links, for example ["https", "myapp"]
      * @return Returns the same push config object for convenient linking
