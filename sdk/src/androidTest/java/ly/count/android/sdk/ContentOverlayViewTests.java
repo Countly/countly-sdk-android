@@ -64,18 +64,24 @@ public class ContentOverlayViewTests {
     }
 
     /**
-     * A host activity that hands out no WindowManager, so ContentOverlayView's window attach fails after
-     * the presentation guard has already been claimed. A real Activity subclass rather than a mock:
+     * A host activity that hands out no WindowManager, or fails the lookup, so ContentOverlayView's window
+     * attach fails after the presentation guard has already been claimed. A real Activity subclass rather than a mock:
      * mocking Activity from inside ActivityScenario.onActivity (the main thread) deadlocks.
      * Declared in sdk/src/androidTest/AndroidManifest.xml.
      */
     public static class NoWindowManagerActivity extends Activity {
+        static final String LOOKUP_FAILURE = "WindowManager lookup failed";
+
         // Off until the activity is up: the framework itself needs the WindowManager to build the
         // activity's window, so withholding it from the start would break the launch.
         volatile boolean withholdWindowManager = false;
+        volatile boolean failWindowManagerLookup = false;
 
         @Override
         public Object getSystemService(@NonNull String name) {
+            if (failWindowManagerLookup && Context.WINDOW_SERVICE.equals(name)) {
+                throw new IllegalStateException(LOOKUP_FAILURE);
+            }
             if (withholdWindowManager && Context.WINDOW_SERVICE.equals(name)) {
                 return null;
             }
@@ -1292,16 +1298,9 @@ public class ContentOverlayViewTests {
                 overlay = createOverlay(activity);
                 ContentOverlayView other = createOverlay(activity); // created but never attached
 
-                // Without a WindowManager the attach cannot complete: measuring the window throws, and
-                // even if it did not, addToWindow would find no WindowManager. Either way the guard has
-                // already been claimed by then. attachToActivity rethrows so the caller's error handling
-                // is unchanged - what must NOT survive is a stranded guard.
+                // measuring falls back to the display, then addToWindow finds no WindowManager after the guard was claimed
                 activity.withholdWindowManager = true;
-                try {
-                    overlay.attachToActivity(activity);
-                } catch (RuntimeException expected) {
-                    // the attach failed loudly; that is the case under test
-                }
+                overlay.attachToActivity(activity);
 
                 Assert.assertFalse("a failed attach must not leave the process-global guard claimed",
                     ContentOverlayView.isOverlayPresented());
@@ -1312,6 +1311,42 @@ public class ContentOverlayViewTests {
                 // reach either one - it destroys `overlay` only through the `scenario` field, and this test
                 // runs in a locally scoped scenario - so release both here, while the host activity is
                 // still alive and destroy() can remove a window on the main thread.
+                other.destroy();
+                overlay.destroy();
+                overlay = null;
+            });
+        } finally {
+            brokenScenario.close();
+        }
+    }
+
+    /**
+     * An attach that throws while measuring the window hands the guard back before rethrowing, so the
+     * caller's error handling is unchanged and no later content or feedback overlay is blocked.
+     */
+    @Test
+    public void presentationGuard_isReleasedWhenTheAttachThrows() {
+        ActivityScenario<NoWindowManagerActivity> brokenScenario = ActivityScenario.launch(NoWindowManagerActivity.class);
+        try {
+            brokenScenario.onActivity(activity -> {
+                overlay = createOverlay(activity);
+                ContentOverlayView other = createOverlay(activity);
+
+                activity.failWindowManagerLookup = true;
+                try {
+                    overlay.attachToActivity(activity);
+                    Assert.fail("the failed WindowManager lookup must be rethrown");
+                } catch (IllegalStateException expected) {
+                    Assert.assertEquals(NoWindowManagerActivity.LOOKUP_FAILURE, expected.getMessage());
+                } finally {
+                    activity.failWindowManagerLookup = false;
+                }
+
+                Assert.assertFalse("a failed attach must not leave the process-global guard claimed",
+                    ContentOverlayView.isOverlayPresented());
+                Assert.assertFalse("an overlay that never attached must not block the next one",
+                    ContentOverlayView.isOtherOverlayPresented(other));
+
                 other.destroy();
                 overlay.destroy();
                 overlay = null;
@@ -1457,8 +1492,8 @@ public class ContentOverlayViewTests {
      * Activity, that Activity stays GC-pinned for the overlay's full lifetime.
      *
      * The exact context type is API-dependent (see ContentOverlayView#resolveOverlayContext):
-     *   - Pre-API 31: Application context.
-     *   - API 31+: createConfigurationContext from the Activity — a ContextImpl
+     *   - Pre-API 30: Application context.
+     *   - API 30+: createConfigurationContext from the Activity, a ContextImpl
      *     wrapper that holds an IBinder token, not the Activity instance, so
      *     GC isn't blocked. Required for StrictMode#detectIncorrectContextUse.
      *
@@ -1478,8 +1513,8 @@ public class ContentOverlayViewTests {
                 activity, overlay.getContext());
             Assert.assertSame(
                 "ContentOverlayView.mContext must resolve to the same Application as the "
-                    + "constructing Activity (Application directly on <API 31, "
-                    + "ConfigurationContext-of-Activity on API 31+).",
+                    + "constructing Activity (Application directly on <API 30, "
+                    + "ConfigurationContext-of-Activity on API 30+).",
                 activity.getApplicationContext(),
                 overlay.getContext().getApplicationContext());
         });

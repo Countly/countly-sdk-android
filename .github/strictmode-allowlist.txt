@@ -1,0 +1,35 @@
+# StrictMode violations the audit accepts, checked by .github/scripts/strictmode_audit.py.
+#
+# Format: <policy> <violation> <site> [tests=TestClass,OtherTests]   # reason
+#   policy     VM or THREAD
+#   violation  the StrictMode violation class name
+#   site       Class.method of the deepest frame in SDK main code, anonymous class numbers dropped,
+#              or Class.* for every method of the class
+#   tests=     optional, the entry only covers violations raised by these test classes
+#
+# VM policy violations have no entries: every one found so far was fixed. Tests call the SDK on the
+# test thread, which stands in for the app's main thread, so THREAD entries are main thread work.
+
+# Init reads the persisted state synchronously. The first read of a SharedPreferences file waits for
+# it to finish loading and is reported, and which method gets there first depends on timing. These
+# classes touch the disk only through SharedPreferences.
+THREAD DiskReadViolation CountlyStore.*
+THREAD DiskReadViolation ModuleDeviceId.*
+THREAD DiskWriteViolation CountlyStore.<init>                 # first use creates the shared_prefs directory
+
+# Native crash dumps left by sdk-native are looked for, sent, and deleted during init.
+THREAD DiskReadViolation ModuleCrash.checkForNativeCrashDumps
+THREAD DiskWriteViolation ModuleCrash.checkForNativeCrashDumps
+THREAD DiskReadViolation ModuleCrash.recordNativeException
+
+# Crash requests are committed synchronously so they survive the process dying right after.
+THREAD DiskWriteViolation CountlyStore.storageWriteRequestQueue tests=ModuleCrashTests,MigrationHelperTests,MultiInstanceTests
+
+# Work the app asks for explicitly, on the thread it calls from.
+THREAD DiskWriteViolation CountlyStore.esWriteCacheToStorage tests=CountlyStoreExplicitModeTests
+THREAD DiskReadViolation ModuleUserProfile.setData            # checks the picture path the app provides
+
+# These tests run the SDK's network code on the test thread, the SDK itself runs it on its request threads.
+THREAD NetworkViolation ConnectionProcessor.* tests=ConnectionProcessorTests,ConnectionQueueIntegrationTests,StrictModeTests
+THREAD NetworkViolation ImmediateRequestMaker.* tests=StrictModeTests
+THREAD NetworkViolation PreflightRequestMaker.* tests=StrictModeTests
