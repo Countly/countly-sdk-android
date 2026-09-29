@@ -13,6 +13,7 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -44,8 +45,11 @@ public class ModuleContent extends ModuleBase {
     //replaced, never refilled in place: the setter can run on any thread while an event reads it
     @NonNull private volatile Map<String, Object> globalContentSegmentation = Collections.emptyMap();
 
-    //keys the feedback widget events report themselves; a global one would show up on events without them, like "closed" on an answered widget
-    private static final String[] reservedSegmentationKeysContent = { "platform", "app_version", "widget_id", "closed" };
+    //keys the feedback widget events report themselves, or that the server reads as an answer or uses to route a widget event;
+    //a global one would show up on events without them, like "closed" on an answered widget or "rating" on a dismissed one
+    private static final String[] reservedSegmentationKeysContent = { "platform", "app_version", "widget_id", "closed", "rating", "comment", "email", "contactMe", "shown", "campaign_id" };
+    //survey answers are keyed as this prefix plus the question id
+    private static final String reservedSegmentationKeyPrefixContent = "answ-";
 
     private @Nullable Activity getCurrentActivity() {
         return currentActivity != null ? currentActivity.get() : null;
@@ -82,6 +86,14 @@ public class ModuleContent extends ModuleBase {
         Map<String, Object> sanitized = new LinkedHashMap<>(segmentation);
         String tag = "[ModuleContent] setGlobalContentSegmentationInternal";
         UtilsInternalLimits.removeReservedKeysFromSegmentation(sanitized, reservedSegmentationKeysContent, tag + ", ", L);
+        UtilsInternalLimits.removeUnsupportedDataTypes(sanitized, L);
+        for (Iterator<String> it = sanitized.keySet().iterator(); it.hasNext(); ) {
+            String key = it.next();
+            if (key.startsWith(reservedSegmentationKeyPrefixContent)) {
+                L.w(tag + ", provided segmentation contains protected key [" + key + "]");
+                it.remove();
+            }
+        }
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(sanitized, _cly.sdkInternalLimits_, L, tag);
 
         globalContentSegmentation = sanitized;

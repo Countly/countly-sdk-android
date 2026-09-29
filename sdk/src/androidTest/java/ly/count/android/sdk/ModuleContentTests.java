@@ -503,4 +503,25 @@ public class ModuleContentTests {
         ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
         verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
     }
+
+    /**
+     * A global value for a key the server reads as a widget answer or uses to route a widget event,
+     * including any survey answer key, is dropped when it is set, so a dismissed widget never reports
+     * one as its answer. A value of an unsupported type is dropped as well.
+     */
+    @Test
+    public void globalContentSegmentation_dropsAnswerAndRoutingKeysAndUnsupportedValues() {
+        Countly countly = initForGlobalSegmentation();
+        EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+        ModuleFeedback.CountlyFeedbackWidget widget = ModuleFeedbackTests.createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
+
+        countly.contents().setGlobalContentSegmentation(TestUtils.map("rating", 5, "comment", "hijacked", "email", "someone@else.com", "contactMe", true,
+            "shown", 1, "campaign_id", "hijacked", "answ-q1", "hijacked", "user", new Object(), "screen", "settings"));
+
+        countly.moduleFeedback.reportFeedbackWidgetCancelButton(widget);
+
+        Map<String, Object> expected = TestUtils.map("screen", "settings", "closed", "1");
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+    }
 }
