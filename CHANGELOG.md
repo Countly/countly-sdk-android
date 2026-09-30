@@ -19,6 +19,7 @@
 * Added support for push notification collapse keys, and it is available through `CountlyPush.Message.collapseKey()`.
 * Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
 * Removed the unused `androidx.multidex:multidex` dependency, which the minimum SDK of 21 has not needed.
+* Added a new method `Countly.sharedInstance().contents().setGlobalContentSegmentation(Map)` for adding a segmentation to content and feedback widget events.
 
 ## 26.1.6
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.

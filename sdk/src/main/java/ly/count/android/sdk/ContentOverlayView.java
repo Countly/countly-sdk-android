@@ -901,7 +901,7 @@ class ContentOverlayView extends FrameLayout {
                         segmentation.put(key, value);
                     }
 
-                    cly.events().recordEvent(eventJson.get("key").toString(), segmentation);
+                    cly.events().recordEvent(eventJson.get("key").toString(), ModuleContent.withGlobalContentSegmentation(cly, segmentation));
                 } catch (JSONException e) {
                     Log.e(Countly.TAG, "[ContentOverlayView] eventAction, Failed to parse event JSON", e);
                 }
