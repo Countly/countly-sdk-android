@@ -73,12 +73,10 @@ class CountlyWebViewClient extends WebViewClient {
     public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
         Uri url = request == null ? null : request.getUrl();
         String scheme = url == null ? null : url.getScheme();
-        // Sub-resources (images, frames, scripts) follow the shared scheme policy, except https which
-        // always loads because it serves the content itself: with no allow-list the dangerous
-        // local/script schemes (file, content, javascript, jar) are blocked while inline data/blob
-        // assets load; when an allow-list is configured, only those schemes (plus https) load. This
-        // keeps an outbound-link allow-list from blocking the page's own https assets, while http and
-        // data/blob stay integrator-decided. A null scheme (e.g. a malformed request) is blocked, fail-secure.
+        // Sub-resources (images, frames, scripts) follow the shared scheme policy: https always loads
+        // because it serves the content itself, and the dangerous schemes (file, content, javascript,
+        // jar, zip, intent, data) are blocked. When an allow-list is configured, only those schemes
+        // (plus https) load. A null scheme (e.g. a malformed request) is blocked, fail-secure.
         if (!Utils.isWebContentSchemeAllowed(scheme, allowedSchemes)) {
             Log.v(Countly.TAG, "[CountlyWebViewClient] shouldInterceptRequest, blocked sub-resource with disallowed scheme: [" + url + "]");
             return Utils.blankWebResourceResponse();

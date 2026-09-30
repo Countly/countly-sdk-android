@@ -19,7 +19,7 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.jetbrains.annotations.NotNull;
+import androidx.annotation.NonNull;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -1255,7 +1255,7 @@ public class ModuleConfigurationTests {
         // so we need a mock server to accept those queued requests
         try (MockWebServer server = new MockWebServer()) {
             server.setDispatcher(new Dispatcher() {
-                @NotNull @Override public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) {
+                @NonNull @Override public MockResponse dispatch(@NonNull RecordedRequest recordedRequest) {
                     return new MockResponse().setResponseCode(200)
                         .setHeader("Content-Type", "application/json").setBody("{\"result\": \"Success\"}");
                 }
@@ -2285,7 +2285,7 @@ public class ModuleConfigurationTests {
     private void testJTEWithMockedWebServer(BiConsumer<RecordedRequest, MockResponse> customRequestFlow, Runnable runnable) throws Exception {
         try (MockWebServer server = new MockWebServer()) {
             server.setDispatcher(new Dispatcher() {
-                @NotNull @Override public MockResponse dispatch(@NotNull RecordedRequest recordedRequest) throws InterruptedException {
+                @NonNull @Override public MockResponse dispatch(@NonNull RecordedRequest recordedRequest) throws InterruptedException {
                     MockResponse response = new MockResponse().setResponseCode(200)
                         .setHeader("Content-Type", "application/json").setBody("{\"result\": \"Success\"}");
                     // Track content requests

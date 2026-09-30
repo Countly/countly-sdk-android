@@ -64,8 +64,11 @@ public class FeedbackDialogWebViewClientTests {
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("content://com.app.provider/private")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("javascript:alert(document.cookie)")));
         assertBlocked(client.shouldInterceptRequest(null, fakeRequest("jar:file:///x.apk!/a.html")));
-        // data:/blob: are inline / runtime-generated assets widgets embed -> load normally
-        Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("zip://archive/x.html")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("intent://x/y#Intent;scheme=https;end")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:image/png;base64,iVBORw0KGgo=")));
+        assertBlocked(client.shouldInterceptRequest(null, fakeRequest("data:image/svg+xml;utf8,<svg/>")));
+        // blob: is a runtime-generated asset of the page itself -> not denylisted
         Assert.assertNull(client.shouldInterceptRequest(null, fakeRequest("blob:https://example.com/uuid")));
     }
 

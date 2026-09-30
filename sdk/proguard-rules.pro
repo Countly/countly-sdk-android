@@ -15,3 +15,6 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# Rules for integrators live in consumer-rules.pro (shipped inside the AAR). This file applies only to
+# this module's own minification, which is off.

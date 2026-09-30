@@ -38,6 +38,7 @@ public class ModuleEventsTests {
 
     @Before
     public void setUp() {
+        TestUtils.alignToSecondBoundary();
         final CountlyStore countlyStore = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
         countlyStore.clear();
 

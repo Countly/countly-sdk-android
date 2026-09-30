@@ -1,3 +1,18 @@
+## 26.1.6
+* Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
+* Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
+* Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
+
+* Fixed regressions where the SDK forced a newer build toolchain on integrators:
+  * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
+  * it was compiled to Java 11 bytecode instead of Java 8, which older Android Gradle Plugin versions cannot read.
+  * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
+* Mitigated issues where the SDK caused StrictMode violations:
+  * `IncorrectContextUseViolation` when collecting display metrics on Android 11, or on newer versions when no Activity was in the foreground.
+  * `IncorrectContextUseViolation` when showing content or a feedback widget on Android 11.
+  * `UntaggedSocketViolation` for its network requests, as their sockets were not tagged.
+  * disk reads on the main thread for the root and total RAM metrics when a crash was recorded.
+
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
 * Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.

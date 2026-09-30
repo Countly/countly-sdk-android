@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.net.TrafficStats;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.UnsupportedEncodingException;
@@ -10,6 +11,34 @@ import java.security.MessageDigest;
 public class UtilsNetworking {
     // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
     final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+    /**
+     * Tag the SDK's sockets are attributed to in network usage statistics. Tagged sockets are also
+     * not reported by StrictMode's untagged socket detection.
+     */
+    static final int SOCKET_TAG = 0x434C59;
+
+    /**
+     * Tags the sockets the calling thread opens from now on with {@link #SOCKET_TAG}. Pass the
+     * returned value to {@link #restoreSocketTag(int)} once the network work is done, since the
+     * thread can belong to a pool shared with the app.
+     *
+     * @return the tag the thread had before
+     */
+    static int tagSocketsOfThread() {
+        int previousTag = TrafficStats.getThreadStatsTag();
+        TrafficStats.setThreadStatsTag(SOCKET_TAG);
+        return previousTag;
+    }
+
+    /**
+     * Gives the calling thread back the socket tag it had before {@link #tagSocketsOfThread()}.
+     *
+     * @param previousTag the value {@link #tagSocketsOfThread()} returned
+     */
+    static void restoreSocketTag(int previousTag) {
+        TrafficStats.setThreadStatsTag(previousTag);
+    }
 
     protected static @NonNull String urlEncodeString(@NonNull String givenValue) {
         assert Utils.isNotNullOrEmpty(givenValue);

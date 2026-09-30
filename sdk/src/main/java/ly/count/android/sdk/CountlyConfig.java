@@ -144,6 +144,8 @@ public class CountlyConfig {
 
     protected boolean temporaryDeviceIdEnabled = false;
 
+    protected boolean clearStoredDeviceId = false;
+
     protected String tamperingProtectionSalt = null;
 
     protected Integer eventQueueSizeThreshold = null;
@@ -658,6 +660,25 @@ public class CountlyConfig {
     }
 
     /**
+     * Clear the device ID that a previous SDK run stored, so that this init resolves a device ID the same way a
+     * first init does: the value given to {@link #setDeviceId(String)} is used if there is one, otherwise the SDK
+     * generates a new one. Without this, a stored device ID is sticky and a device ID given on a later init is
+     * ignored.
+     * <p>
+     * Only the device ID is cleared. No merge request is sent, and data that is still pending on the device, such
+     * as unsent events and requests held back by temporary ID mode, is sent under the newly resolved device ID.
+     * <p>
+     * The cleared device ID can't be recovered. Leaving this enabled in a released app creates a new user on every
+     * app start, so it is meant for development and debugging.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enableClearStoredDeviceId() {
+        clearStoredDeviceId = true;
+        return this;
+    }
+
+    /**
      * @param callback
      * @return Returns the same config object for convenient linking
      * @deprecated This call is deprecated, please use <pre>crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)</pre> instead
@@ -1092,7 +1113,13 @@ public class CountlyConfig {
         return this;
     }
 
-    protected synchronized CountlyConfig disableHealthCheck() {
+    /**
+     * Disable the health check request that the SDK sends to the server once per initialization.
+     * That request reports the SDK's error and warning log counts, the last failed request's status code and error, and back off counts.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig disableHealthCheck() {
         healthCheckEnabled = false;
         return this;
     }
