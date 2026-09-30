@@ -4,6 +4,8 @@ env:
   EMULATOR_REPO: us-docker.pkg.dev/android-emulator-268719/images/28-playstore-x64:30.1.2
   JAVA_V: 17
   JAVA_DIST: corretto
+  # Every Gradle call gets -Pcoverage, so the connected tests run against the jacoco-instrumented debug SDK.
+  ORG_GRADLE_PROJECT_coverage: true
 
 permissions:
   checks: write
@@ -89,3 +91,33 @@ jobs:
             sdk/build/outputs/androidTest-results/**/*.xml
             sdk-native/build/test-results/**/*.xml
             upload-plugin/build/test-results/**/*.xml
+
+      # Runs after failed tests too: the coverage the emulator wrote is still valid. The test tasks are
+      # excluded so a failure is not re-run. No .ec file means the instrumentation process died before
+      # writing one, and a report built from nothing would reach Codacy as 0%.
+      - name: Generate Coverage Reports
+        id: coverage
+        if: always()
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        run: |
+          if [ -z "$CODACY_PROJECT_TOKEN" ]; then
+            echo "No CODACY_PROJECT_TOKEN on this run (fork or Dependabot), skipping coverage."
+            exit 0
+          fi
+          if ! ls sdk/build/outputs/code_coverage/debugAndroidTest/connected/*/*.ec > /dev/null 2>&1; then
+            echo "::warning::The emulator produced no coverage data, so nothing is uploaded to Codacy."
+            exit 0
+          fi
+          ./gradlew sdk:createDebugAndroidTestCoverageReport -x sdk:connectedDebugAndroidTest \
+            upload-plugin:jacocoTestReport -x upload-plugin:test
+          reports=$(ls sdk/build/reports/coverage/androidTest/debug/connected/report.xml \
+            upload-plugin/build/reports/jacoco/test/jacocoTestReport.xml 2> /dev/null | paste -sd, -)
+          echo "reports=$reports" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Coverage to Codacy
+        if: always() && steps.coverage.outputs.reports != ''
+        uses: codacy/codacy-coverage-reporter-action@89d6c85cfafaec52c72b6c5e8b2878d33104c699 # v1.3.0
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: ${{ steps.coverage.outputs.reports }}

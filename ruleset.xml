@@ -73,18 +73,14 @@
     <rule ref="category/java/codestyle.xml/AvoidProtectedFieldInFinalClass" />
     <rule ref="category/java/codestyle.xml/AvoidProtectedMethodInFinalClassNotExtending" />
     <rule ref="category/java/codestyle.xml/AvoidUsingNativeCode" />
-    <rule ref="category/java/codestyle.xml/BooleanGetMethodName" />
     <rule ref="category/java/codestyle.xml/CallSuperInConstructor" />
-    <rule ref="category/java/codestyle.xml/ConfusingTernary" />
     <rule ref="category/java/codestyle.xml/ControlStatementBraces" />
     <rule ref="category/java/codestyle.xml/EmptyControlStatement" /><!--???-->
     <rule ref="category/java/codestyle.xml/EmptyMethodInAbstractClassShouldBeAbstract" />
     <rule ref="category/java/codestyle.xml/ExtendsObject" />
-    <rule ref="category/java/codestyle.xml/FieldDeclarationsShouldBeAtStartOfClass" />
     <rule ref="category/java/codestyle.xml/ForLoopShouldBeWhileLoop" />
     <rule ref="category/java/codestyle.xml/GenericsNaming" />
     <rule ref="category/java/codestyle.xml/IdenticalCatchBranches" />
-    <rule ref="category/java/codestyle.xml/LinguisticNaming" /><!--???-->
     <rule ref="category/java/codestyle.xml/LocalHomeNamingConvention" />
     <rule ref="category/java/codestyle.xml/LocalInterfaceSessionNamingConvention" />    
     <rule ref="category/java/codestyle.xml/LongVariable">
@@ -113,13 +109,11 @@
     <rule ref="category/java/codestyle.xml/UnnecessaryAnnotationValueElement" /><!--???-->
     <rule ref="category/java/codestyle.xml/UnnecessaryCast" />
     <rule ref="category/java/codestyle.xml/UnnecessaryConstructor" /><!--???-->
-    <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName" /><!--???-->
     <rule ref="category/java/codestyle.xml/UnnecessaryImport" />
     <rule ref="category/java/codestyle.xml/UnnecessaryModifier" />
     <rule ref="category/java/codestyle.xml/UnnecessaryReturn" />
     <rule ref="category/java/codestyle.xml/UnnecessarySemicolon" />
     <rule ref="category/java/codestyle.xml/UseDiamondOperator" />
-    <rule ref="category/java/codestyle.xml/UselessParentheses" />
     <rule ref="category/java/codestyle.xml/UselessQualifiedThis" />
     <rule ref="category/java/codestyle.xml/UseShortArrayInitializer" />
     <rule ref="category/java/codestyle.xml/UseUnderscoresInNumericLiterals"><!--???-->
@@ -334,7 +328,6 @@
     <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingMethodName" />
     <rule ref="category/java/errorprone.xml/AvoidFieldNameMatchingTypeName" />
     <rule ref="category/java/errorprone.xml/AvoidInstanceofChecksInCatchClause" />
-    <rule ref="category/java/errorprone.xml/AvoidLiteralsInIfCondition" /><!--???-->
     <rule ref="category/java/errorprone.xml/AvoidLosingExceptionInformation" />
     <rule ref="category/java/errorprone.xml/AvoidMultipleUnaryOperators" />
     <rule ref="category/java/errorprone.xml/AvoidUsingOctalValues" />
@@ -416,7 +409,6 @@
     <rule ref="category/java/multithreading.xml/DoubleCheckedLocking" />
     <rule ref="category/java/multithreading.xml/NonThreadSafeSingleton" />
     <rule ref="category/java/multithreading.xml/UnsynchronizedStaticFormatter" />
-    <rule ref="category/java/multithreading.xml/UseConcurrentHashMap" />
     <rule ref="category/java/multithreading.xml/UseNotifyAllInsteadOfNotify" />
 
     <!--
@@ -430,7 +422,6 @@
     <rule ref="category/java/performance.xml/AvoidArrayLoops" />
     <rule ref="category/java/performance.xml/AvoidCalendarDateCreation" />
     <rule ref="category/java/performance.xml/AvoidFileStream" />
-    <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops" />
     <rule ref="category/java/performance.xml/BigIntegerInstantiation" />    
     <rule ref="category/java/performance.xml/ConsecutiveLiteralAppends" />
     <rule ref="category/java/performance.xml/InefficientEmptyStringCheck" />
