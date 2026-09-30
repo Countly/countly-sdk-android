@@ -87,7 +87,7 @@ public class UtilsNetworking {
         return decodedResult;
     }
 
-    protected static @NonNull String sha256Hash(@NonNull String toHash) {
+    protected static @NonNull String sha256Hash(@NonNull String toHash, @NonNull ModuleLog L) {
         assert toHash != null;
 
         String hash;
@@ -101,7 +101,7 @@ public class UtilsNetworking {
             hash = bytesToHex(bytes);
         } catch (Throwable e) {
             hash = "";
-            Countly.sharedInstance().L.e("Cannot tamper-protect params", e);
+            L.e("Cannot tamper-protect params", e);
         }
         return hash;
     }

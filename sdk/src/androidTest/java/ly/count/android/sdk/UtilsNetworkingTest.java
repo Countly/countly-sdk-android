@@ -63,7 +63,7 @@ public class UtilsNetworkingTest {
         String[] list_b = { "c641f7596a2959479d66f5b1ff9d11b5aaa24c185e27a636de242fab1e19d924", "3d8ad9c4c9194e2e1be44b408849bc4bad1c2624196440d016e14217ce2d5d24", "78cb302c277088418b8c91332eac2e336f6de107f3a336ddf05333b74778b92c" };
 
         for (int a = 0; a < list_a.length; a++) {
-            Assert.assertEquals(UtilsNetworking.sha256Hash(list_a[a]), list_b[a]);
+            Assert.assertEquals(UtilsNetworking.sha256Hash(list_a[a], new ModuleLog()), list_b[a]);
         }
     }
 }

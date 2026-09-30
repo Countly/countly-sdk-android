@@ -11,6 +11,9 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
 
     ImmediateRequestMaker.InternalImmediateRequestCallback callback;
     ModuleLog L;
+    // Set by the owning instance's ImmediateRequestGenerator so the executor choice follows the
+    // instance that issued the request rather than Countly.sharedInstance().
+    boolean useSerialExecutor = false;
 
     @Override
     public void doWork(@NonNull String requestData, @Nullable String customEndpoint, @NonNull ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, @NonNull ImmediateRequestMaker.InternalImmediateRequestCallback callback, @NonNull ModuleLog log) {
@@ -18,7 +21,7 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
         assert cp != null;
         assert log != null;
         assert callback != null;
-        if (Countly.sharedInstance().useSerialExecutorInternal) {
+        if (useSerialExecutor) {
             log.d("[PreflightRequestMaker] Using serial executor");
             this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
         } else {

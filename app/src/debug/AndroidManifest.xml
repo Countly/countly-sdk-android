@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <application>
+    <activity
+        android:name="ly.count.android.demo.MultiInstanceHarness"
+        android:exported="true"
+        android:theme="@android:style/Theme.NoDisplay"/>
+  </application>
+</manifest>

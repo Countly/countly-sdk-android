@@ -1,3 +1,25 @@
+## XX.XX.XX
+* !! Major breaking change !! New versions of the SDK are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
+  ```groovy
+  maven {
+    url = 'https://maven.countly.com'
+    content { includeGroupByRegex 'ly\\.count\\..*' }
+  }
+  ```
+  Versions released before this one stay available on Maven Central. The files are signed with the same key as before (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
+* ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Use the latest version of each instead of the SDK's version number.
+* Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
+
+  `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
+
+  Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
+* Added support for server requested SDK log gathering. When the server asks for it, the SDK uploads its own internal log lines, even if logging is disabled.
+* Added support for the SDK connection test. When the server asks for it, the SDK checks that it can reach every endpoint it depends on and reports the results.
+* Added support for the large icon of push notifications, and it is available through `CountlyPush.Message.largeIcon()`.
+* Added support for push notification collapse keys, and it is available through `CountlyPush.Message.collapseKey()`.
+* Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
+* Removed the unused `androidx.multidex:multidex` dependency, which the minimum SDK of 21 has not needed.
+
 ## 26.1.6
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
 * Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.

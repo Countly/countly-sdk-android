@@ -103,12 +103,12 @@ public class ModuleAPM extends ModuleBase {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
-                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
-                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
+                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
                 }
 
                 String metricString = customMetricsToString(customMetrics);
-                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
                 String modifiedTraceKey = validateAndModifyTraceKey(truncatedTraceKey);
 
                 requestQueueProvider.sendAPMCustomTrace(modifiedTraceKey, durationMs, startTimestamp, currentTimestamp, metricString);
@@ -324,7 +324,7 @@ public class ModuleAPM extends ModuleBase {
         }
 
         //validate trace key
-        networkTraceKey = UtilsInternalLimits.truncateKeyLength(networkTraceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] recordNetworkRequestInternal");
+        networkTraceKey = UtilsInternalLimits.truncateKeyLength(networkTraceKey, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] recordNetworkRequestInternal");
         networkTraceKey = validateAndModifyTraceKey(networkTraceKey);
 
         Long responseTimeMs = endTimestamp - startTimestamp;
@@ -473,28 +473,30 @@ public class ModuleAPM extends ModuleBase {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.apm)) {
             if (!newConsent) {
                 //in case APM consent is removed, clear custom and network traces
-                _cly.moduleAPM.clearNetworkTraces();
-                _cly.moduleAPM.cancelAllTracesInternal();
+                //called directly: _cly.moduleAPM is this very module, so the hop through _cly added nothing
+                //but a field that teardown nulls
+                clearNetworkTraces();
+                cancelAllTracesInternal();
             }
         }
     }
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (_cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (_cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
 
             activitiesOpen++;
         }
 
         // we only do this adjustment if we track it automatically
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Starting to track foreground time");
 
             calculateAppRunningTimes(activitiesOpen - 1, activitiesOpen);
         }
 
-        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Recording automatic app start duration");
             long currentTimestamp = System.currentTimeMillis();
             recordAppStart(currentTimestamp);

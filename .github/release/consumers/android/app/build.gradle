@@ -1,0 +1,33 @@
+def countlyProperty = { String name -> gradle.startParameter.projectProperties[name] }
+
+apply plugin: 'com.android.application'
+if (countlyProperty('countlyPluginVersion') != null) {
+  apply plugin: 'ly.count.android.plugins.upload-symbols'
+}
+
+android {
+  namespace = 'ly.count.consumer'
+  compileSdk = Integer.parseInt(countlyProperty('consumerCompileSdk'))
+  buildToolsVersion = countlyProperty('consumerBuildTools')
+
+  defaultConfig {
+    applicationId = 'ly.count.consumer'
+    minSdk = 21
+    targetSdk = Integer.parseInt(countlyProperty('consumerCompileSdk'))
+  }
+
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+
+  sourceSets {
+    main.java.srcDir "src/${countlyProperty('countlyProbe') ?: 'none'}/java"
+  }
+}
+
+dependencies {
+  if (countlyProperty('countlyDependency') != null) {
+    implementation countlyProperty('countlyDependency')
+  }
+}

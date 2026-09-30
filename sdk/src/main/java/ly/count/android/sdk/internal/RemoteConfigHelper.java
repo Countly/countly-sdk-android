@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.ExperimentInformation;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.ModuleRemoteConfig;
@@ -17,7 +16,11 @@ import org.json.JSONObject;
 
 public class RemoteConfigHelper {
 
-    public static @NonNull Map<String, RCData> DownloadedValuesIntoMap(@Nullable JSONObject jsonObject) {
+    /**
+     * @param L logger of the instance these downloaded values belong to, so a parse failure is reported
+     * to that instance's log listener instead of the default instance's
+     */
+    public static @NonNull Map<String, RCData> DownloadedValuesIntoMap(@Nullable JSONObject jsonObject, @NonNull ModuleLog L) {
         Map<String, RCData> ret = new HashMap<>();
 
         if (jsonObject == null) {
@@ -31,7 +34,7 @@ public class RemoteConfigHelper {
                 Object value = jsonObject.get(key);
                 ret.put(key, new RCData(value, true));
             } catch (Exception e) {
-                Countly.sharedInstance().L.e("[RemoteConfigValueStore] Failed merging new remote config values");
+                L.e("[RemoteConfigValueStore] Failed merging new remote config values");
             }
         }
 

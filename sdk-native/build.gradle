@@ -12,15 +12,16 @@ buildscript {
 
 android {
   namespace 'ly.count.android.sdknative'
+  // Kotlin, bytecode level and the consumer contract check for library modules are set once in the
+  // root build.gradle, so :sdk and :sdk-native cannot drift apart again.
   compileSdk 37
 
   defaultConfig {
     minSdk 21
     targetSdk 37
 
-    // AGP 9 defaults the AAR's minCompileSdk to this module's compileSdk (37), which would force
-    // every integrator to compile against SDK 37. This module only touches Context.getCacheDir(),
-    // Log and File, so its real compile floor is its minSdk; declare that, as the sdk module does.
+    // The compile floor integrators get is the runtime floor: this module only touches
+    // Context.getCacheDir(), Log and File. verifyConsumerContract checks this.
     aarMetadata {
       minCompileSdk 21
     }
@@ -71,5 +72,8 @@ tasks.matching { it.name ==~ /test.*UnitTest/ }.configureEach {
     .withPathSensitivity(PathSensitivity.RELATIVE)
   inputs.dir(layout.projectDirectory.dir('libs'))
     .withPropertyName('precompiledNativeLibraries')
+    .withPathSensitivity(PathSensitivity.RELATIVE)
+  inputs.file(layout.projectDirectory.file('src/cpp_precompilation/ndk.version'))
+    .withPropertyName('pinnedNdkVersion')
     .withPathSensitivity(PathSensitivity.RELATIVE)
 }

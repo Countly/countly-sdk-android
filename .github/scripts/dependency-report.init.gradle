@@ -1,0 +1,170 @@
+// Prints every resolved external dependency coordinate, for every module, as
+//
+//     COORD <projectPath> <group>:<artifact>:<version> <scope>
+//
+// Applied via `--init-script` so no build file in the repo has to change.
+// Consumed by .github/scripts/osv_scan.py via .github/workflows/dependency-security.yml.
+//
+// Resolving the real configurations rather than parsing build files is deliberate: it
+// captures transitive dependencies and the version conflict resolution actually picks,
+// which is what ends up in the artifact. These projects have no Gradle lockfile, so
+// lockfile-based scanners see nothing at all.
+//
+// THREE SCOPES, because a finding's weight depends entirely on who inherits it:
+//
+//   published   — on the runtime classpath of a module we publish to Maven Central.
+//                 Every integrator inherits these. Blocks the scan.
+//   sample      — demo applications and test-only dependencies. Never reaches an
+//                 integrator, but it is still our code and our upgrade to make, so it
+//                 blocks too. (This is the scope that catches a vulnerable JSON library
+//                 left behind in a demo module after the SDK itself was fixed.)
+//   buildscript — the Gradle plugin classpath. Mostly the Android Gradle Plugin's own
+//                 internals, which cannot be upgraded independently of AGP, so these are
+//                 reported and never block.
+//
+// The published module list is passed in with -DpublishedModules=:a,:b so this file stays
+// identical across repositories. Any module that applies the vanniktech publish plugin is
+// added automatically, and one that does so without being declared is reported as an error
+// rather than being quietly downgraded to `sample`.
+//
+// Run locally with:
+//   ./gradlew -I .github/scripts/dependency-report.init.gradle \
+//     -DpublishedModules=:sdk,:sdk-native,:upload-plugin printResolvedDependencies
+
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+
+// Configure-on-demand leaves subprojects unevaluated unless something asks for them, and an
+// unevaluated project reports no configurations — the scan would silently cover part of the
+// build and still look clean.
+gradle.startParameter.configureOnDemand = false
+
+// Configurations carrying what a consumer of the published artifact actually gets.
+def PUBLISHED_CONFIGS = ["runtimeClasspath", "releaseRuntimeClasspath"] as Set
+
+// Configurations carrying dependencies we declare for demo apps and tests.
+//
+// This is a closed list on purpose. "Every resolvable configuration that is not a published
+// runtime classpath" looks equivalent and is not: the Android Gradle Plugin hangs its own
+// tooling configurations off each project (lintChecks, androidTestUtil, androidJdkImage,
+// _internal_aapt2_binary, kotlinCompilerClasspath, ...), which drag in netty, bouncycastle
+// and jose4j. Treating those as `sample` makes the scan block on AGP internals we cannot
+// upgrade -- the very thing the buildscript scope exists to avoid.
+//
+// Compile classpaths are included as well as runtime ones. A stale declaration can be
+// masked at runtime: if a demo module declares an old version of a library that a project
+// dependency also supplies at a newer version, `runtimeClasspath` resolves up and the old
+// version disappears, while `compileClasspath` still shows what was actually declared.
+def SAMPLE_CONFIGS = [
+  "runtimeClasspath",
+  "compileClasspath",
+  "releaseRuntimeClasspath",
+  "releaseCompileClasspath",
+  "debugRuntimeClasspath",
+  "debugCompileClasspath",
+  "debugAndroidTestRuntimeClasspath",
+  "debugAndroidTestCompileClasspath",
+  "releaseUnitTestRuntimeClasspath",
+  "debugUnitTestRuntimeClasspath",
+  "debugUnitTestCompileClasspath",
+  "testRuntimeClasspath",
+  "testCompileClasspath",
+] as Set
+
+// Local project artifacts have no upstream version to look up.
+def SKIP_VERSIONS = ["unspecified", ""] as Set
+
+def PUBLISH_PLUGIN = "com.vanniktech.maven.publish"
+
+gradle.rootProject { rootProject ->
+  rootProject.tasks.register("printResolvedDependencies") {
+    group = "verification"
+    description = "Print every resolved external dependency coordinate for security scanning."
+    notCompatibleWithConfigurationCache("Resolves every project's configurations at execution time.")
+
+    doLast {
+      def declared = (System.getProperty("publishedModules") ?: "")
+        .split(",").collect { it.trim() }.findAll { it } as Set
+
+      // "<modulePath> <coordinate>" -> scope. Each line reports the scope that module
+      // reaches the coordinate through; the scanner takes the widest scope across lines.
+      def found = new TreeMap<String, String>()
+      def skipped = []
+      def undeclared = []
+
+      def precedence = ["buildscript": 0, "sample": 1, "published": 2]
+
+      def record = { String coordinate, String scope, String modulePath ->
+        def key = "${modulePath} ${coordinate}".toString()
+        def existing = found[key]
+        if (existing == null || precedence[scope] > precedence[existing]) {
+          found[key] = scope
+        }
+      }
+
+      def collectFrom = { configuration, String scope, String modulePath, String label ->
+        try {
+          configuration.incoming.resolutionResult.allComponents.each { component ->
+            def id = component.id
+            if (id instanceof ModuleComponentIdentifier && !SKIP_VERSIONS.contains(id.version)) {
+              record("${id.group}:${id.module}:${id.version}".toString(), scope, modulePath)
+            }
+          }
+        } catch (Exception e) {
+          // A configuration that cannot resolve here (missing variant, platform-only, needs
+          // credentials) must not take the whole scan down, but it must be visible: an
+          // unreported skip reads as "clean" when it is really "unchecked".
+          skipped << "${label}: ${e.class.simpleName}: ${e.message?.readLines()?.first()}".toString()
+        }
+      }
+
+      rootProject.allprojects.each { project ->
+        def appliesPublishPlugin = project.plugins.hasPlugin(PUBLISH_PLUGIN)
+        def isPublished = declared.contains(project.path) || appliesPublishPlugin
+        if (appliesPublishPlugin && !declared.contains(project.path)) {
+          undeclared << project.path
+        }
+
+        project.configurations.each { configuration ->
+          if (!configuration.canBeResolved) {
+            return
+          }
+          def name = configuration.name
+          def scope
+          if (isPublished && PUBLISHED_CONFIGS.contains(name)) {
+            scope = "published"
+          } else if (SAMPLE_CONFIGS.contains(name)) {
+            scope = "sample"
+          } else {
+            // An AGP/Gradle tooling configuration. Reported, but not ours to upgrade.
+            scope = "buildscript"
+          }
+          collectFrom(configuration, scope, project.path, "${project.path}:${name}")
+        }
+
+        def buildscriptClasspath = project.buildscript.configurations.findByName("classpath")
+        if (buildscriptClasspath != null) {
+          collectFrom(buildscriptClasspath, "buildscript", project.path,
+            "${project.path}:buildscript.classpath")
+        }
+      }
+
+      found.each { key, scope ->
+        println "COORD ${key} ${scope}"
+      }
+
+      def distinct = found.keySet().collect { it.split(' ')[1] } as Set
+      def publishedCoordinates = found.findAll { it.value == "published" }
+        .keySet().collect { it.split(' ')[1] } as Set
+      logger.lifecycle("Resolved ${distinct.size()} distinct coordinates " +
+        "(${publishedCoordinates.size()} published) across ${rootProject.allprojects.size()} modules")
+      skipped.each { logger.warn("[dependency-report] could not resolve ${it}") }
+
+      if (!undeclared.isEmpty()) {
+        throw new GradleException(
+          "These modules apply ${PUBLISH_PLUGIN} but are missing from -DpublishedModules: " +
+          "${undeclared.join(', ')}. Add them, otherwise their dependencies are scanned as " +
+          "'sample' and a vulnerability shipped to integrators would not be reported as such.")
+      }
+    }
+  }
+}

@@ -392,7 +392,7 @@ public class ConnectionQueueIntegrationTests {
             Assert.assertTrue(serverConn instanceof HttpsURLConnection);
             Assert.assertSame("custom factory must win over pinning", customFactory, ((HttpsURLConnection) serverConn).getSSLSocketFactory());
         } finally {
-            Countly.publicKeyPinCertificates = null;
+            Countly.sharedInstance().halt();
         }
     }
 
@@ -413,7 +413,8 @@ public class ConnectionQueueIntegrationTests {
             Assert.assertNotSame("public key pinning must install its own socket factory", platformDefault, publicKeyPinningFactory);
 
             Countly.sharedInstance().halt();
-            Countly.publicKeyPinCertificates = null;
+            // pinning is now per-instance on the ConnectionQueue; halt() drops the queue, so the
+            // next init starts with a fresh, unpinned ConnectionQueue - no static reset needed.
 
             // certificate pinning
             Countly.sharedInstance().init(new CountlyConfig(TestUtils.getContext(), appKey, serverUrl).enableCertificatePinning(certs));
@@ -421,8 +422,7 @@ public class ConnectionQueueIntegrationTests {
             Assert.assertNotNull(certificatePinningFactory);
             Assert.assertNotSame("certificate pinning must install its own socket factory", platformDefault, certificatePinningFactory);
         } finally {
-            Countly.publicKeyPinCertificates = null;
-            Countly.certificatePinCertificates = null;
+            Countly.sharedInstance().halt();
         }
     }
 

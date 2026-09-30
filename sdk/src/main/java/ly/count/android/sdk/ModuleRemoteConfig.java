@@ -112,7 +112,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
 
                 String error = null;
-                Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse);
+                Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse, L);
 
                 try {
                     boolean clearOldValues = keysExcept == null && keysOnly == null;
@@ -329,7 +329,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     @NonNull RemoteConfigValueStore loadConfig() {
         String rcvsString = storageProvider.getRemoteConfigValues();
         //noinspection UnnecessaryLocalVariable
-        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString, remoteConfigValuesShouldBeCached);
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(rcvsString, remoteConfigValuesShouldBeCached, L);
         return rcvs;
     }
 
@@ -345,7 +345,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 RemoteConfigValueStore rcvs = loadConfig();
                 return rcvs.getAllValuesLegacy();
             } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+                L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
                 return new HashMap<>();
             }
         }
@@ -357,7 +357,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 RemoteConfigValueStore rcvs = loadConfig();
                 return rcvs.getAllValues();
             } catch (Exception ex) {
-                Countly.sharedInstance().L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+                L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
                 return new HashMap<>();
             }
         }

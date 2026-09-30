@@ -1,7 +1,9 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -26,6 +28,43 @@ public class CountlyTimerTests {
     public void tearDown() {
         countlyTimer.stopTimer(mockLog);
         Assert.assertNull(countlyTimer.timerService);
+    }
+
+    /**
+     * stopTimer used to shutdown() and then awaitTermination(1s), shutdownNow(), awaitTermination(1s) - up to
+     * two seconds of blocking on the caller. The callers are the main thread: a module's halt() during a
+     * teardown, and startTimer() itself when the server changes a timer's interval (that arrives on
+     * ImmediateRequestMaker's onPostExecute). In Countly's own stopTimer the wait was worse than slow: it ran
+     * inside the synchronized tearDown() while onTimer() is synchronized on the same instance, so it waited
+     * for a tick that could not start until tearDown() returned - and entering a synchronized block is not
+     * interruptible, so shutdownNow() could not break it either. It burned the full two seconds and logged
+     * "Global timer must be locked". A running tick must therefore never be waited on.
+     */
+    @Test
+    public void stopTimerDoesNotBlockOnARunningTick() throws Exception {
+        final CountDownLatch tickStarted = new CountDownLatch(1);
+        final CountDownLatch releaseTick = new CountDownLatch(1);
+
+        CountlyTimer.TIMER_DELAY_MS = 50;
+        countlyTimer.startTimer(1, () -> {
+            tickStarted.countDown();
+            try {
+                //a deliberately slow tick: this is what stopTimer must not wait for
+                releaseTick.await(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+                //an interrupt is fine, it just means the executor was forced down
+            }
+        }, mockLog);
+
+        Assert.assertTrue("the tick should have started", tickStarted.await(3, TimeUnit.SECONDS));
+
+        long startedAt = System.currentTimeMillis();
+        countlyTimer.stopTimer(mockLog);
+        long elapsed = System.currentTimeMillis() - startedAt;
+
+        releaseTick.countDown();
+        Assert.assertTrue("stopTimer blocked for " + elapsed + "ms while a tick was running; it must not wait"
+            + " for one, because its callers are on the main thread", elapsed < 1000);
     }
 
     @Test

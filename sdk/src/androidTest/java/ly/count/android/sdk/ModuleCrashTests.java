@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
@@ -28,9 +30,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.internal.util.collections.Sets;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleCrashTests {
@@ -1601,5 +1608,129 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, segmentation);
 
         validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map(), 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Issue #130, a fatal crash has to be handed to the storage layer before the SDK hands control back
+     * to the previously registered uncaught exception handler. Otherwise the process can die before the
+     * crash is stored and the crash is lost. Nothing leaves the device during these tests, and not
+     * because the server is unreachable: "ConnectionQueue.tick" returns early on
+     * "!Countly.sharedInstance().isInitialized()", and these tests drive detached "new Countly()"
+     * instances, so the shared instance is never initialised and the network is never touched at all.
+     * <p>
+     * This test pins the ORDERING only. Reading the request queue back cannot tell "commit" from
+     * "apply", because the in memory map of the process wide "SharedPreferencesImpl" is updated
+     * synchronously by both. The three issue #130 tests are therefore complementary:
+     * <ul>
+     * <li>this one pins the ordering, the crash is queued before the previous handler is invoked</li>
+     * <li>"fatalCrash_isWrittenToStorageInSyncMode" pins the sync write flag at the "ConnectionQueue" to
+     * "StorageProvider" boundary</li>
+     * <li>"fatalCrash_requestQueueWriteUsesCommitNotApply" pins the "SharedPreferences.Editor.commit"
+     * call that this flag has to turn into</li>
+     * </ul>
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void fatalCrash_isPersistedBeforeDelegatingToPreviousHandler() throws JSONException {
+        Thread.UncaughtExceptionHandler originalHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        try {
+            boolean[] previousHandlerCalled = { false };
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+                previousHandlerCalled[0] = true;
+                //by the time the previous handler runs, the crash has to be in persistent storage already
+                TestUtils.assertRQSize(1);
+            });
+
+            CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+            countlyConfig.metricProviderOverride = mmp;
+            new Countly().init(countlyConfig);
+
+            Thread.UncaughtExceptionHandler sdkHandler = Thread.getDefaultUncaughtExceptionHandler();
+            Assert.assertNotNull(sdkHandler);
+
+            Exception exception = new Exception("Fatal message");
+            sdkHandler.uncaughtException(Thread.currentThread(), exception);
+
+            //the SDK must not swallow the crash
+            Assert.assertTrue(previousHandlerCalled[0]);
+            validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map(), 0, new HashMap<>(), new ArrayList<>());
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalHandler);
+        }
+    }
+
+    /**
+     * Issue #130, the request queue write for a fatal crash has to be requested in sync mode, so that
+     * "CountlyStore" uses "SharedPreferences.commit" instead of "apply". Handled exceptions do not need
+     * that guarantee and are written in async mode.
+     */
+    @Test
+    public void fatalCrash_isWrittenToStorageInSyncMode() {
+        Thread.UncaughtExceptionHandler originalHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        try {
+            //terminate the handler chain here so the test process is not brought down
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            });
+
+            CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+            countlyConfig.metricProviderOverride = mmp;
+            Countly countly = new Countly().init(countlyConfig);
+
+            StorageProvider storageSpy = spy(TestUtils.getCountlyStore());
+            countly.connectionQueue_.setStorageProvider(storageSpy);
+
+            Thread.UncaughtExceptionHandler sdkHandler = Thread.getDefaultUncaughtExceptionHandler();
+            Assert.assertNotNull(sdkHandler);
+
+            sdkHandler.uncaughtException(Thread.currentThread(), new Exception("Fatal message"));
+            verify(storageSpy).addRequest(anyString(), eq(true));
+
+            countly.crashes().recordHandledException(new Exception("Handled message"));
+            verify(storageSpy).addRequest(anyString(), eq(false));
+
+            TestUtils.assertRQSize(2);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalHandler);
+        }
+    }
+
+    /**
+     * Issue #130, the sync write flag has to end up as a real "SharedPreferences.Editor.commit" call.
+     * "commit" writes to disk on the calling thread, "apply" only updates the in memory map and hands
+     * the disk write to a background thread, so a crashing process can die before an "apply" lands and
+     * the crash is lost. Flipping "CountlyStore.storageWriteRequestQueue" to always call "apply" is
+     * exactly the regression of issue #130.
+     * <p>
+     * This cannot be asserted through the persisted request queue, a read back is identical under
+     * "commit" and "apply" because the in memory map of the process wide "SharedPreferencesImpl" is
+     * updated synchronously by both. The "Editor" itself has to be observed, so "CountlyStore" is built
+     * over a mocked "Context" and mocked "SharedPreferences" here.
+     */
+    @Test
+    public void fatalCrash_requestQueueWriteUsesCommitNotApply() {
+        SharedPreferences.Editor editor = mock(SharedPreferences.Editor.class);
+        when(editor.putString(anyString(), anyString())).thenReturn(editor);
+
+        SharedPreferences preferences = mock(SharedPreferences.class);
+        when(preferences.edit()).thenReturn(editor);
+        when(preferences.getString(anyString(), anyString())).thenReturn("");
+
+        Context mockContext = mock(Context.class);
+        when(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(preferences);
+
+        CountlyStore store = new CountlyStore(mockContext, mock(ModuleLog.class));
+
+        //a fatal crash is written in sync mode, which has to become "commit"
+        store.addRequest("crash=fatal", true);
+        verify(editor).commit();
+        verify(editor, never()).apply();
+
+        //a handled exception does not need that guarantee and stays on "apply"
+        store.addRequest("crash=handled", false);
+        verify(editor).apply();
+        verify(editor).commit();//still only the single "commit" from the fatal crash
     }
 }

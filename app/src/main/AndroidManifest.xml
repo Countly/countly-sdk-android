@@ -172,6 +172,11 @@
         android:name=".ActivityExampleSessions"
         android:label="@string/activity_name_sessions"
         android:configChanges="orientation|screenSize"/>
+
+    <activity
+        android:name=".ActivityExampleMultiInstance"
+        android:label="@string/activity_name_multi_instance"
+        android:configChanges="orientation|screenSize"/>
   </application>
 
 </manifest>

@@ -107,14 +107,14 @@ public class ConnectionProcessor implements Runnable {
             // for binary images, checksum will be calculated without url encoded value of the requestData
             // because they sent as form-data and server calculates it that way
             if (!hasPicturePath) {
-                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt(), L);
                 requestData += "&checksum256=" + checksum;
                 L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
                 approximateDateSize += requestData.length(); // add request data to the estimated data size
             }
         } else {
             urlStr += "?" + requestData;
-            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt(), L);
             urlStr += "&checksum256=" + checksum;
             L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
         }
@@ -188,7 +188,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
-            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt()), boundary);
+            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt(), L), boundary);
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
@@ -376,6 +376,7 @@ public class ConnectionProcessor implements Runnable {
     private void processRequestQueue() {
         long wholeQueueStart = UtilsTime.getNanoTime();
         while (true) {
+            L.setOwnTransportWork(false);
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
             long pccTsStartTempIdCheck = 0L;
@@ -422,6 +423,9 @@ public class ConnectionProcessor implements Runnable {
             // get first request in a separate variable to modify and keep the original intact
             final String originalRequest = storedRequests[0];
             String requestData = originalRequest;//todo rework to another param approach
+
+            //lines logged while sending a log batch are not gathered, or every tick would upload a batch about the last one
+            L.setOwnTransportWork(originalRequest.contains("&" + ModuleLog.transportMarker));
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
@@ -546,7 +550,7 @@ public class ConnectionProcessor implements Runnable {
                         }
 
                         responseCode = httpConn.getResponseCode();
-                        responseString = Utils.inputStreamToString(connInputStream);
+                        responseString = Utils.inputStreamToString(connInputStream, L);
                     }
 
                     long readingStreamTime = UtilsTime.getNanoTime() - pccTsReadingStream;
@@ -687,6 +691,7 @@ public class ConnectionProcessor implements Runnable {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_10_NetworkWholeQueue", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
         }
+        L.setOwnTransportWork(false);
         long wholeQueueTime = UtilsTime.getNanoTime() - wholeQueueStart;
         L.v("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
     }
@@ -728,6 +733,33 @@ public class ConnectionProcessor implements Runnable {
 
     String getServerURL() {
         return serverURL_;
+    }
+
+    /** Bare GET for a connection test probe: this instance's SSL factory and headers, no cache, redirects not followed. */
+    synchronized @NonNull HttpURLConnection urlConnectionForProbe(@NonNull String url, int timeoutMs) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+
+        if (sslSocketFactory_ != null && conn instanceof HttpsURLConnection) {
+            ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory_);
+        }
+
+        conn.setRequestMethod("GET");
+        conn.setInstanceFollowRedirects(false);
+        conn.setUseCaches(false);
+        conn.setConnectTimeout(timeoutMs);
+        conn.setReadTimeout(timeoutMs);
+        conn.setDoInput(true);
+        conn.setDoOutput(false);
+
+        if (requestHeaderCustomValues_ != null) {
+            for (Map.Entry<String, String> e : requestHeaderCustomValues_.entrySet()) {
+                if (e.getKey() != null && e.getValue() != null && !e.getKey().isEmpty()) {
+                    conn.addRequestProperty(e.getKey(), e.getValue());
+                }
+            }
+        }
+
+        return conn;
     }
 
     // for unit testing

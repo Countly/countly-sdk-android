@@ -30,7 +30,8 @@ public class ModuleUserProfile extends ModuleBase {
     String org;
     String phone;
     String picture;
-    static String picturePath;//protected only for testing
+    String picturePath;//protected only for testing. Per-instance: was 'static', which let the last
+    // instance to set a profile-picture path clobber it for every other instance.
     String gender;
     Map<String, Object> custom;
     Map<String, JSONObject> customMods;
@@ -149,7 +150,7 @@ public class ModuleUserProfile extends ModuleBase {
 
             JSONObject ob;
             if (custom != null) {
-                UtilsInternalLimits.truncateSegmentationValues(custom, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleUserProfile] toJSON", _cly.L);
+                UtilsInternalLimits.truncateSegmentationValues(custom, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleUserProfile] toJSON", _cly.L);
                 ob = new JSONObject(custom);
             } else {
                 ob = new JSONObject();
@@ -226,9 +227,9 @@ public class ModuleUserProfile extends ModuleBase {
             }
 
             Object valueAdded;
-            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
+            String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.sdkInternalLimits_.maxKeyLength, _cly.L, "[ModuleUserProfile] modifyCustomData");
             if (value instanceof String) {
-                valueAdded = UtilsInternalLimits.truncateValueSize((String) value, _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
+                valueAdded = UtilsInternalLimits.truncateValueSize((String) value, _cly.sdkInternalLimits_.maxValueSize, _cly.L, "[ModuleUserProfile] modifyCustomData");
             } else if (UtilsInternalLimits.isSupportedDataType(value)) {
                 valueAdded = value;
             } else {
@@ -290,9 +291,9 @@ public class ModuleUserProfile extends ModuleBase {
             // limit to the picture path is applied when request is being made in the ConnectionProcessor
             if (value instanceof String) {
                 if (key.equals(PICTURE_PATH_KEY) || key.equals(PICTURE_KEY)) {
-                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSizePicture, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.sdkInternalLimits_.maxValueSizePicture, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 } else {
-                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.config_.sdkInternalLimits.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                    value = UtilsInternalLimits.truncateValueSize(value.toString(), _cly.sdkInternalLimits_.maxValueSize, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 }
             }
 
@@ -312,7 +313,7 @@ public class ModuleUserProfile extends ModuleBase {
                     continue;
                 }
 
-                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
+                String truncatedKey = UtilsInternalLimits.truncateKeyLength(key, _cly.sdkInternalLimits_.maxKeyLength, _cly.L, "[ModuleUserProfile] setPropertiesInternal");
                 if (UtilsInternalLimits.isSupportedDataType(value)) {
                     dataCustomFields.put(truncatedKey, value);
                 } else {
@@ -336,8 +337,9 @@ public class ModuleUserProfile extends ModuleBase {
     private void onUserPropertiesChanged(Map<String, ?> sourceMap) {
         applyUserPropertyCacheLimit(sourceMap);
         isSynced = false;
-        if (storageProvider.getEventQueueSize() > 0) {
-            _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null && storageProvider.getEventQueueSize() > 0) {
+            requestQueueModule.sendEventsIfNeeded(true);
         }
     }
 
@@ -407,7 +409,12 @@ public class ModuleUserProfile extends ModuleBase {
             return;
         }
 
-        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+        //Only the event flush is skipped when the instance is being torn down - the user data itself is
+        //still sent, because this method is also what teardown calls to persist pending profile changes.
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(true);
+        }
 
         requestQueueProvider.sendUserData(cachedUserData);
         clearInternal();

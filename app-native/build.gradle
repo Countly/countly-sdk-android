@@ -59,8 +59,8 @@ repositories {
 // If you are running app independently, you may pull their latest version from our maven repo using the commented lines.
 dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
-  implementation 'androidx.appcompat:appcompat:1.2.0'
-  implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+  implementation 'androidx.appcompat:appcompat:1.7.1'
+  implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
   implementation project(':sdk')
   //implementation 'ly.count.android:sdk:21.11.0'
   implementation project(':sdk-native')
@@ -78,7 +78,7 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.14.1'
+    classpath group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.12.0'
     // classpath files('../upload-plugin/build/libs/upload-plugin.jar')
     //classpath group: 'ly.count.android', 'name': 'sdk-plugin', 'version': '20.11.8'
   }

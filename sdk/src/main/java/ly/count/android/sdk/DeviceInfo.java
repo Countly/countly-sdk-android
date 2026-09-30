@@ -67,6 +67,9 @@ class DeviceInfo {
 
     MetricProvider mp;
     private final MetricProvider mpOverride;
+    // Logger of the owning instance. The default MetricProvider below is an inner class, so it reads
+    // this field instead of Countly.sharedInstance().L - no change to the public MetricProvider API.
+    @NonNull ModuleLog L = new ModuleLog();
 
     public DeviceInfo(MetricProvider mpOverride) {
         this.mpOverride = mpOverride != null ? mpOverride : new MetricProvider() {};
@@ -123,7 +126,7 @@ class DeviceInfo {
                     final DisplayMetrics metrics = getDisplayMetrics(context);
                     resolution = metrics.widthPixels + "x" + metrics.heightPixels;
                 } catch (Throwable t) {
-                    Countly.sharedInstance().L.i("[DeviceInfo] Device resolution cannot be determined");
+                    L.i("[DeviceInfo] Device resolution cannot be determined");
                 }
                 return resolution;
             }
@@ -192,7 +195,7 @@ class DeviceInfo {
                 }
                 if (carrier == null || carrier.length() == 0) {
                     carrier = "";
-                    Countly.sharedInstance().L.i("[DeviceInfo] No carrier found");
+                    L.i("[DeviceInfo] No carrier found");
                 }
                 if (carrier.equals("--")) {
                     carrier = "";
@@ -233,7 +236,7 @@ class DeviceInfo {
                         result = tmpVersion;
                     }
                 } catch (PackageManager.NameNotFoundException e) {
-                    Countly.sharedInstance().L.i("[DeviceInfo] No app version found");
+                    L.i("[DeviceInfo] No app version found");
                 }
                 return result;
             }
@@ -250,11 +253,11 @@ class DeviceInfo {
                 try {
                     result = context.getPackageManager().getInstallerPackageName(context.getPackageName());
                 } catch (Exception e) {
-                    Countly.sharedInstance().L.d("[DeviceInfo, getStore] Can't get Installer package ");
+                    L.d("[DeviceInfo, getStore] Can't get Installer package ");
                 }
                 if (result == null || result.length() == 0) {
                     result = "";
-                    Countly.sharedInstance().L.d("[DeviceInfo, getStore] No store found");
+                    L.d("[DeviceInfo, getStore] No store found");
                 }
                 return result;
             }
@@ -359,7 +362,7 @@ class DeviceInfo {
                             }
                         }
                     } catch (Exception e) {
-                        Countly.sharedInstance().L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
+                        L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
                     }
                 } else {
                     try {
@@ -376,14 +379,14 @@ class DeviceInfo {
                         long freeBytes = availableBlocks * blockSize;
                         usedBytes = totalBytes - freeBytes;
                     } catch (Exception e) {
-                        Countly.sharedInstance().L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
+                        L.w("[DeviceInfo] getDiskSpaces, Got exception while trying to get all volumes storage", e);
                     }
                 }
 
                 long totalMb = totalBytes / 1024 / 1024;
                 long usedMb = usedBytes / 1024 / 1024;
 
-                Countly.sharedInstance().L.d("[DeviceInfo] getDiskSpaces, totalSpaceInMB:[" + totalMb + "], usedSpaceInMB:[" + usedMb + "]");
+                L.d("[DeviceInfo] getDiskSpaces, totalSpaceInMB:[" + totalMb + "], usedSpaceInMB:[" + usedMb + "]");
                 return new DiskMetric(Long.toString(totalMb), Long.toString(usedMb));
             }
 
@@ -408,7 +411,7 @@ class DeviceInfo {
                         }
                     }
                 } catch (Exception e) {
-                    Countly.sharedInstance().L.i("Can't get battery level");
+                    L.i("Can't get battery level");
                 }
                 return null;
             }
@@ -457,7 +460,7 @@ class DeviceInfo {
                     }
                     return "false";
                 } catch (Exception e) {
-                    Countly.sharedInstance().L.w("isOnline, Got exception determining netwprl connectivity", e);
+                    L.w("isOnline, Got exception determining netwprl connectivity", e);
                 }
                 return null;
             }
@@ -670,7 +673,7 @@ class DeviceInfo {
             result = java.net.URLEncoder.encode(result, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
             // should never happen because Android guarantees UTF-8 support
-            Countly.sharedInstance().L.e("[getMetrics] encode failed, [" + ex + "]");
+            L.e("[getMetrics] encode failed, [" + ex + "]");
         }
 
         return result;
@@ -696,7 +699,7 @@ class DeviceInfo {
             result = java.net.URLEncoder.encode(result, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
             // should never happen because Android guarantees UTF-8 support
-            Countly.sharedInstance().L.e("[getMetrics] encode failed, [" + ex + "]");
+            L.e("[getMetrics] encode failed, [" + ex + "]");
         }
 
         return result;

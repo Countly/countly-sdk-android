@@ -30,6 +30,8 @@ class ElfFile {
     private static final int ELF_MAGIC = 0x7f454c46;
     private static final int ELFCLASS64 = 2;
     private static final int ELFDATA2MSB = 2;
+    /** Each of the two strings after the API level in .note.android.ident sits in a field this wide. */
+    private static final int NDK_IDENT_STRING_SIZE = 64;
 
     private final String name;
     private final ByteBuffer bytes;
@@ -131,6 +133,39 @@ class ElfFile {
      * would fail to resolve at load time on older devices.
      */
     Integer androidApiLevel() {
+        int[] descriptor = androidIdentDescriptor();
+        return descriptor == null ? null : bytes.getInt(descriptor[0]);
+    }
+
+    /**
+     * The NDK release recorded in .note.android.ident, in the NDK's own naming, e.g. "r28c", or null
+     * when the note is absent or predates the field. The descriptor is the API level followed by two
+     * fixed size, NUL terminated strings: this release name and the build number.
+     */
+    String androidNdkVersion() {
+        return androidIdentString(0);
+    }
+
+    /**
+     * The NDK build number recorded in .note.android.ident, e.g. "13676358", or null when absent. It is
+     * the last component of the revision the NDK reports in its source.properties ("28.2.13676358"), so
+     * it identifies the exact release where the "r28c" style name alone does not.
+     */
+    String androidNdkBuildNumber() {
+        return androidIdentString(1);
+    }
+
+    private String androidIdentString(int index) {
+        int[] descriptor = androidIdentDescriptor();
+        int offset = 4 + index * NDK_IDENT_STRING_SIZE;
+        if (descriptor == null || descriptor[1] < offset + NDK_IDENT_STRING_SIZE) {
+            return null;
+        }
+        return fixedString(descriptor[0] + offset, NDK_IDENT_STRING_SIZE);
+    }
+
+    /** Offset and size of the .note.android.ident descriptor, or null when there is no such note. */
+    private int[] androidIdentDescriptor() {
         long[] note = sections.get(".note.android.ident");
         if (note == null) {
             return null;
@@ -138,9 +173,9 @@ class ElfFile {
 
         int entry = (int) note[0];
         int nameSize = bytes.getInt(entry);
+        int descriptorSize = bytes.getInt(entry + 4);
         // The note name is padded out to a 4 byte boundary before the descriptor starts.
-        int descriptor = entry + 12 + ((nameSize + 3) / 4) * 4;
-        return bytes.getInt(descriptor);
+        return new int[] { entry + 12 + ((nameSize + 3) / 4) * 4, descriptorSize };
     }
 
     private void readSectionHeaders() {
@@ -166,6 +201,19 @@ class ElfFile {
             long size = is64Bit ? bytes.getLong(entry + sizeField) : unsigned(bytes.getInt(entry + sizeField));
             sections.put(stringAt(nameTableOffset + nameIndex), new long[] { offset, size });
         }
+    }
+
+    /** A NUL terminated string inside a field of a fixed size, which may fill the field entirely. */
+    private String fixedString(int offset, int size) {
+        StringBuilder text = new StringBuilder();
+        for (int i = offset; i < offset + size && i < bytes.limit(); i++) {
+            byte character = bytes.get(i);
+            if (character == 0) {
+                break;
+            }
+            text.append((char) (character & 0xff));
+        }
+        return text.toString();
     }
 
     private String stringAt(long offset) {
