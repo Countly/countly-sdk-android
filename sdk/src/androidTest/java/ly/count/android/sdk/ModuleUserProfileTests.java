@@ -603,6 +603,30 @@ public class ModuleUserProfileTests {
     }
 
     /**
+     * The limit set with setMaxValueSizePicture truncates the picture independently of the general
+     * value size limit, and a limit below 1 is raised to 1 rather than dropping the picture.
+     *
+     * @throws JSONException if JSON parsing fails
+     */
+    @Test
+    public void internalLimit_setMaxValueSizePicture_truncatesAndClampsToOne() throws JSONException {
+        String picture = TestUtils.generateRandomString(6000);
+        int[][] limitAndExpectedLength = { { 100, 100 }, { 0, 1 }, { -5, 1 } };
+        for (int[] testCase : limitAndExpectedLength) {
+            Countly.sharedInstance().halt();
+            TestUtils.getCountlyStore().clear();
+            CountlyConfig config = TestUtils.createBaseConfig();
+            config.sdkInternalLimits.setMaxValueSize(2).setMaxValueSizePicture(testCase[0]);
+            Countly.sharedInstance().init(config);
+
+            Countly.sharedInstance().userProfile().setProperties(TestUtils.map(ModuleUserProfile.PICTURE_KEY, picture));
+            Countly.sharedInstance().userProfile().save();
+
+            validateUserProfileRequest(TestUtils.map(ModuleUserProfile.PICTURE_KEY, picture.substring(0, testCase[1])), TestUtils.map());
+        }
+    }
+
+    /**
      * Given max segmentation values will truncate custom user properties to the correct length
      *
      * @throws JSONException if JSON parsing fails
