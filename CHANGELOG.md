@@ -35,6 +35,8 @@
   * `UntaggedSocketViolation` for its network requests, as their sockets were not tagged.
   * disk reads on the main thread for the root and total RAM metrics when a crash was recorded.
 
+* Fixed an issue where a view ID stopped working after the app was backgrounded and foregrounded. The view was reopened under a new ID, so `stopViewWithID`, `pauseViewWithID`, `resumeViewWithID`, and `addSegmentationToViewWithID` no longer recognized the ID returned by `startView`, and the view stayed open.
+
 ## 26.1.5
 * The SDK now supports API level 37. Integrating apps must build with `compileSdk` 34 or higher.
 * Added a new configuration option `setCustomSSLSocketFactory(SSLSocketFactory)` to send the SDK's HTTPS requests through a custom SSLSocketFactory.
