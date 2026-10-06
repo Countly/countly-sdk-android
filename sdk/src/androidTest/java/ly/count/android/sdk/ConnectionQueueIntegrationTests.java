@@ -373,6 +373,37 @@ public class ConnectionQueueIntegrationTests {
     }
 
     /**
+     * Integration test: a connection factory set on CountlyConfig reaches every ConnectionProcessor,
+     * so both the server request and the preflight request are opened through it.
+     */
+    @Test
+    public void integration_connectionFactory_usedForServerAndPreflightRequests() throws Exception {
+        final HttpURLConnection factoryConnection = mock(HttpURLConnection.class);
+        final java.util.List<String> requestedUrls = new java.util.concurrent.CopyOnWriteArrayList<>();
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), appKey, serverUrl)
+            .setConnectionFactory(url -> {
+                requestedUrls.add(url.toString());
+                return factoryConnection;
+            });
+        Countly.sharedInstance().init(config);
+        ConnectionQueue cq = Countly.sharedInstance().connectionQueue_;
+
+        URLConnection serverConn = cq.createConnectionProcessor().urlConnectionForServerRequest("app_key=" + appKey + "&hub_marker=1", null);
+        HttpURLConnection preflightConn = (HttpURLConnection) cq.createConnectionProcessor().urlConnectionForPreflightRequest(serverUrl + "/o/sdk?method=fetch&hub_marker=2");
+
+        Assert.assertSame(factoryConnection, serverConn);
+        Assert.assertSame(factoryConnection, preflightConn);
+        boolean serverRequestSeen = false;
+        for (String requested : requestedUrls) {
+            if (requested.startsWith(serverUrl + "/i?app_key=" + appKey + "&hub_marker=1")) {
+                serverRequestSeen = true;
+            }
+        }
+        Assert.assertTrue(serverRequestSeen);
+        Assert.assertTrue(requestedUrls.contains(serverUrl + "/o/sdk?method=fetch&hub_marker=2"));
+    }
+
+    /**
      * Integration test: when both a custom SSLSocketFactory and public-key pinning are configured,
      * the custom factory wins and the pinning certificates are never parsed (so intentionally
      * invalid pinning certs do not break initialization).

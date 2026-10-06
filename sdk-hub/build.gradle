@@ -1,0 +1,68 @@
+apply plugin: 'com.android.library'
+apply plugin: "com.vanniktech.maven.publish" //for publishing
+
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.37.0' //for publishing
+  }
+}
+
+android {
+  namespace 'ly.count.android.sdk.hub'
+  compileSdk 37
+  buildToolsVersion '37.0.0'
+
+  defaultConfig {
+    minSdk 21
+
+    // The client binds through the executor variant of bindService (API 29) and checks signing
+    // certificates with PackageManager.hasSigningCertificate (API 28), both behind SDK_INT checks.
+    aarMetadata {
+      minCompileSdk 29
+    }
+
+    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+  }
+
+  buildFeatures {
+    aidl = true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+
+  testOptions {
+    targetSdk 37
+  }
+
+  lint {
+    abortOnError false
+  }
+}
+
+// Released on its own version line, independently of the SDK
+mavenPublishing {
+  coordinates(GROUP.toString(), 'sdk-hub', HUB_VERSION_NAME.toString())
+}
+
+dependencies {
+  // The app brings the SDK itself, either 'ly.count.android:sdk' or 'ly.count.android:sdk-nw'
+  compileOnly project(':sdk')
+  implementation 'androidx.annotation:annotation:1.3.0'
+
+  testImplementation 'junit:junit:4.13.2'
+  testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+
+  androidTestImplementation project(':sdk')
+  androidTestImplementation 'androidx.test:runner:1.5.2'
+  androidTestImplementation 'androidx.test:rules:1.5.0'
+  androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+  androidTestImplementation 'junit:junit:4.13.2'
+  androidTestImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+}

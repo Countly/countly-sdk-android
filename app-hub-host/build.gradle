@@ -1,0 +1,39 @@
+apply plugin: 'com.android.application'
+
+// The demo hub relays to the server given with -PhubServerUrl=..., by default a test server on the
+// development machine as the emulator sees it. The app keys the two demo clients may use come from
+// -PhubNavAppKey=... and -PhubMusicAppKey=...
+def hubServerUrl = project.findProperty('hubServerUrl') ?: 'http://10.0.2.2:8080'
+def hubNavAppKey = project.findProperty('hubNavAppKey') ?: 'NAV_APP_KEY'
+def hubMusicAppKey = project.findProperty('hubMusicAppKey') ?: 'MUSIC_APP_KEY'
+
+android {
+  namespace 'ly.count.android.demo.hub.host'
+  compileSdk 37
+
+  defaultConfig {
+    applicationId 'ly.count.android.demo.hub.host'
+    minSdk 21
+    targetSdk 37
+    versionCode 1
+    versionName '1.0'
+
+    buildConfigField 'String', 'HUB_SERVER_URL', "\"${hubServerUrl}\""
+    buildConfigField 'String', 'NAV_APP_KEY', "\"${hubNavAppKey}\""
+    buildConfigField 'String', 'MUSIC_APP_KEY', "\"${hubMusicAppKey}\""
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+}
+
+dependencies {
+  implementation project(':sdk-hub')
+}

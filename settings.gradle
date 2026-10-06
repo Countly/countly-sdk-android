@@ -7,5 +7,6 @@ pluginManagement {
 }
 
 include ':app', ':sdk', ':sdk-native', ':app-native', ':upload-plugin'
+include ':sdk-hub', ':app-hub-host', ':app-hub-client'
 include ':app-kotlin'
 include ':app-benchmark'

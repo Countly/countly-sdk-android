@@ -23,6 +23,7 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -359,6 +360,132 @@ public class ConnectionProcessorTests {
         SSLSocketFactory used = ((HttpsURLConnection) urlConnection).getSSLSocketFactory();
         assertNotNull(used);
         assertNotSame(unusedFactory, used);
+    }
+
+    /**
+     * With a connection factory set, a GET server request is opened through it with the full request
+     * URL, checksum included, and the SDK configures the returned connection as it would its own.
+     */
+    @Test
+    public void urlConnectionForServerRequest_usesConnectionFactory() throws IOException {
+        final String eventData = "blahblahblah";
+        final HttpURLConnection factoryConnection = mock(HttpURLConnection.class);
+        final URL[] requestedUrl = new URL[1];
+        connectionProcessor.connectionFactory = url -> {
+            requestedUrl[0] = url;
+            return factoryConnection;
+        };
+
+        final URLConnection urlConnection = connectionProcessor.urlConnectionForServerRequest(eventData, null);
+
+        assertSame(factoryConnection, urlConnection);
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i?" + eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue)), requestedUrl[0]);
+        verify(factoryConnection).setConnectTimeout(30_000);
+        verify(factoryConnection).setReadTimeout(30_000);
+        verify(factoryConnection).setRequestMethod("GET");
+        verify(factoryConnection).setDoOutput(false);
+    }
+
+    /**
+     * A posted request writes its form body, checksum included, into the connection the factory
+     * created, and the URL carries no query.
+     */
+    @Test
+    public void urlConnectionForServerRequest_connectionFactoryReceivesPostBody() throws IOException {
+        final String eventData = "aa=bb&crash=cc";
+        final HttpURLConnection factoryConnection = mock(HttpURLConnection.class);
+        final ByteArrayOutputStream body = new ByteArrayOutputStream();
+        when(factoryConnection.getOutputStream()).thenReturn(body);
+        final URL[] requestedUrl = new URL[1];
+        connectionProcessor.connectionFactory = url -> {
+            requestedUrl[0] = url;
+            return factoryConnection;
+        };
+
+        connectionProcessor.urlConnectionForServerRequest(eventData, null);
+
+        assertEquals(new URL(connectionProcessor.getServerURL() + "/i"), requestedUrl[0]);
+        verify(factoryConnection).setRequestMethod("POST");
+        verify(factoryConnection).setDoOutput(true);
+        assertEquals(eventData + "&checksum256=" + sha256Hash(eventData + testSaltValue), body.toString("UTF-8"));
+    }
+
+    /**
+     * When the factory hands back an HTTPS connection, the resolved SSL socket factory is still
+     * applied to it.
+     */
+    @Test
+    public void urlConnectionForServerRequest_connectionFactoryHttpsGetsCustomSSLSocketFactory() throws IOException {
+        SSLSocketFactory customFactory = mock(SSLSocketFactory.class);
+        final HttpsURLConnection factoryConnection = mock(HttpsURLConnection.class);
+        ConnectionProcessor cp = new ConnectionProcessor("https://secureserver", mockStore, mockDeviceId, configurationProviderFake, rip, customFactory, null, moduleLog, healthTrackerMock, Mockito.mock(Runnable.class), new ConcurrentHashMap<>());
+        cp.connectionFactory = url -> factoryConnection;
+
+        cp.urlConnectionForServerRequest("eventData", null);
+
+        verify(factoryConnection).setSSLSocketFactory(customFactory);
+    }
+
+    /**
+     * The preflight (HEAD) request is opened through the connection factory as well.
+     */
+    @Test
+    public void urlConnectionForPreflightRequest_usesConnectionFactory() throws IOException {
+        final HttpURLConnection factoryConnection = mock(HttpURLConnection.class);
+        final URL[] requestedUrl = new URL[1];
+        connectionProcessor.connectionFactory = url -> {
+            requestedUrl[0] = url;
+            return factoryConnection;
+        };
+
+        final URLConnection conn = connectionProcessor.urlConnectionForPreflightRequest("http://server/feedback/nps?widget_id=1");
+
+        assertSame(factoryConnection, conn);
+        assertEquals(new URL("http://server/feedback/nps?widget_id=1"), requestedUrl[0]);
+        verify(factoryConnection).setRequestMethod("HEAD");
+    }
+
+    /**
+     * A queued request sent through a connection factory is removed from the queue once the
+     * connection reports a successful response, the same as with a connection the SDK opened itself.
+     */
+    @Test
+    public void testRun_connectionFactory_successRemovesRequest() throws IOException {
+        final String eventData = "blahblahblah";
+        when(mockStore.getRequests()).thenReturn(new String[] { eventData }, new String[0]);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
+        final HttpURLConnection factoryConnection = mock(HttpURLConnection.class);
+        final CountlyResponseStream response = new CountlyResponseStream("Success");
+        when(factoryConnection.getInputStream()).thenReturn(response);
+        when(factoryConnection.getResponseCode()).thenReturn(200);
+        connectionProcessor.connectionFactory = url -> factoryConnection;
+
+        connectionProcessor.run();
+
+        verify(mockStore).removeRequest(eventData);
+        verify(factoryConnection).connect();
+        verify(factoryConnection).disconnect();
+        assertTrue(response.fullyRead());
+        assertTrue(response.closed);
+    }
+
+    /**
+     * When the connection factory cannot create a connection, the request stays in the queue for a
+     * later attempt.
+     */
+    @Test
+    public void testRun_connectionFactoryThrows_requestKept() {
+        final String eventData = "blahblahblah";
+        when(mockStore.getRequests()).thenReturn(new String[] { eventData }, new String[0]);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
+        connectionProcessor.connectionFactory = url -> {
+            throw new IOException("transport unavailable");
+        };
+
+        connectionProcessor.run();
+
+        verify(mockStore, times(1)).getRequests();
+        verify(mockStore, times(0)).removeRequest(anyString());
     }
 
     @Test
