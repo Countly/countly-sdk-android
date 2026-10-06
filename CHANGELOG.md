@@ -1,3 +1,7 @@
+## XX.XX.XX
+* Added a new configuration option `setConnectionFactory(ConnectionFactory)` that sends the SDK's server requests through connections created by the integrator instead of opening them itself, for example to carry them to another app on the device that holds the network access.
+* Added the "ly.count.android:sdk-hub" library, released on its own version line starting at 0.1.0. It lets apps without the INTERNET permission send their Countly requests to one host app on the same device, which relays them to the server over a single connection. Apps enable it with `CountlyHub.useHub(config, hubClientConfig)`, and the host app runs it by subclassing `CountlyHubService`. It requires an SDK version with `setConnectionFactory`, supports Android 5.0 (API level 21) and newer, and integrating apps must build with `compileSdk` 29 or higher.
+
 ## 26.1.7-nw
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
 * Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.

@@ -1,0 +1,58 @@
+apply plugin: 'com.android.application'
+
+// The app keys default to the ones the demo hub accepts; pass -PhubNavAppKey=... and
+// -PhubMusicAppKey=... to both demo apps to use keys of a real server.
+def hubNavAppKey = project.findProperty('hubNavAppKey') ?: 'NAV_APP_KEY'
+def hubMusicAppKey = project.findProperty('hubMusicAppKey') ?: 'MUSIC_APP_KEY'
+
+android {
+  namespace 'ly.count.android.demo.hub.client'
+  compileSdk 37
+
+  defaultConfig {
+    applicationId 'ly.count.android.demo.hub.client'
+    minSdk 21
+    targetSdk 37
+    versionCode 1
+    versionName '1.0'
+
+    buildConfigField 'String', 'HUB_PACKAGE', '"ly.count.android.demo.hub.host"'
+    buildConfigField 'String', 'SERVER_URL', '"https://countly.example.com"'
+  }
+
+  buildFeatures {
+    buildConfig true
+  }
+
+  // Three apps from one source: two the demo hub accepts, and one it does not, which tries to send
+  // under the navigation app's key
+  flavorDimensions = ['app']
+  productFlavors {
+    nav {
+      dimension 'app'
+      applicationIdSuffix '.nav'
+      buildConfigField 'String', 'APP_KEY', "\"${hubNavAppKey}\""
+    }
+    music {
+      dimension 'app'
+      applicationIdSuffix '.music'
+      buildConfigField 'String', 'APP_KEY', "\"${hubMusicAppKey}\""
+    }
+    rogue {
+      dimension 'app'
+      applicationIdSuffix '.rogue'
+      buildConfigField 'String', 'APP_KEY', "\"${hubNavAppKey}\""
+    }
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+    }
+  }
+}
+
+dependencies {
+  implementation project(':sdk')
+  implementation project(':sdk-hub')
+}

@@ -731,6 +731,13 @@ public class Countly {
             connectionQueue_.pcc = config.pcc;
             connectionQueue_.setStorageProvider(config.storageProvider);
             connectionQueue_.setupSSLSocketFactory(config.customSSLSocketFactory);
+            if (config.connectionFactory != null) {
+                L.i("[Init] Server requests will be sent through the provided connection factory");
+                if (config.customSSLSocketFactory != null || config.publicKeyPinningCertificates != null || config.certificatePinningCertificates != null) {
+                    L.w("[Init] A custom SSL socket factory or certificate pinning is configured; it is applied only to HTTPS connections the connection factory returns, so any other transport it uses must secure itself");
+                }
+            }
+            connectionQueue_.setConnectionFactory(config.connectionFactory);
             connectionQueue_.setBaseInfoProvider(config.baseInfoProvider);
             connectionQueue_.setDeviceId(config.deviceIdProvider);
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
