@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,16 +19,18 @@ import java.util.regex.Pattern;
  * the path one of the allowed Countly paths, the body within the size limit, and every app key in the
  * request one the app may send data for.
  * <p>
- * Every occurrence of the app key is checked, in the query and in the body, because the server merges
- * both and lets the body win: checking only the first occurrence would let an app send data under
- * another app's key.
+ * Every occurrence of the app key is checked, in the query and in the body, because the server reads
+ * both: checking only one place would let an app send data under another app's key. Only the two body
+ * encodings the SDK itself writes are accepted, in exactly the form it writes them; anything the server
+ * might parse differently than the hub is refused rather than relayed on a guess.
  */
 final class RequestGate {
     private static final Set<String> METHODS = new HashSet<>(Arrays.asList("GET", "POST", "HEAD"));
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
-    private static final Pattern DISPOSITION_NAME = Pattern.compile("(?i)(?:^|;)\\s*name\\s*=\\s*(?:\"([^\"]*)\"|([^;\\s]*))");
-    private static final Pattern BOUNDARY = Pattern.compile("(?i)boundary\\s*=\\s*(?:\"([^\"]+)\"|([^;\\s]+))");
+    private static final String FORM_TYPE = "application/x-www-form-urlencoded";
+    private static final Pattern MULTIPART_TYPE = Pattern.compile("(?i)multipart/form-data; boundary=([0-9a-f]+)");
+    private static final Pattern STRICT_DISPOSITION = Pattern.compile("form-data; name=\"([^\"]*)\"(?:; filename=\".*\")?");
     private static final int MAX_REASON_PATH_LENGTH = 100;
 
     private final Set<String> allowedPaths;
@@ -84,10 +85,11 @@ final class RequestGate {
     }
 
     /**
-     * Collects every app key in a request, from the query and from a form or multipart body.
+     * Collects every app key in a request, from the query and from the body when the body is in one of
+     * the two exact encodings the SDK writes.
      *
      * @param request the request
-     * @return the app keys in the order found, or null when the body has a format the hub does not read
+     * @return the app keys in the order found, or null when the body is not in one of those exact encodings
      * @throws IllegalArgumentException if the query or body is malformed
      */
     static @Nullable List<String> findAppKeys(@NonNull HubRequest request) {
@@ -99,20 +101,16 @@ final class RequestGate {
             return appKeys;
         }
         String contentType = request.getHeader("Content-Type");
-        String type = contentType == null ? "" : contentType.trim().toLowerCase(Locale.ROOT);
-        if (type.startsWith("multipart/form-data")) {
-            Matcher boundary = BOUNDARY.matcher(contentType);
-            if (!boundary.find()) {
-                return null;
-            }
-            String boundaryValue = boundary.group(1) != null ? boundary.group(1) : boundary.group(2);
-            if (!collectMultipartValues(body, boundaryValue, "app_key", appKeys)) {
-                return null;
-            }
+        String type = contentType == null ? "" : contentType.trim();
+        if (FORM_TYPE.equalsIgnoreCase(type)) {
+            collectFormValues(new String(body, UTF_8), "app_key", appKeys);
             return appKeys;
         }
-        if (type.isEmpty() || type.startsWith("application/x-www-form-urlencoded")) {
-            collectFormValues(new String(body, UTF_8), "app_key", appKeys);
+        Matcher multipart = MULTIPART_TYPE.matcher(type);
+        if (multipart.matches()) {
+            if (!collectMultipartValues(body, multipart.group(1), "app_key", appKeys)) {
+                return null;
+            }
             return appKeys;
         }
         return null;
@@ -153,8 +151,10 @@ final class RequestGate {
      * @return false when a part has no field name the hub can read, in which case the body cannot be trusted to hold no other value
      */
     static boolean collectMultipartValues(@NonNull byte[] body, @NonNull String boundary, @NonNull String name, @NonNull List<String> out) {
-        String text = new String(body, ISO_8859_1);
-        String delimiter = "--" + boundary;
+        // A leading CRLF is prepended so the first boundary is anchored the same way as the rest; only a
+        // boundary at the start of a line is a delimiter, so a "--boundary--" inside a value is not one
+        String text = "\r\n" + new String(body, ISO_8859_1);
+        String delimiter = "\r\n--" + boundary;
         int index = text.indexOf(delimiter);
         while (index >= 0) {
             int partStart = index + delimiter.length();
@@ -185,25 +185,29 @@ final class RequestGate {
 
     /**
      * @param headers the header block of one multipart part
-     * @return the field name from its Content-Disposition header, or null when there is none or it uses an encoding the hub does not read
+     * @return the field name when the part's Content-Disposition is exactly the form the SDK writes,
+     * otherwise null so the whole body is refused rather than read on a guess
      */
     private static @Nullable String dispositionName(@NonNull String headers) {
+        String name = null;
+        boolean found = false;
         for (String line : headers.split("\r\n")) {
             int colon = line.indexOf(':');
             if (colon < 0 || !line.substring(0, colon).trim().equalsIgnoreCase("Content-Disposition")) {
                 continue;
             }
-            String value = line.substring(colon + 1);
-            if (value.toLowerCase(Locale.ROOT).contains("name*")) {
+            if (found) {
+                // a second Content-Disposition the hub and the server could read differently
                 return null;
             }
-            Matcher matcher = DISPOSITION_NAME.matcher(value);
-            if (matcher.find()) {
-                return matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+            found = true;
+            Matcher matcher = STRICT_DISPOSITION.matcher(line.substring(colon + 1).trim());
+            if (!matcher.matches()) {
+                return null;
             }
-            return null;
+            name = matcher.group(1);
         }
-        return null;
+        return name;
     }
 
     /**

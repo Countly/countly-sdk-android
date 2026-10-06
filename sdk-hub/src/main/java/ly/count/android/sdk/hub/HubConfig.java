@@ -43,6 +43,7 @@ public final class HubConfig {
     int uplinkTimeoutMillis = 30_000;
     SSLSocketFactory sslSocketFactory = null;
     HubUplink uplink = null;
+    boolean loggingEnabled = false;
 
     /**
      * Creates a configuration for the given server.
@@ -147,6 +148,19 @@ public final class HubConfig {
      */
     public synchronized HubConfig setUplink(@Nullable HubUplink uplink) {
         this.uplink = uplink;
+        return this;
+    }
+
+    /**
+     * Turns on the hub's per-request logging, off by default so the hub stays quiet in production.
+     * Warnings about a misconfiguration, such as an allowed app without a pinned signing certificate,
+     * are logged regardless.
+     *
+     * @param loggingEnabled whether the hub logs each refused or failed request
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized HubConfig setLoggingEnabled(boolean loggingEnabled) {
+        this.loggingEnabled = loggingEnabled;
         return this;
     }
 }

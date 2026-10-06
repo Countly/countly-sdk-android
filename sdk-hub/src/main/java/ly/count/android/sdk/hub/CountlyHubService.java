@@ -46,6 +46,7 @@ public abstract class CountlyHubService extends Service {
     private HubRelay relay;
     private CallerVerifier callerVerifier;
     private int maxRequestBytes;
+    private boolean logging;
 
     private final ICountlyHub.Stub binder = new ICountlyHub.Stub() {
         @Override
@@ -75,11 +76,19 @@ public abstract class CountlyHubService extends Service {
         HubConfig config = onCreateHubConfig();
         synchronized (config) {
             maxRequestBytes = config.maxRequestBytes;
+            logging = config.loggingEnabled;
             HubUplink uplink = config.uplink != null
                 ? config.uplink
                 : new HttpsUplink(config.serverUrl, config.sslSocketFactory, config.uplinkTimeoutMillis, config.maxResponseBytes);
             relay = new HubRelay(new RequestGate(config.allowedPaths, config.maxRequestBytes), uplink, config.maxQueuedRequests);
             callerVerifier = new CallerVerifier(getPackageManager(), config.allowedApps);
+            for (HubAllowedApp app : config.allowedApps.values()) {
+                if (app.signingCertificateSha256 == null) {
+                    Log.w(TAG, "Allowed app " + app.packageName + " has no pinned signing certificate, so any app installed under that package name would be accepted; call HubAllowedApp.setSigningCertificateSha256");
+                } else if (HubSignatures.parseHex(app.signingCertificateSha256) == null) {
+                    Log.w(TAG, "Allowed app " + app.packageName + " has a signing certificate that is not a SHA-256 digest, so it will never match and the app will always be refused");
+                }
+            }
         }
     }
 
@@ -128,7 +137,7 @@ public abstract class CountlyHubService extends Service {
         HubAllowedApp app = callerVerifier.resolve(callingUid);
         if (app == null) {
             relay.stats.onUnknownCaller(callingUid);
-            Log.w(TAG, "Refused a request from uid " + callingUid + ", it is not an allowed app");
+            warn("Refused a request from uid " + callingUid + ", it is not an allowed app");
             return HubBundles.responseToBundle(HubRelay.refusal(403, "this app is not allowed to use the hub"));
         }
         if (request == null) {
@@ -141,11 +150,11 @@ public abstract class CountlyHubService extends Service {
             hubRequest = HubBundles.requestFromBundle(request, maxRequestBytes);
         } catch (HubRejection rejection) {
             relay.stats.onRefused(app.packageName, rejection.getMessage());
-            Log.w(TAG, "Refused a request from " + app.packageName + ", " + rejection.getMessage());
+            warn("Refused a request from " + app.packageName + ", " + rejection.getMessage());
             return HubBundles.responseToBundle(HubRelay.refusal(rejection.status, rejection.getMessage()));
         } catch (RuntimeException e) {
             relay.stats.onRefused(app.packageName, "malformed request");
-            Log.w(TAG, "Refused a malformed request from " + app.packageName);
+            warn("Refused a malformed request from " + app.packageName);
             return HubBundles.responseToBundle(HubRelay.refusal(400, "malformed request"));
         }
 
@@ -154,8 +163,19 @@ public abstract class CountlyHubService extends Service {
             return HubBundles.responseToBundle(response);
         } catch (IOException e) {
             String reason = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-            Log.w(TAG, "Could not deliver a request from " + app.packageName + ", " + reason);
+            warn("Could not deliver a request from " + app.packageName + ", " + reason);
             return HubBundles.failureToBundle(reason);
+        }
+    }
+
+    /**
+     * Logs a per-request warning when the hub's logging is turned on.
+     *
+     * @param message the warning
+     */
+    private void warn(@NonNull String message) {
+        if (logging) {
+            Log.w(TAG, message);
         }
     }
 }

@@ -36,9 +36,10 @@ final class HubProtocol {
     /**
      * Bodies up to this size travel inside the bundle. Larger ones, such as crash reports with native
      * dumps, travel through a file descriptor, because a binder transaction is limited to about 1 MB
-     * shared by every call the process has in flight.
+     * shared by every call the process has in flight, so several concurrent inline bodies must stay
+     * well under that.
      */
-    static final int INLINE_BODY_LIMIT = 256 * 1024;
+    static final int INLINE_BODY_LIMIT = 64 * 1024;
 
     private HubProtocol() {
     }

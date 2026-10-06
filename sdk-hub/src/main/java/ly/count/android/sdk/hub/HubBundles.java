@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -72,6 +73,9 @@ final class HubBundles {
         Object bodyFile = bundle.getParcelable(HubProtocol.KEY_BODY_FILE);
         if (bodyFile instanceof ParcelFileDescriptor) {
             body = readBody((ParcelFileDescriptor) bodyFile, maxBodyBytes);
+        } else if (body != null && body.length > HubProtocol.INLINE_BODY_LIMIT) {
+            // A larger body has to come through a file descriptor; inline it would sit in the binder buffer shared by every in-flight call
+            throw new HubRejection(413, "inline request body is larger than " + HubProtocol.INLINE_BODY_LIMIT + " bytes");
         }
         if (body != null && body.length > maxBodyBytes) {
             throw new HubRejection(413, "request body is larger than " + maxBodyBytes + " bytes");
@@ -148,6 +152,10 @@ final class HubBundles {
     }
 
     /**
+     * Reads the headers, keeping one entry per header name. Names that differ only in case are collapsed
+     * to a single entry whose value is the last one, so the gate and the uplink read the same header the
+     * server would, and a crafted duplicate cannot hide a second value from either.
+     *
      * @param bundle the bundle to read from
      * @return the headers, skipping entries without a name or value
      */
@@ -158,10 +166,16 @@ final class HubBundles {
         if (names == null || values == null) {
             return headers;
         }
+        Map<String, String> canonicalByLowerName = new LinkedHashMap<>();
         for (int i = 0; i < Math.min(names.length, values.length); i++) {
-            if (names[i] != null && values[i] != null) {
-                headers.put(names[i], values[i]);
+            if (names[i] == null || values[i] == null) {
+                continue;
             }
+            String previousName = canonicalByLowerName.put(names[i].toLowerCase(Locale.ROOT), names[i]);
+            if (previousName != null) {
+                headers.remove(previousName);
+            }
+            headers.put(names[i], values[i]);
         }
         return headers;
     }
@@ -176,14 +190,22 @@ final class HubBundles {
      */
     private static @NonNull byte[] readBody(@NonNull ParcelFileDescriptor descriptor, int maxBodyBytes) throws HubRejection {
         try (InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(descriptor)) {
+            // A pipe or socket reports -1 and could block a binder thread forever; only a real file,
+            // which is all the client ever sends, has a known size to read up to
+            long declaredSize = descriptor.getStatSize();
+            if (declaredSize < 0) {
+                throw new HubRejection(400, "request body is not a readable file");
+            }
+            if (declaredSize > maxBodyBytes) {
+                throw new HubRejection(413, "request body is larger than " + maxBodyBytes + " bytes");
+            }
+            // The buffer grows with the bytes actually read, not up to the size the descriptor claims,
+            // so a descriptor that lies about its size cannot force a large allocation
             ByteArrayOutputStream body = new ByteArrayOutputStream();
             byte[] buffer = new byte[16 * 1024];
             int read;
-            while ((read = in.read(buffer)) != -1) {
+            while (body.size() < declaredSize && (read = in.read(buffer)) != -1) {
                 body.write(buffer, 0, read);
-                if (body.size() > maxBodyBytes) {
-                    throw new HubRejection(413, "request body is larger than " + maxBodyBytes + " bytes");
-                }
             }
             return body.toByteArray();
         } catch (IOException e) {
