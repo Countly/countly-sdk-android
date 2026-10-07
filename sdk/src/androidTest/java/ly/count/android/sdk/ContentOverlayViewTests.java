@@ -17,6 +17,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Instrumented tests for ContentOverlayView.
@@ -266,6 +268,35 @@ public class ContentOverlayViewTests {
                 + "&event=[{\"key\":\"click\",\"segmentation\":{\"button\":\"submit\"}}]";
             Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
         });
+    }
+
+    /**
+     * A content event is recorded with the global content segmentation underneath its own entries.
+     * When the merged map is over the segmentation limit, the global entries are dropped first, even
+     * one that shares a key with the event and was put in first.
+     */
+    @Test
+    public void contentUrlAction_eventAction_addsGlobalContentSegmentation() {
+        Countly.sharedInstance().halt();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.sdkInternalLimits.setMaxSegmentationValues(3);
+        Countly.sharedInstance().init(config);
+        EventProvider ep = TestUtils.setEventProviderToMock(Countly.sharedInstance(), mock(EventProvider.class));
+
+        Map<String, Object> globalSegmentation = new LinkedHashMap<>();
+        globalSegmentation.put("color", "global");
+        globalSegmentation.put("screen", "home");
+        globalSegmentation.put("tier", "gold");
+        Countly.sharedInstance().contents().setGlobalContentSegmentation(globalSegmentation);
+
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event"
+                + "&event=[{\"key\":\"test_key\",\"sg\":{\"color\":\"blue\",\"button\":\"buy\"}}]";
+            Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView));
+        });
+
+        verify(ep).recordEventInternal("test_key", TestUtils.map("tier", "gold", "color", "blue", "button", "buy"), 1, 0, 0, null, null);
     }
 
     /**
