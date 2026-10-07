@@ -348,7 +348,7 @@ public class ModuleLog {
         }
 
         final char levelChar = levelToChar(level);
-        boolean batchIsFull;
+        boolean completesBatch;
 
         synchronized (logBufferLock) {
             if (!isCapturingLogs()) {
@@ -360,15 +360,17 @@ public class ModuleLog {
                 return;
             }
 
+            final boolean heldFullBatch = gatheredLines.size() >= logGatherBatchSize;
             LogLine line = new LogLine(UtilsTime.currentTimestampMs(), levelChar, trimLogMessage(msg));
             gatheredLines.add(line);
             gatheredChars += line.message.length();
             trimBufferLocked();
 
-            batchIsFull = isGatheringLogs() && gatheredLines.size() >= logGatherBatchSize;
+            //only the line that completes a batch asks for a delivery, so lines held back by consent do not queue one each
+            completesBatch = isGatheringLogs() && !heldFullBatch && gatheredLines.size() >= logGatherBatchSize;
         }
 
-        if (batchIsFull) {
+        if (completesBatch) {
             scheduleLogDelivery(false);
         }
     }
@@ -454,9 +456,8 @@ public class ModuleLog {
                 return;
             }
 
-            ConsentProvider consent = consentProvider;
-            if (consent != null && !logUploadConsentGiven(consent)) {
-                d("[ModuleLog] deliverLogBatches, the consent gathered lines may need is not given, keeping the gathered lines buffered");
+            if (!logUploadConsentGiven(consentProvider)) {
+                d("[ModuleLog] deliverLogBatches, events or users consent is not given, keeping the gathered lines buffered");
                 return;
             }
 
@@ -483,20 +484,14 @@ public class ModuleLog {
     }
 
     /**
-     * Gathered lines quote event keys, segmentation, user properties, view names and whole queued requests, so a
-     * batch carries user data no matter which module wrote the line. A gathered line is a plain string with no
-     * feature attached, and the lines holding the largest payloads are written by the store and the request queue,
-     * where the feature is whatever the request happens to hold, so a line can not be attributed to one feature's
-     * consent. The whole upload is therefore gated on the broadest check: both the events and the users consent.
+     * Gathered lines can quote any feature's user data and carry no feature of their own, so a batch may leave the
+     * device only while both the events and the users consent are given. Always true when consent is not required.
      *
-     * Without consent required every feature counts as consented, so this only ever narrows an integration that
-     * requires consent, and there it keeps the choice of what leaves the device with the user.
-     *
-     * @param consent the consent state to read the feature consents from
-     * @return true when a gathered batch is allowed to leave the device
+     * @param consent the consent state, null once the SDK is halted
+     * @return true when a gathered batch may be uploaded
      */
-    private static boolean logUploadConsentGiven(@NonNull final ConsentProvider consent) {
-        return consent.getConsent(Countly.CountlyFeatureNames.events) && consent.getConsent(Countly.CountlyFeatureNames.users);
+    private static boolean logUploadConsentGiven(@Nullable final ConsentProvider consent) {
+        return consent != null && consent.getConsent(Countly.CountlyFeatureNames.events) && consent.getConsent(Countly.CountlyFeatureNames.users);
     }
 
     /** One batch taken out of the buffer: the payload plus what it was built from, so a refused send can put it back. */
