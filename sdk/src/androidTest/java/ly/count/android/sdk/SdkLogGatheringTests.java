@@ -498,6 +498,34 @@ public class SdkLogGatheringTests {
     }
 
     /**
+     * A delivery can not send anything while the consent holds the lines back, so a full buffer must not make every
+     * further captured line queue one, each of which would also log why it sent nothing.
+     *
+     * Verifies that with gathering armed, consent required, only the sessions consent given and several batches worth
+     * of lines held, a delivery was attempted only a handful of times rather than once per captured line.
+     */
+    @Test
+    public void logGathering_linesHeldBackByConsent_doNotQueueADeliveryPerLine() throws JSONException, InterruptedException {
+        final List<String> localLogLines = new CopyOnWriteArrayList<>();
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.sessions }, acceptingRequestQueue(), (logMessage, logLevel) -> localLogLines.add(logMessage));
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        for (int a = 0; a < 5; a++) {
+            recordLinesCarryingUserData();
+        }
+        flushAndSettle();
+
+        int heldBackDeliveries = 0;
+        for (String line : localLogLines) {
+            if (line.contains("consent is not given, keeping the gathered lines buffered")) {
+                heldBackDeliveries++;
+            }
+        }
+        Assert.assertTrue("held back deliveries:[" + heldBackDeliveries + "]", heldBackDeliveries >= 1 && heldBackDeliveries <= 5);
+    }
+
+    /**
      * The events consent alone is not enough, the lines can quote user properties as well.
      *
      * Verifies that with gathering armed, consent required and the events consent given without the users consent,
