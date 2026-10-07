@@ -1,0 +1,79 @@
+# Android instrumented tests on the office phone through the Countly Device Farm.
+#
+# A GitHub runner builds the SDK and its test APKs, then the office Android phone runs them with
+# no host computer attached: the job joins the farm's queue with a GitHub OIDC token (no farm
+# secret in the repo, and fork pull requests cannot reach phones), the farm tunnels its adb
+# server to this runner, and `connectedAndroidTest` runs against the phone over that tunnel.
+#
+# The farm client is vendored at .github/farm/client.mjs because countly-sdk-tools is private and
+# a public SDK repo's token cannot check it out. The farm's Command Center must have
+# CC_FARM_OIDC_REPOS include this repo and CC_FARM_SDKS include countly-sdk-android.
+name: Device tests (Android)
+
+on:
+  push:
+    branches: [master, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  JAVA_V: 17
+  JAVA_DIST: corretto
+
+jobs:
+  android:
+    name: Android tests on the office phone
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      FARM_URL: https://test-deniz.count.ly/command-center/farm
+    steps:
+      - name: Check out the SDK
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_V }}
+          distribution: ${{ env.JAVA_DIST }}
+
+      - name: Set up the Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Set AAPT2 for Android 35
+        run: echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" | tee -a gradle.properties
+
+      - name: Build the SDK and its tests
+        run: ./gradlew sdk:assembleDebug sdk:assembleDebugAndroidTest
+
+      - name: Join the device farm queue
+        run: node .github/farm/client.mjs oidc countly-sdk-android
+
+      - name: Take the phone and tunnel adb
+        run: node .github/farm/client.mjs open
+
+      - name: Run the instrumented tests on the phone
+        run: ./gradlew sdk:connectedAndroidTest
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-results
+          path: |
+            sdk/build/outputs/androidTest-results/
+            sdk/build/reports/androidTests/
+          if-no-files-found: ignore
+
+      - name: Summarise the results
+        if: always()
+        run: node .github/farm/client.mjs summary sdk/build/outputs/androidTest-results >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Give the phone back
+        if: always() && env.FARM_TOKEN != ''
+        run: node .github/farm/client.mjs release "${{ job.status }}"
