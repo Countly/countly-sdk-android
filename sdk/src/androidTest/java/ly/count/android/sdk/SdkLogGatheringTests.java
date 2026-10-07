@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 
 import static ly.count.android.sdk.ModuleConfiguration.keyRConfig;
 import static ly.count.android.sdk.ModuleConfiguration.keyRLogGathering;
@@ -20,6 +23,12 @@ import static ly.count.android.sdk.ModuleConfiguration.logGatheringAllLevels;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringDefaultBatchSize;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringMaxBufferedLines;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringMinBatchSize;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Covers the per user SDK log gathering directive, the top level 'lg' key of the configuration response, and the
@@ -42,6 +51,13 @@ public class SdkLogGatheringTests {
      */
     private final static String keyUnsupportedConnectionTest = "ct";
     private final static String keyUnsupportedFuture = "someFutureFeature";
+
+    //values that are user data, chosen so that finding one in an uploaded batch can not be a coincidence
+    private final static String consentGatherId = "consent_gather_id";
+    private final static String secretEventKey = "cly_secret_event_key";
+    private final static String secretSegmentationValue = "cly_secret_segmentation_value";
+    private final static String secretViewName = "cly_secret_view_name";
+    private final static String secretUserProperty = "cly_secret_user_property";
 
     private CountlyStore countlyStore;
     private Countly countly;
@@ -448,7 +464,162 @@ public class SdkLogGatheringTests {
         Assert.assertEquals(0, countly.L.heldLogLineCount()); // the speculative buffer was dropped
     }
 
+    // ================ Consent ================
+
+    /**
+     * The gathered lines quote what the public API was called with, so a batch carries event keys, segmentation and
+     * view names. Uploading one for a user who did not consent to those features would send tracking data to the
+     * server through the back door, which is exactly the choice that has to stay the user's.
+     *
+     * Verifies that with gathering armed, consent required and only the sessions consent given:
+     * 1. not a single batch is handed to the request queue
+     * 2. the lines are held rather than thrown away, so a later consent still lets them out
+     * 3. the local developer log is untouched: the listener still sees the event key and the view name, because only
+     * the gathered copy is withheld and the developer still has to be able to debug the call
+     */
+    @Test
+    public void logGathering_onlySessionsConsent_uploadsNothingAndKeepsTheLocalLog() throws JSONException, InterruptedException {
+        final List<String> localLogLines = new CopyOnWriteArrayList<>();
+        RequestQueueProvider rqp = acceptingRequestQueue();
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.sessions }, rqp, collectEveryLine(localLogLines));
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        flushAndSettle();
+
+        verify(rqp, never()).sendSdkLogs(anyString());
+        Assert.assertTrue(countly.L.heldLogLineCount() > 0);
+        assertSomeLineContains(localLogLines, secretEventKey);
+        assertSomeLineContains(localLogLines, secretViewName);
+    }
+
+    /**
+     * The other half of the rule: the gate must not break the feature for the users who did consent.
+     *
+     * Verifies that with gathering armed, consent required and the events and users consent given:
+     * 1. batches are handed to the request queue
+     * 2. what they carry is the gathered lines, the event key among them
+     */
+    @Test
+    public void logGathering_eventsAndUsersConsent_uploadsTheGatheredLines() throws JSONException, InterruptedException {
+        RequestQueueProvider rqp = acceptingRequestQueue();
+
+        countly = initGathering(new String[] {
+            Countly.CountlyFeatureNames.sessions,
+            Countly.CountlyFeatureNames.events,
+            Countly.CountlyFeatureNames.views,
+            Countly.CountlyFeatureNames.users
+        }, rqp, null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        flushAndSettle();
+
+        ArgumentCaptor<String> batches = ArgumentCaptor.forClass(String.class);
+        verify(rqp, atLeastOnce()).sendSdkLogs(batches.capture());
+        assertSomeLineContains(batches.getAllValues(), secretEventKey);
+    }
+
+    /**
+     * An integration that does not require consent counts as having consented to everything, so the gate has to be
+     * invisible to it. This is the majority of integrations and the one where a regression would be noticed last.
+     *
+     * Verifies that with gathering armed and consent not required at all, batches are uploaded as before.
+     */
+    @Test
+    public void logGathering_consentNotRequired_uploadsTheGatheredLines() throws JSONException, InterruptedException {
+        RequestQueueProvider rqp = acceptingRequestQueue();
+
+        countly = initGathering(null, rqp, null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        flushAndSettle();
+
+        verify(rqp, atLeastOnce()).sendSdkLogs(anyString());
+    }
+
     // ================ Helper Methods ================
+
+    /**
+     * Initialises an instance that the server has armed for gathering, with the request queue mocked so that what the
+     * logger hands over can be observed without any networking.
+     *
+     * @param givenConsent the features consent is given for, or null for an instance that does not require consent
+     * @param rqp the request queue the gathered batches are handed to
+     * @param logListener a listener for the local developer log, or null when it is not inspected
+     * @return the initialised instance
+     */
+    private Countly initGathering(@Nullable String[] givenConsent, @NonNull RequestQueueProvider rqp, @Nullable ModuleLog.LogCallback logListener) throws JSONException {
+        final boolean requiresConsent = givenConsent != null;
+        //the server behaviour settings win over the developer's value, so both have to say the same thing here
+        String response = new ServerConfigBuilder()
+            .defaults()
+            .consentRequired(requiresConsent)
+            .logGatheringOn(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize)
+            .build();
+
+        CountlyConfig config = TestUtils.createBaseConfig().setLoggingEnabled(false).disableHealthCheck();
+        config.setRequiresConsent(requiresConsent).setConsentEnabled(givenConsent);
+        config.requestQueueProvider = rqp;
+        config.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(response);
+        config.setLogListener(logListener);
+
+        return new Countly().init(config);
+    }
+
+    /** @return a request queue that accepts every batch, so a withheld batch can only be the logger's own doing */
+    private static RequestQueueProvider acceptingRequestQueue() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        when(rqp.sendSdkLogs(anyString())).thenReturn(true);
+        return rqp;
+    }
+
+    /**
+     * Calls the public API with values that are user data, so that the lines the SDK logs about those calls quote
+     * them. The calls go through whether or not their consent is given: what is under test is the gathered copy.
+     */
+    private void recordLinesCarryingUserData() {
+        countly.events().recordEvent(secretEventKey, TestUtils.map("secret", secretSegmentationValue));
+        countly.views().startView(secretViewName);
+        countly.userProfile().setProperty("secret", secretUserProperty);
+    }
+
+    /** Delivery runs on its own single thread, so the flush is only a request to upload, not the upload itself. */
+    private void flushAndSettle() throws InterruptedException {
+        countly.L.flushGatheredLogs();
+        Thread.sleep(2000);
+    }
+
+    /**
+     * Asserts that at least one of the given strings quotes the fragment.
+     *
+     * @param lines the local log lines, or the uploaded batches, to look through
+     * @param fragment the value that has to be found in one of them
+     */
+    private void assertSomeLineContains(List<String> lines, String fragment) {
+        for (String line : lines) {
+            if (line.contains(fragment)) {
+                return;
+            }
+        }
+        Assert.fail("no line carried the fragment:[" + fragment + "], lines:[" + lines.size() + "]");
+    }
+
+    /**
+     * A listener that keeps every line the SDK logs, which is the developer facing output the gate must not change.
+     *
+     * @param target the list the lines are collected into
+     * @return the listener to hand to the configuration
+     */
+    private ModuleLog.LogCallback collectEveryLine(final List<String> target) {
+        return new ModuleLog.LogCallback() {
+            @Override public void LogHappened(String logMessage, ModuleLog.LogLevel logLevel) {
+                target.add(logMessage);
+            }
+        };
+    }
 
     /**
      * Asserts the whole directive twice over: as the configuration module parsed it, and as the logger applied it.

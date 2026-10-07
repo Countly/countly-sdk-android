@@ -455,10 +455,8 @@ public class ModuleLog {
             }
 
             ConsentProvider consent = consentProvider;
-            if (consent != null && !consent.anyConsentGiven()) {
-                //gathered lines quote event keys, segmentation and whole queued requests, so they are user data.
-                //Without any consent nothing else leaves the device either, the lines stay held until it is given
-                d("[ModuleLog] deliverLogBatches, no consent given, keeping the gathered lines buffered");
+            if (consent != null && !logUploadConsentGiven(consent)) {
+                d("[ModuleLog] deliverLogBatches, the consent gathered lines may need is not given, keeping the gathered lines buffered");
                 return;
             }
 
@@ -482,6 +480,23 @@ public class ModuleLog {
         } finally {
             setOwnTransportWork(false);
         }
+    }
+
+    /**
+     * Gathered lines quote event keys, segmentation, user properties, view names and whole queued requests, so a
+     * batch carries user data no matter which module wrote the line. A gathered line is a plain string with no
+     * feature attached, and the lines holding the largest payloads are written by the store and the request queue,
+     * where the feature is whatever the request happens to hold, so a line can not be attributed to one feature's
+     * consent. The whole upload is therefore gated on the broadest check: both the events and the users consent.
+     *
+     * Without consent required every feature counts as consented, so this only ever narrows an integration that
+     * requires consent, and there it keeps the choice of what leaves the device with the user.
+     *
+     * @param consent the consent state to read the feature consents from
+     * @return true when a gathered batch is allowed to leave the device
+     */
+    private static boolean logUploadConsentGiven(@NonNull final ConsentProvider consent) {
+        return consent.getConsent(Countly.CountlyFeatureNames.events) && consent.getConsent(Countly.CountlyFeatureNames.users);
     }
 
     /** One batch taken out of the buffer: the payload plus what it was built from, so a refused send can put it back. */
