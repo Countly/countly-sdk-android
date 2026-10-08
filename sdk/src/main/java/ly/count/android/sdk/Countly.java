@@ -1371,6 +1371,9 @@ public class Countly {
         for (ModuleBase module : modules) {
             module.onSdkConfigurationChanged(config);
         }
+
+        //after the modules, so the consent module has applied a changed consent requirement
+        L.releaseConsentedLogLines();
     }
 
     /**
