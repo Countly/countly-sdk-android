@@ -13,7 +13,7 @@
   `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
 
   Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
-* Added support for server requested SDK log gathering. When the server asks for it, the SDK uploads its own internal log lines, even if logging is disabled.
+* Added support for server requested SDK log gathering. When the server asks for it, the SDK uploads its own internal log lines, even if logging is disabled. When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
 * Added support for the SDK connection test. When the server asks for it, the SDK checks that it can reach every endpoint it depends on and reports the results.
 * Added support for the large icon of push notifications, and it is available through `CountlyPush.Message.largeIcon()`.
 * Added support for push notification collapse keys, and it is available through `CountlyPush.Message.collapseKey()`.

@@ -181,6 +181,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         ModuleSessions sessionsModule = _cly.moduleSessions;
         ModuleConsent consentModule = _cly.moduleConsent;
         ModuleRatings ratingsModule = _cly.moduleRatings;
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
 
         //force flush events so that they are associated correctly
         if (requestQueueModule != null) {
@@ -206,6 +207,12 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         if (sessionsModule != null && sessionsModule.automaticSessionTrackingEnabled()) {
             //if automatic session tracking is active, end the current session
             sessionsModule.endSessionInternal(); // this will check consent
+        }
+
+        if (configurationModule != null) {
+            configurationModule.stopLogGatheringForDeviceIdChange();
+        } else {
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMerge, the configuration module is gone, not stopping log gathering");
         }
 
         //remove all consent
