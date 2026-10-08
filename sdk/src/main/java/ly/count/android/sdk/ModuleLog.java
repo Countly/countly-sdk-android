@@ -434,7 +434,8 @@ public class ModuleLog {
                 return;
             }
 
-            LogLine line = new LogLine(nextLineSequence++, UtilsTime.currentTimestampMs(), levelChar, trimLogMessage(msg), consentFeatures);
+            //not UtilsTime.currentTimestampMs, whose unique values would shift the timestamps of events and traces
+            LogLine line = new LogLine(nextLineSequence++, System.currentTimeMillis(), levelChar, trimLogMessage(msg), consentFeatures);
             if (consentGiven) {
                 final boolean heldFullBatch = gatheredLines.size() >= logGatherBatchSize;
                 gatheredLines.add(line);
