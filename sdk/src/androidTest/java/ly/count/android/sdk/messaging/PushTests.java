@@ -61,6 +61,61 @@ public class PushTests {
         Assert.assertEquals("https://www.google222.com", buttons.get(1).link().toString());
     }
 
+    /**
+     * The large icon ("c.li") and collapse key ("c.ck") sent by the server are exposed on the decoded message.
+     */
+    @Test
+    public void decodeMessage_largeIconAndCollapseKey() {
+        Map<String, String> values = new HashMap<>();
+        values.put("c.i", "5e56ae8c80171b2dc1154f3d");
+        values.put("c.li", "https://example.com/icon.png");
+        values.put("c.ck", "order-42");
+
+        CountlyPush.Message message = CountlyPush.decodeMessage(values);
+
+        Assert.assertEquals("https://example.com/icon.png", message.largeIcon());
+        Assert.assertEquals("order-42", message.collapseKey());
+    }
+
+    /**
+     * Missing or blank large icon and collapse key values are reported as absent.
+     */
+    @Test
+    public void decodeMessage_missingOrBlankLargeIconAndCollapseKey_null() {
+        Map<String, String> values = new HashMap<>();
+        values.put("c.i", "5e56ae8c80171b2dc1154f3d");
+
+        CountlyPush.Message message = CountlyPush.decodeMessage(values);
+        Assert.assertNull(message.largeIcon());
+        Assert.assertNull(message.collapseKey());
+
+        values.put("c.li", "  ");
+        values.put("c.ck", "");
+        message = CountlyPush.decodeMessage(values);
+        Assert.assertNull(message.largeIcon());
+        Assert.assertNull(message.collapseKey());
+    }
+
+    /**
+     * The large icon and collapse key survive the parceling done when the message is handed to CountlyPushActivity.
+     */
+    @Test
+    public void decodeMessage_largeIconAndCollapseKey_surviveParceling() {
+        Map<String, String> values = new HashMap<>();
+        values.put("c.i", "5e56ae8c80171b2dc1154f3d");
+        values.put("c.li", "countly_test_large_icon");
+        values.put("c.ck", "order-42");
+
+        android.os.Parcel parcel = android.os.Parcel.obtain();
+        CountlyPush.decodeMessage(values).writeToParcel(parcel, 0);
+        parcel.setDataPosition(0);
+        CountlyPush.Message restored = ModulePush.MessageImpl.CREATOR.createFromParcel(parcel);
+        parcel.recycle();
+
+        Assert.assertEquals("countly_test_large_icon", restored.largeIcon());
+        Assert.assertEquals("order-42", restored.collapseKey());
+    }
+
     private static final String OWN_PKG = "com.example.app";
     private static final String OWN_CLASS = "com.example.app.MainActivity";
 

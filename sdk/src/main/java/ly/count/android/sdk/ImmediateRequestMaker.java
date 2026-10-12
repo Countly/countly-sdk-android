@@ -73,6 +73,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
         HttpURLConnection connection = null;
         BufferedReader reader = null;
         boolean wasSuccess = true;
+        int previousSocketTag = UtilsNetworking.tagSocketsOfThread();
 
         try {
             L.d("[ImmediateRequestMaker] delayed[" + requestShouldBeDelayed + "] hasCallback[" + (callback != null) + "] endpoint[" + customEndpoint + "] request[" + requestData + "] url[" + cp.getServerURL() + "]");
@@ -156,6 +157,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
             } catch (IOException e) {
                 L.e("[ImmediateRequestMaker] ", e);
             }
+            UtilsNetworking.restoreSocketTag(previousSocketTag);
         }
         L.v("[ImmediateRequestMaker] Finished request");
         return null;

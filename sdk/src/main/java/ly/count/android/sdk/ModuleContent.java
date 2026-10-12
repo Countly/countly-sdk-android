@@ -11,7 +11,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -39,6 +41,9 @@ public class ModuleContent extends ModuleBase {
     // Buffered content when no activity is available
     private Map<Integer, TransparentActivityConfig> pendingContentConfigs;
 
+    //replaced, never refilled in place: the setter can run on any thread while an event reads it
+    @NonNull private volatile Map<String, Object> globalContentSegmentation = Collections.emptyMap();
+
     private @Nullable Activity getCurrentActivity() {
         return currentActivity != null ? currentActivity.get() : null;
     }
@@ -59,6 +64,50 @@ public class ModuleContent extends ModuleBase {
         if (!webViewEnabled) {
             L.i("[ModuleContent] WebView is disabled via configuration, content overlay will not be shown");
         }
+    }
+
+    /**
+     * Stores a sanitized copy of the given segmentation, or clears it when 'null' or empty.
+     */
+    void setGlobalContentSegmentationInternal(@Nullable Map<String, Object> segmentation) {
+        if (segmentation == null || segmentation.isEmpty()) {
+            globalContentSegmentation = Collections.emptyMap();
+            return;
+        }
+
+        //copied first: the helpers below modify the map in place, and this one is the developer's
+        Map<String, Object> sanitized = new LinkedHashMap<>(segmentation);
+        String tag = "[ModuleContent] setGlobalContentSegmentationInternal";
+        UtilsInternalLimits.removeUnsupportedDataTypes(sanitized, L);
+        UtilsInternalLimits.applySdkInternalLimitsToSegmentation(sanitized, _cly.sdkInternalLimits_, L, tag);
+
+        globalContentSegmentation = sanitized;
+    }
+
+    /**
+     * Merges the instance's global content segmentation under an event's own segmentation. The event's
+     * entries win and come last, so a content event trimmed to the segmentation limit loses global
+     * entries first.
+     *
+     * @return a new merged map, or eventSegmentation itself when there is nothing to add
+     */
+    @NonNull static Map<String, Object> withGlobalContentSegmentation(@NonNull Countly cly, @NonNull Map<String, Object> eventSegmentation) {
+        //read once into a local: a teardown on another thread nulls the module fields mid call
+        ModuleContent contentModule = cly.moduleContent;
+        if (contentModule == null) {
+            return eventSegmentation;
+        }
+
+        Map<String, Object> globalSegmentation = contentModule.globalContentSegmentation;
+        if (globalSegmentation.isEmpty()) {
+            return eventSegmentation;
+        }
+
+        //putAll keeps a shared key at its global position, and truncateSegmentationValues trims from the front
+        Map<String, Object> merged = new LinkedHashMap<>(globalSegmentation);
+        merged.keySet().removeAll(eventSegmentation.keySet());
+        merged.putAll(eventSegmentation);
+        return merged;
     }
 
     @Override
@@ -673,6 +722,20 @@ public class ModuleContent extends ModuleBase {
             }
 
             refreshContentZoneInternal(true);
+        }
+
+        /**
+         * Sets a segmentation recorded with every content and feedback widget event, on top of the
+         * keys those events already report. It is kept for as long as the app runs, including when a
+         * session ends and a new one starts, and it is not restored after an app restart.
+         *
+         * @param segmentation Map<String, Object> - global content segmentation, 'null' clears it
+         * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+         */
+        public void setGlobalContentSegmentation(@Nullable Map<String, Object> segmentation) {
+            L.i("[Content] Calling setGlobalContentSegmentation sg[" + (segmentation == null ? segmentation : segmentation.size()) + "]");
+
+            setGlobalContentSegmentationInternal(segmentation);
         }
     }
 }

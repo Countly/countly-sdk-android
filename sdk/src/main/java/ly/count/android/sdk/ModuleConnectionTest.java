@@ -333,6 +333,7 @@ class ModuleConnectionTest extends ModuleBase {
             ProbeOutcome outcome = new ProbeOutcome();
             long start = System.nanoTime();
             HttpURLConnection connection = null;
+            int previousSocketTag = UtilsNetworking.tagSocketsOfThread();
             try {
                 if (cp != null) {
                     connection = cp.urlConnectionForProbe(url, timeoutMs);
@@ -357,6 +358,7 @@ class ModuleConnectionTest extends ModuleBase {
                 if (connection != null) {
                     connection.disconnect();
                 }
+                UtilsNetworking.restoreSocketTag(previousSocketTag);
                 outcome.ms = (System.nanoTime() - start) / 1_000_000L;
             }
             return outcome;

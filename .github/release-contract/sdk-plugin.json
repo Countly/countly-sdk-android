@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "coordinates": "ly.count.android:sdk-plugin",
+  "pomDependencies": ["com.squareup.okhttp3:okhttp:4.12.0:runtime"],
+  "moduleVariantAttributes": { "org.gradle.jvm.version": 8 },
+  "maxClassFileMajor": 52
+}

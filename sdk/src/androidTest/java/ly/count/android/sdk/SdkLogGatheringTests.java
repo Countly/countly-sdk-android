@@ -1,9 +1,11 @@
 package ly.count.android.sdk;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.After;
@@ -20,6 +22,9 @@ import static ly.count.android.sdk.ModuleConfiguration.logGatheringAllLevels;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringDefaultBatchSize;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringMaxBufferedLines;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringMinBatchSize;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Covers the per user SDK log gathering directive, the top level 'lg' key of the configuration response, and the
@@ -42,6 +47,14 @@ public class SdkLogGatheringTests {
      */
     private final static String keyUnsupportedConnectionTest = "ct";
     private final static String keyUnsupportedFuture = "someFutureFeature";
+
+    private final static String consentGatherId = "consent_gather_id";
+
+    //values that are user data, chosen so that finding one in an uploaded batch can not be a coincidence
+    private final static String secretEventKey = "cly_secret_event_key";
+    private final static String secretSegmentationValue = "cly_secret_segmentation_value";
+    private final static String secretViewName = "cly_secret_view_name";
+    private final static String secretUserProperty = "cly_secret_user_property";
 
     private CountlyStore countlyStore;
     private Countly countly;
@@ -448,7 +461,475 @@ public class SdkLogGatheringTests {
         Assert.assertEquals(0, countly.L.heldLogLineCount()); // the speculative buffer was dropped
     }
 
+    // ================ Consent ================
+
+    /**
+     * A gathered line needs the consent of the feature it comes from, decided when it is logged. For a user who
+     * consented only to sessions, the session lines can go, while the ones quoting event keys, segmentation and view
+     * names, and the ones that can quote any feature's data, have to stay on the device.
+     *
+     * Verifies that with gathering armed, consent required and only the sessions consent given:
+     * 1. the session lines are uploaded
+     * 2. no uploaded line quotes the event key, the segmentation or the view name, and no consent line is uploaded
+     * 3. the local developer log still quotes the event key and the view name, since only the gathered copy is withheld
+     * 4. the held lines are not dropped: once the events and users consent are given, the event lines and the consent
+     * lines are uploaded, while the view lines keep waiting for the views consent
+     */
+    @Test
+    public void logGathering_onlySessionsConsent_uploadsOnlyTheLinesItCovers() throws JSONException, InterruptedException {
+        final List<String> localLogLines = new CopyOnWriteArrayList<>();
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.sessions }, acceptingRequestQueue(uploadedLines), (logMessage, logLevel) -> localLogLines.add(logMessage));
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, "[ModuleSessions]");
+        assertNoLineContains(uploadedLines, secretEventKey, secretSegmentationValue, secretViewName, "[ModuleConsent]");
+        assertSomeLineContains(localLogLines, secretEventKey);
+        assertSomeLineContains(localLogLines, secretViewName);
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.users });
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, secretEventKey);
+        assertSomeLineContains(uploadedLines, secretSegmentationValue);
+        assertSomeLineContains(uploadedLines, "[ModuleConsent]");
+        assertNoLineContains(uploadedLines, secretViewName);
+    }
+
+    /**
+     * The events consent lets the event lines go and nothing else: the user profile lines wait for the users consent,
+     * the view lines for the views consent, and the lines that can quote anything for both the events and the users
+     * consent. The view event the events module logs counts as a view line.
+     *
+     * Verifies that with gathering armed, consent required and only the events consent given, the event key is uploaded
+     * while no user profile line, consent line or view name is.
+     */
+    @Test
+    public void logGathering_onlyEventsConsent_uploadsOnlyTheEventLines() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.events }, acceptingRequestQueue(uploadedLines), null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, secretEventKey);
+        assertNoLineContains(uploadedLines, "[UserProfile]", "[ModuleConsent]", secretViewName);
+    }
+
+    /**
+     * The users consent lets the user profile lines go and nothing else.
+     *
+     * Verifies that with gathering armed, consent required and only the users consent given, the user profile lines are
+     * uploaded while no line quoting the event key or the segmentation, and no consent line, is.
+     */
+    @Test
+    public void logGathering_onlyUsersConsent_uploadsOnlyTheUserProfileLines() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.users }, acceptingRequestQueue(uploadedLines), null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, "[UserProfile]");
+        assertNoLineContains(uploadedLines, secretEventKey, secretSegmentationValue, "[ModuleConsent]");
+    }
+
+    /**
+     * With both the events and the users consent, the lines no single feature can be found for go as well, while a view
+     * line still needs the views consent.
+     *
+     * Verifies that with gathering armed, consent required and only the events and users consent given, the event key
+     * and the consent lines are uploaded while the view name is not.
+     */
+    @Test
+    public void logGathering_eventsAndUsersConsent_uploadsAllButTheViewLines() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.users }, acceptingRequestQueue(uploadedLines), null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, secretEventKey);
+        assertSomeLineContains(uploadedLines, "[ModuleConsent]");
+        assertNoLineContains(uploadedLines, secretViewName);
+    }
+
+    /**
+     * An integration that does not require consent counts as having consented to everything, so the consent has to be
+     * invisible to it.
+     *
+     * Verifies that with gathering armed and consent not required at all, the gathered lines are uploaded, the event key
+     * and the view name among them.
+     */
+    @Test
+    public void logGathering_consentNotRequired_uploadsTheGatheredLines() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+
+        countly = initGathering(null, acceptingRequestQueue(uploadedLines), null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, secretEventKey);
+        assertSomeLineContains(uploadedLines, secretViewName);
+    }
+
+    /**
+     * The server can lift the consent requirement, and from then on every held line is consented.
+     *
+     * Verifies that with gathering armed, consent required and only the sessions consent given, the held event and view
+     * lines are uploaded once a later server response no longer requires consent.
+     */
+    @Test
+    public void logGathering_consentNoLongerRequired_releasesTheHeldLines() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+        final String[] response = { gatheringResponse(true).build() };
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.sessions }, response, acceptingRequestQueue(uploadedLines), null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        uploadEverythingGathered();
+        assertNoLineContains(uploadedLines, secretEventKey, secretViewName);
+
+        pushServerResponse(response, gatheringResponse(false));
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, secretEventKey);
+        assertSomeLineContains(uploadedLines, secretViewName);
+    }
+
+    /**
+     * A gather belongs to the user it was armed for. A device ID change without merge starts a new user, so what is
+     * gathered goes out right away under the old device ID and gathering stops, while a merge keeps it going.
+     *
+     * Verifies that:
+     * 1. a change with merge leaves gathering on
+     * 2. a change without merge uploads the gathered lines while the old device ID is still the current one
+     * 3. after it gathering is off in the configuration module and in the logger, and nothing more is uploaded
+     */
+    @Test
+    public void logGathering_deviceIdChangeWithoutMerge_flushesUnderTheOldIdAndStops() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+        final List<String> batchDeviceIds = new CopyOnWriteArrayList<>();
+
+        //a batch larger than what is recorded below, so only the change itself can make those lines go out
+        String response = gatheringResponse(false).logGatheringOn(consentGatherId, logGatheringAllLevels, logGatheringDefaultBatchSize).build();
+        countly = initGathering(null, new String[] { response }, acceptingRequestQueue(uploadedLines, batchDeviceIds), null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringDefaultBatchSize);
+
+        countly.deviceId().changeWithMerge("cly_merged_device_id");
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringDefaultBatchSize);
+        uploadEverythingGathered();
+        uploadedLines.clear();
+        batchDeviceIds.clear();
+
+        recordLinesCarryingUserData();
+        countly.deviceId().changeWithoutMerge("cly_new_device_id");
+        final int uploadedByTheChange = uploadedLines.size();
+        Thread.sleep(1000);
+
+        assertSomeLineContains(uploadedLines, secretEventKey);
+        Assert.assertFalse(batchDeviceIds.isEmpty());
+        for (String batchDeviceId : batchDeviceIds) {
+            Assert.assertEquals("cly_merged_device_id", batchDeviceId);
+        }
+        Assert.assertEquals(uploadedByTheChange, uploadedLines.size());
+        assertDecidedAgainstGathering();
+        Assert.assertEquals(0, countly.L.heldLogLineCount());
+    }
+
+    /**
+     * Lines waiting for their consent belong to the user the gather was armed for as well, so a device ID change without
+     * merge drops them instead of leaving them for the consent of the next user.
+     *
+     * Verifies that with gathering armed, consent required and only the sessions consent given:
+     * 1. the session lines go out under the old device ID
+     * 2. after a change without merge nothing waits for consent any more and gathering is off
+     * 3. the events and users consent of the next user uploads none of the event lines
+     */
+    @Test
+    public void logGathering_deviceIdChangeWithoutMerge_dropsTheLinesAwaitingConsent() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+        final List<String> batchDeviceIds = new CopyOnWriteArrayList<>();
+
+        countly = initGathering(new String[] { Countly.CountlyFeatureNames.sessions }, new String[] { gatheringResponse(true).build() }, acceptingRequestQueue(uploadedLines, batchDeviceIds), null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        recordLinesCarryingUserData();
+        Assert.assertTrue(countly.L.awaitingConsentLineCount() > 0);
+
+        countly.deviceId().changeWithoutMerge("cly_new_device_id");
+        Assert.assertEquals(0, countly.L.awaitingConsentLineCount());
+        assertDecidedAgainstGathering();
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.users });
+        Thread.sleep(1000);
+
+        assertSomeLineContains(uploadedLines, "[ModuleSessions]");
+        assertNoLineContains(uploadedLines, secretEventKey, secretSegmentationValue);
+        for (String batchDeviceId : batchDeviceIds) {
+            Assert.assertNotEquals("cly_new_device_id", batchDeviceId);
+        }
+    }
+
+    /**
+     * Lines captured while nothing is decided are the current user's too, so a device ID change without merge drops
+     * them, leaving nothing of the previous user for a directive that arrives later.
+     *
+     * Verifies that with the configuration fetch still in flight, a change without merge decides against gathering and
+     * leaves no line in the buffer or waiting for consent.
+     */
+    @Test
+    public void logGathering_deviceIdChangeWithoutMergeWhileUndecided_dropsTheSpeculativeLines() {
+        CountlyConfig config = TestUtils.createConsentCountlyConfig(false, null, null, acceptingRequestQueue(new CopyOnWriteArrayList<>())).setLoggingEnabled(false);
+        config.immediateRequestGenerator = createPendingIRG(); // the fetch is still in flight, the server has not answered yet
+        countly = new Countly().init(config);
+        Assert.assertEquals(ModuleConfiguration.LogGatheringState.UNDECIDED, countly.L.logGatheringState);
+        Assert.assertTrue(countly.L.heldLogLineCount() > 0);
+
+        countly.deviceId().changeWithoutMerge("cly_new_device_id");
+
+        assertDecidedAgainstGathering();
+        Assert.assertEquals(0, countly.L.heldLogLineCount());
+        Assert.assertEquals(0, countly.L.awaitingConsentLineCount());
+    }
+
+    /**
+     * A gather is armed for the device the configuration was requested for. An answer that only arrives after a device
+     * ID change without merge must not arm it for the next user, while the rest of the answer still applies.
+     *
+     * Verifies that with the init fetch still in flight, a change without merge followed by an answer that arms gathering
+     * leaves gathering off, and the other settings of that answer are applied.
+     */
+    @Test
+    public void logGathering_answerRequestedBeforeDeviceIdChange_doesNotArmTheNextUser() throws JSONException {
+        final List<ImmediateRequestMaker.InternalImmediateRequestCallback> heldAnswers = new CopyOnWriteArrayList<>();
+        CountlyConfig config = TestUtils.createConsentCountlyConfig(false, null, null, acceptingRequestQueue(new CopyOnWriteArrayList<>())).setLoggingEnabled(false);
+        config.immediateRequestGenerator = createHeldIRG(heldAnswers);
+        countly = new Countly().init(config);
+        Assert.assertEquals(1, heldAnswers.size());
+
+        countly.deviceId().changeWithoutMerge("cly_new_device_id");
+        heldAnswers.get(0).callback(new JSONObject(gatheringResponse(false).requestQueueSize(1500).build()));
+
+        assertDecidedAgainstGathering();
+        Assert.assertEquals(1500, countly.moduleConfiguration.currentVMaxRequestQueueSize);
+    }
+
+    /**
+     * A delivery can not send anything while tracking is off, so a full buffer must not make every further captured
+     * line queue one, each of which would also log why it sent nothing. Once a server response turns tracking back on,
+     * the held batches go out without waiting for the next timer tick.
+     *
+     * Verifies that with gathering armed, tracking disabled by the server and several batches worth of lines held:
+     * 1. a delivery was attempted only a handful of times rather than once per captured line, and nothing was uploaded
+     * 2. once a response turns tracking back on, the held lines are uploaded without any flush
+     */
+    @Test
+    public void logGathering_linesHeldBackByTracking_queueNoDeliveryPerLineAndGoOutOnceItIsBack() throws JSONException, InterruptedException {
+        final List<String> localLogLines = new CopyOnWriteArrayList<>();
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+        final String[] response = { gatheringResponse(false).tracking(false).build() };
+
+        countly = initGathering(null, response, acceptingRequestQueue(uploadedLines), (logMessage, logLevel) -> localLogLines.add(logMessage));
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        for (int a = 0; a < 5; a++) {
+            recordLinesCarryingUserData();
+        }
+        countly.L.flushGatheredLogs();
+        Thread.sleep(2000);
+
+        int heldBackDeliveries = 0;
+        for (String line : localLogLines) {
+            if (line.contains("tracking is disabled, keeping the gathered lines buffered")) {
+                heldBackDeliveries++;
+            }
+        }
+        Assert.assertTrue("held back deliveries:[" + heldBackDeliveries + "]", heldBackDeliveries >= 1 && heldBackDeliveries <= 5);
+        Assert.assertTrue(uploadedLines.isEmpty());
+
+        pushServerResponse(response, gatheringResponse(false));
+        Thread.sleep(1000);
+
+        assertSomeLineContains(uploadedLines, secretEventKey);
+    }
+
+    /**
+     * A line's consent is found from the bracketed name it starts with, and for an events line about an internal event
+     * from that event's key, any one of whose consents is enough. A name the SDK does not know, or no name at all, means
+     * the line needs both the events and the users consent.
+     */
+    @Test
+    public void logLineConsentFeatures_areFoundFromTheBracketedName() {
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.events }, "[Events] Calling recordEvent: [" + secretEventKey + "]");
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.events }, "[ModuleEvents] recordEventInternal, key:[" + secretEventKey + "] segmentation:[{screens=[home, [CLY]_view]}]");
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.views }, "[ModuleEvents] recordEventInternal, key:[[CLY]_view] segmentation:[{name=" + secretViewName + "}]");
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.feedback }, "[ModuleEvents] recordEventInternal, key:[[CLY]_star_rating]");
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.scrolls }, "[ModuleEvents] recordEventInternal, key:[[CLY]_action]");
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.views }, "[Views] Calling startView vn[" + secretViewName + "]");
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.users }, "[UserProfile] Calling 'setProperty'");
+        assertLineConsent(new String[] { Countly.CountlyFeatureNames.push }, "[CountlyPush, displayDialog] Showing the dialog");
+
+        assertLineConsent(null, "[ModuleEvents] recordEventInternal, key:[[CLY]_unknown_internal]");
+        assertLineConsent(null, "[CountlyStore] recordEventToEventQueue, key:[" + secretEventKey + "]");
+        assertLineConsent(null, "[Connection Queue] sendUserData");
+        assertLineConsent(null, "Halting Countly!");
+        assertLineConsent(null, "[ModuleEvents");
+        assertLineConsent(null, "");
+    }
+
     // ================ Helper Methods ================
+
+    /**
+     * Initialises an instance that the server has armed for gathering, with the request queue mocked so that what the
+     * logger hands over can be observed without any networking.
+     *
+     * @param givenConsent the features consent is given for, or null for an instance that does not require consent
+     * @param rqp the request queue the gathered batches are handed to
+     * @param logListener a listener for the local developer log, or null when it is not inspected
+     * @return the initialised instance
+     */
+    private Countly initGathering(@Nullable String[] givenConsent, @NonNull RequestQueueProvider rqp, @Nullable ModuleLog.LogCallback logListener) throws JSONException {
+        return initGathering(givenConsent, new String[] { gatheringResponse(givenConsent != null).build() }, rqp, logListener);
+    }
+
+    /**
+     * Initialises an instance like {@link #initGathering(String[], RequestQueueProvider, ModuleLog.LogCallback)} does,
+     * answering with whatever the holder carries, so that {@link #pushServerResponse(String[], ServerConfigBuilder)}
+     * can swap the response later.
+     *
+     * @param givenConsent the features consent is given for, or null for an instance that does not require consent
+     * @param response the holder of the configuration response
+     * @param rqp the request queue the gathered batches are handed to
+     * @param logListener a listener for the local developer log, or null when it is not inspected
+     * @return the initialised instance
+     */
+    private Countly initGathering(@Nullable String[] givenConsent, @NonNull String[] response, @NonNull RequestQueueProvider rqp, @Nullable ModuleLog.LogCallback logListener) {
+        CountlyConfig config = TestUtils.createConsentCountlyConfig(givenConsent != null, givenConsent, null, rqp).setLoggingEnabled(false);
+        config.immediateRequestGenerator = createMutableIRG(response);
+        config.setLogListener(logListener);
+
+        return new Countly().init(config);
+    }
+
+    /**
+     * A configuration response that arms gathering at every level with the smallest batch. The server behaviour settings
+     * win over the developer's value, so the consent requirement has to match the one the instance is given.
+     *
+     * @param requiresConsent whether the response requires consent
+     * @return the response, to build or to change further
+     */
+    private static ServerConfigBuilder gatheringResponse(boolean requiresConsent) throws JSONException {
+        return new ServerConfigBuilder()
+            .defaults()
+            .consentRequired(requiresConsent)
+            .logGatheringOn(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+    }
+
+    /**
+     * @param uploadedLines collects the message of every line of every batch handed over
+     * @return a request queue that accepts every batch, so a line missing from the uploads can only be the logger's doing
+     */
+    private RequestQueueProvider acceptingRequestQueue(@NonNull final List<String> uploadedLines) {
+        return acceptingRequestQueue(uploadedLines, new CopyOnWriteArrayList<>());
+    }
+
+    /**
+     * @param uploadedLines collects the message of every line of every batch handed over
+     * @param batchDeviceIds collects the device ID that was the current one when each batch was handed over
+     * @return a request queue that accepts every batch, so a line missing from the uploads can only be the logger's doing
+     */
+    private RequestQueueProvider acceptingRequestQueue(@NonNull final List<String> uploadedLines, @NonNull final List<String> batchDeviceIds) {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        when(rqp.sendSdkLogs(anyString())).thenAnswer(invocation -> {
+            //read without the instance lock, which the caller of a device ID change holds
+            Countly instance = countly;
+            batchDeviceIds.add(instance == null ? "" : instance.moduleDeviceId.deviceIdInstance.getCurrentId());
+
+            String payload = invocation.getArgument(0);
+            JSONArray lines = new JSONObject(payload).getJSONArray(ModuleLog.keyBatchLines);
+            for (int a = 0; a < lines.length(); a++) {
+                uploadedLines.add(lines.getJSONObject(a).getString(ModuleLog.keyLineMessage));
+            }
+            return true;
+        });
+        return rqp;
+    }
+
+    /**
+     * Calls the public API with values that are user data, so that the lines the SDK logs about those calls quote
+     * them. The calls go through whether or not their consent is given: what is under test is the gathered copy.
+     */
+    private void recordLinesCarryingUserData() {
+        countly.events().recordEvent(secretEventKey, TestUtils.map("secret", secretSegmentationValue));
+        countly.views().startView(secretViewName);
+        countly.userProfile().setProperty("secret", secretUserProperty);
+    }
+
+    /**
+     * Flushes until the buffer is empty, so that a line missing from the uploads was held back rather than left behind.
+     * Delivery runs on its own thread, so each flush is only a request to upload.
+     */
+    private void uploadEverythingGathered() throws InterruptedException {
+        for (int a = 0; a < 20 && countly.L.heldLogLineCount() > 0; a++) {
+            countly.L.flushGatheredLogs();
+            Thread.sleep(250);
+        }
+        Thread.sleep(250); // a batch taken out of the buffer may still be on its way to the queue
+        Assert.assertEquals(0, countly.L.heldLogLineCount());
+    }
+
+    /**
+     * Asserts that at least one of the given strings quotes the fragment.
+     *
+     * @param lines the log lines to look through
+     * @param fragment the value that has to be found in one of them
+     */
+    private void assertSomeLineContains(List<String> lines, String fragment) {
+        for (String line : lines) {
+            if (line.contains(fragment)) {
+                return;
+            }
+        }
+        Assert.fail("no line carried the fragment:[" + fragment + "], lines:[" + lines.size() + "]");
+    }
+
+    /**
+     * Asserts the consent a log line needs.
+     *
+     * @param expected the features any one of whose consent lets the line go, or null for the events and users consent
+     * @param line the line as it is logged
+     */
+    private void assertLineConsent(@Nullable String[] expected, String line) {
+        Assert.assertArrayEquals(line, expected, ModuleLog.logLineConsentFeatures(line));
+    }
+
+    /**
+     * Asserts that none of the given strings quotes any of the fragments.
+     *
+     * @param lines the log lines to look through
+     * @param fragments the values none of them may carry
+     */
+    private void assertNoLineContains(List<String> lines, String... fragments) {
+        for (String line : lines) {
+            for (String fragment : fragments) {
+                Assert.assertFalse("a line carried the fragment:[" + fragment + "], line:[" + line + "]", line.contains(fragment));
+            }
+        }
+    }
 
     /**
      * Asserts the whole directive twice over: as the configuration module parsed it, and as the logger applied it.
@@ -526,6 +1007,29 @@ public class SdkLogGatheringTests {
         };
     }
 
+    /**
+     * An immediate request generator that holds back the answer to every '/o/sdk' request, the configuration fetch among
+     * them, so the test decides when, and with what, the server answers.
+     *
+     * @param heldAnswers collects the callback of each configuration request
+     * @return the generator
+     */
+    private static ImmediateRequestGenerator createHeldIRG(final List<ImmediateRequestMaker.InternalImmediateRequestCallback> heldAnswers) {
+        return new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if ("/o/sdk".equals(customEndpoint)) {
+                        heldAnswers.add(callback);
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return null;
+            }
+        };
+    }
+
     private static ImmediateRequestGenerator createMutableIRG(final String[] responseHolder) {
         return new ImmediateRequestGenerator() {
             @Override public ImmediateRequestI CreateImmediateRequestMaker() {
@@ -574,11 +1078,6 @@ public class SdkLogGatheringTests {
      * something is wrong with a response that is perfectly fine.
      */
     private void assertNoComplaintAbout(List<String> warningsAndErrors, String... fragments) {
-        for (String logMessage : new ArrayList<>(warningsAndErrors)) {
-            for (String fragment : fragments) {
-                Assert.assertFalse("the SDK complained about something it should have tolerated quietly, fragment:[" + fragment + "], log line:[" + logMessage + "]",
-                    logMessage.contains(fragment));
-            }
-        }
+        assertNoLineContains(warningsAndErrors, fragments);
     }
 }

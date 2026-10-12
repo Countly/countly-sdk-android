@@ -682,7 +682,7 @@ public class ModuleFeedbackTests {
         ModuleEventsTests.validateEventInRQ(ModuleFeedback.NPS_EVENT_KEY, expectedSegmentation, 0);
     }
 
-    private ModuleFeedback.CountlyFeedbackWidget createFeedbackWidget(ModuleFeedback.FeedbackWidgetType type) {
+    static ModuleFeedback.CountlyFeedbackWidget createFeedbackWidget(ModuleFeedback.FeedbackWidgetType type) {
         ModuleFeedback.CountlyFeedbackWidget widgetInfo = new ModuleFeedback.CountlyFeedbackWidget();
         widgetInfo.type = type;
         widgetInfo.widgetId = "1234";
@@ -690,7 +690,7 @@ public class ModuleFeedbackTests {
         return widgetInfo;
     }
 
-    private void fillFeedbackWidgetSegmentationParams(Map<String, Object> segmentation, String widgetId) {
+    static void fillFeedbackWidgetSegmentationParams(Map<String, Object> segmentation, String widgetId) {
         segmentation.put("platform", "android");
         segmentation.put("app_version", "1.0");
         segmentation.put("widget_id", widgetId);

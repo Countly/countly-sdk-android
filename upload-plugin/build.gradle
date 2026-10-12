@@ -10,6 +10,7 @@ buildscript {
 plugins {
   id 'java-gradle-plugin'
   id 'groovy'
+  id 'jacoco'
 }
 
 // Gradle only resolves a plugin when the JVM running the build is at least the bytecode level it
@@ -39,6 +40,13 @@ dependencies {
   implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 
   testImplementation 'junit:junit:4.13.2'
+}
+
+// XML is the format Codacy ingests; build_and_test_sdk.yml uploads it next to :sdk's report.
+tasks.named('jacocoTestReport') {
+  reports {
+    xml.required = true
+  }
 }
 
 apply plugin: "com.vanniktech.maven.publish"

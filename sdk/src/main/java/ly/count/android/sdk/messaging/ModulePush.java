@@ -37,10 +37,12 @@ public class ModulePush {
     static final String KEY_BUTTONS = "c.b";
     static final String KEY_BUTTONS_TITLE = "t";
     static final String KEY_BUTTONS_LINK = "l";
+    static final String KEY_LARGE_ICON = "c.li";
+    static final String KEY_COLLAPSE_KEY = "c.ck";
 
     static class MessageImpl implements CountlyPush.Message {
         final String id;
-        private final String title, message, sound;
+        private final String title, message, sound, largeIcon, collapseKey;
         private final Integer badge;
         private final Uri link;
         private final URL media;
@@ -110,6 +112,8 @@ public class ModulePush {
             this.title = data.get(KEY_TITLE);
             this.message = data.get(KEY_MESSAGE);
             this.sound = data.get(KEY_SOUND);
+            this.largeIcon = nonBlank(data.get(KEY_LARGE_ICON));
+            this.collapseKey = nonBlank(data.get(KEY_COLLAPSE_KEY));
 
             Countly.sharedInstance().L.d("[MessageImpl] constructed: " + id);
             Integer b = null;
@@ -198,6 +202,30 @@ public class ModulePush {
         @Override
         public URL media() {
             return media;
+        }
+
+        @Override
+        public String largeIcon() {
+            return largeIcon;
+        }
+
+        @Override
+        public String collapseKey() {
+            return collapseKey;
+        }
+
+        /**
+         * Trims the given payload value and treats an empty result as absent.
+         *
+         * @param value raw payload value, may be {@code null}
+         * @return trimmed value, or {@code null} if it was missing or blank
+         */
+        private static String nonBlank(String value) {
+            if (value == null) {
+                return null;
+            }
+            String trimmed = value.trim();
+            return trimmed.isEmpty() ? null : trimmed;
         }
 
         @Override

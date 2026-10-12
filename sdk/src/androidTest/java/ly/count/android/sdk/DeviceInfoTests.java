@@ -37,6 +37,7 @@ import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -89,6 +90,8 @@ public class DeviceInfoTests {
 
     @Test
     public void testGetResolution_getDefaultDisplayReturnsNull() {
+        // from API 30 the WindowManager is not read from a non-Activity context, so its display never is either
+        Assume.assumeTrue(android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R);
         final WindowManager mockWindowMgr = mock(WindowManager.class);
         when(mockWindowMgr.getDefaultDisplay()).thenReturn(null);
         final Context mockContext = mock(Context.class);

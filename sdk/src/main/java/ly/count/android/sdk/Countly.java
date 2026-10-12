@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Countly {
 
-    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.5";
+    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "26.1.6";
     /**
      * Used as request meta data on every request
      */
@@ -775,6 +775,11 @@ public class Countly {
                 config.sdkInternalLimits.maxValueSize = maxValueSizeDefault;
             }
 
+            if (config.sdkInternalLimits.maxValueSizePicture < 1) {
+                config.sdkInternalLimits.maxValueSizePicture = 1;
+                L.w("[Init] provided 'maxValueSizePicture' is less than '1'. Setting it to '1'.");
+            }
+
             if (config.sdkInternalLimits.maxSegmentationValues != null) {
                 if (config.sdkInternalLimits.maxSegmentationValues < 1) {
                     config.sdkInternalLimits.maxSegmentationValues = 1;
@@ -1366,6 +1371,9 @@ public class Countly {
         for (ModuleBase module : modules) {
             module.onSdkConfigurationChanged(config);
         }
+
+        //after the modules, so the consent module has applied a changed consent requirement
+        L.releaseConsentedLogLines();
     }
 
     /**

@@ -38,18 +38,40 @@ class SafeAreaCalculator {
      */
     @NonNull
     static SafeAreaDimensions calculateSafeAreaDimensions(@NonNull Context context, @NonNull ModuleLog L) {
-        final WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        final WindowManager wm = UtilsDevice.obtainWindowManager(context);
         final Resources resources = context.getResources();
         final int currentOrientation = resources.getConfiguration().orientation;
         final boolean isPortrait = currentOrientation == Configuration.ORIENTATION_PORTRAIT;
 
         L.d("[SafeAreaCalculator] calculateSafeAreaDimensions, current orientation: [" + (isPortrait ? "portrait" : "landscape") + "], API level: [" + Build.VERSION.SDK_INT + "]");
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        if (wm == null) {
+            return calculateSafeAreaDimensionsFromDisplay(context, isPortrait, L);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             return calculateSafeAreaDimensionsR(context, wm, isPortrait, L);
         } else {
             return calculateSafeAreaDimensionsLegacy(context, wm, isPortrait, L);
         }
+    }
+
+    /**
+     * Safe area for when there is no visual context to read window insets from: the default
+     * display's size in both orientations, with no insets.
+     *
+     * @param context context to read the display through
+     * @param isPortrait whether the current orientation is portrait
+     * @param L logger
+     * @return the display based dimensions
+     */
+    private static SafeAreaDimensions calculateSafeAreaDimensionsFromDisplay(@NonNull Context context, boolean isPortrait, @NonNull ModuleLog L) {
+        final DisplayMetrics metrics = new DisplayMetrics();
+        UtilsDevice.applyDisplayMetrics(context, metrics);
+        final int portraitWidth = isPortrait ? metrics.widthPixels : metrics.heightPixels;
+        final int portraitHeight = isPortrait ? metrics.heightPixels : metrics.widthPixels;
+
+        L.d("[SafeAreaCalculator] calculateSafeAreaDimensionsFromDisplay, no visual context, display size (px) - Portrait: [" + portraitWidth + "x" + portraitHeight + "]");
+
+        return new SafeAreaDimensions(portraitWidth, portraitHeight, portraitHeight, portraitWidth, 0, 0, 0, 0);
     }
 
     @TargetApi(Build.VERSION_CODES.R)

@@ -49,6 +49,7 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
         L.v("[PreflightRequestMaker] doPreflightRequest, Starting preflight request");
 
         HttpURLConnection connection = null;
+        int previousSocketTag = UtilsNetworking.tagSocketsOfThread();
 
         try {
             //getting connection ready
@@ -69,6 +70,7 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
             if (connection != null) {
                 connection.disconnect();
             }
+            UtilsNetworking.restoreSocketTag(previousSocketTag);
         }
         L.v("[PreflightRequestMaker] doPreflightRequest, Finished request");
         return false;
