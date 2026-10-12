@@ -2,6 +2,7 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
@@ -16,6 +17,26 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
     final static String PREVIOUS_EVENT_NAME_KEY = "cly_pen";
     final static String PREVIOUS_VIEW_NAME_KEY = "cly_pvn";
     final static String CURRENT_VIEW_NAME_KEY = "cly_cvn";
+    final static String internalEventKeyPrefix = "[CLY]_";
+
+    /**
+     * The consents each internal event is recorded under, any one of them is enough. The consent checks of
+     * {@link #recordEventInternal} read it, and so does log gathering, so a line about an event follows the event.
+     */
+    static final Map<String, String[]> internalEventConsents;
+
+    static {
+        Map<String, String[]> consents = new HashMap<>();
+        consents.put(ModuleFeedback.NPS_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.feedback });
+        consents.put(ModuleFeedback.SURVEY_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.feedback });
+        //these events can be reported from a lot of sources, therefore multiple consents could apply
+        consents.put(ModuleFeedback.RATING_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.feedback });
+        consents.put(ModuleViews.VIEW_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.views });
+        consents.put(ModuleViews.ORIENTATION_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.users });
+        consents.put(ModulePush.PUSH_EVENT_ACTION, new String[] { Countly.CountlyFeatureNames.push });
+        consents.put(ACTION_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.scrolls });
+        internalEventConsents = Collections.unmodifiableMap(consents);
+    }
 
     //interface for SDK users
     final Events eventsInterface;
@@ -96,6 +117,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         } else {
             L.w("[ModuleEvents] sendEventsIfNeededWhenPossible, the request queue module is gone, leaving the events queued");
         }
+    }
+
+    /**
+     * @param key the key of an internal event, one of {@link #internalEventConsents}
+     * @return true when any consent the event is recorded under is given
+     */
+    private boolean internalEventConsentGiven(@NonNull final String key) {
+        for (String feature : internalEventConsents.get(key)) {
+            if (consentProvider.getConsent(feature)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
@@ -217,19 +251,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(true);
                 }
                 break;
-            case ModuleFeedback.RATING_EVENT_KEY: //these events can be reported from a lot of sources, therefore multiple consents could apply
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating) || consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
+            case ModuleFeedback.RATING_EVENT_KEY:
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+                if (internalEventConsentGiven(key)) {
 
                     if (segmentation == null) {
                         segmentation = new HashMap<>();
@@ -248,19 +282,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(true);
                 }
                 break;
             case ACTION_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.clicks) || consentProvider.getConsent(Countly.CountlyFeatureNames.scrolls)) {
+                if (internalEventConsentGiven(key)) {
                     if (segmentation != null) {
                         UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
                     }
