@@ -7,10 +7,12 @@ on:
     branches:
       - master
       - staging
+      - staging-nw
   pull_request:
     branches:
       - master
       - staging
+      - staging-nw
   schedule:
     # Mondays 06:00 UTC
     - cron: '0 6 * * 1'

@@ -565,7 +565,7 @@ public class ModuleFeedback extends ModuleBase {
                 key = NPS_EVENT_KEY;
             }
 
-            eventProvider.recordEventInternal(key, segm, 1, 0, 0, null, null);
+            eventProvider.recordEventInternal(key, ModuleContent.withGlobalContentSegmentation(_cly, segm), 1, 0, 0, null, null);
         }
     }
 
@@ -817,7 +817,7 @@ public class ModuleFeedback extends ModuleBase {
             segm.putAll(widgetResult);
         }
 
-        eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null, null);
+        eventProvider.recordEventInternal(usedEventKey, ModuleContent.withGlobalContentSegmentation(_cly, segm), 1, 0, 0, null, null);
     }
 
     /**

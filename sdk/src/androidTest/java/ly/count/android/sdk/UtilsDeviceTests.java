@@ -4,32 +4,69 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.graphics.Rect;
+import android.hardware.display.DisplayManager;
+import android.os.Build;
+import android.util.DisplayMetrics;
+import android.view.Display;
+import android.view.DisplayCutout;
+import android.view.WindowInsets;
+import android.view.WindowManager;
+import android.view.WindowMetrics;
+import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
 public class UtilsDeviceTests {
 
+    private StrictModeRecorder recorder;
+    private DisplayCutout savedCutout;
+
     /**
-     * getThemeMode and appendThemeParam prefer the foreground Activity's configuration. These
-     * tests exercise the fallback-context path, so make sure no Activity is registered from a
-     * previously run test in the same process.
+     * getThemeMode, appendThemeParam and getDisplayMetrics prefer the foreground Activity, and the
+     * request queue and the cutout cached from an earlier Activity are shared by every test in the
+     * process, so each test starts with no held Activity, an empty queue and no cached cutout.
      */
     @Before
     public void setUp() {
+        TestUtils.getCountlyStore().clear();
         clearForegroundActivity();
+        savedCutout = UtilsDevice.cutout;
+        UtilsDevice.cutout = null;
     }
 
+    /**
+     * Clears the held Activity, stops StrictMode recording and gives back the cutout cached before
+     * the test.
+     */
     @After
     public void tearDown() {
         clearForegroundActivity();
+        UtilsDevice.cutout = savedCutout;
+        if (recorder != null) {
+            recorder.stop();
+            recorder = null;
+        }
     }
 
     private void clearForegroundActivity() {
@@ -105,5 +142,197 @@ public class UtilsDeviceTests {
     public void appendThemeParam_returnsUrlUnchangedWhenThemeUndefined() {
         String url = "https://content.example/page?a=1";
         Assert.assertEquals(url, UtilsDevice.appendThemeParam(url, contextWithNightMode(Configuration.UI_MODE_NIGHT_UNDEFINED)));
+    }
+
+    // ======== getDisplayMetrics ========
+
+    /**
+     * With no Activity at all, the remote config download at init, a manual session, a standalone
+     * metrics request, and a handled crash all report the default display's resolution, and none
+     * of them reads WindowManager from the Application context.
+     */
+    @Test
+    public void getDisplayMetrics_withoutActivity_reportsDisplayWithoutIncorrectContextUse() throws JSONException {
+        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R);
+        startRecordingIncorrectContextUse();
+
+        List<String> immediateRequests = new CopyOnWriteArrayList<>();
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl().enableRemoteConfigAutomaticTriggers();
+        config.immediateRequestGenerator = recordingRequestGenerator(immediateRequests);
+
+        Countly countly = new Countly().init(config);
+        countly.sessions().beginSession();
+        countly.requestQueue().recordMetrics(null);
+        countly.crashes().recordHandledException(new Exception("recorded without an Activity"));
+
+        assertNoIncorrectContextUse();
+
+        String expected = defaultDisplayResolution();
+        String remoteConfigRequest = null;
+        for (String request : immediateRequests) {
+            if (request.contains("method=rc")) {
+                remoteConfigRequest = request;
+            }
+        }
+        Assert.assertNotNull(remoteConfigRequest);
+        Assert.assertEquals(expected, resolutionIn(UtilsNetworking.urlDecodeString(TestUtils.getParamValueFromRequest(remoteConfigRequest, "metrics"))));
+
+        List<String> storedResolutions = new ArrayList<>();
+        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
+            if (request.containsKey("begin_session")) {
+                storedResolutions.add("session " + resolutionIn(request.get("metrics")));
+            } else if (request.containsKey("metrics")) {
+                storedResolutions.add("metrics " + resolutionIn(request.get("metrics")));
+            } else if (request.containsKey("crash")) {
+                storedResolutions.add("crash " + resolutionIn(request.get("crash")));
+            }
+        }
+        Assert.assertEquals(Arrays.asList("session " + expected, "metrics " + expected, "crash " + expected), storedResolutions);
+    }
+
+    /**
+     * A held Activity is the metrics source on every API level, so a session begun with the
+     * Application context reports the Activity's window and never reads WindowManager from the
+     * Application context.
+     */
+    @Test
+    @SuppressWarnings("deprecation")
+    public void getDisplayMetrics_withHeldActivity_readsActivityWindowManager() throws JSONException {
+        WindowManager activityWindowManager = mock(WindowManager.class);
+        String expected;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            startRecordingIncorrectContextUse();
+            when(activityWindowManager.getCurrentWindowMetrics()).thenReturn(new WindowMetrics(new Rect(0, 0, 1234, 567), new WindowInsets.Builder().build()));
+            expected = "1234x567";
+        } else {
+            Display display = ((DisplayManager) TestUtils.getContext().getSystemService(Context.DISPLAY_SERVICE)).getDisplay(Display.DEFAULT_DISPLAY);
+            when(activityWindowManager.getDefaultDisplay()).thenReturn(display);
+            DisplayMetrics realMetrics = new DisplayMetrics();
+            display.getRealMetrics(realMetrics);
+            expected = realMetrics.widthPixels + "x" + realMetrics.heightPixels;
+        }
+        Activity activity = mock(Activity.class);
+        when(activity.getSystemService(Context.WINDOW_SERVICE)).thenReturn(activityWindowManager);
+
+        Countly countly = new Countly().init(TestUtils.createBaseConfig().enableManualSessionControl());
+        CountlyActivityHolder.getInstance().setActivity(activity);
+        countly.sessions().beginSession();
+
+        Map<String, String>[] stored = TestUtils.getCurrentRQ();
+        Assert.assertEquals(1, stored.length);
+        Assert.assertEquals("1", stored[0].get("begin_session"));
+        Assert.assertEquals(expected, resolutionIn(stored[0].get("metrics")));
+        verify(activity, atLeastOnce()).getSystemService(Context.WINDOW_SERVICE);
+        assertNoIncorrectContextUse();
+    }
+
+    /**
+     * When no display can be resolved, the context's resource metrics are returned, and from API
+     * 30 WindowManager is not read from the non-Activity context at all.
+     */
+    @Test
+    public void getDisplayMetrics_withoutDisplay_fallsBackToResourceMetrics() {
+        DisplayMetrics resourceMetrics = new DisplayMetrics();
+        resourceMetrics.widthPixels = 111;
+        resourceMetrics.heightPixels = 222;
+        resourceMetrics.density = 1.5f;
+        Resources resources = mock(Resources.class);
+        when(resources.getDisplayMetrics()).thenReturn(resourceMetrics);
+        Context context = mock(Context.class);
+        when(context.getResources()).thenReturn(resources);
+
+        DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(context);
+
+        Assert.assertEquals(111, metrics.widthPixels);
+        Assert.assertEquals(222, metrics.heightPixels);
+        Assert.assertEquals(1.5f, metrics.density, 0.0001f);
+        verify(context).getSystemService(Context.DISPLAY_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            verify(context, never()).getSystemService(Context.WINDOW_SERVICE);
+        }
+    }
+
+    // ======== SafeAreaCalculator ========
+
+    /**
+     * Without an Activity, the content safe area is the default display's size in both
+     * orientations with no insets, and nothing reads WindowManager from the Application context.
+     */
+    @Test
+    public void calculateSafeAreaDimensions_withoutActivity_usesDisplaySizeWithoutIncorrectContextUse() {
+        Assume.assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R);
+        startRecordingIncorrectContextUse();
+
+        SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(TestUtils.getContext(), new ModuleLog());
+
+        assertNoIncorrectContextUse();
+        String[] size = defaultDisplayResolution().split("x");
+        int currentWidth = Integer.parseInt(size[0]);
+        int currentHeight = Integer.parseInt(size[1]);
+        boolean portrait = TestUtils.getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+        int portraitWidth = portrait ? currentWidth : currentHeight;
+        int portraitHeight = portrait ? currentHeight : currentWidth;
+        Assert.assertEquals(Arrays.asList(portraitWidth, portraitHeight, portraitHeight, portraitWidth, 0, 0, 0, 0), Arrays.asList(
+            safeArea.portraitWidth, safeArea.portraitHeight, safeArea.landscapeWidth, safeArea.landscapeHeight,
+            safeArea.portraitTopOffset, safeArea.landscapeTopOffset, safeArea.portraitLeftOffset, safeArea.landscapeLeftOffset));
+    }
+
+    /**
+     * Records StrictMode's incorrect context use reports for the rest of the test, after checking
+     * this device reports one for WindowManager read from the Application context.
+     */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private void startRecordingIncorrectContextUse() {
+        recorder = StrictModeRecorder.startVm("IncorrectContextUseViolation", () -> TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE));
+    }
+
+    /**
+     * Fails when SDK code read WindowManager from a non-visual context since recording started.
+     */
+    private void assertNoIncorrectContextUse() {
+        if (recorder != null) {
+            List<String> sdkViolations = recorder.violationsThrough("ly.count.android.sdk.");
+            Assert.assertTrue("unexpected incorrect context use: " + sdkViolations, sdkViolations.isEmpty());
+        }
+    }
+
+    /**
+     * Request generator that records the data of every immediate request and completes each one
+     * without a response, so init runs its network calls without reaching a server.
+     */
+    private static ImmediateRequestGenerator recordingRequestGenerator(@NonNull final List<String> requests) {
+        return new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    requests.add(requestData);
+                    callback.callback(null);
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(null);
+            }
+        };
+    }
+
+    /** Reads the resolution metric out of a metrics or crash JSON object. */
+    private static String resolutionIn(@NonNull String json) throws JSONException {
+        return new JSONObject(json).getString("_resolution");
+    }
+
+    /** The default display's real size minus its cutout's safe insets, formatted like the resolution metric. */
+    @RequiresApi(Build.VERSION_CODES.R)
+    private static String defaultDisplayResolution() {
+        Display display = TestUtils.getContext().getSystemService(DisplayManager.class).getDisplay(Display.DEFAULT_DISPLAY);
+        DisplayMetrics metrics = new DisplayMetrics();
+        display.getRealMetrics(metrics);
+        int width = metrics.widthPixels;
+        int height = metrics.heightPixels;
+        DisplayCutout displayCutout = display.getCutout();
+        if (displayCutout != null) {
+            width -= displayCutout.getSafeInsetLeft() + displayCutout.getSafeInsetRight();
+            height -= displayCutout.getSafeInsetTop() + displayCutout.getSafeInsetBottom();
+        }
+        return width + "x" + height;
     }
 }

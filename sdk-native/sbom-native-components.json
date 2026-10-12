@@ -1,0 +1,38 @@
+{
+  "checks": [
+    { "kind": "gitlink", "path": "sdk-native/src/cpp_precompilation/breakpad", "expect": "1c954c096c9be31e03615cb7de1a392a93145a4c" },
+    { "kind": "blob-sha256", "path": "sdk-native/src/cpp_precompilation/lss/linux_syscall_support.h", "expect": "3becc310bb7f127fef9c970dc3d88e44cf656cf793292d9fcb00129bbd89b4d3" }
+  ],
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:github/Countly/countly-breakpad@1c954c096c9be31e03615cb7de1a392a93145a4c",
+      "group": "Countly",
+      "name": "countly-breakpad",
+      "version": "1c954c096c9be31e03615cb7de1a392a93145a4c",
+      "purl": "pkg:github/Countly/countly-breakpad@1c954c096c9be31e03615cb7de1a392a93145a4c",
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "pedigree": {
+        "ancestors": [
+          {
+            "type": "library",
+            "group": "google",
+            "name": "breakpad",
+            "version": "418aacd617897c19d960ec3e649f42ea95a6363a",
+            "purl": "pkg:github/google/breakpad@418aacd617897c19d960ec3e649f42ea95a6363a"
+          }
+        ]
+      }
+    },
+    {
+      "type": "library",
+      "bom-ref": "linux-syscall-support-vendored",
+      "name": "linux-syscall-support",
+      "version": "vendored",
+      "hashes": [{ "alg": "SHA-256", "content": "3becc310bb7f127fef9c970dc3d88e44cf656cf793292d9fcb00129bbd89b4d3" }],
+      "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
+      "externalReferences": [{ "type": "vcs", "url": "https://chromium.googlesource.com/linux-syscall-support" }]
+    }
+  ],
+  "tools": [{ "type": "application", "name": "android-ndk", "version": "28.2.13676358" }]
+}

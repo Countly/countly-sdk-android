@@ -15,8 +15,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
@@ -427,5 +431,104 @@ public class ModuleContentTests {
         } finally {
             CountlyActivityHolder.getInstance().clearActivity(darkActivity);
         }
+    }
+
+    // ======== global content segmentation ========
+
+    /**
+     * Initializes an instance with manual session control whose immediate requests are captured
+     * instead of sent.
+     */
+    private Countly initForGlobalSegmentation() {
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createCapturingIRGenerator());
+        config.disableHealthCheck().enableManualSessionControl();
+        return new Countly().init(config);
+    }
+
+    /**
+     * The global content segmentation is added to a feedback widget event, the widget's own keys and
+     * the answers it reports win over a global value with the same key, and setting 'null' clears it.
+     */
+    @Test
+    public void globalContentSegmentation_stampsFeedbackWidgetEventsWithoutOverridingTheirKeys() {
+        Countly countly = initForGlobalSegmentation();
+        EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+        ModuleFeedback.CountlyFeedbackWidget widget = ModuleFeedbackTests.createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
+        Map<String, Object> widgetResult = TestUtils.map("rating", 4);
+
+        countly.contents().setGlobalContentSegmentation(TestUtils.map("screen", "checkout", "step", 3, "rating", "should lose to the answer"));
+        countly.feedback().reportFeedbackWidgetManually(widget, null, widgetResult);
+
+        Map<String, Object> expected = TestUtils.map("screen", "checkout", "step", 3, "rating", 4);
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+
+        countly.contents().setGlobalContentSegmentation(null);
+        countly.feedback().reportFeedbackWidgetManually(widget, null, widgetResult);
+
+        expected.remove("screen");
+        expected.remove("step");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+    }
+
+    /**
+     * A global value never overrides a key the events build themselves, the caller's own map is left
+     * untouched by the sanitisation, a later call replaces the whole segmentation rather than merging
+     * into it, and neither a session ending nor a new one starting forgets what was set.
+     */
+    @Test
+    public void globalContentSegmentation_neverOverridesTheEventsOwnKeysAndSurvivesASessionRestart() {
+        Countly countly = initForGlobalSegmentation();
+        EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+        ModuleFeedback.CountlyFeedbackWidget widget = ModuleFeedbackTests.createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
+
+        Map<String, Object> globalSegmentation = TestUtils.map("widget_id", "hijacked", "platform", "hijacked", "app_version", "hijacked", "screen", "settings", "user", new Object());
+        countly.contents().setGlobalContentSegmentation(globalSegmentation);
+        Assert.assertEquals(5, globalSegmentation.size());
+
+        countly.feedback().reportFeedbackWidgetManually(widget, null, TestUtils.map("rating", 4));
+
+        Map<String, Object> expected = TestUtils.map("screen", "settings", "rating", 4);
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+
+        countly.contents().setGlobalContentSegmentation(TestUtils.map("state", "logged_in"));
+
+        countly.sessions().beginSession();
+        countly.sessions().endSession();
+        countly.sessions().beginSession();
+        Assert.assertTrue(countly.moduleSessions.sessionIsRunning());
+
+        countly.moduleFeedback.reportFeedbackWidgetCancelButton(widget);
+
+        expected = TestUtils.map("state", "logged_in", "closed", "1");
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+    }
+
+    /**
+     * The global content segmentation is limited when it is set, and a feedback widget event is not
+     * limited again, so it keeps every key of its own next to the global keys.
+     */
+    @Test
+    public void globalContentSegmentation_isLimitedWhenSetAndWidgetEventsKeepAllOfTheirKeys() {
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createCapturingIRGenerator());
+        config.disableHealthCheck().enableManualSessionControl();
+        config.sdkInternalLimits.setMaxSegmentationValues(4);
+        Countly countly = new Countly().init(config);
+        EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+        ModuleFeedback.CountlyFeedbackWidget widget = ModuleFeedbackTests.createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
+
+        countly.contents().setGlobalContentSegmentation(TestUtils.map("g1", "a", "g2", "b", "g3", "c", "g4", "d", "g5", "e", "g6", "f"));
+        countly.moduleFeedback.reportFeedbackWidgetCancelButton(widget);
+
+        ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+        verify(ep).recordEventInternal(eq(ModuleFeedback.NPS_EVENT_KEY), captor.capture(), eq(1), eq(0.0), eq(0.0), isNull(), isNull());
+        Map<String, Object> recorded = captor.getValue();
+        Assert.assertEquals("1", recorded.get("closed"));
+        Assert.assertEquals("1234", recorded.get("widget_id"));
+        Assert.assertEquals("android", recorded.get("platform"));
+        Assert.assertTrue(recorded.containsKey("app_version"));
+        Assert.assertEquals(8, recorded.size());
     }
 }

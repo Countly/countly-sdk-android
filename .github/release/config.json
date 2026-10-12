@@ -1,0 +1,55 @@
+{
+  "repository": "Countly/countly-sdk-android",
+  "publicBaseUrl": { "production": "https://maven.countly.com/", "test": "https://maven-test.countly.com/" },
+  "centralBaseUrl": "https://repo1.maven.org/maven2/",
+  "publishedModules": ":sdk,:sdk-native,:upload-plugin",
+  "requiredChecks": ["Build and Test the SDK", "OSV scan (all modules)", "Analyze (java)", "Analyze (cpp)"],
+  "consumerPairs": [
+    { "name": "AGP 7.4.2 on Gradle 7.5", "gradle": "gradle", "agp": "7.4.2", "compileSdk": "24", "buildTools": "30.0.3" },
+    { "name": "the checkout's AGP on the wrapper's Gradle", "gradle": "{gradlew}", "agp": "{project}", "compileSdk": "37", "buildTools": "37.0.0" }
+  ],
+  "tagRules": [
+    { "tag": "{version}", "branch": "staging", "artifacts": ["sdk"] },
+    { "tag": "{version}-nw", "branch": "staging-nw", "artifacts": ["sdk-nw"] },
+    { "tag": "native-{version}", "branch": "staging", "artifacts": ["sdk-native"] },
+    { "tag": "plugin-{version}", "branch": "staging", "artifacts": ["sdk-plugin", "sdk-plugin-marker"] }
+  ],
+  "artifacts": {
+    "sdk": {
+      "group": "ly.count.android", "artifact": "sdk", "packaging": "aar", "module": ":sdk", "sbom": true,
+      "contract": ".github/release-contract/sdk.json", "consumerProbe": "sdk",
+      "versionSources": [
+        { "file": "gradle.properties", "regex": "^VERSION_NAME=(.+)$" },
+        { "file": "sdk/src/main/java/ly/count/android/sdk/Countly.java", "regex": "DEFAULT_COUNTLY_SDK_VERSION_STRING = \"([^\"]+)\"" }
+      ],
+      "changelog": { "file": "CHANGELOG.md", "heading": "tag" }
+    },
+    "sdk-nw": {
+      "group": "ly.count.android", "artifact": "sdk-nw", "packaging": "aar", "module": ":sdk", "sbom": true,
+      "contract": ".github/release-contract/sdk-nw.json", "consumerProbe": "sdk",
+      "versionSources": [
+        { "file": "gradle.properties", "regex": "^VERSION_NAME=(.+)$" },
+        { "file": "sdk/src/main/java/ly/count/android/sdk/Countly.java", "regex": "DEFAULT_COUNTLY_SDK_VERSION_STRING = \"([^\"]+)\"" }
+      ],
+      "changelog": { "file": "CHANGELOG.md", "heading": "tag" }
+    },
+    "sdk-native": {
+      "group": "ly.count.android", "artifact": "sdk-native", "packaging": "aar", "module": ":sdk-native", "sbom": true,
+      "contract": ".github/release-contract/sdk-native.json", "consumerProbe": "native",
+      "sbomFragment": "sdk-native/sbom-native-components.json", "nativeLibrariesFrom": "sdk-native/libs",
+      "versionSources": [ { "file": "sdk-native/gradle.properties", "regex": "^VERSION_NAME=(.+)$" } ],
+      "changelog": { "file": "sdk-native/CHANGELOG.md", "heading": "version" }
+    },
+    "sdk-plugin": {
+      "group": "ly.count.android", "artifact": "sdk-plugin", "packaging": "jar", "module": ":upload-plugin", "sbom": true,
+      "contract": ".github/release-contract/sdk-plugin.json", "consumerProbe": "plugin",
+      "versionSources": [ { "file": "upload-plugin/gradle.properties", "regex": "^VERSION_NAME=(.+)$" } ],
+      "changelog": { "file": "upload-plugin/CHANGELOG.md", "heading": "version" }
+    },
+    "sdk-plugin-marker": {
+      "group": "ly.count.android.plugins.upload-symbols", "artifact": "ly.count.android.plugins.upload-symbols.gradle.plugin",
+      "packaging": "marker", "module": ":upload-plugin", "sbom": false, "contract": null, "consumerProbe": null,
+      "versionSources": [], "changelog": null
+    }
+  }
+}

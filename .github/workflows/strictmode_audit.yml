@@ -1,0 +1,75 @@
+name: The Countly Android SDK StrictMode Audit
+
+env:
+  JAVA_V: 17
+  JAVA_DIST: corretto
+  # Incorrect context use and unsafe intent launch detection need API 31+, and Mockito 4 can not
+  # mock on API 34+, so 33 is the highest level the whole suite runs on.
+  API_LEVEL: 33
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - master
+      - staging
+      - staging-nw
+  pull_request:
+    branches:
+      - master
+      - staging
+      - staging-nw
+
+jobs:
+  strictmode:
+    runs-on: ubuntu-latest
+    name: StrictMode Audit
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout SDK code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ env.JAVA_V }}
+          distribution: ${{ env.JAVA_DIST }}
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Set AAPT2 for android 35
+        run: echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2"  | tee -a ${{ github.workspace }}/gradle.properties
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      # Test results are the main workflow's job. Here a failing or flaky test must not stop the run,
+      # the next step judges the violations the listener recorded.
+      - name: Run the SDK tests under StrictMode
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.API_LEVEL }}
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: ./gradlew sdk:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.listener=ly.count.android.sdk.StrictModeAuditListener || true
+
+      - name: Check the StrictMode violations
+        run: python3 .github/scripts/strictmode_audit.py --sources sdk/src/main/java --allowlist .github/strictmode-allowlist.txt sdk/build/outputs/connected_android_test_additional_output
+
+      - name: Upload the StrictMode records
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: strictmode-violations
+          path: sdk/build/outputs/connected_android_test_additional_output/
+          if-no-files-found: warn

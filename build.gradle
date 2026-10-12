@@ -8,6 +8,10 @@ buildscript {
     }
     google()
     mavenCentral()
+    // CycloneDX publishes its Gradle plugin 3.x only on the Gradle Plugin Portal.
+    gradlePluginPortal {
+      content { includeGroup 'org.cyclonedx' }
+    }
   }
   dependencies {
     classpath 'com.android.tools.build:gradle:9.3.2'
@@ -16,6 +20,7 @@ buildscript {
     classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     classpath 'com.huawei.agconnect:agcp:1.9.6.300'
     classpath "androidx.navigation:navigation-safe-args-gradle-plugin:2.9.8"
+    classpath 'org.cyclonedx:cyclonedx-gradle-plugin:3.4.1'
   }
 }
 
@@ -73,5 +78,23 @@ subprojects {
       }
     }
     tasks.named('check') { dependsOn verifyConsumerContract }
+  }
+}
+
+// Publishing modules: the local staging repository release.yml uploads from, and the SBOM of the published runtime classpath.
+subprojects {
+  plugins.withId('com.vanniktech.maven.publish') {
+    publishing {
+      repositories {
+        maven {
+          name = 'releaseStaging'
+          url = rootProject.file('build/release-staging')
+        }
+      }
+    }
+    apply plugin: 'org.cyclonedx.bom'
+    tasks.named('cyclonedxDirectBom').configure {
+      includeConfigs = [project.plugins.hasPlugin('com.android.library') ? 'releaseRuntimeClasspath' : 'runtimeClasspath']
+    }
   }
 }

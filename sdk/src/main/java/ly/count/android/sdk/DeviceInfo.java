@@ -41,9 +41,10 @@ import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.util.Date;
 import java.util.Locale;
@@ -61,7 +62,8 @@ import org.json.JSONObject;
 class DeviceInfo {
     private final static int startTime = UtilsTime.currentTimestampSeconds();
     private boolean inBackground = true;
-    private static long totalMemory = 0;
+    private static volatile long totalMemory = -1; // -1 until resolved, so a failed read is not retried
+    private static volatile String rootedStatus = null;
 
     MetricProvider mp;
     private final MetricProvider mpOverride;
@@ -439,14 +441,7 @@ class DeviceInfo {
             public String isRooted() {
                 String ov = DeviceInfo.this.mpOverride.isRooted();
                 if (ov != null) return ov;
-                String[] paths = {
-                    "/sbin/su", "/system/bin/su", "/system/xbin/su", "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
-                    "/system/bin/failsafe/su", "/data/local/su"
-                };
-                for (String path : paths) {
-                    if (new File(path).exists()) return "true";
-                }
-                return "false";
+                return getRootedStatusInternal();
             }
 
             @SuppressLint("MissingPermission")
@@ -507,49 +502,75 @@ class DeviceInfo {
         };
     }
 
-    private long getTotalRAMInternal() {
-        if (totalMemory == 0) {
-            RandomAccessFile reader = null;
-            String load;
-            try {
-                reader = new RandomAccessFile("/proc/meminfo", "r");
-                load = reader.readLine();
+    /**
+     * Returns the total device RAM in MB, read once per process from /proc/meminfo.
+     *
+     * @return the total RAM in MB, or 0 when it can not be read
+     */
+    private static long getTotalRAMInternal() {
+        long total = totalMemory;
+        if (total < 0) {
+            total = 0;
+            try (BufferedReader reader = new BufferedReader(new FileReader("/proc/meminfo"))) {
+                String load = reader.readLine();
+                if (load != null) {
+                    Matcher m = Pattern.compile("(\\d+)").matcher(load);
+                    String value = "";
+                    while (m.find()) {
+                        value = m.group(1);
+                    }
+                    total = Long.parseLong(value) / 1024;
+                }
+            } catch (IOException | NumberFormatException ignored) {
+            }
+            totalMemory = total;
+        }
+        return total;
+    }
 
-                Pattern p = Pattern.compile("(\\d+)");
-                Matcher m = p.matcher(load);
-                String value = "";
-                while (m.find()) {
-                    value = m.group(1);
-                }
-                try {
-                    if (value != null) {
-                        totalMemory = Long.parseLong(value) / 1024;
-                    } else {
-                        totalMemory = 0;
-                    }
-                } catch (NumberFormatException ex) {
-                    totalMemory = 0;
-                }
-            } catch (IOException ex) {
-                try {
-                    if (reader != null) {
-                        reader.close();
-                    }
-                } catch (IOException exc) {
-                    exc.printStackTrace();
-                }
-                ex.printStackTrace();
-            } finally {
-                try {
-                    if (reader != null) {
-                        reader.close();
-                    }
-                } catch (IOException exc) {
-                    exc.printStackTrace();
+    /**
+     * Returns whether a su binary exists at one of the well known paths, checked once per process.
+     *
+     * @return "true" or "false"
+     */
+    private static String getRootedStatusInternal() {
+        String status = rootedStatus;
+        if (status == null) {
+            status = "false";
+            String[] paths = {
+                "/sbin/su", "/system/bin/su", "/system/xbin/su", "/data/local/xbin/su", "/data/local/bin/su", "/system/sd/xbin/su",
+                "/system/bin/failsafe/su", "/data/local/su"
+            };
+            for (String path : paths) {
+                if (new File(path).exists()) {
+                    status = "true";
+                    break;
                 }
             }
+            rootedStatus = status;
         }
-        return totalMemory;
+        return status;
+    }
+
+    /**
+     * Resolves the crash metrics that read the disk, the root check and the total RAM, and caches
+     * them, so a crash recorded on the main thread later does not have to read the disk. The root
+     * check is skipped while the metric provider override supplies the root status.
+     */
+    void prefetchDiskBackedMetrics() {
+        if (mpOverride.isRooted() == null) {
+            getRootedStatusInternal();
+        }
+        getTotalRAMInternal();
+    }
+
+    /**
+     * Test support only: forgets the cached root check and total RAM, so a test can observe them
+     * being resolved from scratch. Not used in production.
+     */
+    static void resetDiskBackedMetricsForTests() {
+        rootedStatus = null;
+        totalMemory = -1;
     }
 
     /**

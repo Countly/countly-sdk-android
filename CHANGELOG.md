@@ -1,21 +1,40 @@
 ## XX.XX.XX
+* !! Major breaking change !! New versions of the SDK are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
+  ```groovy
+  maven {
+    url = 'https://maven.countly.com'
+    content { includeGroupByRegex 'ly\\.count\\..*' }
+  }
+  ```
+  Versions released before this one stay available on Maven Central. The files are signed with the same key as before (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
+* ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Use the latest version of each instead of the SDK's version number.
 * Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
 
   `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
 
   Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
-* Added support for server requested SDK log gathering. When the server asks for it, the SDK uploads its own internal log lines, even if logging is disabled.
+* Added support for server requested SDK log gathering. When the server asks for it, the SDK uploads its own internal log lines, even if logging is disabled. When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
 * Added support for the SDK connection test. When the server asks for it, the SDK checks that it can reach every endpoint it depends on and reports the results.
-* Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
-* Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
-* Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
+* Added support for the large icon of push notifications, and it is available through `CountlyPush.Message.largeIcon()`.
+* Added support for push notification collapse keys, and it is available through `CountlyPush.Message.collapseKey()`.
 * Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
 * Removed the unused `androidx.multidex:multidex` dependency, which the minimum SDK of 21 has not needed.
+* Added a new method `Countly.sharedInstance().contents().setGlobalContentSegmentation(Map)` for adding a segmentation to content and feedback widget events.
+
+## 26.1.6
+* Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
+* Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.
+* Improved the security of content, feedback widget, and push notification links by blocking the `data:`, `zip:`, and `intent:` URI schemes by default, both for opening links and for loading web view resources. They can be allowed with `setAllowedIntentSchemes(List)`.
 
 * Fixed regressions where the SDK forced a newer build toolchain on integrators:
   * it could only be used from projects on Kotlin 2.4 or newer, as the AAR declared a dependency on the Kotlin standard library it does not use.
   * it was compiled to Java 11 bytecode instead of Java 8, which older Android Gradle Plugin versions cannot read.
-  * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, lower than any release since 23.8.0 accepted, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
+  * it could only be used from projects compiling against SDK 34 or higher. `compileSdk` 24 is enough now, and the minimum Android version is unchanged at 5.0 (API level 21). To get there the `androidx.lifecycle` dependency is now 2.3.1 and `androidx.annotation` 1.3.0, the newest versions that impose no compile floor and bring no Kotlin standard library with them.
+* Mitigated issues where the SDK caused StrictMode violations:
+  * `IncorrectContextUseViolation` when collecting display metrics on Android 11, or on newer versions when no Activity was in the foreground.
+  * `IncorrectContextUseViolation` when showing content or a feedback widget on Android 11.
+  * `UntaggedSocketViolation` for its network requests, as their sockets were not tagged.
+  * disk reads on the main thread for the root and total RAM metrics when a crash was recorded.
 
 * Fixed an issue where a view ID stopped working after the app was backgrounded and foregrounded. The view was reopened under a new ID, so `stopViewWithID`, `pauseViewWithID`, `resumeViewWithID`, and `addSegmentationToViewWithID` no longer recognized the ID returned by `startView`, and the view stayed open.
 

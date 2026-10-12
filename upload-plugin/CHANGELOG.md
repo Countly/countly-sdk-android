@@ -1,3 +1,7 @@
+## 0.0.1
+* !! Major breaking change !! New versions of the plugin are published at `https://maven.countly.com` instead of Maven Central. Add the repository where Gradle looks for the plugin: to `pluginManagement { repositories { ... } }` in `settings.gradle` when you apply it in a `plugins { }` block, or to `buildscript { repositories { ... } }` when it is on the `buildscript` classpath. Versions released before this one stay available on Maven Central.
+* ! Minor breaking change ! The plugin now has its own version number and is released only when it changes. Use its latest version instead of the SDK's version number.
+
 ## 26.1.6
 * ! Minor breaking change ! The native symbol upload now works per variant: `uploadNativeSymbols<Variant>` (for example `uploadNativeSymbolsRelease`) dumps the native libraries AGP merges for that variant, your own unstripped ones plus those from AARs, and builds them first so the symbols always belong to the current build. `uploadNativeSymbols` now covers every release variant. The previous default of reading `intermediates/cmake/release/obj` is gone; set `nativeObjectFilesDir` to keep dumping a directory of your choice, where `BUILD_TYPE` stands for the variant's build type.
 * The plugin now fails the build when `dump_syms` fails or the server rejects the native symbol upload, instead of only logging it, and logs every dumped library's debug id so a crash that stays unsymbolicated can be checked against the shipped APK.
