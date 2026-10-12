@@ -38,6 +38,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     final Map<String, ViewData> viewDataMap = new ConcurrentHashMap<>(); // map viewIDs to its viewData
 
+    //Maps every view ID that was handed out to the host to the ID its view is open under now. A view closed on
+    //background and reopened on foreground gets a fresh ID, so without this the ID the host saved stops resolving.
+    final Map<String, String> restartedViewIDs = new ConcurrentHashMap<>();
+
     SafeIDGenerator safeViewIDGenerator;
 
     String[] reservedSegmentationKeysViews = { "name", "visit", "start", "segment" };
@@ -153,6 +157,57 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         return viewSegmentation;
     }
 
+    /**
+     * Resolves a view ID the host is holding into the ID its view is open under now.
+     *
+     * @param viewID String - view ID as it was handed out to the host
+     * @return String - the ID the view is currently tracked with, or the provided one if it was never restarted
+     */
+    @NonNull String currentIDFor(@NonNull String viewID) {
+        String currentViewID = restartedViewIDs.get(viewID);
+
+        if (currentViewID == null) {
+            return viewID;
+        }
+
+        L.d("[ModuleViews] currentIDFor, view ID:[" + viewID + "] was restarted, resolving to:[" + currentViewID + "]");
+        return currentViewID;
+    }
+
+    /**
+     * Records that a view which was open under one ID is now open under another one, so that every ID the host
+     * was ever given for that view keeps resolving.
+     *
+     * @param oldViewID String - ID the view was open under before it was restarted
+     * @param newViewID String - ID the view is open under now
+     */
+    void rememberRestartedView(@NonNull String oldViewID, @NonNull String newViewID) {
+        for (Map.Entry<String, String> entry : restartedViewIDs.entrySet()) {
+            if (oldViewID.equals(entry.getValue())) {
+                entry.setValue(newViewID);
+            }
+        }
+
+        restartedViewIDs.put(oldViewID, newViewID);
+    }
+
+    /**
+     * Drops every ID that resolves to the provided view ID, and the entry for the view ID itself. Called when a
+     * view is finally stopped and none of its IDs should resolve any more.
+     *
+     * @param viewID String - ID the view was open under when it was stopped
+     */
+    void forgetRestartedView(@NonNull String viewID) {
+        Iterator<Map.Entry<String, String>> iterator = restartedViewIDs.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry = iterator.next();
+            if (viewID.equals(entry.getKey()) || viewID.equals(entry.getValue())) {
+                iterator.remove();
+            }
+        }
+    }
+
     void autoCloseRequiredViews(boolean closeAllViews, @Nullable Map<String, Object> customViewSegmentation) {
         L.d("[ModuleViews] autoCloseRequiredViews");
         List<ViewData> viewsToRemove = new ArrayList<>(1);
@@ -175,6 +230,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             } else if (closeAllViews) {
                 //if we are closing all views, we should remove the view from the cache
                 viewDataMap.remove(vd.viewID);
+                forgetRestartedView(vd.viewID);
             }
         }
     }
@@ -279,6 +335,9 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.e("[ModuleViews] stopViewWithNameInternal, Trying to record view with null or empty view ID, ignoring request");
             return;
         }
+
+        viewID = currentIDFor(viewID);
+
         //todo extract common checks
         if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] stopViewWithIDInternal, there is no view with the provided view id to close");
@@ -308,6 +367,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (!vd.willStartAgain) {
             viewDataMap.remove(vd.viewID);
+            forgetRestartedView(vd.viewID);
         }
     }
 
@@ -347,6 +407,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        viewID = currentIDFor(viewID);
+
         if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] pauseViewWithIDInternal, there is no view with the provided view id to close");
             return;
@@ -385,6 +447,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
+        viewID = currentIDFor(viewID);
+
         if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] resumeViewWithIDInternal, there is no view with the provided view id to close");
             return;
@@ -420,6 +484,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             L.e("[Views] addSegmentationToViewWithID, null or empty parameters provided");
             return;
         }
+
+        viewID = currentIDFor(viewID);
 
         if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] addSegmentationToViewWithID, there is no view with the provided view id");
@@ -530,7 +596,14 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             if (vd.willStartAgain) {
                 //if the view is auto-stopped, start it again and remove from the cache
                 iterator.remove();
-                startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
+                String restartedViewID = startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
+
+                if (restartedViewID == null) {
+                    //the view could not be reopened, so no ID the host holds for it points anywhere any more
+                    forgetRestartedView(vd.viewID);
+                } else {
+                    rememberRestartedView(vd.viewID, restartedViewID);
+                }
             }
         }
     }
