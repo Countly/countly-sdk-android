@@ -1211,8 +1211,6 @@ public class ModuleConfigurationTests {
         countlyConfig.metricProviderOverride = new MockedMetricProvider();
         Countly.sharedInstance().init(countlyConfig);
         Countly.sharedInstance().moduleContent.CONTENT_START_DELAY_MS = 0; // make it zero to catch content immediate request
-        //the health check goes out on the first timer tick, which these flows do not wait for
-        Countly.sharedInstance().moduleHealthCheck.sendHealthCheckIfDue();
         return counts;
     }
 

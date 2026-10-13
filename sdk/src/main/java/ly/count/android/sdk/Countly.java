@@ -1940,11 +1940,6 @@ public class Countly {
             //on every timer tick we save the user profile if it was changed
             moduleUserProfile.saveInternal();
 
-            //on the first tick, so a device ID switch right after init leaves no user that only the health check created
-            ModuleHealthCheck healthCheckModule = moduleHealthCheck;
-            if (healthCheckModule != null) {
-                healthCheckModule.sendHealthCheckIfDue();
-            }
 
             //partial batches go out on foreground ticks; the process lifecycle covers activities the SDK does not see
             if (appIsInForeground || lifeCycleAtleastStarted()) {

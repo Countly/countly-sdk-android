@@ -22,6 +22,13 @@ class ModuleHealthCheck extends ModuleBase {
     }
 
     @Override
+    void initFinished(@NonNull final CountlyConfig config) {
+        if (healthCheckEnabled) {
+            sendHealthCheck();
+        }
+    }
+
+    @Override
     void halt() {
         hCounter = null;
         immediateRequestGenerator = null;
@@ -32,17 +39,6 @@ class ModuleHealthCheck extends ModuleBase {
         if (hCounter != null) {
             hCounter.saveState();
         }
-    }
-
-    /**
-     * Sends the health check on a timer tick when it is still due. Unlike {@link #sendHealthCheck()} it stays silent
-     * when there is nothing to do, as it runs on every tick.
-     */
-    void sendHealthCheckIfDue() {
-        if (healthCheckSent || !healthCheckEnabled || deviceIdProvider.isTemporaryIdEnabled()) {
-            return;
-        }
-        sendHealthCheck();
     }
 
     void sendHealthCheck() {

@@ -48,7 +48,6 @@
 * Mitigated an issue where fatal crash reports were lost in explicit storage mode.
 * Mitigated an issue where recording a crash on the main thread measured the disk size on that thread.
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
-* Mitigated an issue where switching to temporary device ID mode right after initialization could leave a user that only the health check had created.
 
 ## 26.1.6
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.

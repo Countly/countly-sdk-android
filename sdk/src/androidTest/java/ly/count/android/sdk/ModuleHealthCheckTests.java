@@ -53,12 +53,9 @@ public class ModuleHealthCheckTests {
         }
     }
 
-    /** Initialises an instance and runs its first timer tick, which is when the health check goes out. */
     private Countly initWith(CapturingIRG irg, CountlyConfig config) {
         config.immediateRequestGenerator = irg;
-        Countly countly = new Countly().init(config);
-        countly.onTimer();
-        return countly;
+        return new Countly().init(config); // initFinished() -> sendHealthCheck()
     }
 
     /**
@@ -85,54 +82,6 @@ public class ModuleHealthCheckTests {
         Assert.assertEquals("/i", irg.lastHcEndpoint);
         Assert.assertTrue(irg.lastHcRequestData.contains("&hc="));
         Assert.assertTrue(countly.moduleHealthCheck.healthCheckSent);
-    }
-
-    /**
-     * The health check waits for the first timer tick, so an app that switches to a temporary or another device ID
-     * right after init does not leave a user behind that only the health check created. It then goes out exactly once,
-     * however many ticks follow.
-     */
-    @Test
-    public void healthCheck_waitsForTheFirstTimerTick_thenGoesOutOnce() {
-        CapturingIRG irg = new CapturingIRG();
-        CountlyConfig config = TestUtils.createBaseConfig();
-        config.immediateRequestGenerator = irg;
-        Countly countly = new Countly().init(config);
-
-        Assert.assertEquals(0, irg.hcCallCount);
-        Assert.assertFalse(countly.moduleHealthCheck.healthCheckSent);
-
-        countly.onTimer();
-        Assert.assertEquals(1, irg.hcCallCount);
-        Assert.assertEquals("/i", irg.lastHcEndpoint);
-        Assert.assertTrue(irg.lastHcRequestData.contains("device_id=" + TestUtils.commonDeviceId));
-        Assert.assertTrue(countly.moduleHealthCheck.healthCheckSent);
-
-        countly.onTimer();
-        countly.onTimer();
-        Assert.assertEquals(1, irg.hcCallCount);
-    }
-
-    /**
-     * An app that enters temporary device ID mode right after init sends no health check on the ticks that follow, and
-     * the one it sends when the mode ends carries the real device ID.
-     */
-    @Test
-    public void healthCheck_temporaryIdModeRightAfterInit_waitsForTheRealId() {
-        CapturingIRG irg = new CapturingIRG();
-        CountlyConfig config = TestUtils.createBaseConfig();
-        config.immediateRequestGenerator = irg;
-        Countly countly = new Countly().init(config);
-
-        countly.deviceId().enableTemporaryIdMode();
-        countly.onTimer();
-        countly.onTimer();
-        Assert.assertEquals(0, irg.hcCallCount);
-        Assert.assertFalse(countly.moduleHealthCheck.healthCheckSent);
-
-        countly.deviceId().setID("realIdAfterTempMode");
-        Assert.assertEquals(1, irg.hcCallCount);
-        Assert.assertTrue(irg.lastHcRequestData.contains("device_id=realIdAfterTempMode"));
     }
 
     /**
