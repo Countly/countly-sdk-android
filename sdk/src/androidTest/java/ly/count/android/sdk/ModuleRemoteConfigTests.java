@@ -628,4 +628,47 @@ public class ModuleRemoteConfigTests {
             }
         }
     }
+
+    /**
+     * A download whose response arrives after halt() belongs to the user the instance had, and halt() erased the store.
+     * The response is dropped and the caller is told, so nothing lands in the store the next init reads.
+     */
+    @Test
+    public void downloadResponseAfterHalt_isDroppedAndReportedAsError() throws JSONException {
+        final ImmediateRequestMaker.InternalImmediateRequestCallback[] pending = { null };
+        CountlyConfig config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true);
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (requestData.contains("method=rc")) {
+                        pending[0] = callback;
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                };
+            }
+        };
+        Countly countly = new Countly().init(config);
+
+        final RequestResult[] result = { null };
+        final String[] error = { null };
+        countly.remoteConfig().downloadAllKeys((rResult, rError, fullValueUpdate, downloadedValues) -> {
+            result[0] = rResult;
+            error[0] = rError;
+        });
+        Assert.assertNotNull("the download must still be in flight", pending[0]);
+        Assert.assertNull(result[0]);
+
+        countly.halt();
+        pending[0].callback(new JSONObject("{\"a\":123}"));
+
+        Assert.assertEquals(RequestResult.Error, result[0]);
+        Assert.assertNotNull(error[0]);
+        String stored = countlyStore.getRemoteConfigValues();
+        Assert.assertTrue("nothing may land in the erased store, found:[" + stored + "]", stored == null || stored.isEmpty());
+    }
+
 }

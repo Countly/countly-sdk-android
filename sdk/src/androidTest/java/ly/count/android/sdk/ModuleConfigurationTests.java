@@ -1312,6 +1312,101 @@ public class ModuleConfigurationTests {
             Integer.valueOf(10), config.sdkInternalLimits.maxKeyLength);
     }
 
+    /**
+     * The settings refresh repeats every interval the server gives, in hours: the timer's period is that interval, not
+     * a thousand of them, and a new interval from the server restarts the timer with it.
+     */
+    @Test
+    public void serverConfigRefresh_repeatsEveryIntervalInHours() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().defaults().serverConfigUpdateInterval(4).build());
+        Countly countly = new Countly().init(config);
+        Assert.assertEquals(4L * 60 * 60 * 1000, countly.moduleConfiguration.serverConfigUpdateTimer.periodMs);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().defaults().serverConfigUpdateInterval(1).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertEquals(1, countly.moduleConfiguration.currentServerConfigUpdateInterval);
+        Assert.assertEquals(60L * 60 * 1000, countly.moduleConfiguration.serverConfigUpdateTimer.periodMs);
+
+        CountlyTimer timer = countly.moduleConfiguration.serverConfigUpdateTimer;
+        countly.halt();
+        Assert.assertEquals(0, timer.periodMs);
+    }
+
+    /**
+     * A developer who turns the backoff mechanism off has it off from the very start, before any settings are stored,
+     * and keeps it off while the server says nothing about it; a server that sets it still wins. A developer who leaves
+     * it alone has it on from the start.
+     */
+    @Test
+    public void backoffMechanism_developerChoiceHoldsBeforeAnySettingsArrive() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig().disableBackoffMechanism();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(null);
+        Countly countly = new Countly().init(config);
+        Assert.assertNull(TestUtils.getCountlyStore().getServerConfig());
+        Assert.assertFalse(countly.moduleConfiguration.getBOMEnabled());
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().defaults().build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertNotNull(TestUtils.getCountlyStore().getServerConfig());
+        Assert.assertFalse(countly.moduleConfiguration.getBOMEnabled());
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().defaults().backoffMechanism(true).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertTrue(countly.moduleConfiguration.getBOMEnabled());
+        countly.halt();
+        TestUtils.getCountlyStore().clear();
+
+        CountlyConfig defaultConfig = TestUtils.createBaseConfig();
+        defaultConfig.immediateRequestGenerator = createIRGForSpecificResponse(null);
+        Countly second = new Countly().init(defaultConfig);
+        Assert.assertTrue(second.moduleConfiguration.getBOMEnabled());
+        second.halt();
+    }
+
+    /**
+     * A device ID merge while the first settings request is out leaves that answer's log gathering directive unread,
+     * since it was asked for the ID before the merge. Gathering is not left undecided for hours: the settings are
+     * fetched again for the current ID, and that answer decides.
+     */
+    @Test
+    public void logGathering_mergeBeforeTheFirstAnswer_fetchesAgainForTheCurrentDeviceId() throws JSONException {
+        final List<String> requestedFor = new ArrayList<>();
+        final List<ImmediateRequestMaker.InternalImmediateRequestCallback> pending = new ArrayList<>();
+        CountlyConfig config = TestUtils.createBaseConfig("deviceBeforeMerge");
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (requestData.contains("&method=sc")) {
+                        java.util.regex.Matcher id = java.util.regex.Pattern.compile("device_id=([^&]*)").matcher(requestData);
+                        requestedFor.add(id.find() ? UtilsNetworking.urlDecodeString(id.group(1)) : "");
+                        pending.add(callback);
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return null;
+            }
+        };
+        Countly countly = new Countly().init(config);
+        Assert.assertEquals(1, pending.size());
+
+        countly.deviceId().changeWithMerge("deviceAfterMerge");
+        JSONObject armed = new JSONObject(new ServerConfigBuilder().defaults().logGatheringOn("gather_after_merge", "ew", 50).build());
+        pending.get(0).callback(armed);
+
+        Assert.assertEquals(ModuleConfiguration.LogGatheringState.UNDECIDED, countly.moduleConfiguration.currentVLogGatheringState);
+        Assert.assertEquals(2, pending.size());
+        Assert.assertEquals(java.util.Arrays.asList("deviceBeforeMerge", "deviceAfterMerge"), requestedFor);
+
+        pending.get(1).callback(new JSONObject(armed.toString()));
+        Assert.assertEquals(ModuleConfiguration.LogGatheringState.GATHERING, countly.moduleConfiguration.currentVLogGatheringState);
+        Assert.assertEquals("gather_after_merge", countly.moduleConfiguration.getLogGatheringId());
+        Assert.assertEquals(2, pending.size());
+        countly.halt();
+    }
+
     private static void validateEventInRQ(String eventName, Map<String, Object> segmentation, int idx, int rqCount, int eventIdx, int eventCount) throws JSONException {
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, eventName, segmentation, 1, 0.0, 0.0, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventIdx, eventCount);
     }

@@ -1018,6 +1018,24 @@ public class ContentOverlayViewTests {
     }
 
     /**
+     * destroy() reached off the main thread, as a halt on a worker thread does, must not touch the WebView there, which
+     * throws. It moves itself to the main thread and releases the same references.
+     */
+    @Test
+    public void destroy_offMainThread_runsOnTheMainThread() throws Exception {
+        withActivity(activity -> overlay = createOverlay(activity));
+        Assert.assertNotNull(overlay.webView);
+
+        overlay.destroy();
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+        Assert.assertNull("webView should be null", overlay.webView);
+        Assert.assertTrue("isClosed should be true", (Boolean) getField("isClosed"));
+        Assert.assertNull("currentHostActivity", getField("currentHostActivity"));
+        Assert.assertNull("windowManager", getField("windowManager"));
+    }
+
+    /**
      * destroy() does not crash when overlay was never attached to WindowManager.
      */
     @Test
@@ -1395,6 +1413,54 @@ public class ContentOverlayViewTests {
             Assert.assertNotNull("the callback must be told why the widget was not shown", reportedError.get());
             Assert.assertFalse("the widget was never shown, so it must not report as closed", closedCalled.get());
         });
+    }
+
+    /**
+     * An instance that sees no activity starts, neither through the Application class nor through manual onStart calls,
+     * has nothing to reattach the overlay to the next activity, so the presentation ends with its host. An app that
+     * calls onStart itself reattaches it, so there the overlay outlives its host, as on a rotation.
+     */
+    @Test
+    public void hostDestroyed_closesTheOverlayOnlyWhenNothingCanReattachIt() throws Exception {
+        for (final boolean manualOnStart : new boolean[] { false, true }) {
+            Countly.sharedInstance().halt();
+            Countly.sharedInstance().init(new CountlyConfig(TestUtils.getContext(), TestUtils.commonAppKey, TestUtils.commonURL)
+                .setDeviceId("overlayHost").setLoggingEnabled(true));
+            Assert.assertFalse(Countly.sharedInstance().applicationClassProvided);
+
+            scenario = ActivityScenario.launch(OverlayTestActivity.class);
+            scenario.onActivity(activity -> {
+                if (manualOnStart) {
+                    Countly.sharedInstance().onStart(activity);
+                }
+                overlay = createOverlay(activity);
+                overlay.attachToActivity(activity);
+            });
+            scenario.close();
+            scenario = null;
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+            Assert.assertEquals("closed when nothing reattaches it, manual onStart:[" + manualOnStart + "]", !manualOnStart, getField("isClosed"));
+            Assert.assertEquals(manualOnStart, ContentOverlayView.isOverlayPresented());
+
+            final ContentOverlayView shown = overlay;
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(shown::destroy);
+            Assert.assertFalse(ContentOverlayView.isOverlayPresented());
+        }
+    }
+
+    /**
+     * A teardown on another thread stops the instance before the overlay's destroy reaches the main thread. A tap on an
+     * event action in that window finds no running instance and is ignored instead of crashing the app.
+     */
+    @Test
+    public void eventActionAfterTheInstanceStopped_isIgnored() {
+        withActivity(activity -> overlay = createOverlay(activity));
+        Countly.sharedInstance().halt();
+
+        final String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=[{\"key\":\"t\",\"sg\":{\"k\":\"v\"}}]";
+        scenario.onActivity(activity -> Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView)));
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
     }
 
     /**

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,6 +39,9 @@ import org.junit.runner.RunWith;
 public class ModuleConnectionTestTests {
     private static final String PREFIX = "/countly";
     private static final String[] NAMED = { "ctA", "ctB" };
+
+    /** Requests one battery makes: every path of every row. */
+    private static final int PROBES = 17;
 
     private static final String[] EXPECTED_ORDER = { "core", "core-write", "sc", "rc", "ab", "feedback", "feedback-widget", "feedback-submit", "content", "feedback-page", "feedback-assets", "content-page" };
 
@@ -96,6 +100,31 @@ public class ModuleConnectionTestTests {
     }
 
     /** Immediate request generator whose response can be changed after init; null means "no response". */
+    /**
+     * Holds every configuration fetch until the test answers it, so the device ID can change while one is on its way.
+     * Other immediate requests get no response.
+     *
+     * @param pendingFetches receives the callback of each configuration fetch
+     * @return the generator
+     */
+    private static ImmediateRequestGenerator deferredScIRG(final List<ImmediateRequestMaker.InternalImmediateRequestCallback> pendingFetches) {
+        return new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (requestData.contains("method=sc")) {
+                        pendingFetches.add(callback);
+                    } else {
+                        callback.callback(null);
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return null;
+            }
+        };
+    }
+
     private static ImmediateRequestGenerator switchableIRG(final String[] holder) {
         return new ImmediateRequestGenerator() {
             @Override public ImmediateRequestI CreateImmediateRequestMaker() {
@@ -106,11 +135,14 @@ public class ModuleConnectionTestTests {
                             callback.callback(null);
                             return;
                         }
+                        JSONObject parsed;
                         try {
-                            callback.callback(new JSONObject(response));
+                            parsed = new JSONObject(response);
                         } catch (JSONException e) {
-                            callback.callback(null);
+                            //a malformed fixture has to fail the test, not pass for a missing response
+                            throw new AssertionError("the sc fixture is not valid JSON: " + response, e);
                         }
+                        callback.callback(parsed);
                     }
                 };
             }
@@ -128,6 +160,11 @@ public class ModuleConnectionTestTests {
         }
         int q = path.indexOf('?');
         return q < 0 ? path : path.substring(0, q);
+    }
+
+    /** The rows a WebView loads: feedback pages, their assets and the content page. */
+    private static boolean isWebViewPath(String path) {
+        return path.startsWith(PREFIX + "/feedback/") || path.endsWith("/ct-probe.png") || path.equals(PREFIX + "/_external/content/");
     }
 
     private static boolean isSdkRequest(RecordedRequest request) {
@@ -315,16 +352,15 @@ public class ModuleConnectionTestTests {
         assertRow(rows.get("rc"), true, 400, null, null);
         assertRow(rows.get("ab"), true, 400, null, null);
         assertRow(rows.get("feedback"), true, 400, null, null);
-        assertRow(rows.get("feedback-widget"), true, 400, null, 3);
+        assertRow(rows.get("feedback-widget"), true, 400, null, 4);
         assertRow(rows.get("feedback-submit"), true, 400, null, null);
         assertRow(rows.get("content"), true, 400, null, null);
         assertRow(rows.get("feedback-page"), true, 200, null, 3);
         assertRow(rows.get("feedback-assets"), true, 200, null, 2);
         assertRow(rows.get("content-page"), true, 200, null, null);
 
-        // 16 probes: bare GETs, prefixed, marked, carrying no identity, but the SDK's custom headers, so a gateway
-        // that needs them sees the probe the way it sees real traffic
-        Assert.assertEquals(16, recorded.probes.size());
+        // bare GETs, prefixed and marked; the SDK's own endpoints carry its custom headers, WebView pages and assets none
+        Assert.assertEquals(PROBES, recorded.probes.size());
         List<String> probedPaths = new ArrayList<>();
         for (RecordedRequest probe : recorded.probes) {
             Assert.assertEquals("GET", probe.getMethod());
@@ -335,7 +371,11 @@ public class ModuleConnectionTestTests {
             Assert.assertTrue(path, path.contains("_="));
             Assert.assertFalse(path, path.contains("app_key"));
             Assert.assertFalse(path, path.contains("device_id"));
-            Assert.assertEquals("yes", probe.getHeader("X-Countly-Test"));
+            if (isWebViewPath(pathOnly(probe))) {
+                Assert.assertNull(path, probe.getHeader("X-Countly-Test"));
+            } else {
+                Assert.assertEquals(path, "yes", probe.getHeader("X-Countly-Test"));
+            }
             Assert.assertEquals(0, probe.getBodySize());
             probedPaths.add(pathOnly(probe));
         }
@@ -409,16 +449,16 @@ public class ModuleConnectionTestTests {
         assertRow(rows.get("rc"), false, 500, "HTTP 500", null);
         assertRow(rows.get("ab"), false, 500, "HTTP 500", null);
         assertRow(rows.get("feedback"), false, 500, "HTTP 500", null);
-        assertRow(rows.get("feedback-widget"), false, 302, "redirected", 3);
+        assertRow(rows.get("feedback-widget"), false, 302, "redirected", 4);
         assertRow(rows.get("feedback-submit"), true, 400, null, null);
         assertRow(rows.get("content"), true, 400, null, null);
         assertRow(rows.get("feedback-page"), false, 502, "HTTP 502", 3);
         assertRow(rows.get("feedback-assets"), false, 404, "HTTP 404", 2);
         assertRow(rows.get("content-page"), true, 200, null, null);
 
-        // all 16 probes still issued (combined rows do not stop at the first failure), and the redirect was
+        // every probe still issued (combined rows do not stop at the first failure), and the redirect was
         // not followed: /o/ping was requested exactly once, by its own row
-        Assert.assertEquals(16, recorded.probes.size());
+        Assert.assertEquals(PROBES, recorded.probes.size());
         int pingCount = 0;
         for (RecordedRequest probe : recorded.probes) {
             if (pathOnly(probe).equals(PREFIX + "/o/ping")) {
@@ -452,19 +492,175 @@ public class ModuleConnectionTestTests {
     }
 
     /**
-     * The server config that arms the test also switches networking off: the SDK honours the setting and
-     * runs no battery, so an operator who disabled networking does not get probe traffic either.
+     * The server config that arms the test also switches networking or tracking off. Without networking an operator
+     * who disabled it gets no probe traffic; without tracking the queue would refuse the report, so probing would be
+     * wasted. Either way no battery runs and nothing is reported.
      */
     @Test
-    public void armed_networkingDisabled_skipsBattery() throws Exception {
-        countly = new Countly().init(config(prefixedUrl(), "appKeyCt", "deviceCt", scResponse(1, "{\"networking\":false}")));
-        Thread.sleep(700);
-        awaitBatteryIdle(countly, 2_000);
+    public void armed_networkingOrTrackingDisabled_skipsBattery() throws Exception {
+        String[] innerConfigs = { "{\"networking\":false}", "{\"tracking\":false}" };
+        for (String innerConfig : innerConfigs) {
+            resetAll();
+            countly = new Countly().init(config(prefixedUrl(), "appKeyCt", "deviceCt", scResponse(1, innerConfig)));
+            Thread.sleep(700);
+            awaitBatteryIdle(countly, 2_000);
 
-        Recorded recorded = awaitReports(0, 500);
-        Assert.assertEquals(0, recorded.probes.size());
+            Recorded recorded = awaitReports(0, 500);
+            Assert.assertEquals(innerConfig, 0, recorded.probes.size());
+            Assert.assertEquals(innerConfig, 0, recorded.reports.size());
+            Assert.assertFalse(innerConfig, countly.moduleConnectionTest.batteryRunning.get());
+            Assert.assertEquals(innerConfig, innerConfig.contains("networking"), !countly.moduleConfiguration.getNetworkingEnabled());
+            Assert.assertEquals(innerConfig, innerConfig.contains("tracking"), !countly.moduleConfiguration.getTrackingEnabled());
+        }
+    }
+
+    /**
+     * The server armed the test for the user the config fetch was made for. When the app switches to another user
+     * while the battery runs, the report still goes out under the device ID it was armed for, which is the only one the
+     * server accepts it for.
+     */
+    @Test
+    public void report_isFiledUnderTheDeviceIdTheTestWasArmedFor() throws Exception {
+        final String[] scHolder = { null };
+        CountlyConfig cc = new CountlyConfig(TestUtils.getApplication(), "appKeyCt", prefixedUrl())
+            .setDeviceId("deviceCt")
+            .setLoggingEnabled(true);
+        cc.immediateRequestGenerator = switchableIRG(scHolder);
+        countly = new Countly().init(cc);
+        GatedTransport transport = new GatedTransport(400);
+        countly.moduleConnectionTest.transport = transport;
+        scHolder[0] = scResponse(1, null);
+        countly.moduleConfiguration.fetchConfigFromServer(cc);
+        Assert.assertTrue(transport.firstProbeStarted.await(5, TimeUnit.SECONDS));
+
+        countly.deviceId().changeWithoutMerge("deviceCtNext");
+        transport.gate.countDown();
+
+        Recorded recorded = awaitReports(1, 15_000);
+        Assert.assertEquals(1, recorded.reports.size());
+        RecordedRequest reportRequest = null;
+        for (RecordedRequest r : recorded.sdkRequests) {
+            if (sdkParams(r).containsKey("ct_results")) {
+                reportRequest = r;
+            }
+        }
+        Assert.assertNotNull(reportRequest);
+        Assert.assertEquals("deviceCt", sdkParams(reportRequest).get("device_id"));
+        Assert.assertEquals("appKeyCt", sdkParams(reportRequest).get("app_key"));
+        Assert.assertEquals("deviceCtNext", countly.deviceId().getID());
+        Assert.assertEquals(PROBES, transport.probes.get());
+    }
+
+    /**
+     * The run is armed for the device the configuration fetch was made for. When the app switches to another user without
+     * merge while that fetch is on its way, the battery still runs and its report goes under the ID of the fetch.
+     */
+    @Test
+    public void report_isFiledUnderTheFetchTimeDeviceId_whenTheIdChangesWithoutMergeDuringTheFetch() throws Exception {
+        final List<ImmediateRequestMaker.InternalImmediateRequestCallback> pendingFetches = new CopyOnWriteArrayList<>();
+        CountlyConfig cc = new CountlyConfig(TestUtils.getApplication(), "appKeyCt", prefixedUrl())
+            .setDeviceId("deviceCt")
+            .setLoggingEnabled(true);
+        cc.immediateRequestGenerator = deferredScIRG(pendingFetches);
+        countly = new Countly().init(cc);
+        Assert.assertFalse(pendingFetches.isEmpty());
+
+        countly.deviceId().changeWithoutMerge("deviceCtNext");
+        pendingFetches.get(0).callback(new JSONObject(scResponse(1, null)));
+
+        Recorded recorded = awaitReports(1, 20_000);
+        Assert.assertEquals(1, recorded.reports.size());
+        RecordedRequest reportRequest = null;
+        for (RecordedRequest r : recorded.sdkRequests) {
+            if (sdkParams(r).containsKey("ct_results")) {
+                reportRequest = r;
+            }
+        }
+        Assert.assertNotNull(reportRequest);
+        Assert.assertEquals("deviceCt", sdkParams(reportRequest).get("device_id"));
+        Assert.assertEquals("deviceCtNext", countly.deviceId().getID());
+    }
+
+    /**
+     * A merge while the arming fetch is on its way folds the armed user into the new one on the server. The battery does
+     * not run, so no report can recreate that user.
+     */
+    @Test
+    public void battery_isSkippedWhenTheIdIsMergedDuringTheFetch() throws Exception {
+        final List<ImmediateRequestMaker.InternalImmediateRequestCallback> pendingFetches = new CopyOnWriteArrayList<>();
+        CountlyConfig cc = new CountlyConfig(TestUtils.getApplication(), "appKeyCt", prefixedUrl())
+            .setDeviceId("deviceCt")
+            .setLoggingEnabled(true);
+        cc.immediateRequestGenerator = deferredScIRG(pendingFetches);
+        countly = new Countly().init(cc);
+        Assert.assertFalse(pendingFetches.isEmpty());
+
+        countly.deviceId().changeWithMerge("deviceCtMerged");
+        pendingFetches.get(0).callback(new JSONObject(scResponse(1, null)));
+
+        Assert.assertFalse(countly.moduleConnectionTest.batteryRunning.get());
+        Recorded recorded = awaitReports(0, 2_000);
         Assert.assertEquals(0, recorded.reports.size());
-        Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
+        Assert.assertEquals(0, recorded.probes.size());
+    }
+
+    /**
+     * A merge during the battery folds the armed user into the new one on the server, which cancels the run. A report
+     * under the old device ID would only create that user again, so the report is dropped.
+     */
+    @Test
+    public void report_isDroppedWhenTheDeviceIdIsMergedDuringTheBattery() throws Exception {
+        final String[] scHolder = { null };
+        CountlyConfig cc = new CountlyConfig(TestUtils.getApplication(), "appKeyCt", prefixedUrl())
+            .setDeviceId("deviceCt")
+            .setLoggingEnabled(true);
+        cc.immediateRequestGenerator = switchableIRG(scHolder);
+        countly = new Countly().init(cc);
+        GatedTransport transport = new GatedTransport(400);
+        countly.moduleConnectionTest.transport = transport;
+        scHolder[0] = scResponse(1, null);
+        countly.moduleConfiguration.fetchConfigFromServer(cc);
+        Assert.assertTrue(transport.firstProbeStarted.await(5, TimeUnit.SECONDS));
+
+        countly.deviceId().changeWithMerge("deviceCtMerged");
+        transport.gate.countDown();
+        awaitBatteryIdle(countly, 15_000);
+
+        Recorded recorded = awaitReports(0, 1_000);
+        Assert.assertEquals(0, recorded.reports.size());
+        Assert.assertEquals(PROBES, transport.probes.get());
+        Assert.assertEquals("deviceCtMerged", countly.deviceId().getID());
+    }
+
+    /**
+     * Connect and read timeouts each bound one phase only, so a body that keeps trickling in never trips them. The
+     * probe still ends at its total budget: the status had arrived in time, so the row is reachable, and its time is
+     * close to the budget rather than to the many seconds the whole body would take.
+     */
+    @Test
+    public void probe_slowBodyIsCutAtTheTotalBudget() throws Exception {
+        Map<String, MockResponse> overrides = new HashMap<>();
+        String body = new String(new char[64 * 1024]).replace('\0', 'a');
+        overrides.put(PREFIX + "/_external/content/", new MockResponse().setResponseCode(200).setBody(body).throttleBody(1024, 500, TimeUnit.MILLISECONDS));
+        server.setDispatcher(healthyDispatcher(overrides));
+
+        final String[] scHolder = { null };
+        CountlyConfig cc = new CountlyConfig(TestUtils.getApplication(), "appKeyCt", prefixedUrl())
+            .setDeviceId("deviceCt")
+            .setLoggingEnabled(true);
+        cc.immediateRequestGenerator = switchableIRG(scHolder);
+        countly = new Countly().init(cc);
+        countly.moduleConnectionTest.perRequestTimeoutMs = 2000;
+        scHolder[0] = scResponse(1, null);
+        countly.moduleConfiguration.fetchConfigFromServer(cc);
+
+        Recorded recorded = awaitReports(1, 30_000);
+        Assert.assertEquals(1, recorded.reports.size());
+        Map<String, JSONObject> rows = rowsByFeature(recorded.reports.get(0));
+        JSONObject contentPage = rows.get("content-page");
+        assertRow(contentPage, true, 200, null, null);
+        Assert.assertTrue("took " + contentPage.getLong("ms") + " ms", contentPage.getLong("ms") < 6000);
+        assertRow(rows.get("core"), true, 200, null, null);
     }
 
     /**
@@ -505,7 +701,7 @@ public class ModuleConnectionTestTests {
             Assert.assertEquals(feature, 0, row.getInt("st"));
             Assert.assertEquals(feature, "transport error", row.getString("e"));
         }
-        Assert.assertEquals(3, rows.get("feedback-widget").getInt("n"));
+        Assert.assertEquals(4, rows.get("feedback-widget").getInt("n"));
         Assert.assertEquals(2, rows.get("feedback-assets").getInt("n"));
 
         // re-create the server so tearDown can shut it down cleanly
@@ -594,18 +790,18 @@ public class ModuleConnectionTestTests {
         GatedTransport transport = new GatedTransport(400);
         module.transport = transport;
 
-        module.startBattery(12);
+        module.startBattery(12, null);
         Assert.assertTrue(transport.firstProbeStarted.await(5, TimeUnit.SECONDS));
         Assert.assertTrue(module.batteryRunning.get());
 
-        module.startBattery(13);
-        module.startBattery(14);
+        module.startBattery(13, null);
+        module.startBattery(14, null);
         Thread.sleep(200);
         Assert.assertEquals(1, transport.probes.get());
 
         transport.gate.countDown();
         awaitBatteryIdle(countly, 10_000);
-        Assert.assertEquals(16, transport.probes.get());
+        Assert.assertEquals(PROBES, transport.probes.get());
 
         Recorded recorded = awaitReports(1, 10_000);
         Assert.assertEquals(1, recorded.reports.size());
@@ -615,9 +811,9 @@ public class ModuleConnectionTestTests {
         GatedTransport second = new GatedTransport(400);
         second.gate.countDown();
         module.transport = second;
-        module.startBattery(99);
+        module.startBattery(99, null);
         awaitBatteryIdle(countly, 10_000);
-        Assert.assertEquals(16, second.probes.get());
+        Assert.assertEquals(PROBES, second.probes.get());
         recorded = awaitReports(1, 10_000);
         Assert.assertEquals(1, recorded.reports.size());
         Assert.assertEquals(99, rowsByFeature(recorded.reports.get(0)).get("sc").getLong("ms"));
@@ -636,7 +832,7 @@ public class ModuleConnectionTestTests {
         final AtomicInteger sent = new AtomicInteger();
         module.requestQueueProvider = new CountingRequestQueue(sent);
 
-        module.startBattery(5);
+        module.startBattery(5, null);
         Assert.assertTrue(transport.firstProbeStarted.await(5, TimeUnit.SECONDS));
         module.halt();
         transport.gate.countDown();
@@ -648,9 +844,9 @@ public class ModuleConnectionTestTests {
         Assert.assertFalse(module.batteryRunning.get());
         Assert.assertEquals(0, sent.get());
         // the battery stops at the next row boundary once halted
-        Assert.assertTrue(transport.probes.get() < 16);
+        Assert.assertTrue(transport.probes.get() < PROBES);
 
-        module.startBattery(6);
+        module.startBattery(6, null);
         Thread.sleep(200);
         Assert.assertFalse(module.batteryRunning.get());
         Assert.assertEquals(0, sent.get());
@@ -664,9 +860,9 @@ public class ModuleConnectionTestTests {
     public void batteryCap_marksUnreachedRowsNotRun() throws Exception {
         countly = initWithoutBattery("appKeyCt", "deviceCt");
         ModuleConnectionTest module = countly.moduleConnectionTest;
-        module.perRequestTimeoutMs = 10;
+        module.perRequestTimeoutMs = 20;
         module.batteryCapExtraMs = 0;
-        // cap = 16 * 10 + 0 = 160 ms, each probe takes ~120 ms
+        // cap = 17 * 20 + 0 = 340 ms against ~120 ms probes: the first two rows always start, twelve never fit
         module.transport = new ModuleConnectionTest.ProbeTransport() {
             @Override public @NonNull ModuleConnectionTest.ProbeOutcome probe(@NonNull String url, int timeoutMs, @Nullable ConnectionProcessor cp) {
                 try {
@@ -723,8 +919,9 @@ public class ModuleConnectionTestTests {
             this.sent = sent;
         }
 
-        @Override public void sendConnectionTestResults(@NonNull String resultsJson) {
+        @Override public boolean sendConnectionTestResults(@NonNull String resultsJson, @Nullable String deviceId) {
             sent.incrementAndGet();
+            return true;
         }
 
         @Override public ConnectionProcessor createConnectionProcessor() {
@@ -771,7 +968,7 @@ public class ModuleConnectionTestTests {
 
         Recorded recorded = awaitReports(2, 20_000);
         Assert.assertEquals(2, recorded.reports.size());
-        Assert.assertEquals(32, recorded.probes.size());
+        Assert.assertEquals(2 * PROBES, recorded.probes.size());
 
         int probesA = 0;
         int probesB = 0;
@@ -785,8 +982,8 @@ public class ModuleConnectionTestTests {
                 Assert.fail("probe outside both prefixes: " + path);
             }
         }
-        Assert.assertEquals(16, probesA);
-        Assert.assertEquals(16, probesB);
+        Assert.assertEquals(PROBES, probesA);
+        Assert.assertEquals(PROBES, probesB);
 
         JSONObject reportA = null;
         JSONObject reportB = null;
@@ -983,8 +1180,8 @@ public class ModuleConnectionTestTests {
         // combined row sums latency and counts paths
         ModuleConnectionTest.ResultRow widget = rows.get(5);
         Assert.assertEquals("feedback-widget", widget.feature);
-        Assert.assertEquals(6, widget.ms);
-        Assert.assertEquals(3, widget.pathCount);
+        Assert.assertEquals(8, widget.ms);
+        Assert.assertEquals(4, widget.pathCount);
         Assert.assertTrue(widget.ok);
         Assert.assertEquals(400, widget.status);
     }

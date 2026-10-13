@@ -32,6 +32,9 @@ interface RequestQueueProvider {
      */
     boolean sendSdkLogs(@NonNull final String logBatch);
 
+    /** @return true while the queue still holds an 'sdk_logs' request that has not been sent */
+    boolean queueContainsSdkLogs();
+
     void recordEvents(final String events);
 
     void recordEvents(final String events, @Nullable InternalRequestCallback callback);
@@ -50,7 +53,14 @@ interface RequestQueueProvider {
 
     void sendMetricsRequest(@NonNull String preparedMetrics);
 
-    void sendConnectionTestResults(@NonNull String resultsJson);
+    /**
+     * Queues the connection test report as its own request.
+     *
+     * @param resultsJson the report
+     * @param deviceId the device ID the test was armed for, null for the current one
+     * @return false when the queue refused the report
+     */
+    boolean sendConnectionTestResults(@NonNull String resultsJson, @Nullable String deviceId);
 
     void enrollToKeys(@NonNull String[] keys);
 

@@ -29,6 +29,9 @@ public class ModuleCrash extends ModuleBase {
     //tracks whether the unhandled crash handler has already been installed, so we only wrap the global handler once
     volatile boolean unhandledCrashHandlerInstalled = false;
 
+    //what this instance's own config asked for, before the server behaviour settings are applied
+    private final boolean unhandledCrashReportingInConfig;
+
     //Thread.getDefaultUncaughtExceptionHandler()/setDefaultUncaughtExceptionHandler is process-global state,
     //and installing wraps the handler that is there now. Two instances initialising on two threads hold no
     //common monitor (init synchronises on its own Countly), so without this lock both could read the same
@@ -61,6 +64,7 @@ public class ModuleCrash extends ModuleBase {
         crashFilterCallback = config.crashFilterCallback;
 
         recordAllThreads = config.crashes.recordAllThreadsWithCrash;
+        unhandledCrashReportingInConfig = config.crashes.enableUnhandledCrashReporting;
 
         //Copy first, for the same reason as ModuleViews' global segmentation: this truncates in place and the
         //map belongs to the developer's config, which a second instance may also be built from.
@@ -469,9 +473,17 @@ public class ModuleCrash extends ModuleBase {
      * changes, so a server that enables 'acr' at runtime starts catching crashes.
      */
     private void installUnhandledCrashHandlerIfEnabled() {
-        if (!unhandledCrashHandlerInstalled && configProvider.getCrashReportingEnabled() && configProvider.getAutomaticCrashReportingEnabled()) {
-            enableCrashReporting();
+        if (unhandledCrashHandlerInstalled || !configProvider.getCrashReportingEnabled() || !configProvider.getAutomaticCrashReportingEnabled()) {
+            return;
         }
+
+        //every instance with a handler records a process-wide crash, so a named one installs it only when its config asks
+        if (!_cly.storageNamespace_.isEmpty() && !unhandledCrashReportingInConfig) {
+            L.d("[ModuleCrash] installUnhandledCrashHandlerIfEnabled, a named instance records unhandled crashes only when its config enables them, not installing the handler");
+            return;
+        }
+
+        enableCrashReporting();
     }
 
     @Override

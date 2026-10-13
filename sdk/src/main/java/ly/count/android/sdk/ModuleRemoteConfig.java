@@ -22,6 +22,9 @@ public class ModuleRemoteConfig extends ModuleBase {
     Map<String, String[]> variantContainer = new HashMap<>(); // Stores the fetched A/B test variants
     Map<String, ExperimentInformation> experimentContainer = new HashMap<>(); // Stores the fetched A/B test information (includes exp ID, description etc.)
     RemoteConfig remoteConfigInterface = null;
+
+    //set by halt(); a download still in flight checks it before writing anything
+    private volatile boolean halted = false;
     // dedicated lock for remote config
     private final Object remoteConfigLock = new Object();
 
@@ -111,12 +114,21 @@ public class ModuleRemoteConfig extends ModuleBase {
                     return;
                 }
 
+                //the values belong to the user before the halt, and writing them would hand them to the next one
+                if (halted) {
+                    L.d("[ModuleRemoteConfig] the instance was halted before the remote config response arrived, dropping it");
+                    NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "The instance was stopped before the remote config response arrived", fullUpdate, null);
+                    return;
+                }
+
                 String error = null;
                 Map<String, RCData> newRC = RemoteConfigHelper.DownloadedValuesIntoMap(checkResponse, L);
 
                 try {
                     boolean clearOldValues = keysExcept == null && keysOnly == null;
-                    mergeCheckResponseIntoCurrentValues(clearOldValues, newRC);
+                    if (!mergeCheckResponseIntoCurrentValues(clearOldValues, newRC)) {
+                        error = "The instance was stopped before the remote config response arrived";
+                    }
                 } catch (Exception ex) {
                     L.e("[ModuleRemoteConfig] updateRemoteConfigValues - execute, Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]");
                     error = "Encountered internal issue while trying to download remote config information from the server, [" + ex.toString() + "]";
@@ -264,16 +276,22 @@ public class ModuleRemoteConfig extends ModuleBase {
      * Merge the values acquired from the server into the current values.
      * Clear if needed.
      *
+     * @return false when the instance was halted, nothing is stored then
      * @throws Exception it throws an exception so that it is escalated upwards
      */
-    void mergeCheckResponseIntoCurrentValues(boolean clearOldValues, @NonNull Map<String, RCData> newRC) {
+    boolean mergeCheckResponseIntoCurrentValues(boolean clearOldValues, @NonNull Map<String, RCData> newRC) {
         //todo iterate over all response values and print a summary of the returned keys + ideally a summary of their payload.
         synchronized (remoteConfigLock) {
+            if (halted) {
+                L.d("[ModuleRemoteConfig] mergeCheckResponseIntoCurrentValues, the instance was halted, the values are not stored");
+                return false;
+            }
             RemoteConfigValueStore rcvs = loadConfig();
             rcvs.mergeValues(newRC, clearOldValues);
             L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
             saveConfig(rcvs);
             L.d("[ModuleRemoteConfig] Finished remote config saving");
+            return true;
         }
     }
 
@@ -463,6 +481,10 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     @Override
     public void halt() {
+        //under the lock, so a merge that is already writing finishes first and every later one sees the flag
+        synchronized (remoteConfigLock) {
+            halted = true;
+        }
         remoteConfigInterface = null;
     }
 

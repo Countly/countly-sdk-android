@@ -1,25 +1,50 @@
 ## XX.XX.XX
-* !! Major breaking change !! New versions of the SDK are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
+* !! Major breaking change !! New SDK versions are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
   ```groovy
   maven {
     url = 'https://maven.countly.com'
     content { includeGroupByRegex 'ly\\.count\\..*' }
   }
   ```
-  Versions released before this one stay available on Maven Central. The files are signed with the same key as before (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
+  or, in `settings.gradle.kts`:
+  ```kotlin
+  maven {
+    url = uri("https://maven.countly.com")
+    content { includeGroupByRegex("ly\\.count\\..*") }
+  }
+  ```
+  Older versions stay on Maven Central. The files are signed with the same key (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
 * ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Use the latest version of each instead of the SDK's version number.
-* Added support for multi-instancing, each with isolated storage, request queue, and device ID. Access a named instance with `Countly.instance(name)` and initialize it yourself, and manage instances with `Countly.getInstance(name)`, `Countly.listInstances()`, and `Countly.removeInstance(name)`. 
+* ! Minor breaking change ! "halt()" now also erases the generated device ID, so the next initialization starts as a new user.
+* ! Minor breaking change ! The custom network request headers in `CountlyConfig` are copied at initialization, so later changes to that map are no longer picked up. Use "requestQueue().addCustomNetworkRequestHeaders(Map)" to change them later.
+* ! Minor breaking change ! Removed the unused `androidx.multidex:multidex` dependency. An app that uses it has to declare it itself.
 
-  `Countly.sharedInstance()` is unchanged, so existing integrations keep working. A named instance starts from empty storage and generates its own device ID, so do not move an existing integration onto one. 
+* Added multi-instance support:
+  * A named instance from "Countly.instance(name)" has its own storage, request queue and device ID. Manage instances with "Countly.getInstance(name)", "Countly.listInstances()" and "Countly.removeInstance(name)".
+  * "Countly.sharedInstance()" is unchanged. A named instance starts with empty storage, so do not move an existing integration onto one.
+  * Push notifications and native crash reporting stay with the default instance, and one content or feedback widget shows at a time. A named instance records unhandled crashes only when its own config enables them.
+* Added server requested SDK log gathering. When the server asks, the SDK uploads its own log lines, even with logging disabled. When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
+* Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
+* Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
+* Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events. Keys these events reserve are dropped from it.
 
-  Push notifications and native crash reporting are process wide and stay with the default instance, and at most one content or feedback widget is displayed at a time across all instances.
-* Added support for server requested SDK log gathering. When the server asks for it, the SDK uploads its own internal log lines, even if logging is disabled. When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
-* Added support for the SDK connection test. When the server asks for it, the SDK checks that it can reach every endpoint it depends on and reports the results.
-* Added support for the large icon of push notifications, and it is available through `CountlyPush.Message.largeIcon()`.
-* Added support for push notification collapse keys, and it is available through `CountlyPush.Message.collapseKey()`.
-* Updated the symbol upload plugin's OkHttp dependency to 4.12.0.
-* Removed the unused `androidx.multidex:multidex` dependency, which the minimum SDK of 21 has not needed.
-* Added a new method `Countly.sharedInstance().contents().setGlobalContentSegmentation(Map)` for adding a segmentation to content and feedback widget events.
+* Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.
+* Mitigated an issue where an app that stayed in the foreground refreshed its SDK behavior settings only every 4,000 hours instead of every 4 hours.
+* Mitigated an issue where "disableBackoffMechanism()" had no effect until SDK behavior settings arrived.
+* Mitigated a crash when a content or feedback widget was closed from a background thread, for example by a device ID change without merge or by removing consent.
+* Mitigated an issue where an auto-stopped view could stop being tracked when the app came back from the background.
+* Mitigated push notification image issues that could show a notification late, or not at all:
+  * A notification waits at most 8 seconds for its images and is shown without the ones that have not arrived.
+  * Images over 5 MB are left out, and large ones are scaled down while decoding.
+  * Images on the Countly server use the SDK's certificate pinning and custom SSL socket factory.
+* Mitigated an issue where tapping a push notification action button left the notification visible, so a second tap recorded the action again.
+* Mitigated a crash when a push notification dialog's screen closed before its image loaded. The dialog now shows on the current screen.
+* Mitigated push token issues:
+  * The token is sent again when push consent is given again, also on API level 34+ targets and within a minute.
+  * The token is sent for the new user after a device ID change without merge.
+  * The token request is filed under the device ID that is current when it is queued.
+* Mitigated an issue where fatal crash reports were lost in explicit storage mode.
+* Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
 
 ## 26.1.6
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.

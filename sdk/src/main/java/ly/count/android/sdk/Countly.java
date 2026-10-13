@@ -31,16 +31,22 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.ProcessLifecycleOwner;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.net.ssl.SSLSocketFactory;
 
 /**
  * This class is the public API for the Countly Android SDK.
@@ -209,7 +215,8 @@ public class Countly {
     ConnectionQueue connectionQueue_;
     private ScheduledExecutorService timerService_;
     private ScheduledFuture<?> timerFuture = null;
-    private int activityCount_;
+    //atomic: the main thread counts activity starts while a background init seeds it from the dispatcher's snapshot
+    private final AtomicInteger activityCount_ = new AtomicInteger(0);
     boolean disableUpdateSessionRequests_ = false;//todo, move to module after 'setDisableUpdateSessionRequests' is removed
 
     //volatile: written under the instance monitor (init/tearDown) but read lock-free from other
@@ -233,8 +240,8 @@ public class Countly {
     private boolean loggingForcedOffForProduction = false;
     Context context_;
 
-    //Internal modules for functionality grouping
-    List<ModuleBase> modules = new ArrayList<>();
+    //Internal modules for functionality grouping, copy on write as lifecycle dispatch reads it on the main thread
+    final List<ModuleBase> modules = new CopyOnWriteArrayList<>();
     ModuleCrash moduleCrash = null;
     ModuleEvents moduleEvents = null;
     ModuleViews moduleViews = null;
@@ -281,7 +288,7 @@ public class Countly {
     private boolean addMetadataToPushIntents = false;// a flag that indicates if metadata should be added to push notification intents
 
     //internal flags
-    private boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
+    boolean calledAtLeastOnceOnStart = false;//flag for if the onStart function has been called at least once
 
     protected boolean isBeginSessionSent = false;
 
@@ -302,6 +309,9 @@ public class Countly {
     long lastRegistrationCallTs = 0;
     String lastRegistrationCallID = null;
     CountlyMessagingProvider lastRegistrationCallProvider = null;
+    String lastRegistrationCallDeviceId = null;
+    //guards the four fields above: the server keeps the token request scheduled last
+    private final Object registrationLock = new Object();
 
     boolean applicationClassProvided = false;
 
@@ -320,13 +330,7 @@ public class Countly {
     // Volatile: written by the tearing-down thread, read by the main thread.
     private volatile boolean tearingDown = false;
 
-    // Process-global lifecycle/component callbacks are registered on the Application per init().
-    // We keep references so halt() can unregister them; otherwise every init/halt cycle leaks a
-    // callback bound to a dead instance that keeps receiving Activity/config events - a real hazard
-    // once multiple instances come and go in one process.
-    // Lifecycle callbacks are no longer registered per instance: CountlyLifecycleDispatcher holds the one
-    // process-wide registration and this instance simply adds/removes itself from its list. That removes both
-    // the N-registrations-for-N-instances problem and the per-init re-registration leak.
+    // Lifecycle callbacks are registered once per process by CountlyLifecycleDispatcher, which instances join.
 
     public static class CountlyFeatureNames {
         public static final String sessions = "sessions";
@@ -532,9 +536,19 @@ public class Countly {
      * Guard with {@link #isInitialized()} or call {@code init(config)} again before using any instance.
      */
     public static void haltAllInstances() {
-        for (Countly c : instances_.values()) {
+        List<Countly> all = new ArrayList<>(instances_.values());
+        //every instance leaves the dispatcher first, so one hop through the main looper quiesces them all
+        for (Countly c : all) {
+            c.tearingDown = true;
+            CountlyLifecycleDispatcher.getInstance().removeInstance(c);
+        }
+        if (!all.isEmpty()) {
+            CountlyLifecycleDispatcher.getInstance().quiesce(all.get(0).L);
+        }
+
+        for (Countly c : all) {
             try {
-                c.halt();
+                c.haltAfterQuiesce();
             } catch (Throwable t) {
                 //one instance failing to halt must not leave the remaining ones running: this is a
                 //process-wide reset, so it has to be all-or-as-much-as-possible rather than stopping at the
@@ -595,7 +609,7 @@ public class Countly {
         //Deliberately NOT halt(): deregistering an instance must not throw away data it recorded but has
         //not sent yet. Callers who want the data gone call halt() on the instance first.
         c.L.i("[Countly] removeInstance, stopping and deregistering instance [" + key + "], stored data is kept");
-        c.stop();
+        c.stopInternal();
     }
 
     /**
@@ -691,7 +705,7 @@ public class Countly {
         //(see sdkInternalLimits_), and DerivedFieldSnapshot resets the objects init derives, so each init
         //starts from what the developer configured rather than from the previous instance's leftovers.
         if (config.initialisedForNamespace != null && !storageNamespace_.equals(config.initialisedForNamespace)) {
-            L.w("[Init] This CountlyConfig was already used to initialise another instance. Each instance keeps its own storage, device id and internal limits, but the values you set on this object apply to every instance built from it, and the settings this instance resolves from the server are written onto it. Prefer a fresh CountlyConfig per instance.");
+            L.w("[Init] This CountlyConfig was already used to initialise another instance. Each instance keeps its own storage, device id and internal limits, but the values you set on this object apply to every instance built from it. Prefer a fresh CountlyConfig per instance.");
         }
 
         //A handle whose name was deregistered by removeInstance() is still a fully functional object with the
@@ -1076,7 +1090,7 @@ public class Countly {
                 //It does NOT make the map thread-safe: addCustomNetworkRequestHeaders still mutates this same
                 //map in place while ConnectionProcessor iterates it on the network executor. That race is
                 //pre-existing and unchanged here.
-                //The trade-off is a behaviour change: until 26.1.5 the SDK held the caller's own map and
+                //The trade-off is a behaviour change: until 26.1.6 the SDK held the caller's own map and
                 //re-read it before every request, so mutating it after init changed later requests. It no
                 //longer does, so say so out loud rather than letting an app silently keep sending a stale
                 //header (a rotated auth token being the case that matters).
@@ -1145,6 +1159,7 @@ public class Countly {
             connectionQueue_.setRequestHeaderCustomValues(requestHeaderCustomValues);
             connectionQueue_.setMetricOverride(config.metricOverride);
             connectionQueue_.setContext(context_);
+            connectionQueue_.claimStorage(storageNamespace_);
             final String requestSaltSnapshot = config.tamperingProtectionSalt;
             connectionQueue_.requestInfoProvider = new RequestInfoProvider() {
                 //These are called from the network thread, outside any try block, for every request the
@@ -1206,7 +1221,7 @@ public class Countly {
                 //the returned snapshot is atomic with joining the dispatcher: this instance receives
                 //exactly the events after the snapshot, so seeding from it can neither miss nor
                 //double-count an activity start that races init
-                exactStartedActivityCount = CountlyLifecycleDispatcher.getInstance().addInstance(this);
+                exactStartedActivityCount = CountlyLifecycleDispatcher.getInstance().addInstance(this, !lifecycleObserverInjected && lifecycleStateOverrideForTests == null);
             } else {
                 L.d("[Countly] Global activity listeners not registred due to no Application class");
                 if (moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled() && lifeCycleAtleastStarted()) {
@@ -1229,15 +1244,15 @@ public class Countly {
                 //whose ~700ms stop-debounce can report "foreground" right after the app left it and
                 //seed a phantom count that never drains (a session that never ends)
                 L.d("[Countly] Seeding the activity counter from the lifecycle dispatcher: [" + exactStartedActivityCount + "] activities are started.");
-                activityCount_ = exactStartedActivityCount;
-                if (activityCount_ > 0) {
+                //the dispatcher added the snapshot to the counter while this instance joined, see addInstance
+                if (activityCount_.get() > 0) {
                     deviceInfo_.inForeground();
                 }
             } else if (lifeCycleAtleastStarted()) {
                 //no trustworthy exact count (no Application class, provider stripped from the
                 //manifest) or an authoritative observer/override is present - use the observer chain
                 L.d("[Countly] SDK detects that the app is in the foreground. Increasing the activity counter and setting the foreground state.");
-                activityCount_++;
+                activityCount_.incrementAndGet();
                 deviceInfo_.inForeground();
             }
 
@@ -1277,6 +1292,9 @@ public class Countly {
             //SDK's own write-backs are undone while anything the developer changed in between is honoured.
             config.derivedFieldSnapshot.captureApplied(config);
             L.onSdkInitFinished();
+
+            //the push provider hands the token over only at app start, so an instance started again sends the one it had
+            resendLastPushToken("init, sending the push token this instance had before it was stopped");
 
             L.i("[Init] Finished initialising SDK");
             }
@@ -1389,9 +1407,33 @@ public class Countly {
         //a lifecycle dispatch at that moment. Holding this instance's monitor while waiting for that hop
         //would deadlock until the timeout. tearDown is itself synchronized, so the critical section is still
         //serialised - only the quiesce and the timer drain sit outside it, which is the whole point.
+        if (isDetachedHandle("halt")) {
+            return;
+        }
         unsubscribeFromLifecycleBeforeTeardown();
+        haltAfterQuiesce();
+    }
+
+    /** Erases and tears this instance down once no lifecycle event can reach it any more. */
+    private void haltAfterQuiesce() {
         ScheduledExecutorService timerToDrain = tearDown(true);
         awaitTimerServiceTermination(timerToDrain);
+    }
+
+    /**
+     * A handle whose name {@link #removeInstance(String)} deregistered shares its storage namespace with whatever
+     * object {@link #instance(String)} hands out under that name next, so tearing it down would act on that
+     * object's data and device ID. Such a handle refuses, as {@code init} already does.
+     *
+     * @param caller the public call being refused, for the log
+     * @return true when this handle is detached and the call must not proceed
+     */
+    private boolean isDetachedHandle(@NonNull String caller) {
+        if (wasRegistered_ && instances_.get(instanceName_) != this) {
+            L.e("[Countly] " + caller + ", this handle for instance [" + instanceName_ + "] was removed from the registry and is ignored. Obtain a fresh handle with Countly.instance(name).");
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -1412,6 +1454,14 @@ public class Countly {
      */
     public void stop() {
         //see halt() for why this is not synchronized
+        if (isDetachedHandle("stop")) {
+            return;
+        }
+        stopInternal();
+    }
+
+    /** Tears this instance down and keeps everything it stored. */
+    private void stopInternal() {
         unsubscribeFromLifecycleBeforeTeardown();
         ScheduledExecutorService timerToDrain = tearDown(false);
         awaitTimerServiceTermination(timerToDrain);
@@ -1495,8 +1545,7 @@ public class Countly {
             //for them to be persisted, and after this teardown nothing can: requestQueue() returns null once
             //the instance is no longer initialised. This runs LAST so it captures everything the flush above
             //queued. A request the in-flight processor acknowledges after this point stays in the persisted
-            //queue and is retried on the next init - a duplicate is better than a silent loss, and the server
-            //deduplicates on the request id.
+            //queue and is retried on the next init, as a duplicate is better than a silent loss.
             if (countlyStore != null && config_ != null && config_.explicitStorageModeEnabled) {
                 L.d("[Countly] tearDown, writing the explicit-storage-mode caches to persistence");
                 countlyStore.esWriteCacheToStorage(null);
@@ -1539,23 +1588,50 @@ public class Countly {
             timerToDrain.shutdown();
         }
 
+        //cleared after the module halts, so a late response such as a remote config download can not refill it
+        final boolean clearStore = clearStoredData && connectionQueue_ != null && countlyStore != null;
         if (connectionQueue_ != null) {
-            if (clearStoredData && countlyStore != null) {
-                countlyStore.clear();
-            }
             connectionQueue_.setContext(null);
+            //nothing persists a late processor's removals in explicit storage mode, so it stops and the next init sends the rest
+            if (config_ != null && config_.explicitStorageModeEnabled) {
+                connectionQueue_.stopProcessor();
+            }
             //init builds a fresh ConnectionQueue, so release this one's worker threads instead of
             //stranding them; they are non-daemon and would otherwise outlive every halt/init cycle.
             connectionQueue_.shutdownExecutors();
             connectionQueue_ = null;
         }
 
-        activityCount_ = 0;
+        activityCount_.set(0);
+        calledAtLeastOnceOnStart = false;
+
+        //an init racing the caller's unsubscribe may have joined the dispatcher after it, so leave it again here
+        CountlyLifecycleDispatcher.getInstance().removeInstance(this);
+
+        synchronized (registrationLock) {
+            //a token request still waiting in the discarded queue is gone, so a later init must be free to send it again
+            lastRegistrationCallTs = 0;
+            if (clearStoredData) {
+                //nothing of the previous run is kept, the token included; the push provider hands it over again
+                lastRegistrationCallID = null;
+                lastRegistrationCallProvider = null;
+                lastRegistrationCallDeviceId = null;
+            }
+        }
 
         for (ModuleBase module : modules) {
-            module.halt();
+            //one module failing must not leave the instance half torn down, unable to start again
+            try {
+                module.halt();
+            } catch (Throwable t) {
+                L.e("[Countly] tearDown, halting [" + module.getClass().getSimpleName() + "] failed, continuing the teardown, [" + t + "]");
+            }
         }
         modules.clear();
+
+        if (clearStore) {
+            countlyStore.clear();
+        }
 
         L.haltLogGathering();
 
@@ -1603,6 +1679,11 @@ public class Countly {
 
         for (ModuleBase module : modules) {
             module.deviceIdChanged(withoutMerge);
+        }
+
+        //a merge moves the token on the server; without one the new user has none until it is sent again
+        if (withoutMerge) {
+            resendLastPushToken("the device ID changed without merge");
         }
     }
 
@@ -1668,13 +1749,8 @@ public class Countly {
         if (L.logEnabled()) {
             L.d("[Countly] onActivityResumed, " + activity.getClass().getSimpleName());
         }
-        //Hardcoded, in the order init adds the modules to `modules` - see the note on
-        //ModuleBase#callbackOnActivityResumed
-        if (moduleRatings != null) {
-            moduleRatings.callbackOnActivityResumed(activity);
-        }
-        if (moduleAPM != null) {
-            moduleAPM.callbackOnActivityResumed(activity);
+        for (ModuleBase module : modules) {
+            module.callbackOnActivityResumed(activity);
         }
     }
 
@@ -1686,9 +1762,8 @@ public class Countly {
             L.d("[Countly] onActivityStopped, " + activity.getClass().getSimpleName());
         }
         onStopInternal();
-        //hardcoded on purpose - see the note on ModuleBase#callbackOnActivityStopped
-        if (moduleAPM != null) {
-            moduleAPM.callbackOnActivityStopped(activity);
+        for (ModuleBase module : modules) {
+            module.callbackOnActivityStopped(activity);
         }
     }
 
@@ -1699,13 +1774,8 @@ public class Countly {
         if (L.logEnabled()) {
             L.d("[Countly] onActivityDestroyed, " + activity.getClass().getSimpleName());
         }
-        //Hardcoded, in the order init adds the modules to `modules` - see the note on
-        //ModuleBase#onActivityDestroyed
-        if (moduleFeedback != null) {
-            moduleFeedback.onActivityDestroyed(activity);
-        }
-        if (moduleContent != null) {
-            moduleContent.onActivityDestroyed(activity);
+        for (ModuleBase module : modules) {
+            module.onActivityDestroyed(activity);
         }
     }
 
@@ -1723,77 +1793,61 @@ public class Countly {
             if (activity != null) {
                 activityName = activity.getClass().getSimpleName();
             }
-            L.d("Countly onStartInternal called, name:[" + activityName + "], [" + activityCount_ + "] -> [" + (activityCount_ + 1) + "] activities now open");
+            L.d("Countly onStartInternal called, name:[" + activityName + "], [" + activityCount_.get() + "] -> [" + (activityCount_.get() + 1) + "] activities now open");
         }
 
-        ++activityCount_;
-        if (activityCount_ == 1) {
+        final int startedCount = activityCount_.incrementAndGet();
+        if (startedCount == 1) {
+            //read once into locals: a teardown on another thread nulls the module fields
+            ModuleConfiguration configurationModule = moduleConfiguration;
+            ModuleSessions sessionsModule = moduleSessions;
             // start the timer in the first activity
-            if (moduleConfiguration != null) {
-                moduleConfiguration.fetchIfTimeIsUpForFetchingServerConfig();
+            if (configurationModule != null) {
+                configurationModule.fetchIfTimeIsUpForFetchingServerConfig();
             }
             //if we open the first activity
             //and automatic session tracking is active (resolved through the SBS precedence chain),
             //begin a session
-            if (moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
-                moduleSessions.beginSessionInternal();
+            if (sessionsModule != null && sessionsModule.automaticSessionTrackingEnabled()) {
+                sessionsModule.beginSessionInternal();
             }
         }
 
         deviceInfo_.inForeground();
 
-        //Hardcoded rather than iterating the mutable modules list: teardown clears that list from another
-        //thread, which used to mean a ConcurrentModificationException or an NPE on the main thread.
-        //Adding a module that overrides this hook means wiring it in here - see ModuleBase#onActivityStarted.
-        if (moduleViews != null) {
-            moduleViews.onActivityStarted(activity, activityCount_);
-        }
-        if (moduleAPM != null) {
-            moduleAPM.onActivityStarted(activity, activityCount_);
-        }
-        if (moduleFeedback != null) {
-            moduleFeedback.onActivityStarted(activity, activityCount_);
-        }
-        if (moduleContent != null) {
-            moduleContent.onActivityStarted(activity, activityCount_);
+        for (ModuleBase module : modules) {
+            module.onActivityStarted(activity, startedCount);
         }
 
         calledAtLeastOnceOnStart = true;
     }
 
     void onStopInternal() {
-        L.d("Countly onStopInternal called, [" + activityCount_ + "] -> [" + (activityCount_ - 1) + "] activities now open");
+        L.d("Countly onStopInternal called, [" + activityCount_.get() + "] -> [" + (activityCount_.get() - 1) + "] activities now open");
 
-        if (activityCount_ == 0) {
+        final int startedCount = activityCount_.decrementAndGet();
+        if (startedCount < 0) {
+            activityCount_.incrementAndGet();
             L.e("must call onStart before onStop");
             return;
         }
 
-        --activityCount_;
-        if (activityCount_ == 0 && moduleSessions != null && moduleSessions.automaticSessionTrackingEnabled()) {
+        //read once into a local: a teardown on another thread nulls the module fields
+        ModuleSessions sessionsModule = moduleSessions;
+        if (startedCount == 0 && sessionsModule != null && sessionsModule.automaticSessionTrackingEnabled()) {
             // if automatic session tracking is active
             // Called when final Activity is stopped.
             // Sends an end session event to the server, also sends any unsent custom events.
-            moduleSessions.endSessionInternal();
+            sessionsModule.endSessionInternal();
         }
 
         deviceInfo_.inBackground();
 
-        //Hardcoded - see ModuleBase#onActivityStopped
-        if (moduleViews != null) {
-            moduleViews.onActivityStopped(activityCount_);
-        }
-        if (moduleFeedback != null) {
-            moduleFeedback.onActivityStopped(activityCount_);
-        }
-        if (moduleContent != null) {
-            moduleContent.onActivityStopped(activityCount_);
-        }
-        if (moduleHealthCheck != null) {
-            moduleHealthCheck.onActivityStopped(activityCount_);
+        for (ModuleBase module : modules) {
+            module.onActivityStopped(startedCount);
         }
 
-        if (activityCount_ == 0) {
+        if (startedCount == 0) {
             //the app itself is in the background now, not just moving between activities
             L.onAppEnteredBackground();
         }
@@ -1802,9 +1856,8 @@ public class Countly {
     public synchronized void onConfigurationChangedInternal(Configuration newConfig) {
         L.i("Calling [onConfigurationChangedInternal]");
 
-        //Hardcoded - see ModuleBase#onConfigurationChanged
-        if (moduleViews != null) {
-            moduleViews.onConfigurationChanged(newConfig);
+        for (ModuleBase module : modules) {
+            module.onConfigurationChanged(newConfig);
         }
     }
 
@@ -1868,10 +1921,10 @@ public class Countly {
      * is not an active application session.
      */
     synchronized void onTimer() {
-        L.v("[onTimer] Calling heartbeat, Activity count:[" + activityCount_ + "]");
+        L.v("[onTimer] Calling heartbeat, Activity count:[" + activityCount_.get() + "]");
 
         if (isInitialized()) {
-            final boolean appIsInForeground = activityCount_ > 0;
+            final boolean appIsInForeground = activityCount_.get() > 0;
             if (appIsInForeground && moduleSessions.automaticSessionTrackingEnabled()) {
                 //if we have automatic session control and we are in the foreground, record an update
                 moduleSessions.updateSessionInternal();
@@ -1887,8 +1940,11 @@ public class Countly {
             //on every timer tick we save the user profile if it was changed
             moduleUserProfile.saveInternal();
 
-            //on every timer tick we upload the gathered SDK log lines, for a buffer that never reaches the batch size
-            L.flushGatheredLogs();
+
+            //partial batches go out on foreground ticks; the process lifecycle covers activities the SDK does not see
+            if (appIsInForeground || lifeCycleAtleastStarted()) {
+                L.flushGatheredLogs();
+            }
 
             requestQueueProvider.tick();
         }
@@ -1916,24 +1972,83 @@ public class Countly {
             return;
         }
 
-        //debouncing the call
+        //debouncing the call, per device ID: the same token sent for a new user is a new registration
+        ModuleDeviceId deviceIdModule = moduleDeviceId;
+        String deviceId = deviceIdModule == null ? null : deviceIdModule.getDeviceId();
 
-        long currentTs = UtilsTime.currentTimestampMs();
-        long timeDelta = currentTs - lastRegistrationCallTs;
+        synchronized (registrationLock) {
+            long currentTs = UtilsTime.currentTimestampMs();
+            long timeDelta = currentTs - lastRegistrationCallTs;
 
-        if (lastRegistrationCallID != null && lastRegistrationCallID.equals(registrationId) &&
-            lastRegistrationCallProvider != null && lastRegistrationCallProvider == provider &&
-            timeDelta < lastRegistrationCallDebounceDuration) {
-            // if the values match and we are trying to resend them withing the debounce duration, ignore them
-            L.w("[onRegistrationId] Calling this with the same values within the debounce interval. elapsedT:[" + timeDelta + "] ms");
-            return;
+            if (lastRegistrationCallID != null && lastRegistrationCallID.equals(registrationId) &&
+                lastRegistrationCallProvider != null && lastRegistrationCallProvider == provider &&
+                Objects.equals(lastRegistrationCallDeviceId, deviceId) &&
+                timeDelta < lastRegistrationCallDebounceDuration) {
+                // if the values match and we are trying to resend them withing the debounce duration, ignore them
+                L.w("[onRegistrationId] Calling this with the same values within the debounce interval. elapsedT:[" + timeDelta + "] ms");
+                return;
+            }
+
+            lastRegistrationCallTs = currentTs;
+            lastRegistrationCallID = registrationId;
+            lastRegistrationCallProvider = provider;
+            lastRegistrationCallDeviceId = deviceId;
+
+            queue.tokenSession(registrationId, provider);
         }
+    }
 
-        lastRegistrationCallTs = currentTs;
-        lastRegistrationCallID = registrationId;
-        lastRegistrationCallProvider = provider;
+    /**
+     * Lets the next registration of the token through the debounce. Removing the push consent makes the server drop
+     * the token, so giving it again has to send the token even when that happens within the debounce interval.
+     */
+    void resetPushTokenDebounce() {
+        synchronized (registrationLock) {
+            lastRegistrationCallTs = 0;
+        }
+    }
 
-        queue.tokenSession(registrationId, provider);
+    /**
+     * The SSL socket factory this instance's requests go through, for a resource on its own server.
+     *
+     * @param host host of the resource
+     * @return the factory, or null when the instance is not running, has none, or the host is another one
+     */
+    @Nullable SSLSocketFactory sslSocketFactoryForHost(@Nullable String host) {
+        ConnectionQueue queue = connectionQueue_;
+        CountlyConfig config = config_;
+        if (!isInitialized() || queue == null || config == null || config.serverURL == null || host == null) {
+            return null;
+        }
+        try {
+            if (!host.equalsIgnoreCase(new URL(config.serverURL).getHost())) {
+                return null;
+            }
+        } catch (MalformedURLException e) {
+            return null;
+        }
+        return queue.getSslSocketFactory();
+    }
+
+    /**
+     * Sends the push token this instance last sent once more, under the device ID it has now. The server keeps a
+     * token on the user that sent it last, so this moves the token to a new user after a device ID change without
+     * merge, and replaces a token request that a teardown dropped before it reached the queue.
+     *
+     * @param reason why the token is sent again, for the log
+     */
+    void resendLastPushToken(@NonNull String reason) {
+        synchronized (registrationLock) {
+            String token = lastRegistrationCallID;
+            CountlyMessagingProvider provider = lastRegistrationCallProvider;
+            if (token == null || provider == null) {
+                return;
+            }
+
+            L.d("[Countly] resendLastPushToken, " + reason);
+            lastRegistrationCallTs = 0;
+            onRegistrationId(token, provider);
+        }
     }
 
     public void setLoggingEnabled(final boolean enableLogging) {
@@ -2195,7 +2310,17 @@ public class Countly {
     }
 
     int getActivityCount() {
-        return activityCount_;
+        return activityCount_.get();
+    }
+
+    /**
+     * Adds the activities already started when this instance joined the lifecycle dispatcher. Added, not assigned: a
+     * start dispatched since joining is counted already.
+     *
+     * @param startedActivities the dispatcher's count when this instance joined
+     */
+    void seedActivityCount(int startedActivities) {
+        activityCount_.addAndGet(startedActivities);
     }
 
     synchronized boolean getDisableUpdateSessionRequests() {

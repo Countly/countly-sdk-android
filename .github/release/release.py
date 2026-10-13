@@ -98,6 +98,8 @@ def cmd_plan(args):
     summary(lines + [f"- {artifact.coordinates}" for artifact in plan.artifacts])
     problems = []
     if args.target == "production":
+        if plan.version.split(".")[0] == "0":
+            problems.append(f"{plan.version} is a dry run version, a production release needs 1.0.0 or above")
         if args.prerelease not in ("true", "false"):
             problems.append("a production release needs a published GitHub release for this tag")
         elif (args.prerelease == "true") != plan.prerelease:
@@ -291,7 +293,17 @@ def cmd_consumer(args):
         if not artifact.consumer_probe:
             continue
         for pair in config["consumerPairs"]:
-            if subprocess.run(consumers.android_command(pair, gradlew, repository, artifact, plan.version, checkout_agp), cwd=REPO_ROOT).returncode != 0:
+            try:
+                command = consumers.android_command(pair, gradlew, repository, artifact, plan.version, checkout_agp)
+            except ValueError as error:
+                problems.append(str(error))
+                continue
+            try:
+                returncode = subprocess.run(command, cwd=REPO_ROOT).returncode
+            except OSError as error:
+                problems.append(f"{pair['name']}: could not run {command[0]}: {error}")
+                continue
+            if returncode != 0:
                 problems.append(f"{pair['name']}: a clean app could not build with {artifact.coordinates}:{plan.version}")
     finish(problems, "Consumer builds")
 

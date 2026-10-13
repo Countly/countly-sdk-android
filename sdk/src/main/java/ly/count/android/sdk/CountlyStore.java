@@ -272,6 +272,10 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
             //L.v("[CountlyStore] Writing RQ to cache");
             esRequestQueueCache = requestQueue;
             esDirtyFlag = true;
+            //a synchronous write is a fatal crash report, and nothing persists the cache once the process ends
+            if (writeInSync) {
+                esWriteCacheToStorage(null);
+            }
         } else {
             //L.v("[CountlyStore] Writing RQ to preferences");
             SharedPreferences.Editor editor = preferences_.edit().putString(REQUEST_PREFERENCE, requestQueue);

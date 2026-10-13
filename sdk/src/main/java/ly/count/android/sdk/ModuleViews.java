@@ -523,15 +523,24 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     void startStoppedViews() {
         L.d("[ModuleViews] startStoppedViews, app is coming back to the foreground, starting views that were stopped");
 
+        //auto-stopped views come back last: a regular view started after one would close it at once
+        List<ViewData> autoStoppedViews = new ArrayList<>(1);
         Iterator<Map.Entry<String, ViewData>> iterator = viewDataMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, ViewData> value = iterator.next();
-            ViewData vd = value.getValue();
-            if (vd.willStartAgain) {
-                //if the view is auto-stopped, start it again and remove from the cache
-                iterator.remove();
-                startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
+            ViewData vd = iterator.next().getValue();
+            if (!vd.willStartAgain) {
+                continue;
             }
+            iterator.remove();
+            if (vd.isAutoStoppedView) {
+                autoStoppedViews.add(vd);
+            } else {
+                startViewInternal(vd.viewName, vd.viewSegmentation, false);
+            }
+        }
+
+        for (ViewData vd : autoStoppedViews) {
+            startViewInternal(vd.viewName, vd.viewSegmentation, true);
         }
     }
 
@@ -571,6 +580,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     @Override
     void onActivityStarted(Activity activity, int updatedActivityCount) {
+        //stopped views come back first: a regular view restarted after the activity's view would close it at once
+        if (updatedActivityCount == 1 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
+            startStoppedViews();
+        }
+
         //automatic view tracking, resolved through the SBS precedence chain (server can override the local setting)
         if (configProvider.getAutomaticViewTrackingEnabled()) {
             if (!isActivityInExceptionList(activity)) {
@@ -596,10 +610,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             if (orient != null) {
                 updateOrientation(orient);
             }
-        }
-
-        if (updatedActivityCount == 1 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
-            startStoppedViews();
         }
     }
 

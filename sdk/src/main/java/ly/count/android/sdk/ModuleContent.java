@@ -13,6 +13,7 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -44,6 +45,13 @@ public class ModuleContent extends ModuleBase {
     //replaced, never refilled in place: the setter can run on any thread while an event reads it
     @NonNull private volatile Map<String, Object> globalContentSegmentation = Collections.emptyMap();
 
+    //the server reads these off feedback widget and content events to count answers and attribute them
+    static final String[] reservedGlobalContentSegmentationKeys = {
+        "platform", "app_version", "widget_id", "closed", "shown", "started", "answered", "rating", "comment", "email", "contactMe", "campaign_id",
+        "content_id", "element_id", "dismissed", "journey_id", "journey_definition_id", "journeyId", "journeyDefinitionId", "journeyInstanceId"
+    };
+    static final String reservedSurveyAnswerKeyPrefix = "answ-";
+
     private @Nullable Activity getCurrentActivity() {
         return currentActivity != null ? currentActivity.get() : null;
     }
@@ -67,7 +75,8 @@ public class ModuleContent extends ModuleBase {
     }
 
     /**
-     * Stores a sanitized copy of the given segmentation, or clears it when 'null' or empty.
+     * Stores a sanitized copy of the given segmentation without its reserved keys, or clears it when
+     * 'null' or empty.
      */
     void setGlobalContentSegmentationInternal(@Nullable Map<String, Object> segmentation) {
         if (segmentation == null || segmentation.isEmpty()) {
@@ -79,6 +88,16 @@ public class ModuleContent extends ModuleBase {
         Map<String, Object> sanitized = new LinkedHashMap<>(segmentation);
         String tag = "[ModuleContent] setGlobalContentSegmentationInternal";
         UtilsInternalLimits.removeUnsupportedDataTypes(sanitized, L);
+        UtilsInternalLimits.removeReservedKeysFromSegmentation(sanitized, reservedGlobalContentSegmentationKeys, tag + ",", L);
+        Iterator<String> keys = sanitized.keySet().iterator();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            if (key.startsWith(reservedSurveyAnswerKeyPrefix)) {
+                L.w(tag + ", provided segmentation contains protected key [" + key + "]");
+                keys.remove();
+            }
+        }
+        //after the reserved keys are gone, so they do not use up the segmentation limit
         UtilsInternalLimits.applySdkInternalLimitsToSegmentation(sanitized, _cly.sdkInternalLimits_, L, tag);
 
         globalContentSegmentation = sanitized;
@@ -727,7 +746,8 @@ public class ModuleContent extends ModuleBase {
         /**
          * Sets a segmentation recorded with every content and feedback widget event, on top of the
          * keys those events already report. It is kept for as long as the app runs, including when a
-         * session ends and a new one starts, and it is not restored after an app restart.
+         * session ends and a new one starts, and it is not restored after an app restart. Keys those
+         * events reserve, like "rating", "closed", "dismissed" or "answ-" answers, are dropped.
          *
          * @param segmentation Map<String, Object> - global content segmentation, 'null' clears it
          * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
