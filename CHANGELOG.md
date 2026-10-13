@@ -26,7 +26,7 @@
 * Added server requested SDK log gathering. When the server asks, the SDK uploads its own log lines, even with logging disabled. When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
 * Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
 * Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
-* Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events.
+* Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events. Keys these events reserve are dropped from it.
 
 * Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.
 * Mitigated an issue where an app that stayed in the foreground refreshed its SDK behavior settings only every 4,000 hours instead of every 4 hours.
