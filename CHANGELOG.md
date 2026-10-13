@@ -46,6 +46,29 @@
 * Mitigated an issue where fatal crash reports were lost in explicit storage mode.
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
 
+* Removed the following deprecated calls from "CountlyConfig":
+  * "setMaxSegmentationValues(int)" and "setMaxBreadcrumbCount(int)"
+  * "enableCrashReporting()", "setRecordAllThreadsWithCrash()", "setCustomCrashSegment(Map)" and "setCrashFilterCallback(CrashFilterCallback)"
+  * "checkForNativeCrashDumps(boolean)"
+  * "setViewTracking(boolean)", "setAutoTrackingUseShortName(boolean)", "setAutomaticViewSegmentation(Map)" and "setAutoTrackingExceptions(Class[])"
+  * "setRemoteConfigAutomaticDownload(boolean, RemoteConfigCallback)"
+  * "setRecordAppStartTime(boolean)", "setAppStartTimestampOverride(long)", "enableManualAppLoadedTrigger()" and "enableManualForegroundBackgroundTriggerAPM()"
+  * "setEnableAttribution(boolean)" and "enableServerConfiguration()"
+* Removed the following deprecated calls from the "RemoteConfig" interface:
+  * "update(RemoteConfigCallback)", "updateForKeysOnly(String[], RemoteConfigCallback)" and "updateExceptKeys(String[], RemoteConfigCallback)"
+  * "getValueForKey(String)", "getAllValues()" and "clearStoredValues()"
+* Removed the deprecated calls "recordView(String)", "recordView(String, Map)" and "isAutomaticViewTrackingEnabled()" from the "Views" interface
+* Removed the deprecated calls "triggerForeground()" and "triggerBackground()" from the "Apm" interface
+* Removed the deprecated calls "recordManualRating(String, int, String, String, boolean)" and "showFeedbackPopup(String, String, Activity, FeedbackRatingCallback)" from the "Ratings" interface
+* Removed the deprecated function "presentFeedbackWidget(CountlyFeedbackWidget, Context, String, FeedbackCallback)" from the "Feedback" interface
+* Removed the deprecated functions "CountlyPush.init(Application, CountlyMessagingMode)", "CountlyPush.init(Application, CountlyMessagingMode, CountlyMessagingProvider)" and "CountlyPush.getLastMessagingMethod(Context)"
+* Removed the deprecated constructor "CountlyConfigPush(Application, CountlyMessagingMode)"
+* Removed the deprecated functions "Countly.hasBeenCalledOnStart()" and "Utils.API(int)"
+
+* Deprecated the "RemoteConfigCallback" interface, replaced with "RCDownloadCallback"
+* Deprecated the "CrashFilterCallback" interface, replaced with "GlobalCrashFilterCallback"
+* Deprecated the "Countly.CountlyMessagingMode" enum, as the messaging mode is no longer used
+
 ## 26.1.6
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
 * Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.

@@ -657,61 +657,6 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     public class Views {
         /**
-         * Check state of automatic view tracking
-         *
-         * @return boolean - true if enabled, false if disabled
-         * @deprecated this call will be removed. There is no replacement
-         */
-        public boolean isAutomaticViewTrackingEnabled() {
-            synchronized (_cly) {
-                L.i("[Views] Calling isAutomaticViewTrackingEnabled");
-
-                return autoViewTracker;
-            }
-        }
-
-        /**
-         * Record a view manually, without automatic tracking
-         * or tracks a view that is not automatically tracked
-         * like a fragment, Message box or a transparent Activity
-         *
-         * @param viewName String - name of the view
-         * @return Returns link to Countly for call chaining
-         * @deprecated Use "Countly.sharedInstance().views().startAutoStoppedView(...)" in place of this
-         */
-        public Countly recordView(@Nullable String viewName) {
-            synchronized (_cly) {
-                // call the general function that has two parameters
-                return recordView(viewName, null);
-            }
-        }
-
-        /**
-         * Record a view manually, without automatic tracking
-         * or tracks a view that is not automatically tracked
-         * like a fragment, Message box or a transparent Activity
-         * with segmentation. (This is the main function that is used)
-         *
-         * @param viewName String - name of the view
-         * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
-         * @deprecated Use "Countly.sharedInstance().views().startAutoStoppedView(...)" in place of this
-         */
-        public Countly recordView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
-            synchronized (_cly) {
-                L.i("[Views] Calling recordView [" + viewName + "]");
-
-                if (autoViewTracker) {
-                    L.e("[Views] recordView, manual view call will be ignored since automatic tracking is enabled.");
-                    return _cly;
-                }
-
-                startViewInternal(viewName, viewSegmentation, true);
-
-                return _cly;
-            }
-        }
-
-        /**
          * Record a view manually, without automatic tracking
          * or tracks a view that is not automatically tracked
          * like a fragment, Message box or a transparent Activity

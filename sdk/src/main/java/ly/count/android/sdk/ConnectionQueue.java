@@ -881,23 +881,6 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
-    public String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
-        String data = prepareCommonRequestData() + "&method=fetch_remote_config";
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            //add session data if consent given
-            data += "&metrics=" + preparedMetrics;
-        }
-
-        //add key filters
-        if (keysInclude != null) {
-            data += "&keys=" + UtilsNetworking.urlEncodeString(keysInclude);
-        } else if (keysExclude != null) {
-            data += "&omit_keys=" + UtilsNetworking.urlEncodeString(keysExclude);
-        }
-
-        return data;
-    }
-
     public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics, boolean autoEnroll) {
         String data = prepareCommonRequestData() + "&method=rc";
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {

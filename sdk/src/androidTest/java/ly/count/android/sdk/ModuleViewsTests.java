@@ -135,7 +135,7 @@ public class ModuleViewsTests {
         @NonNull Activity act1 = mock(Activity.class);
         @NonNull Activity act2 = mock(TestUtils.Activity2.class);
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeViewIDGenerator, null).setAutoTrackingExceptions(new Class[] { act1.getClass() });
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeViewIDGenerator, null).setAutomaticViewTrackingExclusions(new Class[] { act1.getClass() });
         Countly mCountly = new Countly().init(cc);
 
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -303,13 +303,13 @@ public class ModuleViewsTests {
         // start false because session did not start
         ClearFillSegmentationViewStart(segm, viewNames[0], false);
 
-        mCountly.views().recordView(viewNames[0]);
+        mCountly.views().startAutoStoppedView(viewNames[0]);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
         clearInvocations(ep);
         Thread.sleep(1000);
 
-        mCountly.views().recordView(viewNames[1]);
+        mCountly.views().startAutoStoppedView(viewNames[1]);
         ClearFillSegmentationViewEnd(segm, viewNames[0], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 0, 2);
 
@@ -318,7 +318,7 @@ public class ModuleViewsTests {
         clearInvocations(ep);
 
         Thread.sleep(1000);
-        mCountly.views().recordView(viewNames[2]);
+        mCountly.views().startAutoStoppedView(viewNames[2]);
         ClearFillSegmentationViewEnd(segm, viewNames[1], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);//todo this test has issues sometimes
 
@@ -369,7 +369,7 @@ public class ModuleViewsTests {
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
         final Map<String, Object> segm = new HashMap<>();
 
-        mCountly.views().recordView(viewNames[0], cSegm1);
+        mCountly.views().startAutoStoppedView(viewNames[0], cSegm1);
 
         // start false because session did not start
         ClearFillSegmentationViewStart(segm, viewNames[0], false, globalSegm);
@@ -378,7 +378,7 @@ public class ModuleViewsTests {
         clearInvocations(ep);
         Thread.sleep(2000);
 
-        mCountly.views().recordView(viewNames[1], cSegm2);
+        mCountly.views().startAutoStoppedView(viewNames[1], cSegm2);
         ClearFillSegmentationViewEnd(segm, viewNames[0], globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 2); // duration comes off sometimes
 
@@ -391,7 +391,7 @@ public class ModuleViewsTests {
         clearInvocations(ep);
 
         Thread.sleep(1000);
-        mCountly.views().recordView(viewNames[2], cSegm3);
+        mCountly.views().startAutoStoppedView(viewNames[2], cSegm3);
         ClearFillSegmentationViewEnd(segm, viewNames[1], globalSegm);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);
@@ -491,7 +491,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.views().recordView("");
+        mCountly.views().startAutoStoppedView("");
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
@@ -504,7 +504,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.views().recordView(null);
+        mCountly.views().startAutoStoppedView(null);
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("xxx", "33");
@@ -682,7 +682,7 @@ public class ModuleViewsTests {
         segm.put("xxx", "33");
         segm.put("rtt", 2);
 
-        mCountly.views().recordView("abcd");
+        mCountly.views().startAutoStoppedView("abcd");
         mCountly.views().startView("aa");
         mCountly.views().startView("aa", segm);
         mCountly.views().startAutoStoppedView("bb");
@@ -709,10 +709,10 @@ public class ModuleViewsTests {
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        mCountly.views().recordView("a");//starting a view
+        mCountly.views().startAutoStoppedView("a");//starting a view
         TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
 
-        mCountly.views().recordView("b", segm);//starting a new view, stopping the previous one
+        mCountly.views().startAutoStoppedView("b", segm);//starting a new view, stopping the previous one
         TestUtils.validateRecordEventInternalMockInteractions(ep, 3);
 
         mCountly.views().startView("c");//starting a new view, stopping the previous one

@@ -141,42 +141,6 @@ public class RemoteConfigValueStore {
         return ret;
     }
 
-    public Object getValueLegacy(@NonNull String key) {
-        JSONObject rcObj = values.optJSONObject(key);
-        if (rcObj == null) {
-            return null;
-        }
-
-        return rcObj.opt(keyValue);
-    }
-
-    public @NonNull Map<String, Object> getAllValuesLegacy() {
-        Map<String, Object> ret = new HashMap<>();
-
-        Iterator<String> keys = values.keys();
-
-        while (keys.hasNext()) {
-            String key = keys.next();
-
-            JSONObject jobj = values.optJSONObject(key);
-            if (jobj == null) {
-                L.e("[RemoteConfigValueStore] getAllValuesLegacy, inner object seems to be 'null', key:[" + key + "]");
-                continue;
-            }
-
-            Object innerValue = jobj.opt(keyValue);
-
-            if (innerValue == null) {
-                L.e("[RemoteConfigValueStore] getAllValuesLegacy, inner value seems to be 'null', key:[" + key + "]");
-                continue;
-            }
-
-            ret.put(key, innerValue);
-        }
-
-        return ret;
-    }
-
     //========================================
     // SERIALIZATION, DESERIALIZATION
     //========================================

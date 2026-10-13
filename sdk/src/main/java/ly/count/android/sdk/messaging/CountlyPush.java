@@ -940,33 +940,6 @@ public class CountlyPush {
     /**
      * Initialize Countly messaging functionality
      *
-     * @param application application instance
-     * @param mode whether to mark push token as test or as production one
-     * @throws IllegalStateException
-     * @deprecated use 'CountlyConfigPush' object to init Countly Push: 'init(CountlyConfigPush countlyConfigPush)'.
-     */
-    public static void init(@Nullable final Application application, @Nullable Countly.CountlyMessagingMode mode) throws IllegalStateException {
-        init(application, mode, null);
-    }
-
-    /**
-     * Initialize Countly messaging functionality
-     *
-     * @param application application instance
-     * @param mode whether to mark push token as test or as production one
-     * @param preferredProvider prefer specified push provider, {@code null} means use FCM first, then fallback to Huawei
-     * @throws IllegalStateException
-     * @deprecated use 'CountlyConfigPush' object to init Countly Push: 'init(CountlyConfigPush countlyConfigPush)'.
-     */
-    public static void init(@Nullable final Application application, @Nullable Countly.CountlyMessagingMode mode, @Nullable Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
-        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(application)
-            .setProvider(preferredProvider);
-        init(countlyConfigPush);
-    }
-
-    /**
-     * Initialize Countly messaging functionality
-     *
      * @param countlyConfigPush push configuration
      * @throws IllegalStateException
      */
@@ -1100,18 +1073,6 @@ public class CountlyPush {
         } catch (Throwable t) {
             return "";
         }
-    }
-
-    /**
-     * Returns which messaging mode was used in the previous init
-     * -1 - no data / no init has happened
-     * 0 - test mode
-     * 1 - production mode
-     *
-     * @deprecated this call will always return "0". It should not be used anymore. There is no need for it
-     */
-    public static int getLastMessagingMethod(Context context) {
-        return 0;
     }
 
     public static void setNotificationAccentColor(int alpha, int red, int green, int blue) {

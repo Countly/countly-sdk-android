@@ -1397,7 +1397,7 @@ public class ContentOverlayViewTests {
             final AtomicBoolean finishedCalled = new AtomicBoolean(false);
             final AtomicBoolean closedCalled = new AtomicBoolean(false);
 
-            Countly.sharedInstance().feedback().presentFeedbackWidget(widget, activity, null,
+            Countly.sharedInstance().feedback().presentFeedbackWidget(widget, activity,
                 new ModuleFeedback.FeedbackCallback() {
                     @Override public void onClosed() {
                         closedCalled.set(true);

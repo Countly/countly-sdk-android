@@ -57,10 +57,6 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         downloadCallbacks.addAll(config.remoteConfigGlobalCallbackList);
 
-        if (config.remoteConfigCallbackLegacy != null) {
-            downloadCallbacks.add((downloadResult, error, fullValueUpdate, downloadedValues) -> config.remoteConfigCallbackLegacy.callback(error));
-        }
-
         remoteConfigInterface = new RemoteConfig();
     }
 
@@ -71,8 +67,8 @@ public class ModuleRemoteConfig extends ModuleBase {
      * @param keysExcept set if these keys should be ignored from the update
      * @param devProvidedCallback dev provided callback that is called after the update is done
      */
-    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, final boolean useLegacyAPI, @Nullable final RCDownloadCallback devProvidedCallback) {
-        L.d("[ModuleRemoteConfig] Updating remote config values, legacyAPI:[" + useLegacyAPI + "]");
+    void updateRemoteConfigValues(@Nullable final String[] keysOnly, @Nullable final String[] keysExcept, @Nullable final RCDownloadCallback devProvidedCallback) {
+        L.d("[ModuleRemoteConfig] Updating remote config values");
 
         String[] preparedKeys = RemoteConfigHelper.prepareKeysIncludeExclude(keysOnly, keysExcept, L);
         boolean fullUpdate = (preparedKeys[0] == null || preparedKeys[0].length() == 0) && (preparedKeys[1] == null || preparedKeys[1].length() == 0);
@@ -95,13 +91,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             //prepare metrics and request data
             String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
-            String requestData;
-
-            if (useLegacyAPI) {
-                requestData = requestQueueProvider.prepareRemoteConfigRequestLegacy(preparedKeys[0], preparedKeys[1], preparedMetrics);
-            } else {
-                requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics, autoEnrollEnabled);
-            }
+            String requestData = requestQueueProvider.prepareRemoteConfigRequest(preparedKeys[0], preparedKeys[1], preparedMetrics, autoEnrollEnabled);
             L.d("[ModuleRemoteConfig] RemoteConfig requestData:[" + requestData + "]");
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
@@ -326,16 +316,6 @@ public class ModuleRemoteConfig extends ModuleBase {
         }
     }
 
-    Object getRCValueLegacy(@NonNull String key) {
-        try {
-            RemoteConfigValueStore rcvs = loadConfig();
-            return rcvs.getValueLegacy(key);
-        } catch (Exception ex) {
-            L.e("[ModuleRemoteConfig] getValueLegacy, Call failed:[" + ex.toString() + "]");
-            return null;
-        }
-    }
-
     void saveConfig(@NonNull RemoteConfigValueStore rcvs) {
         storageProvider.setRemoteConfigValues(rcvs.dataToString());
     }
@@ -354,18 +334,6 @@ public class ModuleRemoteConfig extends ModuleBase {
     void clearValueStoreInternal() {
         synchronized (remoteConfigLock) {
             storageProvider.setRemoteConfigValues("");
-        }
-    }
-
-    @NonNull Map<String, Object> getAllRemoteConfigValuesInternalLegacy() {
-        synchronized (remoteConfigLock) {
-            try {
-                RemoteConfigValueStore rcvs = loadConfig();
-                return rcvs.getAllValuesLegacy();
-            } catch (Exception ex) {
-                L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
-                return new HashMap<>();
-            }
         }
     }
 
@@ -444,7 +412,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
         if (automaticDownloadTriggersEnabled && consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
             L.d("[RemoteConfig] Automatically updating remote config values");
-            updateRemoteConfigValues(null, null, false, null);
+            updateRemoteConfigValues(null, null, null);
         } else {
             L.v("[RemoteConfig] Automatic RC update trigger skipped");
         }
@@ -496,134 +464,6 @@ public class ModuleRemoteConfig extends ModuleBase {
 
     public class RemoteConfig {
         /**
-         * Clear all stored remote config_ values
-         *
-         * @deprecated Use "clearAll"
-         */
-        public void clearStoredValues() {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] clearStoredValues");
-
-                clearValueStoreInternal();
-            }
-        }
-
-        /**
-         * @return
-         * @deprecated You should use "getValues"
-         */
-        public Map<String, Object> getAllValues() {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] getAllValues");
-
-                return getAllRemoteConfigValuesInternalLegacy();
-            }
-        }
-
-        /**
-         * Get the stored value for the provided remote config_ key
-         *
-         * @param key
-         * @return
-         * @deprecated You should use "getValue"
-         */
-        public Object getValueForKey(String key) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] remoteConfigValueForKey, " + key);
-
-                return getRCValueLegacy(key);
-            }
-        }
-
-        /**
-         * Manual remote config update call. Will update all keys except the ones provided
-         *
-         * @param keysToExclude
-         * @param callback
-         * @deprecated You should use "downloadOmittingKeys"
-         */
-        public void updateExceptKeys(String[] keysToExclude, RemoteConfigCallback callback) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] updateExceptKeys");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    if (callback != null) {
-                        callback.callback("No consent given");
-                    }
-                    return;
-                }
-                if (keysToExclude == null) {
-                    L.w("[RemoteConfig] updateExceptKeys passed 'keys to ignore' array is null");
-                }
-
-                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
-                };
-
-                updateRemoteConfigValues(null, keysToExclude, true, innerCall);
-            }
-        }
-
-        /**
-         * Manual remote config update call. Will only update the keys provided.
-         *
-         * @param keysToInclude
-         * @param callback
-         * @deprecated You should use "downloadSpecificKeys"
-         */
-        public void updateForKeysOnly(String[] keysToInclude, RemoteConfigCallback callback) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] updateForKeysOnly");
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    if (callback != null) {
-                        callback.callback("No consent given");
-                    }
-                    return;
-                }
-                if (keysToInclude == null) {
-                    L.w("[RemoteConfig] updateForKeysOnly passed 'keys to include' array is null");
-                }
-
-                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
-                };
-
-                updateRemoteConfigValues(keysToInclude, null, true, innerCall);
-            }
-        }
-
-        /**
-         * Manually update remote config values
-         *
-         * @param callback
-         * @deprecated You should use "downloadAllKeys"
-         */
-        public void update(RemoteConfigCallback callback) {
-            synchronized (_cly) {
-                L.i("[RemoteConfig] update");
-
-                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.remoteConfig)) {
-                    if (callback != null) {
-                        callback.callback("No consent given");
-                    }
-                    return;
-                }
-
-                RCDownloadCallback innerCall = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
-                    if (callback != null) {
-                        callback.callback(error);
-                    }
-                };
-
-                updateRemoteConfigValues(null, null, true, innerCall);
-            }
-        }
-
-        /**
          * Manual remote config call that will initiate a download of all except the given remote config keys.
          * If no keys are provided then it will download all available RC values
          *
@@ -649,7 +489,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     };
                 }
 
-                updateRemoteConfigValues(null, keysToOmit, false, callback);
+                updateRemoteConfigValues(null, keysToOmit, callback);
             }
         }
 
@@ -678,7 +518,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     };
                 }
 
-                updateRemoteConfigValues(keysToInclude, null, false, callback);
+                updateRemoteConfigValues(keysToInclude, null, callback);
             }
         }
 
@@ -703,7 +543,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                     };
                 }
 
-                updateRemoteConfigValues(null, null, false, callback);
+                updateRemoteConfigValues(null, null, callback);
             }
         }
 
@@ -860,7 +700,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         public void clearAll() {
             synchronized (_cly) {
                 L.i("[RemoteConfig] clearAll");
-                clearStoredValues();
+                clearValueStoreInternal();
             }
         }
 
