@@ -923,7 +923,8 @@ public class SdkLogGatheringTests {
                 return true;
             });
 
-            CountlyConfig config = TestUtils.createBaseConfig().setLoggingEnabled(false);
+            //the mocked request queue can not build the health check request that init sends
+            CountlyConfig config = TestUtils.createBaseConfig().setLoggingEnabled(false).disableHealthCheck();
             config.requestQueueProvider = rqp;
             config.immediateRequestGenerator = createPendingIRG();
             countly = new Countly().init(config);
