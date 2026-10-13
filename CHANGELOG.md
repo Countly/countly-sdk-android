@@ -18,7 +18,6 @@
 * ! Minor breaking change ! "halt()" now also erases the generated device ID, so the next initialization starts as a new user.
 * ! Minor breaking change ! The custom network request headers in `CountlyConfig` are copied at initialization, so later changes to that map are no longer picked up. Use "requestQueue().addCustomNetworkRequestHeaders(Map)" to change them later.
 * ! Minor breaking change ! Removed the unused `androidx.multidex:multidex` dependency. An app that uses it has to declare it itself.
-* ! Minor breaking change ! In temporary device ID mode, requests recorded before the mode began are now sent.
 
 * Added multi-instance support:
   * A named instance from "Countly.instance(name)" has its own storage, request queue and device ID. Manage instances with "Countly.getInstance(name)", "Countly.listInstances()" and "Countly.removeInstance(name)".
@@ -33,7 +32,6 @@
 * Mitigated an issue where an app that stayed in the foreground refreshed its SDK behavior settings only every 4,000 hours instead of every 4 hours.
 * Mitigated an issue where "disableBackoffMechanism()" had no effect until SDK behavior settings arrived.
 * Mitigated a crash when a content or feedback widget was closed from a background thread, for example by a device ID change without merge or by removing consent.
-* Mitigated an issue where rating dialogs and feedback widgets without a version could open on top of a displayed content or feedback widget.
 * Mitigated an issue where an auto-stopped view could stop being tracked when the app came back from the background.
 * Mitigated push notification image issues that could show a notification late, or not at all:
   * A notification waits at most 8 seconds for its images and is shown without the ones that have not arrived.
@@ -46,7 +44,6 @@
   * The token is sent for the new user after a device ID change without merge.
   * The token request is filed under the device ID that is current when it is queued.
 * Mitigated an issue where fatal crash reports were lost in explicit storage mode.
-* Mitigated an issue where recording a crash on the main thread measured the disk size on that thread.
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
 
 ## 26.1.6

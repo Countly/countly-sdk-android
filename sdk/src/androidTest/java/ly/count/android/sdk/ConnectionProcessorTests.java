@@ -421,32 +421,6 @@ public class ConnectionProcessorTests {
     }
 
     /**
-     * Temporary ID mode stalls only what was recorded under the temporary ID. A request recorded before the mode began
-     * carries a real device ID and is sent, and the queue stops at the first tagged request, so the order is kept.
-     */
-    @Test
-    public void testRun_temporaryIdMode_sendsRealIdRequestsAndStallsAtTheFirstTaggedOne() throws IOException {
-        final String realIdRequest = "a=1&device_id=" + testDeviceId;
-        final String taggedRequest = "b=2&device_id=" + DeviceId.temporaryCountlyDeviceId;
-        final String laterRealIdRequest = "c=3&device_id=" + testDeviceId;
-        connectionProcessor = spy(connectionProcessor);
-        when(mockDeviceId.isTemporaryIdEnabled()).thenReturn(true);
-        when(mockDeviceId.getDeviceId()).thenReturn(DeviceId.temporaryCountlyDeviceId);
-        when(mockStore.getRequests()).thenReturn(new String[] { realIdRequest, taggedRequest, laterRealIdRequest }, new String[] { taggedRequest, laterRealIdRequest });
-        final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
-        when(mockURLConnection.getInputStream()).thenReturn(new CountlyResponseStream("Success"));
-        when(mockURLConnection.getResponseCode()).thenReturn(200);
-        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(anyString(), isNull(String.class));
-
-        connectionProcessor.run();
-
-        verify(connectionProcessor, times(1)).urlConnectionForServerRequest(anyString(), isNull(String.class));
-        verify(mockStore).removeRequest(realIdRequest);
-        verify(mockStore, never()).removeRequest(taggedRequest);
-        verify(mockStore, never()).removeRequest(laterRealIdRequest);
-    }
-
-    /**
      * A processor asked to stop finishes the request in flight and stops before the next one, so a stopped instance's
      * sender does not keep draining the stored queue beside the processor of the next init.
      */

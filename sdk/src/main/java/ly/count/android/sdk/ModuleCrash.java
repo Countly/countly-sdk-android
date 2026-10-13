@@ -435,7 +435,7 @@ public class ModuleCrash extends ModuleBase {
     @Override
     void initFinished(@NonNull CountlyConfig config) {
         // resolved even while the server configuration disables crash reporting, as it can enable it later
-        Utils.runInBackground(() -> deviceInfo.prefetchDiskBackedMetrics(config.context));
+        Utils.runInBackground(deviceInfo::prefetchDiskBackedMetrics);
 
         //enable unhandled crash reporting
         if (!configProvider.getCrashReportingEnabled()) {

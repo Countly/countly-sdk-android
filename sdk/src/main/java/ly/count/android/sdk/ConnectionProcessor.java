@@ -436,9 +436,13 @@ public class ConnectionProcessor implements Runnable {
             }
             // temp ID checks
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            if (requestData.contains(temporaryIdTag)) {
-                //requests recorded before the mode began carry a real ID and go out; from here on, order is kept by waiting
-                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests until temporary ID mode is exited. temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
+            boolean containsTemporaryId = requestData.contains(temporaryIdTag);
+            if (containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
+                //we are about to change ID to the temporary one or
+                //the internally set id is the temporary one
+
+                //abort and wait for exiting temporary mode
+                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests. tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
                 break;
             }
             if (pcc != null) {
