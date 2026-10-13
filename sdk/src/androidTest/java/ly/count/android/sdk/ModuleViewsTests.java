@@ -7,8 +7,10 @@ import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -801,6 +803,66 @@ public class ModuleViewsTests {
     @Test
     public void performFullViewFlowStopWithName_regularStart() throws InterruptedException {
         performFullViewFlowBase(false, false);
+    }
+
+    /**
+     * When the server turns automatic view tracking on, manual views run next to the activities' views. Coming back from
+     * the background restarts the stopped regular view before the activity's view starts. The other order lost the
+     * activity's view: restarting the regular view closed it at once.
+     */
+    @Test
+    public void backgroundAndForeground_automaticTracking_keepsTheActivityViewNextToTheRegularOne() throws JSONException {
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null)
+            .setSDKBehaviorSettings(new ServerConfigBuilder().defaults().automaticViewTracking(true).build());
+        Countly countly = new Countly().init(cc);
+        Assert.assertTrue(countly.moduleConfiguration.getAutomaticViewTrackingEnabled());
+        Activity activity = mock(Activity.class);
+
+        countly.views().startView("regularView");
+        countly.moduleViews.onActivityStarted(activity, 1);
+        Assert.assertEquals(2, countly.moduleViews.viewDataMap.size());
+
+        countly.moduleViews.onActivityStopped(0);
+        countly.moduleViews.onActivityStarted(activity, 1);
+
+        Set<String> running = new HashSet<>();
+        for (ModuleViews.ViewData vd : countly.moduleViews.viewDataMap.values()) {
+            Assert.assertFalse(vd.viewName, vd.willStartAgain);
+            running.add(vd.viewName);
+        }
+        Assert.assertEquals(new HashSet<>(Arrays.asList("regularView", activity.getClass().getName())), running);
+        Assert.assertEquals(activity.getClass().getName(), countly.moduleViews.currentViewName);
+    }
+
+    /**
+     * Coming back to the foreground restarts the views stopped in the background. Starting a view closes the running
+     * auto-stopped one, so the auto-stopped view has to come back after the regular ones, or the regular view restarted
+     * after it would close it at once and it would stop being tracked. The view IDs put the auto-stopped view first in
+     * the map, the order in which it was lost.
+     */
+    @Test
+    public void backgroundAndForeground_autoStoppedViewIsRestartedAfterTheRegularOnes() {
+        //the regular view gets "b" and the auto-stopped one "a", which the map iterates first
+        final String[] ids = { "b", "a", "c", "d", "e", "f" };
+        final int[] next = { 0 };
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, () -> ids[next[0]++], null);
+        Countly countly = new Countly().init(cc);
+
+        //a regular view started after an auto-stopped one would close it, so the regular view comes first
+        countly.views().startView("regularView");
+        countly.views().startAutoStoppedView("autoView");
+        Assert.assertEquals(2, countly.moduleViews.viewDataMap.size());
+
+        countly.moduleViews.onActivityStopped(0);
+        countly.moduleViews.onActivityStarted(null, 1);
+
+        Set<String> running = new HashSet<>();
+        for (ModuleViews.ViewData vd : countly.moduleViews.viewDataMap.values()) {
+            Assert.assertFalse(vd.viewName, vd.willStartAgain);
+            running.add(vd.viewName);
+        }
+        Assert.assertEquals(new HashSet<>(Arrays.asList("autoView", "regularView")), running);
+        Assert.assertEquals("autoView", countly.moduleViews.currentViewName);
     }
 
     /**

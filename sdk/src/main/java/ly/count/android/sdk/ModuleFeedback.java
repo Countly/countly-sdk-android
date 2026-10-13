@@ -355,6 +355,14 @@ public class ModuleFeedback extends ModuleBase {
                     public void run() {
                         L.d("[ModuleFeedback] Calling on main thread");
 
+                        if (ContentOverlayView.isOverlayPresented()) {
+                            L.w("[ModuleFeedback] a content or feedback overlay is already being shown (possibly by another instance), skipping this widget");
+                            if (devCallback != null) {
+                                devCallback.onFinished("A content or feedback overlay is already being shown");
+                            }
+                            return;
+                        }
+
                         try {
                             showFeedbackWidget(context, widgetInfo, closeButtonText, devCallback, preparedWidgetUrl);
 

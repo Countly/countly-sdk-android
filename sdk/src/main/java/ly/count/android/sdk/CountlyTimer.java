@@ -11,6 +11,8 @@ class CountlyTimer {
     //Volatile: written by whichever thread calls stopTimer/startTimer, read by the timer thread.
     private volatile boolean stopped = false;
     protected static int TIMER_DELAY_MS = 0; // for testing purposes
+    //the period the running timer was started with, in milliseconds, 0 while stopped
+    long periodMs = 0;
 
     protected void stopTimer(@NonNull ModuleLog L) {
         if (timerService != null) {
@@ -26,6 +28,7 @@ class CountlyTimer {
                 //(that arrives on ImmediateRequestMaker's onPostExecute, i.e. the main thread). Neither can
                 //afford a two second stall.
                 timerService.shutdown();
+                periodMs = 0;
             } catch (Exception e) {
                 L.e("[CountlyTimer] stopTimer, Error while stopping global timer " + e);
             }
@@ -65,6 +68,7 @@ class CountlyTimer {
         }
 
         stopped = false;
+        periodMs = timerDelayInternal;
         timerService = Executors.newSingleThreadScheduledExecutor();
         //Wrapped rather than scheduled directly. shutdown() already prevents any further execution of a
         //fixed-delay task, so this gate covers only the narrow case it cannot: a tick that has been dequeued

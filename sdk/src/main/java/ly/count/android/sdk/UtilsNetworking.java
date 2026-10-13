@@ -3,14 +3,39 @@ package ly.count.android.sdk;
 import android.net.TrafficStats;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.MessageDigest;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSocketFactory;
 
 public class UtilsNetworking {
     // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
     final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
+
+    /**
+     * Opens a connection for a resource the SDK downloads outside its request queue, such as a push notification
+     * image. A URL on the default instance's server goes through that instance's SSL socket factory, so a server that
+     * is trusted only through the custom factory or certificate pinning works there as well; any other URL gets a
+     * plain connection.
+     *
+     * @param url the resource
+     * @return the connection, not connected yet
+     * @throws IOException when the connection can not be opened
+     */
+    public static @NonNull URLConnection openResourceConnection(@NonNull URL url) throws IOException {
+        URLConnection connection = url.openConnection();
+        if (connection instanceof HttpsURLConnection) {
+            SSLSocketFactory factory = Countly.sharedInstance().sslSocketFactoryForHost(url.getHost());
+            if (factory != null) {
+                ((HttpsURLConnection) connection).setSSLSocketFactory(factory);
+            }
+        }
+        return connection;
+    }
 
     /**
      * Tag the SDK's sockets are attributed to in network usage statistics. Tagged sockets are also

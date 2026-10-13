@@ -23,6 +23,8 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -1018,6 +1020,24 @@ public class ContentOverlayViewTests {
     }
 
     /**
+     * destroy() reached off the main thread, as a halt on a worker thread does, must not touch the WebView there, which
+     * throws. It moves itself to the main thread and releases the same references.
+     */
+    @Test
+    public void destroy_offMainThread_runsOnTheMainThread() throws Exception {
+        withActivity(activity -> overlay = createOverlay(activity));
+        Assert.assertNotNull(overlay.webView);
+
+        overlay.destroy();
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+        Assert.assertNull("webView should be null", overlay.webView);
+        Assert.assertTrue("isClosed should be true", (Boolean) getField("isClosed"));
+        Assert.assertNull("currentHostActivity", getField("currentHostActivity"));
+        Assert.assertNull("windowManager", getField("windowManager"));
+    }
+
+    /**
      * destroy() does not crash when overlay was never attached to WindowManager.
      */
     @Test
@@ -1395,6 +1415,133 @@ public class ContentOverlayViewTests {
             Assert.assertNotNull("the callback must be told why the widget was not shown", reportedError.get());
             Assert.assertFalse("the widget was never shown, so it must not report as closed", closedCalled.get());
         });
+    }
+
+    /**
+     * A feedback widget without a version, and a rating widget, open dialogs of their own once their request returns.
+     * Neither may open on top of a content or feedback overlay that is already shown, and both tell the developer
+     * callback why.
+     */
+    @Test
+    public void legacyWidgetDialogsBlockedByPresentationGuard_reportToTheDeveloperCallback() {
+        Countly.sharedInstance().halt();
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = new ImmediateRequestGenerator() {
+            @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                    if (!"/o/feedback/widget".equals(customEndpoint)) {
+                        callback.callback(null);
+                        return;
+                    }
+                    try {
+                        callback.callback(new JSONObject("{\"target_devices\":{\"phone\":true,\"tablet\":true,\"desktop\":true}}"));
+                    } catch (JSONException e) {
+                        throw new IllegalStateException(e);
+                    }
+                };
+            }
+
+            @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+                return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> callback.callback(new JSONObject());
+            }
+        };
+        Countly.sharedInstance().init(config);
+
+        final AtomicReference<String> feedbackError = new AtomicReference<>(null);
+        final AtomicReference<String> ratingError = new AtomicReference<>(null);
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            overlay.attachToActivity(activity);
+            Assert.assertTrue(ContentOverlayView.isOverlayPresented());
+
+            ModuleFeedback.CountlyFeedbackWidget widget = new ModuleFeedback.CountlyFeedbackWidget();
+            widget.widgetId = "legacyWidget";
+            widget.type = ModuleFeedback.FeedbackWidgetType.nps;
+            Countly.sharedInstance().feedback().presentFeedbackWidget(widget, activity, null, new ModuleFeedback.FeedbackCallback() {
+                @Override public void onClosed() {
+                }
+
+                @Override public void onFinished(String error) {
+                    feedbackError.set(error);
+                }
+            });
+            Countly.sharedInstance().ratings().presentRatingWidgetWithID("ratingWidget", null, activity, ratingError::set);
+        });
+        //both dialogs open from a task posted to the main thread, which has run once the main thread is idle
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+        Assert.assertEquals("A content or feedback overlay is already being shown", feedbackError.get());
+        Assert.assertEquals("A content or feedback overlay is already being shown", ratingError.get());
+    }
+
+    /**
+     * The automatic star rating is not shown on top of a content or feedback overlay. It is not marked as shown either,
+     * so a later resume shows it once the overlay is gone.
+     */
+    @Test
+    public void automaticStarRating_waitsWhileAnOverlayIsShown() {
+        withActivity(activity -> {
+            overlay = createOverlay(activity);
+            overlay.attachToActivity(activity);
+            Assert.assertTrue(ContentOverlayView.isOverlayPresented());
+
+            ModuleRatings ratings = Countly.sharedInstance().moduleRatings;
+            ratings.showStarRatingDialogOnFirstActivity = true;
+            ratings.callbackOnActivityResumed(activity);
+
+            Assert.assertTrue("the star rating stays due for a later resume", ratings.showStarRatingDialogOnFirstActivity);
+            ModuleRatings.StarRatingPreferences srp = ModuleRatings.loadStarRatingPreferences(TestUtils.getCountlyStore(), new ModuleLog());
+            Assert.assertFalse(srp.isShownForCurrentVersion);
+            Assert.assertFalse(srp.automaticHasBeenShown);
+        });
+    }
+
+    /**
+     * An instance that sees no activity starts, neither through the Application class nor through manual onStart calls,
+     * has nothing to reattach the overlay to the next activity, so the presentation ends with its host. An app that
+     * calls onStart itself reattaches it, so there the overlay outlives its host, as on a rotation.
+     */
+    @Test
+    public void hostDestroyed_closesTheOverlayOnlyWhenNothingCanReattachIt() throws Exception {
+        for (final boolean manualOnStart : new boolean[] { false, true }) {
+            Countly.sharedInstance().halt();
+            Countly.sharedInstance().init(new CountlyConfig(TestUtils.getContext(), TestUtils.commonAppKey, TestUtils.commonURL)
+                .setDeviceId("overlayHost").setLoggingEnabled(true));
+            Assert.assertFalse(Countly.sharedInstance().applicationClassProvided);
+
+            scenario = ActivityScenario.launch(OverlayTestActivity.class);
+            scenario.onActivity(activity -> {
+                if (manualOnStart) {
+                    Countly.sharedInstance().onStart(activity);
+                }
+                overlay = createOverlay(activity);
+                overlay.attachToActivity(activity);
+            });
+            scenario.close();
+            scenario = null;
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+            Assert.assertEquals("closed when nothing reattaches it, manual onStart:[" + manualOnStart + "]", !manualOnStart, getField("isClosed"));
+            Assert.assertEquals(manualOnStart, ContentOverlayView.isOverlayPresented());
+
+            final ContentOverlayView shown = overlay;
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(shown::destroy);
+            Assert.assertFalse(ContentOverlayView.isOverlayPresented());
+        }
+    }
+
+    /**
+     * A teardown on another thread stops the instance before the overlay's destroy reaches the main thread. A tap on an
+     * event action in that window finds no running instance and is ignored instead of crashing the app.
+     */
+    @Test
+    public void eventActionAfterTheInstanceStopped_isIgnored() {
+        withActivity(activity -> overlay = createOverlay(activity));
+        Countly.sharedInstance().halt();
+
+        final String url = Utils.COMM_URL + "/?cly_x_action_event=1&action=event&event=[{\"key\":\"t\",\"sg\":{\"k\":\"v\"}}]";
+        scenario.onActivity(activity -> Assert.assertTrue(overlay.contentUrlAction(url, overlay.webView)));
+        Assert.assertEquals(0, TestUtils.getCountlyStore().getEventQueueSize());
     }
 
     /**

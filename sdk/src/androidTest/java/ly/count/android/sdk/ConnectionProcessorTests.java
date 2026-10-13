@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import org.junit.Before;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -416,6 +418,61 @@ public class ConnectionProcessorTests {
             super.close();
             closed = true;
         }
+    }
+
+    /**
+     * Temporary ID mode stalls only what was recorded under the temporary ID. A request recorded before the mode began
+     * carries a real device ID and is sent, and the queue stops at the first tagged request, so the order is kept.
+     */
+    @Test
+    public void testRun_temporaryIdMode_sendsRealIdRequestsAndStallsAtTheFirstTaggedOne() throws IOException {
+        final String realIdRequest = "a=1&device_id=" + testDeviceId;
+        final String taggedRequest = "b=2&device_id=" + DeviceId.temporaryCountlyDeviceId;
+        final String laterRealIdRequest = "c=3&device_id=" + testDeviceId;
+        connectionProcessor = spy(connectionProcessor);
+        when(mockDeviceId.isTemporaryIdEnabled()).thenReturn(true);
+        when(mockDeviceId.getDeviceId()).thenReturn(DeviceId.temporaryCountlyDeviceId);
+        when(mockStore.getRequests()).thenReturn(new String[] { realIdRequest, taggedRequest, laterRealIdRequest }, new String[] { taggedRequest, laterRealIdRequest });
+        final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
+        when(mockURLConnection.getInputStream()).thenReturn(new CountlyResponseStream("Success"));
+        when(mockURLConnection.getResponseCode()).thenReturn(200);
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(anyString(), isNull(String.class));
+
+        connectionProcessor.run();
+
+        verify(connectionProcessor, times(1)).urlConnectionForServerRequest(anyString(), isNull(String.class));
+        verify(mockStore).removeRequest(realIdRequest);
+        verify(mockStore, never()).removeRequest(taggedRequest);
+        verify(mockStore, never()).removeRequest(laterRealIdRequest);
+    }
+
+    /**
+     * A processor asked to stop finishes the request in flight and stops before the next one, so a stopped instance's
+     * sender does not keep draining the stored queue beside the processor of the next init.
+     */
+    @Test
+    public void testRun_stopRequested_stopsBeforeTheNextRequest() throws IOException {
+        final String first = "a=1&device_id=" + testDeviceId;
+        final String second = "b=2&device_id=" + testDeviceId;
+        final AtomicBoolean tornDown = new AtomicBoolean(false);
+        connectionProcessor.stopRequested = tornDown;
+        connectionProcessor = spy(connectionProcessor);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
+        when(mockStore.getRequests()).thenReturn(new String[] { first, second }, new String[] { second });
+        final HttpURLConnection mockURLConnection = mock(HttpURLConnection.class);
+        when(mockURLConnection.getInputStream()).thenReturn(new CountlyResponseStream("Success"));
+        //the queue that takes over the storage starts while the first request is in flight
+        when(mockURLConnection.getResponseCode()).thenAnswer(invocation -> {
+            tornDown.set(true);
+            return 200;
+        });
+        doReturn(mockURLConnection).when(connectionProcessor).urlConnectionForServerRequest(anyString(), isNull(String.class));
+
+        connectionProcessor.run();
+
+        verify(connectionProcessor, times(1)).urlConnectionForServerRequest(anyString(), isNull(String.class));
+        verify(mockStore).removeRequest(first);
+        verify(mockStore, never()).removeRequest(second);
     }
 
     @Test

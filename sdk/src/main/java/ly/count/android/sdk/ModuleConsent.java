@@ -166,7 +166,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             L.d("[ModuleConsent] doPushConsentSpecialAction, named instance does not own push, skipping the process-global consent broadcast");
             return;
         }
-        _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
+        //addressed to this app: an implicit broadcast never reaches the not exported receiver when the app targets API 34+
+        Intent consentIntent = new Intent(Countly.CONSENT_BROADCAST);
+        consentIntent.setPackage(_cly.context_.getPackageName());
+        _cly.context_.sendBroadcast(consentIntent);
     }
 
     /**
@@ -325,6 +328,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         L.d("[ModuleConsent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
             //handle push consent changes
+            if (!newConsent) {
+                //the server drops the token with the consent, so giving it again must send the token again
+                _cly.resetPushTokenDebounce();
+            }
             doPushConsentSpecialAction(newConsent);
         }
     }

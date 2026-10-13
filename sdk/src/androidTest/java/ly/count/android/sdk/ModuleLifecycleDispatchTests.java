@@ -2,44 +2,27 @@ package ly.count.android.sdk;
 
 import android.app.Activity;
 import android.content.res.Configuration;
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Makes the "wire a new override into the dispatcher" rule enforceable instead of aspirational.
- * <p>
- * Lifecycle hooks used to be delivered by iterating Countly's mutable {@code modules} list. Android
- * delivers them on the main thread while a teardown on another thread clears that list and nulls the
- * module fields, which killed a CI run with {@code ModuleViews.resetFirstView()} thrown out of
- * {@code Activity.onStop}. Dispatch therefore calls a fixed set of modules directly. That trades the race
- * for two silent failure modes this test closes:
- * <ol>
- *     <li>A module overrides a hook and is never added to the call site, so the hook does nothing.</li>
- *     <li>The call site's order drifts from the order init adds modules to {@code modules}, silently
- *     reordering side effects between modules that used to run in list order.</li>
- * </ol>
- * The expected order is derived from the live {@code modules} list of a real initialised instance, so it
- * tracks init order automatically rather than restating it.
+ * Lifecycle hooks reach the modules by iterating Countly's {@code modules} list, which is copy on write, so a teardown
+ * on another thread can not break a dispatch in progress, and the dispatch gate plus the quiesce in teardown keep events
+ * away from a dying instance. These tests pin that down: every module that overrides a hook receives it, a dispatch
+ * survives a sibling module going away, and one registration feeds every live instance.
  */
 @RunWith(AndroidJUnit4.class)
 public class ModuleLifecycleDispatchTests {
-
-    // What Countly's dispatch path calls, hook by hook, IN CALL ORDER. Keep in sync with the call sites.
-    private static final String[] WIRED_ON_ACTIVITY_STARTED = { "ModuleViews", "ModuleAPM", "ModuleFeedback", "ModuleContent" };
-    private static final String[] WIRED_ON_ACTIVITY_STOPPED = { "ModuleViews", "ModuleFeedback", "ModuleContent", "ModuleHealthCheck" };
-    private static final String[] WIRED_ON_ACTIVITY_DESTROYED = { "ModuleFeedback", "ModuleContent" };
-    private static final String[] WIRED_ON_CONFIGURATION_CHANGED = { "ModuleViews" };
-    private static final String[] WIRED_CALLBACK_ON_RESUMED = { "ModuleRatings", "ModuleAPM" };
-    private static final String[] WIRED_CALLBACK_ON_STOPPED = { "ModuleAPM" };
 
     private Countly countly;
 
@@ -52,50 +35,81 @@ public class ModuleLifecycleDispatchTests {
         TestUtils.getCountlyStore().clear();
     }
 
-    /** The order init adds modules to {@code modules}, filtered to the ones overriding this hook. */
-    private List<String> expectedOrderFor(String methodName, Class<?>... paramTypes) {
-        List<String> expected = new ArrayList<>();
-        for (ModuleBase module : countly.modules) {
-            if (overridesHook(module.getClass(), methodName, paramTypes)) {
-                expected.add(module.getClass().getSimpleName());
-            }
+    /** A module that only records the lifecycle hooks it receives. */
+    private static class RecordingModule extends ModuleBase {
+        final List<String> received = new ArrayList<>();
+
+        /**
+         * @param cly the instance the module belongs to
+         * @param config the config the instance is initialised with
+         */
+        RecordingModule(Countly cly, CountlyConfig config) {
+            super(cly, config);
         }
-        return expected;
+
+        @Override void halt() {
+        }
+
+        @Override void onActivityStarted(Activity activity, int updatedActivityCount) {
+            received.add("started:" + updatedActivityCount);
+        }
+
+        @Override void callbackOnActivityResumed(Activity activity) {
+            received.add("resumed");
+        }
+
+        @Override void onActivityStopped(int updatedActivityCount) {
+            received.add("stopped:" + updatedActivityCount);
+        }
+
+        @Override void callbackOnActivityStopped(Activity activity) {
+            received.add("callbackStopped");
+        }
+
+        @Override void onActivityDestroyed(@NonNull Activity activity) {
+            received.add("destroyed");
+        }
+
+        @Override void onConfigurationChanged(Configuration newConfig) {
+            received.add("configuration");
+        }
     }
 
     /**
-     * True when this module declares the hook itself, which for a direct ModuleBase subclass is exactly what
-     * "overrides it" means. Scanning getDeclaredMethods rather than calling getDeclaredMethod keeps the
-     * not-overridden case a plain false instead of an exception that has to be caught and ignored.
+     * A module only has to override a hook to receive it: the dispatcher reaches every module in the list, a module
+     * that exists only for tests included, with the activity count after the start or stop. Once the instance is
+     * halted, nothing reaches it any more.
      */
-    private static boolean overridesHook(Class<?> moduleClass, String methodName, Class<?>[] paramTypes) {
-        for (Method declared : moduleClass.getDeclaredMethods()) {
-            if (declared.getName().equals(methodName) && Arrays.equals(declared.getParameterTypes(), paramTypes)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void assertWiring(String hook, String[] wired, String methodName, Class<?>... paramTypes) {
-        List<String> expected = expectedOrderFor(methodName, paramTypes);
-        List<String> actual = Arrays.asList(wired);
-        Assert.assertEquals("The dispatcher's calls for " + hook + " must be exactly the modules that override"
-            + " it, in the order init adds them to `modules`. A module missing here is a hook that silently"
-            + " does nothing; a module listed that no longer overrides it is dead code; a different order"
-            + " silently reorders side effects. Fix the call site (see the note on ModuleBase#" + hook + ")."
-            + "\n  expected (live modules list): " + expected
-            + "\n  wired at the call site:       " + actual, expected, actual);
-    }
-
     @Test
-    public void everyLifecycleOverrideIsWiredIntoTheDispatcherInModuleListOrder() {
-        assertWiring("onActivityStarted", WIRED_ON_ACTIVITY_STARTED, "onActivityStarted", Activity.class, int.class);
-        assertWiring("onActivityStopped", WIRED_ON_ACTIVITY_STOPPED, "onActivityStopped", int.class);
-        assertWiring("onActivityDestroyed", WIRED_ON_ACTIVITY_DESTROYED, "onActivityDestroyed", Activity.class);
-        assertWiring("onConfigurationChanged", WIRED_ON_CONFIGURATION_CHANGED, "onConfigurationChanged", Configuration.class);
-        assertWiring("callbackOnActivityResumed", WIRED_CALLBACK_ON_RESUMED, "callbackOnActivityResumed", Activity.class);
-        assertWiring("callbackOnActivityStopped", WIRED_CALLBACK_ON_STOPPED, "callbackOnActivityStopped", Activity.class);
+    public void everyModuleReceivesTheLifecycleHooksUntilHalt() {
+        Countly recordingInstance = Countly.instance("dispatchRecording");
+        CountlyConfig cc = TestUtils.createBaseConfig("deviceRecording");
+        RecordingModule recorder = new RecordingModule(recordingInstance, cc);
+        cc.testModuleListener = recorder;
+        recordingInstance.init(cc);
+        Assert.assertTrue(recordingInstance.modules.contains(recorder));
+        recorder.received.clear();
+
+        CountlyLifecycleDispatcher dispatcher = CountlyLifecycleDispatcher.getInstance();
+        Activity activity = org.mockito.Mockito.mock(Activity.class);
+        int countBefore = recordingInstance.getActivityCount();
+
+        dispatcher.onActivityStarted(activity);
+        dispatcher.onActivityResumed(activity);
+        dispatcher.onActivityStopped(activity);
+        dispatcher.onActivityDestroyed(activity);
+        dispatcher.onConfigurationChanged(TestUtils.getContext().getResources().getConfiguration());
+
+        Assert.assertEquals(Arrays.asList("started:" + (countBefore + 1), "resumed", "stopped:" + countBefore, "callbackStopped", "destroyed", "configuration"), recorder.received);
+        Assert.assertEquals(countBefore, recordingInstance.getActivityCount());
+
+        recordingInstance.halt();
+        recorder.received.clear();
+        dispatcher.onActivityStarted(activity);
+        dispatcher.onActivityStopped(activity);
+        Assert.assertTrue("a halted instance must receive nothing, got " + recorder.received, recorder.received.isEmpty());
+
+        Countly.removeInstance("dispatchRecording");
     }
 
     /**
@@ -194,5 +208,34 @@ public class ModuleLifecycleDispatchTests {
         dispatcher.onConfigurationChanged(TestUtils.getContext().getResources().getConfiguration());
 
         Countly.removeInstance("dispatchFanOut");
+    }
+
+    /**
+     * An instance joining the dispatcher is seeded with the started activities in the same step, before any event can
+     * reach it. A stop delivered right after joining then finds the count it applies to, instead of a zero it would be
+     * dropped at, which left the count one too high and the session open for good.
+     */
+    @Test
+    public void addInstance_seedsTheActivityCountWhileJoining() {
+        CountlyLifecycleDispatcher dispatcher = CountlyLifecycleDispatcher.getInstance();
+        Assume.assumeTrue("the count is exact only when the provider registered the dispatcher", dispatcher.hasExactActivityCount());
+        dispatcher.resetForTests();
+        Activity activity = org.mockito.Mockito.mock(Activity.class);
+        try {
+            dispatcher.onActivityStarted(activity);
+            dispatcher.onActivityStarted(activity);
+
+            Countly seeded = new Countly();
+            Assert.assertEquals(2, dispatcher.addInstance(seeded, true));
+            Assert.assertEquals(2, seeded.getActivityCount());
+            Assert.assertEquals(2, dispatcher.addInstance(seeded, true));
+            Assert.assertEquals("joining again does not seed again", 2, seeded.getActivityCount());
+
+            Countly unseeded = new Countly();
+            dispatcher.addInstance(unseeded, false);
+            Assert.assertEquals(0, unseeded.getActivityCount());
+        } finally {
+            dispatcher.resetForTests();
+        }
     }
 }

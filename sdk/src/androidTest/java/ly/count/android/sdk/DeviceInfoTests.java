@@ -25,15 +25,20 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.os.Looper;
 import android.telephony.TelephonyManager;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -75,10 +80,11 @@ public class DeviceInfoTests {
 
     @Test
     public void testGetResolution() {
-        final DisplayMetrics metrics = new DisplayMetrics();
-        ((WindowManager) TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(metrics);
-        final String expected = metrics.widthPixels + "x" + metrics.heightPixels;
-        assertEquals(expected, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
+        //the SDK's own metrics leave the display cutout out from API 30, so getRealMetrics can differ
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(TestUtils.getContext());
+        Assert.assertTrue(metrics.widthPixels > 0);
+        Assert.assertTrue(metrics.heightPixels > 0);
+        assertEquals(metrics.widthPixels + "x" + metrics.heightPixels, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
     }
 
     @Test
@@ -381,6 +387,38 @@ public class DeviceInfoTests {
         assertEquals(android.os.Build.VERSION.RELEASE, deviceInfo.mp.getOSVersion());
         assertEquals(android.os.Build.MODEL, deviceInfo.mp.getDevice());
         assertNotNull(deviceInfo.mp.getLocale());
+    }
+
+    /**
+     * A crash recorded on the main thread does not measure the disk there: it takes the last background measurement and
+     * starts a fresh one in the background. Off the main thread the disk is measured right away.
+     */
+    @Test
+    public void diskMetricForCrash_usesTheBackgroundMeasurementOnTheMainThread() throws InterruptedException {
+        final AtomicInteger measurements = new AtomicInteger();
+        final List<Boolean> measuredOnMainThread = new CopyOnWriteArrayList<>();
+        MetricProvider countingDisk = new MetricProvider() {
+            @Override public DiskMetric getDiskSpaces(Context context) {
+                measuredOnMainThread.add(Looper.myLooper() == Looper.getMainLooper());
+                return new DiskMetric("100", String.valueOf(measurements.incrementAndGet()));
+            }
+        };
+        final DeviceInfo deviceInfo = new DeviceInfo(countingDisk);
+
+        deviceInfo.prefetchDiskBackedMetrics(TestUtils.getContext());
+        assertEquals(1, measurements.get());
+
+        final DiskMetric[] onMainThread = { null };
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> onMainThread[0] = deviceInfo.getDiskMetricForCrash(TestUtils.getContext()));
+        assertEquals("the main thread gets the prefetched measurement", "1", onMainThread[0].usedMb);
+        for (int a = 0; a < 40 && measurements.get() < 2; a++) {
+            Thread.sleep(50);
+        }
+        assertEquals("a fresh measurement is started in the background", 2, measurements.get());
+
+        DiskMetric offMainThread = deviceInfo.getDiskMetricForCrash(TestUtils.getContext());
+        assertEquals("off the main thread the disk is measured right away", "3", offMainThread.usedMb);
+        Assert.assertFalse("the disk is never measured on the main thread", measuredOnMainThread.contains(Boolean.TRUE));
     }
 
     @Test

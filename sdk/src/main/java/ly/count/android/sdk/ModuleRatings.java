@@ -378,6 +378,11 @@ public class ModuleRatings extends ModuleBase {
             return;
         }
 
+        if (ContentOverlayView.isOverlayPresented()) {
+            L.w("[ModuleRatings] showStarRatingCustom, a content or feedback overlay is already being shown (possibly by another instance), skipping the star rating dialog");
+            return;
+        }
+
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View dialogLayout = inflater.inflate(R.layout.star_rating_layout, null);
         RatingBar ratingBar = dialogLayout.findViewById(R.id.ratingBar);
@@ -534,6 +539,14 @@ public class ModuleRatings extends ModuleBase {
                             public void run() {
                                 L.d("[ModuleRatings] Calling on main thread");
 
+                                if (ContentOverlayView.isOverlayPresented()) {
+                                    L.w("[ModuleRatings] showFeedbackPopupInternal, a content or feedback overlay is already being shown (possibly by another instance), skipping the rating widget");
+                                    if (devCallback != null) {
+                                        devCallback.callback("A content or feedback overlay is already being shown");
+                                    }
+                                    return;
+                                }
+
                                 RatingDialogWebView webView = new RatingDialogWebView(activity);
                                 webView.clearCache(true);
                                 webView.clearHistory();
@@ -653,6 +666,12 @@ public class ModuleRatings extends ModuleBase {
     @Override
     void callbackOnActivityResumed(Activity activity) {
         if (showStarRatingDialogOnFirstActivity) {
+            if (ContentOverlayView.isOverlayPresented()) {
+                //not marked as shown, so a later resume shows it once the overlay is gone
+                L.d("[ModuleRatings] callbackOnActivityResumed, a content or feedback overlay is being shown, the automatic star rating waits for a later resume");
+                return;
+            }
+
             StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
             srp.isShownForCurrentVersion = true;
             srp.automaticHasBeenShown = true;

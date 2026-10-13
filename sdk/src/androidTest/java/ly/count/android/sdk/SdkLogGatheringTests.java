@@ -3,8 +3,12 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -22,8 +26,12 @@ import static ly.count.android.sdk.ModuleConfiguration.logGatheringAllLevels;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringDefaultBatchSize;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringMaxBufferedLines;
 import static ly.count.android.sdk.ModuleConfiguration.logGatheringMinBatchSize;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -471,9 +479,11 @@ public class SdkLogGatheringTests {
      * Verifies that with gathering armed, consent required and only the sessions consent given:
      * 1. the session lines are uploaded
      * 2. no uploaded line quotes the event key, the segmentation or the view name, and no consent line is uploaded
-     * 3. the local developer log still quotes the event key and the view name, since only the gathered copy is withheld
+     * 3. the local developer log still quotes the event key and the view name, since only the gathered copy is withheld,
+     * but never the segmentation: an event refused for consent is not recorded, and only a recorded event logs it
      * 4. the held lines are not dropped: once the events and users consent are given, the event lines and the consent
      * lines are uploaded, while the view lines keep waiting for the views consent
+     * 5. an event recorded with the events consent logs its segmentation, and that line is uploaded
      */
     @Test
     public void logGathering_onlySessionsConsent_uploadsOnlyTheLinesItCovers() throws JSONException, InterruptedException {
@@ -490,13 +500,19 @@ public class SdkLogGatheringTests {
         assertNoLineContains(uploadedLines, secretEventKey, secretSegmentationValue, secretViewName, "[ModuleConsent]");
         assertSomeLineContains(localLogLines, secretEventKey);
         assertSomeLineContains(localLogLines, secretViewName);
+        assertNoLineContains(localLogLines, secretSegmentationValue);
 
         countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.events, Countly.CountlyFeatureNames.users });
         uploadEverythingGathered();
 
         assertSomeLineContains(uploadedLines, secretEventKey);
-        assertSomeLineContains(uploadedLines, secretSegmentationValue);
         assertSomeLineContains(uploadedLines, "[ModuleConsent]");
+        assertNoLineContains(uploadedLines, secretViewName, secretSegmentationValue);
+
+        countly.events().recordEvent(secretEventKey, TestUtils.map("secret", secretSegmentationValue));
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, secretSegmentationValue);
         assertNoLineContains(uploadedLines, secretViewName);
     }
 
@@ -768,6 +784,206 @@ public class SdkLogGatheringTests {
     }
 
     /**
+     * The server takes one last batch of a stopped gather under its id, so the lines held when the stop arrives go out
+     * once with the old id, and nothing is gathered or uploaded after that.
+     */
+    @Test
+    public void logGathering_stopFromTheServer_uploadsTheHeldLinesOnceUnderTheOldGatherId() throws JSONException, InterruptedException {
+        final List<String> batchGatherIds = new CopyOnWriteArrayList<>();
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        when(rqp.sendSdkLogs(anyString())).thenAnswer(invocation -> {
+            JSONObject batch = new JSONObject((String) invocation.getArgument(0));
+            batchGatherIds.add(batch.getString(ModuleLog.keyBatchGatherId));
+            JSONArray lines = batch.getJSONArray(ModuleLog.keyBatchLines);
+            for (int a = 0; a < lines.length(); a++) {
+                uploadedLines.add(lines.getJSONObject(a).getString(ModuleLog.keyLineMessage));
+            }
+            return true;
+        });
+
+        //a batch size no test reaches, so the lines are still held when the stop arrives
+        final String[] response = { gatheringResponse(false).logGatheringOn(consentGatherId, logGatheringAllLevels, 500).build() };
+        countly = initGathering(null, response, rqp, null);
+        assertGathering(consentGatherId, logGatheringAllLevels, 500);
+        Thread.sleep(500); // the init lines go out as a partial batch once init finishes
+        batchGatherIds.clear();
+        uploadedLines.clear();
+
+        recordLinesCarryingUserData();
+        Assert.assertTrue(countly.L.heldLogLineCount() > 0);
+        Assert.assertTrue(uploadedLines.isEmpty());
+
+        pushServerResponse(response, new ServerConfigBuilder().defaults().consentRequired(false).withoutLogGathering());
+
+        assertDecidedAgainstGathering();
+        Assert.assertEquals(Collections.singletonList(consentGatherId), batchGatherIds);
+        assertSomeLineContains(uploadedLines, secretEventKey);
+        Assert.assertEquals(0, countly.L.heldLogLineCount());
+
+        recordLinesCarryingUserData();
+        countly.L.flushGatheredLogs();
+        Thread.sleep(500);
+        Assert.assertEquals(1, batchGatherIds.size());
+        Assert.assertEquals(0, countly.L.heldLogLineCount());
+    }
+
+    /**
+     * Only one batch waits in the request queue at a time. While it is unsent, as when the device is offline, the next
+     * lines stay in the bounded buffer instead of filling the queue; once it is sent, the next batch goes out.
+     */
+    @Test
+    public void logGathering_aBatchStillInTheQueue_holdsTheNextOneBack() throws JSONException, InterruptedException {
+        final AtomicBoolean batchWaiting = new AtomicBoolean(false);
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        when(rqp.sendSdkLogs(anyString())).thenAnswer(invocation -> {
+            batchWaiting.set(true);
+            return true;
+        });
+        when(rqp.queueContainsSdkLogs()).thenAnswer(invocation -> batchWaiting.get());
+
+        countly = initGathering(null, rqp, null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+
+        for (int a = 0; a < 5; a++) {
+            recordLinesCarryingUserData();
+        }
+        countly.L.flushGatheredLogs();
+        Thread.sleep(1000);
+
+        verify(rqp, times(1)).sendSdkLogs(anyString());
+        Assert.assertTrue(countly.L.heldLogLineCount() >= logGatheringMinBatchSize);
+
+        batchWaiting.set(false);
+        countly.L.flushGatheredLogs();
+        Thread.sleep(1000);
+        verify(rqp, times(2)).sendSdkLogs(anyString());
+    }
+
+    /**
+     * A backlog of several batches drains on its own: each time the request queue has sent the waiting batch, the
+     * delivery resumes with the next one, the partial remainder included, instead of one batch per timer tick while the
+     * buffer fills up and drops lines.
+     */
+    @Test
+    public void logGathering_backlogDrainsEachTimeTheQueueIsSent() throws JSONException, InterruptedException {
+        final AtomicBoolean batchWaiting = new AtomicBoolean(false);
+        final List<Runnable> drainActions = new CopyOnWriteArrayList<>();
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        when(rqp.sendSdkLogs(anyString())).thenAnswer(invocation -> {
+            batchWaiting.set(true);
+            return true;
+        });
+        when(rqp.queueContainsSdkLogs()).thenAnswer(invocation -> batchWaiting.get());
+        doAnswer(invocation -> {
+            drainActions.add(invocation.getArgument(0));
+            return null;
+        }).when(rqp).registerInternalGlobalRequestCallbackAction(any(Runnable.class));
+
+        countly = initGathering(null, rqp, null);
+        assertGathering(consentGatherId, logGatheringAllLevels, logGatheringMinBatchSize);
+        while (countly.L.heldLogLineCount() < 3 * logGatheringMinBatchSize) {
+            recordLinesCarryingUserData();
+        }
+        countly.L.flushGatheredLogs();
+        Thread.sleep(500);
+        verify(rqp, times(1)).sendSdkLogs(anyString());
+
+        int sends = 1;
+        while (countly.L.heldLogLineCount() > 0 && sends < 20) {
+            Assert.assertFalse("a delivery must wait for the queue while lines are held", drainActions.isEmpty());
+            //the request queue sent the waiting batch and has nothing left
+            batchWaiting.set(false);
+            List<Runnable> pending = new ArrayList<>(drainActions);
+            drainActions.clear();
+            for (Runnable action : pending) {
+                action.run();
+            }
+            Thread.sleep(300);
+            sends++;
+            verify(rqp, times(sends)).sendSdkLogs(anyString());
+        }
+        Assert.assertEquals(0, countly.L.heldLogLineCount());
+        Assert.assertTrue("the backlog took several batches", sends >= 3);
+    }
+
+    /**
+     * While undecided every level is captured, and the buffer drops its oldest lines once full. Those drops count into
+     * 'd' only for the levels the adopted gather asks for, since the server never asked for the others.
+     */
+    @Test
+    public void logGathering_dropsWhileUndecided_countOnlyForTheLevelsTheGatherAsksFor() throws JSONException, InterruptedException {
+        String[] levelsToAdopt = { "e", logGatheringAllLevels };
+        for (String levels : levelsToAdopt) {
+            final List<Integer> reportedDrops = new CopyOnWriteArrayList<>();
+            RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+            when(rqp.sendSdkLogs(anyString())).thenAnswer(invocation -> {
+                String payload = invocation.getArgument(0);
+                reportedDrops.add(new JSONObject(payload).getInt(ModuleLog.keyBatchDroppedCount));
+                return true;
+            });
+
+            CountlyConfig config = TestUtils.createBaseConfig().setLoggingEnabled(false);
+            config.requestQueueProvider = rqp;
+            config.immediateRequestGenerator = createPendingIRG();
+            countly = new Countly().init(config);
+            Assert.assertEquals(ModuleConfiguration.LogGatheringState.UNDECIDED, countly.L.logGatheringState);
+
+            for (int a = 0; a < logGatheringMaxBufferedLines + 100; a++) {
+                countly.L.v("[ModuleEvents] filler line " + a);
+            }
+            countly.L.e("[ModuleEvents] error line, kept as the newest");
+            Assert.assertEquals(levels, 0, countly.L.droppedLogLineCount);
+
+            countly.moduleConfiguration.immediateRequestGenerator = ModuleConfigurationTests.createIRGForSpecificResponse(
+                new ServerConfigBuilder().defaults().logGatheringOn(consentGatherId, levels, 500).build());
+            countly.moduleConfiguration.fetchConfigFromServer(countly.config_);
+            assertGathering(consentGatherId, levels, 500);
+            uploadEverythingGathered();
+
+            Assert.assertFalse(levels, reportedDrops.isEmpty());
+            int reported = 0;
+            for (int dropped : reportedDrops) {
+                reported += dropped;
+            }
+            if (levels.equals("e")) {
+                Assert.assertTrue("reported:[" + reported + "]", reported < 10);
+            } else {
+                Assert.assertTrue("reported:[" + reported + "]", reported >= 100);
+            }
+            countly.halt();
+        }
+    }
+
+    /**
+     * Gathered lines never carry what the server settings or consent keep out of the data: a segmentation key the
+     * filter blocks, and a location while location tracking is off. The filtered event itself is still logged.
+     */
+    @Test
+    public void logGathering_blockedSegmentationAndLocation_neverReachTheGatheredLines() throws JSONException, InterruptedException {
+        final List<String> uploadedLines = new CopyOnWriteArrayList<>();
+        final String[] response = {
+            gatheringResponse(false)
+                .segmentationFilterList(new HashSet<>(Collections.singletonList("secret")), false)
+                .locationTracking(false)
+                .build()
+        };
+        countly = initGathering(null, response, acceptingRequestQueue(uploadedLines), null);
+
+        countly.events().recordEvent(secretEventKey, TestUtils.map("secret", secretSegmentationValue, "visible", "visible_value"));
+        countly.location().setLocation("TR", "cly_secret_city", "41.0151,28.9795", "10.20.30.40");
+        uploadEverythingGathered();
+
+        assertSomeLineContains(uploadedLines, "visible_value");
+        for (String line : uploadedLines) {
+            Assert.assertFalse(line, line.contains(secretSegmentationValue));
+            Assert.assertFalse(line, line.contains("cly_secret_city"));
+            Assert.assertFalse(line, line.contains("41.0151,28.9795"));
+            Assert.assertFalse(line, line.contains("10.20.30.40"));
+        }
+    }
+
+    /**
      * A line's consent is found from the bracketed name it starts with, and for an events line about an internal event
      * from that event's key, any one of whose consents is enough. A name the SDK does not know, or no name at all, means
      * the line needs both the events and the users consent.
@@ -884,11 +1100,17 @@ public class SdkLogGatheringTests {
      * Delivery runs on its own thread, so each flush is only a request to upload.
      */
     private void uploadEverythingGathered() throws InterruptedException {
-        for (int a = 0; a < 20 && countly.L.heldLogLineCount() > 0; a++) {
+        for (int a = 0; a < 20; a++) {
+            if (countly.L.heldLogLineCount() == 0) {
+                Thread.sleep(250); // a batch taken out of the buffer may still be on its way to the queue
+                if (countly.L.heldLogLineCount() == 0) {
+                    return;
+                }
+                //a line another SDK thread logged in the meantime, it goes out with the next flush
+            }
             countly.L.flushGatheredLogs();
             Thread.sleep(250);
         }
-        Thread.sleep(250); // a batch taken out of the buffer may still be on its way to the queue
         Assert.assertEquals(0, countly.L.heldLogLineCount());
     }
 

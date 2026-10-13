@@ -247,6 +247,12 @@ class MigrationHelper {
             return;
         }
 
+        //a remote config write after a halt can leave the new structure behind, and wrapping it again nests every value
+        if (isWrappedRemoteConfigStructure(initialStructure)) {
+            L.d("[MigrationHelper] performMigration1To2, the remote config values already carry their metadata, leaving them as they are");
+            return;
+        }
+
         JSONObject newStructure = new JSONObject();
         Iterator<String> iter = initialStructure.keys();
         while (iter.hasNext()) {
@@ -266,6 +272,30 @@ class MigrationHelper {
         }
 
         storage.setRemoteConfigValues(newStructure.toString());
+    }
+
+    /**
+     * @param rcValues the stored remote config values
+     * @return true when there is at least one value and every value is already an object holding exactly a value and
+     * a cache flag
+     */
+    private static boolean isWrappedRemoteConfigStructure(@NonNull JSONObject rcValues) {
+        if (rcValues.length() == 0) {
+            return false;
+        }
+
+        Iterator<String> keys = rcValues.keys();
+        while (keys.hasNext()) {
+            Object value = rcValues.opt(keys.next());
+            if (!(value instanceof JSONObject)) {
+                return false;
+            }
+            JSONObject entry = (JSONObject) value;
+            if (entry.length() != 2 || !entry.has(RemoteConfigValueStore.keyValue) || !(entry.opt(RemoteConfigValueStore.keyCacheFlag) instanceof Integer)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

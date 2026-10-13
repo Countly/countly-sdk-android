@@ -35,6 +35,7 @@ import android.net.ConnectivityManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Environment;
+import android.os.Looper;
 import android.os.StatFs;
 import android.os.storage.StorageManager;
 import android.telephony.TelephonyManager;
@@ -64,6 +65,8 @@ class DeviceInfo {
     private boolean inBackground = true;
     private static volatile long totalMemory = -1; // -1 until resolved, so a failed read is not retried
     private static volatile String rootedStatus = null;
+    //the last disk size measurement, see getDiskMetricForCrash
+    private volatile DiskMetric cachedDiskMetric = null;
 
     MetricProvider mp;
     private final MetricProvider mpOverride;
@@ -553,15 +556,37 @@ class DeviceInfo {
     }
 
     /**
-     * Resolves the crash metrics that read the disk, the root check and the total RAM, and caches
+     * Resolves the crash metrics that read the disk, the root check, the total RAM and the disk sizes, and caches
      * them, so a crash recorded on the main thread later does not have to read the disk. The root
      * check is skipped while the metric provider override supplies the root status.
+     *
+     * @param context context to measure the disk sizes with
      */
-    void prefetchDiskBackedMetrics() {
+    void prefetchDiskBackedMetrics(@NonNull Context context) {
         if (mpOverride.isRooted() == null) {
             getRootedStatusInternal();
         }
         getTotalRAMInternal();
+        cachedDiskMetric = mp.getDiskSpaces(context);
+    }
+
+    /**
+     * Disk sizes for a crash report. Measuring them is a binder call on newer Android versions, too slow for a crash
+     * recorded on the main thread, so there the last background measurement is used and a fresh one is started.
+     *
+     * @param context context to measure the disk sizes with
+     * @return the disk sizes
+     */
+    @NonNull DiskMetric getDiskMetricForCrash(@NonNull final Context context) {
+        DiskMetric cached = cachedDiskMetric;
+        if (cached != null && Looper.myLooper() == Looper.getMainLooper()) {
+            Utils.runInBackground(() -> cachedDiskMetric = mp.getDiskSpaces(context));
+            return cached;
+        }
+
+        DiskMetric measured = mp.getDiskSpaces(context);
+        cachedDiskMetric = measured;
+        return measured;
     }
 
     /**
@@ -736,7 +761,7 @@ class DeviceInfo {
     Map<String, Object> getCrashMetrics(@NonNull final Context context, boolean isNativeCrash, @Nullable final Map<String, String> metricOverride, @NonNull ModuleLog L) {
         Map<String, Object> metrics = getCommonMetrics(context, metricOverride, L);
 
-        DiskMetric diskMetric = mp.getDiskSpaces(context);
+        DiskMetric diskMetric = getDiskMetricForCrash(context);
 
         putIfNotNullAndNotEmpty(metrics, "_cpu", mp.getCpu());
         putIfNotNullAndNotEmpty(metrics, "_opengl", mp.getOpenGL(context));

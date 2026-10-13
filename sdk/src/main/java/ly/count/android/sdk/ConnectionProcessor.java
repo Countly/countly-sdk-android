@@ -36,6 +36,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import org.json.JSONException;
@@ -69,6 +70,9 @@ public class ConnectionProcessor implements Runnable {
     ModuleLog L;
 
     public PerformanceCounterCollector pcc;
+
+    /** Set when this processor has to stop, see {@link ConnectionQueue#claimStorage(String)}; checked before each request. */
+    AtomicBoolean stopRequested;
 
     private enum RequestResult {
         OK,         // success
@@ -131,11 +135,7 @@ public class ConnectionProcessor implements Runnable {
         }
 
         final URLConnection urlConnection = url.openConnection();
-        // Apply the resolved SSL socket factory (a custom/FIPS factory or the pinning factory) to
-        // every HTTPS connection. A plain HTTP connection is left untouched.
-        if (sslSocketFactory_ != null && urlConnection instanceof HttpsURLConnection) {
-            ((HttpsURLConnection) urlConnection).setSSLSocketFactory(sslSocketFactory_);
-        }
+        applySslSocketFactory(urlConnection);
         conn = (HttpURLConnection) urlConnection;
 
         if (pcc != null) {
@@ -150,17 +150,7 @@ public class ConnectionProcessor implements Runnable {
         conn.setDoInput(true);
         conn.setRequestMethod("GET");
 
-        if (requestHeaderCustomValues_ != null) {
-            //if there are custom header values, add them
-            L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
-            for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue();
-                if (key != null && value != null && !key.isEmpty()) {
-                    conn.addRequestProperty(key, value);
-                }
-            }
-        }
+        addCustomRequestHeaders(conn);
 
         L.v("[ConnectionProcessor] Has picturePath [" + hasPicturePath + "]");
 
@@ -249,10 +239,7 @@ public class ConnectionProcessor implements Runnable {
 
         long tOpen = pcc != null ? UtilsTime.getNanoTime() : 0;
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-        if (sslSocketFactory_ != null && conn instanceof HttpsURLConnection) {
-            ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory_);
-        }
+        applySslSocketFactory(conn);
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_01_OpenURLConnection", UtilsTime.getNanoTime() - tOpen);
@@ -267,14 +254,7 @@ public class ConnectionProcessor implements Runnable {
         conn.setDoOutput(false);
         conn.setInstanceFollowRedirects(true);
 
-        if (requestHeaderCustomValues_ != null) {
-            L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
-            for (Map.Entry<String, String> e : requestHeaderCustomValues_.entrySet()) {
-                if (e.getKey() != null && e.getValue() != null && !e.getKey().isEmpty()) {
-                    conn.addRequestProperty(e.getKey(), e.getValue());
-                }
-            }
-        }
+        addCustomRequestHeaders(conn);
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_02_ConfigureConnection", UtilsTime.getNanoTime() - tOpen);
@@ -387,6 +367,11 @@ public class ConnectionProcessor implements Runnable {
             long pccTsReadingStream;
             long pccTsStartHandlingResponse;
 
+            if (stopRequested != null && stopRequested.get()) {
+                L.d("[ConnectionProcessor] run, asked to stop, leaving the remaining requests to the queue that took over");
+                break;
+            }
+
             if (!configProvider_.getNetworkingEnabled()) {
                 L.w("[ConnectionProcessor] run, Networking config is disabled, request queue skipped");
                 break;
@@ -451,13 +436,9 @@ public class ConnectionProcessor implements Runnable {
             }
             // temp ID checks
             String temporaryIdTag = "&device_id=" + DeviceId.temporaryCountlyDeviceId;
-            boolean containsTemporaryId = requestData.contains(temporaryIdTag);
-            if (containsTemporaryId || deviceIdProvider_.isTemporaryIdEnabled()) {
-                //we are about to change ID to the temporary one or
-                //the internally set id is the temporary one
-
-                //abort and wait for exiting temporary mode
-                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests. tmp id tag:[" + containsTemporaryId + "], temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
+            if (requestData.contains(temporaryIdTag)) {
+                //requests recorded before the mode began carry a real ID and go out; from here on, order is kept by waiting
+                L.i("[ConnectionProcessor] Temporary ID detected, stalling requests until temporary ID mode is exited. temp ID set:[" + deviceIdProvider_.isTemporaryIdEnabled() + "]");
                 break;
             }
             if (pcc != null) {
@@ -738,10 +719,7 @@ public class ConnectionProcessor implements Runnable {
     /** Bare GET for a connection test probe: this instance's SSL factory and headers, no cache, redirects not followed. */
     synchronized @NonNull HttpURLConnection urlConnectionForProbe(@NonNull String url, int timeoutMs) throws IOException {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-
-        if (sslSocketFactory_ != null && conn instanceof HttpsURLConnection) {
-            ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory_);
-        }
+        applySslSocketFactory(conn);
 
         conn.setRequestMethod("GET");
         conn.setInstanceFollowRedirects(false);
@@ -751,15 +729,35 @@ public class ConnectionProcessor implements Runnable {
         conn.setDoInput(true);
         conn.setDoOutput(false);
 
-        if (requestHeaderCustomValues_ != null) {
-            for (Map.Entry<String, String> e : requestHeaderCustomValues_.entrySet()) {
-                if (e.getKey() != null && e.getValue() != null && !e.getKey().isEmpty()) {
-                    conn.addRequestProperty(e.getKey(), e.getValue());
-                }
-            }
-        }
+        addCustomRequestHeaders(conn);
 
         return conn;
+    }
+
+    /**
+     * Routes an HTTPS connection through this instance's SSL socket factory, the custom (FIPS) or the pinning one,
+     * when it has one. A plain HTTP connection is left untouched.
+     */
+    private void applySslSocketFactory(@NonNull URLConnection connection) {
+        if (sslSocketFactory_ != null && connection instanceof HttpsURLConnection) {
+            ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory_);
+        }
+    }
+
+    /** Adds the custom request headers the developer configured, skipping entries without a name or a value. */
+    private void addCustomRequestHeaders(@NonNull URLConnection connection) {
+        if (requestHeaderCustomValues_ == null) {
+            return;
+        }
+
+        L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
+        for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key != null && value != null && !key.isEmpty()) {
+                connection.addRequestProperty(key, value);
+            }
+        }
     }
 
     // for unit testing

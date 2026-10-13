@@ -2,6 +2,8 @@
 
 import subprocess
 
+CHECKS_APP = "github-actions"
+
 
 def branch_problems(commit, branch, repo_root, runner=subprocess.run):
     """Problems unless the commit is an ancestor of origin/<branch>."""
@@ -10,6 +12,10 @@ def branch_problems(commit, branch, repo_root, runner=subprocess.run):
 
 
 def missing_checks(check_runs, required):
-    """Required check names without a successful run on the commit, from the GitHub check-runs API response."""
-    succeeded = {run["name"] for run in check_runs.get("check_runs", []) if run.get("conclusion") == "success"}
+    """Required check names without a successful run on the commit, from the GitHub check-runs API response. Only runs
+    the repository's own workflows created count: any app allowed to write checks could create one with the same name."""
+    succeeded = {
+        run["name"] for run in check_runs.get("check_runs", [])
+        if run.get("conclusion") == "success" and (run.get("app") or {}).get("slug") == CHECKS_APP
+    }
     return [name for name in required if name not in succeeded]
