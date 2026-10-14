@@ -287,7 +287,7 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Validate pure "recordView" flow without using segmentation
+     * Validate pure "startAutoStoppedView" flow without using segmentation
      *
      * @throws InterruptedException
      */
@@ -327,7 +327,7 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Validate pure "recordView" flow with using segmentation
+     * Validate pure "startAutoStoppedView" flow with using segmentation
      *
      * @throws InterruptedException
      */

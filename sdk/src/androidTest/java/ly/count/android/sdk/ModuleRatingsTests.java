@@ -145,7 +145,7 @@ public class ModuleRatingsTests {
 
     /**
      * Value size limit is applied to the email and the comment of the manual rating
-     * "recordManualRating" and "recordRatingWidgetWithID" methods are tested
+     * "recordRatingWidgetWithID" is tested
      * Validate that events exist and contains the truncated values of the email and the comment
      */
     @Test
@@ -168,7 +168,7 @@ public class ModuleRatingsTests {
 
     /**
      * Value size limit is applied to the email and the comment of the manual rating with server config provided
-     * "recordManualRating" and "recordRatingWidgetWithID" methods are tested
+     * "recordRatingWidgetWithID" is tested
      * Validate that events exist and contains the truncated values of the email and the comment
      */
     @Test

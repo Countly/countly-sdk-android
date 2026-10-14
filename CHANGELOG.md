@@ -47,23 +47,47 @@
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
 
 * Removed the following deprecated calls from "CountlyConfig":
-  * "setMaxSegmentationValues(int)" and "setMaxBreadcrumbCount(int)"
-  * "enableCrashReporting()", "setRecordAllThreadsWithCrash()", "setCustomCrashSegment(Map)" and "setCrashFilterCallback(CrashFilterCallback)"
-  * "checkForNativeCrashDumps(boolean)"
-  * "setViewTracking(boolean)", "setAutoTrackingUseShortName(boolean)", "setAutomaticViewSegmentation(Map)" and "setAutoTrackingExceptions(Class[])"
-  * "setRemoteConfigAutomaticDownload(boolean, RemoteConfigCallback)"
-  * "setRecordAppStartTime(boolean)", "setAppStartTimestampOverride(long)", "enableManualAppLoadedTrigger()" and "enableManualForegroundBackgroundTriggerAPM()"
-  * "setEnableAttribution(boolean)" and "enableServerConfiguration()"
+  * "setMaxSegmentationValues(int)", use "sdkInternalLimits.setMaxSegmentationValues(int)" instead
+  * "setMaxBreadcrumbCount(int)", use "sdkInternalLimits.setMaxBreadcrumbCount(int)" instead
+  * "enableCrashReporting()", use "crashes.enableCrashReporting()" instead
+  * "setRecordAllThreadsWithCrash()", use "crashes.enableRecordAllThreadsWithCrash()" instead
+  * "setCustomCrashSegment(Map)", use "crashes.setCustomCrashSegmentation(Map)" instead
+  * "setCrashFilterCallback(CrashFilterCallback)", use "crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)" instead
+  * "setViewTracking(boolean)", use "enableAutomaticViewTracking()" instead
+  * "setAutoTrackingUseShortName(boolean)", use "enableAutomaticViewShortNames()" instead
+  * "setAutomaticViewSegmentation(Map)", use "setGlobalViewSegmentation(Map)" instead
+  * "setAutoTrackingExceptions(Class[])", use "setAutomaticViewTrackingExclusions(Class[])" instead
+  * "setRemoteConfigAutomaticDownload(boolean, RemoteConfigCallback)", use "enableRemoteConfigAutomaticTriggers()" and "RemoteConfigRegisterGlobalCallback(RCDownloadCallback)" instead
+  * "setRecordAppStartTime(boolean)", use "apm.enableAppStartTimeTracking()" instead
+  * "setAppStartTimestampOverride(long)", use "apm.setAppStartTimestampOverride(long)" instead
+  * "enableManualAppLoadedTrigger()", use "apm.enableManualAppLoadedTrigger()" instead
+  * "enableManualForegroundBackgroundTriggerAPM()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking
+  * "setEnableAttribution(boolean)", there is no replacement, it had no effect. Use "setDirectAttribution(String, String)" or "setIndirectAttribution(Map)" for attribution
+  * "checkForNativeCrashDumps(boolean)", there is no replacement, native crash dumps are always checked
+  * "enableServerConfiguration()", there is no replacement, it had no effect
 * Removed the following deprecated calls from the "RemoteConfig" interface:
-  * "update(RemoteConfigCallback)", "updateForKeysOnly(String[], RemoteConfigCallback)" and "updateExceptKeys(String[], RemoteConfigCallback)"
-  * "getValueForKey(String)", "getAllValues()" and "clearStoredValues()"
-* Removed the deprecated calls "recordView(String)", "recordView(String, Map)" and "isAutomaticViewTrackingEnabled()" from the "Views" interface
-* Removed the deprecated calls "triggerForeground()" and "triggerBackground()" from the "Apm" interface
-* Removed the deprecated calls "recordManualRating(String, int, String, String, boolean)" and "showFeedbackPopup(String, String, Activity, FeedbackRatingCallback)" from the "Ratings" interface
-* Removed the deprecated function "presentFeedbackWidget(CountlyFeedbackWidget, Context, String, FeedbackCallback)" from the "Feedback" interface
-* Removed the deprecated functions "CountlyPush.init(Application, CountlyMessagingMode)", "CountlyPush.init(Application, CountlyMessagingMode, CountlyMessagingProvider)" and "CountlyPush.getLastMessagingMethod(Context)"
-* Removed the deprecated constructor "CountlyConfigPush(Application, CountlyMessagingMode)"
-* Removed the deprecated functions "Countly.hasBeenCalledOnStart()" and "Utils.API(int)"
+  * "update(RemoteConfigCallback)", use "downloadAllKeys(RCDownloadCallback)" instead
+  * "updateForKeysOnly(String[], RemoteConfigCallback)", use "downloadSpecificKeys(String[], RCDownloadCallback)" instead
+  * "updateExceptKeys(String[], RemoteConfigCallback)", use "downloadOmittingKeys(String[], RCDownloadCallback)" instead
+  * "getValueForKey(String)", use "getValue(String)" instead
+  * "getAllValues()", use "getValues()" instead
+  * "clearStoredValues()", use "clearAll()" instead
+* Removed the following deprecated calls from the "Views" interface:
+  * "recordView(String)", use "startAutoStoppedView(String)" instead
+  * "recordView(String, Map)", use "startAutoStoppedView(String, Map)" instead
+  * "isAutomaticViewTrackingEnabled()", there is no replacement
+* Removed the following deprecated calls from the "Apm" interface:
+  * "triggerForeground()" and "triggerBackground()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking
+* Removed the following deprecated calls from the "Ratings" interface:
+  * "recordManualRating(String, int, String, String, boolean)", use "recordRatingWidgetWithID(String, int, String, String, boolean)" instead
+  * "showFeedbackPopup(String, String, Activity, FeedbackRatingCallback)", use "presentRatingWidgetWithID(String, String, Activity, FeedbackRatingCallback)" instead
+* Removed the deprecated function "presentFeedbackWidget(CountlyFeedbackWidget, Context, String, FeedbackCallback)" from the "Feedback" interface, use "presentFeedbackWidget(CountlyFeedbackWidget, Context, FeedbackCallback)" instead
+* Removed the following deprecated push calls:
+  * "CountlyPush.init(Application, CountlyMessagingMode)" and "CountlyPush.init(Application, CountlyMessagingMode, CountlyMessagingProvider)", use "CountlyPush.init(CountlyConfigPush)" instead, with "CountlyConfigPush.setProvider(CountlyMessagingProvider)" for the provider
+  * "CountlyConfigPush(Application, CountlyMessagingMode)", use "CountlyConfigPush(Application)" instead
+  * "CountlyPush.getLastMessagingMethod(Context)", there is no replacement, it always returned "0"
+* Removed the deprecated function "Countly.hasBeenCalledOnStart()", there is no replacement
+* Removed the deprecated function "Utils.API(int)", there is no replacement, compare against "Build.VERSION.SDK_INT" instead
 
 * Deprecated the "RemoteConfigCallback" interface, replaced with "RCDownloadCallback"
 * Deprecated the "CrashFilterCallback" interface, replaced with "GlobalCrashFilterCallback"
