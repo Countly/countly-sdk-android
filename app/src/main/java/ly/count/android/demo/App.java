@@ -233,7 +233,6 @@ public class App extends Application {
             .setTrackOrientationChanges(true)
             //.setMetricOverride(metricOverride)
             .setWebviewDisplayOption(WebViewDisplayOption.IMMERSIVE)
-            //.enableServerConfiguration()
             .setUserProperties(customUserProperties);
 
         // crash configuration

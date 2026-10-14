@@ -686,21 +686,6 @@ public class ModuleRatings extends ModuleBase {
          * @param email email of the user
          * @param comment comment set by the user
          * @param userCanBeContacted set true if the user wants you to contact him
-         * @deprecated use 'recordRatingWidgetWithID' in place of this call
-         */
-        public void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
-            L.i("[Ratings] Calling recordManualRating");
-            recordRatingWidgetWithID(widgetId, rating, email, comment, userCanBeContacted);
-        }
-
-        /**
-         * Record user rating widget manually without showing any message dialog.
-         *
-         * @param widgetId widget ID to which this rating will be tied. You get it from the dashboard
-         * @param rating value from 1 to 5 that will be set as the rating value
-         * @param email email of the user
-         * @param comment comment set by the user
-         * @param userCanBeContacted set true if the user wants you to contact him
          */
         public void recordRatingWidgetWithID(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
             synchronized (_cly) {
@@ -712,17 +697,6 @@ public class ModuleRatings extends ModuleBase {
 
                 recordManualRatingInternal(widgetId, rating, email, comment, userCanBeContacted);
             }
-        }
-
-        /**
-         * Show the rating dialog to the user
-         *
-         * @param widgetId ID that identifies this dialog
-         * @deprecated use 'presentRatingWidgetWithID' in place of this call
-         */
-        public void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
-            L.i("[Ratings] Calling showFeedbackPopup");
-            presentRatingWidgetWithID(widgetId, closeButtonText, activity, callback);
         }
 
         /**

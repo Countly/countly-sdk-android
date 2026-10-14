@@ -28,9 +28,7 @@ public class ModuleAPM extends ModuleBase {
 
     boolean useManualAppLoadedTrigger;
     long appStartTimestamp;
-    boolean manualForegroundBackgroundTriggers;
     boolean trackForegroundBackground;
-    boolean manualOverrideInForeground = false;//app starts in background
 
     boolean appStartRecorded = false;
 
@@ -56,11 +54,6 @@ public class ModuleAPM extends ModuleBase {
 
         if (config.apm.appLoadedManualTrigger) {
             L.d("[ModuleAPM] Using manual app finished loading trigger for app start");
-        }
-
-        manualForegroundBackgroundTriggers = config.apm.manualForegroundBackgroundTrigger;
-        if (manualForegroundBackgroundTriggers) {
-            L.d("[ModuleAPM] Using manual foreground/background triggers");
         }
 
         trackForegroundBackground = config.apm.trackForegroundBackground;
@@ -398,26 +391,6 @@ public class ModuleAPM extends ModuleBase {
         }
     }
 
-    void goToForeground() {
-        L.d("[ModuleAPM] Calling 'goToForeground'");
-        if (manualOverrideInForeground) {
-            //if we already are in foreground, do nothing
-            return;
-        }
-        manualOverrideInForeground = true;
-        doForegroundBackgroundCalculations(false, true);
-    }
-
-    void goToBackground() {
-        L.d("[ModuleAPM] Calling 'goToBackground'");
-        if (!manualOverrideInForeground) {
-            //if we already are in background, do nothing
-            return;
-        }
-        manualOverrideInForeground = false;
-        doForegroundBackgroundCalculations(true, false);
-    }
-
     @Override
     void halt() {
         codeTraces = null;
@@ -440,7 +413,7 @@ public class ModuleAPM extends ModuleBase {
 
         long currentTimestamp = System.currentTimeMillis();
 
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
         }
         activitiesOpen++;
@@ -462,7 +435,7 @@ public class ModuleAPM extends ModuleBase {
     void callbackOnActivityStopped(Activity activity) {
         L.d("[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
 
-        if (trackForegroundBackground & !manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
         }
         activitiesOpen--;
@@ -489,8 +462,7 @@ public class ModuleAPM extends ModuleBase {
             activitiesOpen++;
         }
 
-        // we only do this adjustment if we track it automatically
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.lifeCycleAtleastStarted()) {
+        if (trackForegroundBackground && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Starting to track foreground time");
 
             calculateAppRunningTimes(activitiesOpen - 1, activitiesOpen);
@@ -627,52 +599,6 @@ public class ModuleAPM extends ModuleBase {
                 }
 
                 recordAppStart(timestamp);
-            }
-        }
-
-        /**
-         * Manually trigger that the app has gone to the foreground
-         *
-         * @deprecated this call is deprecated and will be removed in the future
-         */
-        public void triggerForeground() {
-            synchronized (_cly) {
-                L.i("[Apm] Calling 'triggerForeground'");
-
-                if (!trackForegroundBackground) {
-                    L.w("[Apm] triggerForeground, tracking foreground is disabled");
-                    return;
-                }
-
-                if (!manualForegroundBackgroundTriggers) {
-                    L.w("[Apm] trying to use manual foreground triggers without enabling them");
-                    return;
-                }
-
-                goToForeground();
-            }
-        }
-
-        /**
-         * Manually trigger that the app has gone to the background
-         *
-         * @deprecated this call is deprecated and will be removed in the future
-         */
-        public void triggerBackground() {
-            synchronized (_cly) {
-                L.i("[Apm] Calling 'triggerBackground'");
-
-                if (!trackForegroundBackground) {
-                    L.w("[Apm] triggerBackground, tracking background is disabled");
-                    return;
-                }
-
-                if (!manualForegroundBackgroundTriggers) {
-                    L.w("[Apm] triggerBackground, trying to use manual background triggers without enabling them");
-                    return;
-                }
-
-                goToBackground();
             }
         }
     }

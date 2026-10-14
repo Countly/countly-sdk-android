@@ -185,16 +185,16 @@ public class ModuleLifecycleDispatchTests {
 
         Countly second = Countly.instance("dispatchFanOut");
         second.init(TestUtils.createBaseConfig("deviceFanOut"));
-        Assert.assertFalse("no start seen yet by the default instance", countly.hasBeenCalledOnStart());
-        Assert.assertFalse("no start seen yet by the named instance", second.hasBeenCalledOnStart());
+        Assert.assertFalse("no start seen yet by the default instance", countly.calledAtLeastOnceOnStart);
+        Assert.assertFalse("no start seen yet by the named instance", second.calledAtLeastOnceOnStart);
 
         Activity activity = org.mockito.Mockito.mock(Activity.class);
         dispatcher.onActivityStarted(activity);
 
-        // hasBeenCalledOnStart is set at the end of onStartInternal, so it proves the event reached each
+        // calledAtLeastOnceOnStart is set at the end of onStartInternal, so it proves the event reached each
         // instance and ran the whole method - not just that the dispatcher held a reference
-        Assert.assertTrue("the default instance must have seen onActivityStarted", countly.hasBeenCalledOnStart());
-        Assert.assertTrue("the named instance must have seen the same event from the one registration", second.hasBeenCalledOnStart());
+        Assert.assertTrue("the default instance must have seen onActivityStarted", countly.calledAtLeastOnceOnStart);
+        Assert.assertTrue("the named instance must have seen the same event from the one registration", second.calledAtLeastOnceOnStart);
 
         second.halt();
         Assert.assertFalse("a halted instance must not still be initialised", second.isInitialized());

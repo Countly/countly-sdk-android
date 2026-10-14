@@ -68,7 +68,6 @@ public class ModuleConfigurationTests {
     @Test
     public void defaultConfig_WhenServerConfigEnabledAndStorageEmpty() {
         CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
-        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertNull(countlyStore.getServerConfig());
@@ -84,7 +83,6 @@ public class ModuleConfigurationTests {
     public void serverConfig_WhenEnabledAndAllPropertiesAllowing() throws JSONException {
         countlyStore.setServerConfig(createStorageConfig(true, true, true));
         CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
-        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertNotNull(countlyStore.getServerConfig());
@@ -98,7 +96,6 @@ public class ModuleConfigurationTests {
     public void serverConfig_WhenEnabledAndAllPropertiesForbidding() throws JSONException {
         countlyStore.setServerConfig(createStorageConfig(false, false, false));
         CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
-        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertNotNull(countlyStore.getServerConfig());
@@ -539,7 +536,6 @@ public class ModuleConfigurationTests {
 
         // Third init lacks connection but should have previously saved values
         CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
-        config.enableServerConfiguration();
         countly = new Countly().init(config);
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
@@ -562,7 +558,6 @@ public class ModuleConfigurationTests {
 
         countlyStore.setServerConfig(createStorageConfig(false, false, false));
         CountlyConfig config = TestUtils.createIRGeneratorConfig(null);
-        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         Assert.assertFalse(countly.moduleConfiguration.getNetworkingEnabled());
@@ -602,7 +597,7 @@ public class ModuleConfigurationTests {
 
         TestUtils.getCountlyStore().setServerConfig(createStorageConfig(true, true, false));
         CountlyConfig config = TestUtils.createBaseConfig();
-        config.enableServerConfiguration().setEventQueueSizeToSend(2);
+        config.setEventQueueSizeToSend(2);
         config.crashes.enableCrashReporting();
         countly = new Countly().init(config);
 
@@ -1075,7 +1070,6 @@ public class ModuleConfigurationTests {
 
     private Countly initAndValidateConfigParsingResult(String targetResponse, boolean responseAccepted) {
         CountlyConfig config = TestUtils.createIRGeneratorConfig(createIRGForSpecificResponse(targetResponse));
-        config.enableServerConfiguration();
         countly = new Countly().init(config);
 
         if (!responseAccepted) {

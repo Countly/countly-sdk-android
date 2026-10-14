@@ -21,8 +21,6 @@ public class ModuleCrash extends ModuleBase {
 
     //crash filtering
     GlobalCrashFilterCallback globalCrashFilterCallback;
-    //Deprecated, will be removed in the future
-    CrashFilterCallback crashFilterCallback;
 
     boolean recordAllThreads = false;
 
@@ -61,7 +59,6 @@ public class ModuleCrash extends ModuleBase {
         L.v("[ModuleCrash] Initialising");
 
         globalCrashFilterCallback = config.crashes.globalCrashFilterCallback;
-        crashFilterCallback = config.crashFilterCallback;
 
         recordAllThreads = config.crashes.recordAllThreadsWithCrash;
         unhandledCrashReportingInConfig = config.crashes.enableUnhandledCrashReporting;
@@ -324,10 +321,6 @@ public class ModuleCrash extends ModuleBase {
         assert crashData != null;
 
         L.d("[ModuleCrash] Calling crashFilterCheck");
-
-        if (crashFilterCallback != null) {
-            return crashFilterCallback.filterCrash(crashData.getStackTrace());
-        }
 
         if (globalCrashFilterCallback == null) {
             return false;

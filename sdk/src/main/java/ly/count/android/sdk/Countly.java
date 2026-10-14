@@ -135,7 +135,11 @@ public class Countly {
      * app installation it is. Later (in Countly Dashboard or when calling Countly API method),
      * you'll be able to choose whether you want to send a message to test devices,
      * or to production ones.
+     *
+     * @deprecated The messaging mode is not reported any more and no SDK call takes it. Initialize push with
+     * {@link ly.count.android.sdk.messaging.CountlyPush#init(ly.count.android.sdk.messaging.CountlyConfigPush)}.
      */
+    @Deprecated
     public enum CountlyMessagingMode {
         TEST,
         PRODUCTION,
@@ -2136,16 +2140,6 @@ public class Countly {
      */
     public boolean isLoggingEnabled() {
         return enableLogging_;
-    }
-
-    /**
-     * Returns if the countly sdk onStart function has been called at least once
-     *
-     * @return true - yes, it has, false - no it has not
-     * @deprecated This will be removed
-     */
-    public boolean hasBeenCalledOnStart() {
-        return calledAtLeastOnceOnStart;
     }
 
     public ModuleCrash.Crashes crashes() {
