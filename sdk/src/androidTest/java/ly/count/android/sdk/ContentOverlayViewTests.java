@@ -53,6 +53,13 @@ public class ContentOverlayViewTests {
     private final List<ContentOverlayView> createdOverlays = new ArrayList<>();
 
     /**
+     * Default content URL handler for overlays built here: it takes web links so a link action never
+     * opens a real browser, which on a physical phone covers the test activity and stalls the run.
+     */
+    private static final ContentUrlHandler NO_EXTERNAL_BROWSER =
+        url -> url != null && (url.startsWith("http://") || url.startsWith("https://"));
+
+    /**
      * Bare activity used as a host for ContentOverlayView in tests.
      * Declared in sdk/src/androidTest/AndroidManifest.xml.
      */
@@ -147,7 +154,7 @@ public class ContentOverlayViewTests {
 
     private ContentOverlayView createOverlay(Activity activity,
         @Nullable ContentCallback callback, @Nullable Runnable onClose) {
-        return createOverlay(activity, callback, onClose, null);
+        return createOverlay(activity, callback, onClose, NO_EXTERNAL_BROWSER);
     }
 
     private ContentOverlayView createOverlay(Activity activity,
