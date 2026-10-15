@@ -57,6 +57,15 @@ class ReleaseCliTest(unittest.TestCase):
                 result = run_cli("plan", "--tag", tag, "--target", "production", "--prerelease", prerelease, "--out", str(self.folder / "plan.json"))
                 self.assertEqual(result.returncode, code, result.stdout)
 
+    def test_production_refuses_a_dry_run_version(self):
+        cases = [("0.0.3", "production", 1), ("native-0.0.1", "production", 1), ("plugin-0.1.0", "production", 1), ("0.0.3", "test", 0), ("26.2.0", "production", 0)]
+        for tag, target, code in cases:
+            with self.subTest(tag=tag, target=target):
+                result = run_cli("plan", "--tag", tag, "--target", target, "--prerelease", "false", "--out", str(self.folder / "plan.json"))
+                self.assertEqual(result.returncode, code, result.stdout)
+                if code:
+                    self.assertIn("dry run version", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

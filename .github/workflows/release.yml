@@ -99,11 +99,19 @@ jobs:
           java -version 2>&1 | sed 's/^/    /' >> "$GITHUB_STEP_SUMMARY"
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
-          packages: platform-tools platforms;android-24 platforms;android-37.0 build-tools;30.0.3 build-tools;37.0.0
+          packages: platform-tools platforms;android-24 platforms;android-35 platforms;android-37.0 build-tools;30.0.3 build-tools;35.0.0 build-tools;37.0.0
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
         with:
           cache-disabled: true
           gradle-version: '7.5'
+      - name: Record Gradle 7.5 for the oldest consumer pair
+        run: echo "GRADLE_7=$(command -v gradle)" >> "$GITHUB_ENV"
+      - name: Install Gradle 8.9 for the middle consumer pair
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/gradle-8.9-bin.zip" https://services.gradle.org/distributions/gradle-8.9-bin.zip
+          echo "d725d707bfabd4dfdc958c624003b3c80accc03f7037b5122c4b1d0ef15cecab  $RUNNER_TEMP/gradle-8.9-bin.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/gradle-8.9-bin.zip" -d "$RUNNER_TEMP"
+          echo "GRADLE_8=$RUNNER_TEMP/gradle-8.9/bin/gradle" >> "$GITHUB_ENV"
       - name: Test and check the modules
         run: ./gradlew --no-daemon --no-build-cache --no-configuration-cache ${{ needs.plan.outputs.check_tasks }}
       - name: Publish into the staging folder
@@ -238,5 +246,5 @@ jobs:
           title: New ${{ github.repository }} version ${{ github.event.release.tag_name }} published by ${{ github.actor }}
           description: |
             Release URL: ${{ github.event.release.html_url }}
-            Click [here](https://github.com/Countly/countly-server/blob/master/CHANGELOG.md) to view the change log.
+            Click [here](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.event.release.tag_name }}/${{ startsWith(github.event.release.tag_name, 'native-') && 'sdk-native/CHANGELOG.md' || startsWith(github.event.release.tag_name, 'plugin-') && 'upload-plugin/CHANGELOG.md' || 'CHANGELOG.md' }}) to view the change log.
             `${{ github.event.release.body }}`

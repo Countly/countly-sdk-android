@@ -65,6 +65,9 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
     // callers must fall back to the ProcessLifecycleOwner heuristic.
     private volatile boolean countExactSinceProcessStart = false;
 
+    // the Application the callbacks are on; Robolectric builds a new one per test within one process
+    private volatile Application registeredApplication;
+
     private CountlyLifecycleDispatcher() {
     }
 
@@ -73,8 +76,8 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
     }
 
     /**
-     * Registers this dispatcher against the Application exactly once per process. Safe to call repeatedly
-     * and from any thread: the second and later calls do nothing.
+     * Registers this dispatcher against the Application once. Safe to call repeatedly and from any thread: later
+     * calls with the same Application do nothing, and a different Application takes over the registration.
      */
     void register(@Nullable Context context) {
         register(context, false);
@@ -85,20 +88,32 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
      * exist), which is what makes the started-activity count exact from process start
      */
     void register(@Nullable Context context, boolean fromProvider) {
-        if (registered || context == null) {
+        if (context == null) {
             return;
         }
         Context appContext = context.getApplicationContext();
         if (!(appContext instanceof Application)) {
             return;
         }
+        Application application = (Application) appContext;
+        if (registered && registeredApplication == application) {
+            return;
+        }
         synchronized (instance) {
-            if (registered) {
+            if (registered && registeredApplication == application) {
                 return;
             }
-            Application application = (Application) appContext;
+            Application previous = registeredApplication;
+            if (previous != null) {
+                previous.unregisterActivityLifecycleCallbacks(this);
+                previous.unregisterComponentCallbacks(this);
+                synchronized (stateLock) {
+                    startedActivityCount = 0;
+                }
+            }
             application.registerActivityLifecycleCallbacks(this);
             application.registerComponentCallbacks(this);
+            registeredApplication = application;
             countExactSinceProcessStart = fromProvider;
             registered = true;
         }
@@ -109,17 +124,24 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
     }
 
     /**
-     * Adds the instance and returns the started-activity count it should seed itself with, taken
-     * atomically with joining: the instance will receive exactly the events after this snapshot,
-     * never one that is also included in it.
+     * Adds the instance and returns the started-activity count, taken atomically with joining: the instance receives
+     * exactly the events after this snapshot, never one that is also included in it. When asked to, the instance's own
+     * activity counter is seeded with the snapshot in the same step, before any event can reach it: an activity stop
+     * delivered between joining and a later seed would find a counter of zero, be dropped, and leave the count one too
+     * high for good.
      *
+     * @param countly the instance joining
+     * @param seedActivityCount whether to add the exact count to the instance's activity counter
      * @return the exact number of currently started activities, or -1 when the dispatcher was not
      * registered before the first activity and the count is therefore not trustworthy
      */
-    int addInstance(@NonNull Countly countly) {
+    int addInstance(@NonNull Countly countly, boolean seedActivityCount) {
         synchronized (stateLock) {
             if (!instances.contains(countly)) {
                 instances.add(countly);
+                if (seedActivityCount && countExactSinceProcessStart) {
+                    countly.seedActivityCount(startedActivityCount);
+                }
             }
             return countExactSinceProcessStart ? startedActivityCount : -1;
         }
@@ -148,10 +170,6 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
     }
 
     /**
-     * Stops delivering lifecycle events to this instance. Teardown calls this before it nulls anything, so
-     * that the window in which an event can reach a half-destroyed instance is closed rather than guarded.
-     */
-    /**
      * Removes the instance and does not return until no lifecycle event can still be in flight toward it, so
      * its owner may tear state down without racing the main thread. This is what turns the teardown race from
      * "guarded" into "closed": {@code tearingDown} and the per-dereference null checks stop the crash, but
@@ -170,7 +188,16 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
      */
     void removeInstanceAndQuiesce(@NonNull Countly countly, @NonNull ModuleLog L) {
         instances.remove(countly);
+        quiesce(L);
+    }
 
+    /**
+     * Waits until the main thread has moved past every dispatch that started before this call, the second half of
+     * {@link #removeInstanceAndQuiesce}. Instances removed with {@link #removeInstance} before one call are all
+     * covered by it, so tearing several down costs one hop rather than one each. Same rules and same one second
+     * bound as {@link #removeInstanceAndQuiesce}.
+     */
+    void quiesce(@NonNull ModuleLog L) {
         Looper mainLooper = Looper.getMainLooper();
         if (mainLooper == null || Looper.myLooper() == mainLooper) {
             return;
@@ -182,19 +209,23 @@ class CountlyLifecycleDispatcher implements Application.ActivityLifecycleCallbac
                 drained.countDown();
             }
         })) {
-            L.w("[CountlyLifecycleDispatcher] removeInstanceAndQuiesce, the main looper refused the drain hop, proceeding with teardown");
+            L.w("[CountlyLifecycleDispatcher] quiesce, the main looper refused the drain hop, proceeding with teardown");
             return;
         }
         try {
             if (!drained.await(1, TimeUnit.SECONDS)) {
-                L.w("[CountlyLifecycleDispatcher] removeInstanceAndQuiesce, the main thread did not drain within 1s, proceeding with teardown");
+                L.w("[CountlyLifecycleDispatcher] quiesce, the main thread did not drain within 1s, proceeding with teardown");
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            L.w("[CountlyLifecycleDispatcher] removeInstanceAndQuiesce, interrupted while waiting for the main thread to drain");
+            L.w("[CountlyLifecycleDispatcher] quiesce, interrupted while waiting for the main thread to drain");
         }
     }
 
+    /**
+     * Stops delivering lifecycle events to this instance, without waiting for a dispatch already under way; pair it
+     * with {@link #quiesce} before tearing the instance down.
+     */
     void removeInstance(@NonNull Countly countly) {
         instances.remove(countly);
     }

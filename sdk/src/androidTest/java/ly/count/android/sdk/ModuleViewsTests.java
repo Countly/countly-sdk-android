@@ -7,8 +7,10 @@ import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -133,7 +135,7 @@ public class ModuleViewsTests {
         @NonNull Activity act1 = mock(Activity.class);
         @NonNull Activity act2 = mock(TestUtils.Activity2.class);
 
-        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeViewIDGenerator, null).setAutoTrackingExceptions(new Class[] { act1.getClass() });
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(true, shortNames, true, safeViewIDGenerator, null).setAutomaticViewTrackingExclusions(new Class[] { act1.getClass() });
         Countly mCountly = new Countly().init(cc);
 
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -285,7 +287,7 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Validate pure "recordView" flow without using segmentation
+     * Validate pure "startAutoStoppedView" flow without using segmentation
      *
      * @throws InterruptedException
      */
@@ -301,13 +303,13 @@ public class ModuleViewsTests {
         // start false because session did not start
         ClearFillSegmentationViewStart(segm, viewNames[0], false);
 
-        mCountly.views().recordView(viewNames[0]);
+        mCountly.views().startAutoStoppedView(viewNames[0]);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, segm, vals[0], 0, 1);
         clearInvocations(ep);
         Thread.sleep(1000);
 
-        mCountly.views().recordView(viewNames[1]);
+        mCountly.views().startAutoStoppedView(viewNames[1]);
         ClearFillSegmentationViewEnd(segm, viewNames[0], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[0], 0, 2);
 
@@ -316,7 +318,7 @@ public class ModuleViewsTests {
         clearInvocations(ep);
 
         Thread.sleep(1000);
-        mCountly.views().recordView(viewNames[2]);
+        mCountly.views().startAutoStoppedView(viewNames[2]);
         ClearFillSegmentationViewEnd(segm, viewNames[1], null);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);//todo this test has issues sometimes
 
@@ -325,7 +327,7 @@ public class ModuleViewsTests {
     }
 
     /**
-     * Validate pure "recordView" flow with using segmentation
+     * Validate pure "startAutoStoppedView" flow with using segmentation
      *
      * @throws InterruptedException
      */
@@ -367,7 +369,7 @@ public class ModuleViewsTests {
         String[] viewNames = new String[] { "DSD", "32", "DSD" };
         final Map<String, Object> segm = new HashMap<>();
 
-        mCountly.views().recordView(viewNames[0], cSegm1);
+        mCountly.views().startAutoStoppedView(viewNames[0], cSegm1);
 
         // start false because session did not start
         ClearFillSegmentationViewStart(segm, viewNames[0], false, globalSegm);
@@ -376,7 +378,7 @@ public class ModuleViewsTests {
         clearInvocations(ep);
         Thread.sleep(2000);
 
-        mCountly.views().recordView(viewNames[1], cSegm2);
+        mCountly.views().startAutoStoppedView(viewNames[1], cSegm2);
         ClearFillSegmentationViewEnd(segm, viewNames[0], globalSegm);
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 2, segm, vals[0], 0, 2); // duration comes off sometimes
 
@@ -389,7 +391,7 @@ public class ModuleViewsTests {
         clearInvocations(ep);
 
         Thread.sleep(1000);
-        mCountly.views().recordView(viewNames[2], cSegm3);
+        mCountly.views().startAutoStoppedView(viewNames[2], cSegm3);
         ClearFillSegmentationViewEnd(segm, viewNames[1], globalSegm);
 
         TestUtils.validateRecordEventInternalMock(ep, ModuleViews.VIEW_EVENT_KEY, 1, segm, vals[1], 0, 2);
@@ -489,7 +491,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.views().recordView("");
+        mCountly.views().startAutoStoppedView("");
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
     }
 
@@ -502,7 +504,7 @@ public class ModuleViewsTests {
         Countly mCountly = new Countly().init(cc);
         @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
 
-        mCountly.views().recordView(null);
+        mCountly.views().startAutoStoppedView(null);
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("xxx", "33");
@@ -680,7 +682,7 @@ public class ModuleViewsTests {
         segm.put("xxx", "33");
         segm.put("rtt", 2);
 
-        mCountly.views().recordView("abcd");
+        mCountly.views().startAutoStoppedView("abcd");
         mCountly.views().startView("aa");
         mCountly.views().startView("aa", segm);
         mCountly.views().startAutoStoppedView("bb");
@@ -707,10 +709,10 @@ public class ModuleViewsTests {
 
         TestUtils.validateRecordEventInternalMockInteractions(ep, 0);
 
-        mCountly.views().recordView("a");//starting a view
+        mCountly.views().startAutoStoppedView("a");//starting a view
         TestUtils.validateRecordEventInternalMockInteractions(ep, 1);
 
-        mCountly.views().recordView("b", segm);//starting a new view, stopping the previous one
+        mCountly.views().startAutoStoppedView("b", segm);//starting a new view, stopping the previous one
         TestUtils.validateRecordEventInternalMockInteractions(ep, 3);
 
         mCountly.views().startView("c");//starting a new view, stopping the previous one
@@ -801,6 +803,66 @@ public class ModuleViewsTests {
     @Test
     public void performFullViewFlowStopWithName_regularStart() throws InterruptedException {
         performFullViewFlowBase(false, false);
+    }
+
+    /**
+     * When the server turns automatic view tracking on, manual views run next to the activities' views. Coming back from
+     * the background restarts the stopped regular view before the activity's view starts. The other order lost the
+     * activity's view: restarting the regular view closed it at once.
+     */
+    @Test
+    public void backgroundAndForeground_automaticTracking_keepsTheActivityViewNextToTheRegularOne() throws JSONException {
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, null, null)
+            .setSDKBehaviorSettings(new ServerConfigBuilder().defaults().automaticViewTracking(true).build());
+        Countly countly = new Countly().init(cc);
+        Assert.assertTrue(countly.moduleConfiguration.getAutomaticViewTrackingEnabled());
+        Activity activity = mock(Activity.class);
+
+        countly.views().startView("regularView");
+        countly.moduleViews.onActivityStarted(activity, 1);
+        Assert.assertEquals(2, countly.moduleViews.viewDataMap.size());
+
+        countly.moduleViews.onActivityStopped(0);
+        countly.moduleViews.onActivityStarted(activity, 1);
+
+        Set<String> running = new HashSet<>();
+        for (ModuleViews.ViewData vd : countly.moduleViews.viewDataMap.values()) {
+            Assert.assertFalse(vd.viewName, vd.willStartAgain);
+            running.add(vd.viewName);
+        }
+        Assert.assertEquals(new HashSet<>(Arrays.asList("regularView", activity.getClass().getName())), running);
+        Assert.assertEquals(activity.getClass().getName(), countly.moduleViews.currentViewName);
+    }
+
+    /**
+     * Coming back to the foreground restarts the views stopped in the background. Starting a view closes the running
+     * auto-stopped one, so the auto-stopped view has to come back after the regular ones, or the regular view restarted
+     * after it would close it at once and it would stop being tracked. The view IDs put the auto-stopped view first in
+     * the map, the order in which it was lost.
+     */
+    @Test
+    public void backgroundAndForeground_autoStoppedViewIsRestartedAfterTheRegularOnes() {
+        //the regular view gets "b" and the auto-stopped one "a", which the map iterates first
+        final String[] ids = { "b", "a", "c", "d", "e", "f" };
+        final int[] next = { 0 };
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, () -> ids[next[0]++], null);
+        Countly countly = new Countly().init(cc);
+
+        //a regular view started after an auto-stopped one would close it, so the regular view comes first
+        countly.views().startView("regularView");
+        countly.views().startAutoStoppedView("autoView");
+        Assert.assertEquals(2, countly.moduleViews.viewDataMap.size());
+
+        countly.moduleViews.onActivityStopped(0);
+        countly.moduleViews.onActivityStarted(null, 1);
+
+        Set<String> running = new HashSet<>();
+        for (ModuleViews.ViewData vd : countly.moduleViews.viewDataMap.values()) {
+            Assert.assertFalse(vd.viewName, vd.willStartAgain);
+            running.add(vd.viewName);
+        }
+        Assert.assertEquals(new HashSet<>(Arrays.asList("autoView", "regularView")), running);
+        Assert.assertEquals("autoView", countly.moduleViews.currentViewName);
     }
 
     /**

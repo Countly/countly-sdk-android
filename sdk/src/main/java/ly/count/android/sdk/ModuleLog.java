@@ -4,11 +4,19 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -17,6 +25,7 @@ import org.json.JSONObject;
  * The SDK's logger, which also gathers its own lines when the server's 'lg' directive asks for them and uploads them
  * as 'sdk_logs' = {"i":gatherId,"d":dropped,"l":[{"t":ms,"l":"e","m":message}]}. Capture starts at the first log line
  * into a provisional buffer, since the init lines are the ones worth having, and a live directive adopts or drops it.
+ * A line whose consent is not given when it is logged is held apart until it is, see {@link #logLineConsent}.
  */
 public class ModuleLog {
     public interface LogCallback {
@@ -54,20 +63,55 @@ public class ModuleLog {
     //the server stores at most this many characters of a single message, so there is no point in uploading more
     final static int maxMessageLength = 4096;
 
-    //second ceiling, on the total characters held. A line may be up to 'maxMessageLength' long, so a line count on its
-    //own is not a bound on memory
+    //second ceiling, on the characters each list of lines holds, since one line can be 'maxMessageLength' long
     final static int gatheredCharCeiling = 128 * 1024;
 
     //a log line carrying an uploaded batch is never gathered, or each batch would nest the previous one
     final static String keySdkLogs = "sdk_logs";
     final static String transportMarker = keySdkLogs + "=";
 
+    /**
+     * The consent a gathered line needs while consent is required, by the name its message starts with in brackets,
+     * as in "[ModuleEvents] ..." or "[CountlyPush, init] ...". A line of any other name, such as those of the store,
+     * the request queue and init, can quote any feature's data, so it needs both the events and the users consent.
+     */
+    private static final Map<String, String[]> logLineConsent;
+
+    //where the events module logs the key of the event it records, as in "recordEventInternal, key:[[CLY]_view]"
+    private static final String eventKeyField = "key:[";
+
+    static {
+        Map<String, String[]> consent = new HashMap<>();
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.events, "ModuleEvents", "Events");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.sessions, "ModuleSessions", "Sessions");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.views, "ModuleViews", "Views", "View");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.users, "ModuleUserProfile", "UserProfile", "UserData");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.crashes, "ModuleCrash", "Crashes", "BreadcrumbHelper");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.location, "ModuleLocation", "Location");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.attribution, "ModuleAttribution", "Attribution");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.starRating, "ModuleRatings", "Ratings");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.feedback, "ModuleFeedback", "Feedback", "FeedbackDialogWebViewClient", "reportFeedbackWidgetCancelButton");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.remoteConfig, "ModuleRemoteConfig", "RemoteConfig", "RemoteConfigValueStore");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.apm, "ModuleAPM", "Apm");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.content, "ModuleContent");
+        mapLogLineConsent(consent, Countly.CountlyFeatureNames.push, "CountlyPush", "CountlyPushActivity", "CountlyConfigPush", "MessageImpl", "onRegistrationId");
+        logLineConsent = Collections.unmodifiableMap(consent);
+    }
+
     /** Guards the buffer and the directive mirror. Never call out (not even log) while holding it, lock order would invert. */
     private final Object logBufferLock = new Object();
 
-    @NonNull private final List<LogLine> gatheredLines = new ArrayList<>();
+    @NonNull private final LogLineList gatheredLines = new LogLineList();
     int droppedLogLineCount = 0;
-    int gatheredChars = 0;
+    //lines dropped while undecided, per level in the order of logGatheringAllLevels; see trimBufferLocked
+    private final int[] undecidedDropsPerLevel = new int[ModuleConfiguration.logGatheringAllLevels.length()];
+    //the last batch of a gather that just stopped, taken under the lock and handed to the queue outside it
+    @Nullable private LogBatch pendingTailBatch = null;
+
+    //lines whose consent was not given when they were logged, kept out of every batch until it is
+    @NonNull private final LogLineList linesAwaitingConsent = new LogLineList();
+    //orders the lines of both lists, since the SDK's millisecond timestamps are not monotonic within a burst
+    private long nextLineSequence = 0;
 
     //mirror of the directive, held here so that capturing a line never has to call the configuration provider.
     //the state is read on every single log call, without taking the lock
@@ -80,10 +124,12 @@ public class ModuleLog {
     private final ThreadLocal<Boolean> uploadingLogBatch = new ThreadLocal<>();
 
     @Nullable private volatile ExecutorService logDeliveryExecutor = null;
+    //set while a delivery waits for the request queue to send the log batch it holds, see resumeDeliveryWhenQueueDrains
+    private final AtomicBoolean deliveryAwaitsQueueDrain = new AtomicBoolean(false);
     private volatile boolean sdkInitFinished = false;
 
     @Nullable private ConfigurationProvider configProvider = null;
-    @Nullable private ConsentProvider consentProvider = null;
+    @Nullable private volatile ConsentProvider consentProvider = null;
     @Nullable private RequestQueueProvider requestQueueProvider = null;
 
     void SetListener(LogCallback logListener) {
@@ -227,11 +273,12 @@ public class ModuleLog {
 
     /** Setters, not constructor parameters: the logger exists long before these do. Applies the parsed directive right away. */
     void setLogGatheringProviders(@NonNull ConfigurationProvider configProvider, @NonNull ConsentProvider consentProvider, @NonNull RequestQueueProvider requestQueueProvider) {
-        v("[ModuleLog] Setting the log gathering providers, held lines:[" + heldLogLineCount() + "]");
+        v("[ModuleLog] Setting the log gathering providers, held lines:[" + heldLogLineCount() + "], awaiting consent:[" + awaitingConsentLineCount() + "]");
         this.configProvider = configProvider;
         this.consentProvider = consentProvider;
         this.requestQueueProvider = requestQueueProvider;
 
+        releaseConsentedLogLines();
         applyLogGatheringDirective("init");
     }
 
@@ -258,6 +305,7 @@ public class ModuleLog {
 
         if (state != ModuleConfiguration.LogGatheringState.GATHERING) {
             shutdownLogDelivery();
+            uploadTailBatch();
             return;
         }
 
@@ -279,6 +327,32 @@ public class ModuleLog {
     void flushGatheredLogs() {
         if (isGatheringLogs() && heldLogLineCount() > 0) {
             scheduleLogDelivery(true);
+        }
+    }
+
+    /**
+     * Uploads every buffered line on the calling thread, so that each request is queued with the current device ID.
+     * Called right before the device ID changes without merge, after which the gather is stopped. A delivery already
+     * under way is let finish first, since the batch it took belongs to the current device ID as well.
+     */
+    void flushGatheredLogsBeforeDeviceIdChange() {
+        final RequestQueueProvider requestQueue = requestQueueProvider;
+        if (!isGatheringLogs() || requestQueue == null) {
+            return;
+        }
+
+        awaitLogDelivery();
+        setOwnTransportWork(true);
+        try {
+            //a refused batch ends the loop, it is put back and the stop that follows drops it
+            boolean uploaded;
+            do {
+                uploaded = uploadLogBatch(requestQueue, true);
+            } while (uploaded);
+        } catch (Exception ex) {
+            e("[ModuleLog] flushGatheredLogsBeforeDeviceIdChange, failed to upload the gathered lines, " + ex);
+        } finally {
+            setOwnTransportWork(false);
         }
     }
 
@@ -314,6 +388,7 @@ public class ModuleLog {
             logGatherId = null;
             logGatherLevels = ModuleConfiguration.logGatheringAllLevels;
             logGatherBatchSize = ModuleConfiguration.logGatheringDefaultBatchSize;
+            pendingTailBatch = null;
             clearBufferLocked();
         }
     }
@@ -333,6 +408,13 @@ public class ModuleLog {
         }
     }
 
+    /** @return how many lines wait for their consent, outside of the buffer */
+    int awaitingConsentLineCount() {
+        synchronized (logBufferLock) {
+            return linesAwaitingConsent.size();
+        }
+    }
+
     private void captureLogLine(@NonNull final String msg, @NonNull final LogLevel level) {
         if (Boolean.TRUE.equals(uploadingLogBatch.get())) {
             //this thread is uploading a batch, everything it logs is this feature's own transport commentary
@@ -348,7 +430,9 @@ public class ModuleLog {
         }
 
         final char levelChar = levelToChar(level);
-        boolean batchIsFull;
+        final String[] consentFeatures = logLineConsentFeatures(msg);
+        final boolean consentGiven = logLineConsentGiven(consentFeatures);
+        boolean completesBatch = false;
 
         synchronized (logBufferLock) {
             if (!isCapturingLogs()) {
@@ -360,17 +444,145 @@ public class ModuleLog {
                 return;
             }
 
-            LogLine line = new LogLine(UtilsTime.currentTimestampMs(), levelChar, trimLogMessage(msg));
-            gatheredLines.add(line);
-            gatheredChars += line.message.length();
-            trimBufferLocked();
+            //not UtilsTime.currentTimestampMs, whose unique values would shift the timestamps of events and traces
+            LogLine line = new LogLine(nextLineSequence++, System.currentTimeMillis(), levelChar, trimLogMessage(msg), consentFeatures);
+            if (consentGiven) {
+                final boolean heldFullBatch = gatheredLines.size() >= logGatherBatchSize;
+                gatheredLines.add(line);
+                trimBufferLocked();
 
-            batchIsFull = isGatheringLogs() && gatheredLines.size() >= logGatherBatchSize;
+                //only the line that completes a batch asks for a delivery, so lines held back by tracking do not queue one each
+                completesBatch = isGatheringLogs() && !heldFullBatch && gatheredLines.size() >= logGatherBatchSize;
+            } else {
+                linesAwaitingConsent.add(line);
+                //not counted into 'd', a line waiting for its consent has not joined the gather
+                linesAwaitingConsent.trim();
+            }
         }
 
-        if (batchIsFull) {
+        if (completesBatch) {
+            scheduleLogDelivery(false);
+        } else if (!consentGiven && logLineConsentGiven(consentFeatures)) {
+            //given since it was read above, possibly right after the release that would have moved this line
+            releaseConsentedLogLines();
+        }
+    }
+
+    /**
+     * Maps the bracketed names a feature's log lines start with to the consent of that feature.
+     *
+     * @param consent the map to fill
+     * @param feature the feature whose consent the lines need
+     * @param names the names, without the brackets
+     */
+    private static void mapLogLineConsent(@NonNull final Map<String, String[]> consent, @NonNull final String feature, @NonNull final String... names) {
+        final String[] features = { feature };
+        for (String name : names) {
+            consent.put(name, features);
+        }
+    }
+
+    /**
+     * Finds the consent a log line needs from the bracketed name it starts with, up to the closing bracket or a comma.
+     * An events line about another feature's internal event, such as a view, needs the consent that event is recorded
+     * under, see {@link ModuleEvents#internalEventConsents}.
+     *
+     * @param msg the line as it was logged
+     * @return the features any one of whose consent lets the line go, or null for a line that needs both the events and
+     * the users consent
+     */
+    @Nullable static String[] logLineConsentFeatures(@NonNull final String msg) {
+        if (msg.isEmpty() || msg.charAt(0) != '[') {
+            return null;
+        }
+        int end = msg.indexOf(']');
+        final int comma = msg.indexOf(',');
+        if (comma > 0 && (end < 0 || comma < end)) {
+            end = comma;
+        }
+        final String[] features = end > 1 ? logLineConsent.get(msg.substring(1, end)) : null;
+        if (features == null || !Countly.CountlyFeatureNames.events.equals(features[0])) {
+            return features;
+        }
+
+        //the events module logs every internal event before checking the consent of the feature it belongs to
+        final int keyStart = msg.indexOf(eventKeyField);
+        if (keyStart < 0 || !msg.startsWith(ModuleEvents.internalEventKeyPrefix, keyStart + eventKeyField.length())) {
+            return features;
+        }
+        final int key = keyStart + eventKeyField.length();
+        final int keyEnd = msg.indexOf(']', key + ModuleEvents.internalEventKeyPrefix.length());
+        return keyEnd < 0 ? null : ModuleEvents.internalEventConsents.get(msg.substring(key, keyEnd));
+    }
+
+    /**
+     * Tells whether a line needing the given consent may be gathered now. Reads the consent without logging, as it runs
+     * inside log calls, and says no until the consent provider is set, so the lines logged before that are held.
+     *
+     * @param consentFeatures what {@link #logLineConsentFeatures(String)} returned for the line
+     * @return true when consent is not required or the consent the line needs is given
+     */
+    private boolean logLineConsentGiven(@Nullable final String[] consentFeatures) {
+        final ConsentProvider consent = consentProvider;
+        if (consent == null) {
+            return false;
+        }
+        if (consentFeatures == null) {
+            return consent.getConsentSilently(Countly.CountlyFeatureNames.events) && consent.getConsentSilently(Countly.CountlyFeatureNames.users);
+        }
+        for (String feature : consentFeatures) {
+            if (consent.getConsentSilently(feature)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Moves the lines whose consent is given by now into the buffer, in capture order with the lines already in it, and
+     * asks for a delivery when a full batch is held. Called when consent is given, when the configuration changes,
+     * which can lift the consent requirement or turn tracking back on, and when the providers are set.
+     */
+    void releaseConsentedLogLines() {
+        final ConsentProvider consent = consentProvider;
+        if (consent == null) {
+            return;
+        }
+
+        //decided before taking the lock, which nothing may call out of
+        final Set<String> givenFeatures = new HashSet<>();
+        for (String feature : ModuleConsent.validFeatureNames) {
+            if (consent.getConsentSilently(feature)) {
+                givenFeatures.add(feature);
+            }
+        }
+        final boolean unattributedGiven = givenFeatures.contains(Countly.CountlyFeatureNames.events) && givenFeatures.contains(Countly.CountlyFeatureNames.users);
+
+        synchronized (logBufferLock) {
+            List<LogLine> released = linesAwaitingConsent.removeIf(line -> line.consentFeatures == null ? unattributedGiven : anyGiven(line.consentFeatures, givenFeatures));
+            if (!released.isEmpty()) {
+                gatheredLines.merge(released);
+                trimBufferLocked();
+            }
+        }
+
+        if (hasFullLogBatch()) {
             scheduleLogDelivery(false);
         }
+    }
+
+    /**
+     * @param features the features a line can go with the consent of
+     * @param givenFeatures the features whose consent is given
+     * @return true when any of the features has its consent given
+     */
+    private static boolean anyGiven(@NonNull final String[] features, @NonNull final Set<String> givenFeatures) {
+        for (String feature : features) {
+            if (givenFeatures.contains(feature)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Applies a directive to what is held. Returns true if anything changed. */
@@ -395,7 +607,10 @@ public class ModuleLog {
 
             switch (newState) {
                 case NOT_GATHERING:
-                    //decided against gathering, so everything held speculatively goes
+                    //a stopped gather's held lines go out once under its id; lines held while undecided are dropped
+                    if (wasGathering && previousGatherId != null) {
+                        pendingTailBatch = takeAllLinesLocked(previousGatherId);
+                    }
                     clearBufferLocked();
                     break;
                 case GATHERING:
@@ -404,6 +619,7 @@ public class ModuleLog {
                         clearBufferLocked();
                     } else {
                         //adoption, or a levels/batch size change inside the same gather: what is held is this gather's
+                        adoptUndecidedDropsLocked(newLevels);
                         filterBufferLocked();
                         trimBufferLocked();
                     }
@@ -454,27 +670,16 @@ public class ModuleLog {
                 return;
             }
 
-            ConsentProvider consent = consentProvider;
-            if (consent != null && !consent.anyConsentGiven()) {
-                //gathered lines quote event keys, segmentation and whole queued requests, so they are user data.
-                //Without any consent nothing else leaves the device either, the lines stay held until it is given
-                d("[ModuleLog] deliverLogBatches, no consent given, keeping the gathered lines buffered");
+            //one batch waits in the queue at a time, so offline lines stay in the capped buffer instead of crowding it
+            if (requestQueue.queueContainsSdkLogs()) {
+                d("[ModuleLog] deliverLogBatches, a log batch is still waiting in the request queue, delivering the rest once it is sent");
+                resumeDeliveryWhenQueueDrains(requestQueue);
                 return;
             }
+            //no batch is waiting, so a resume that was asked for and lost would only hold up the next one
+            deliveryAwaitsQueueDrain.set(false);
 
-            LogBatch batch = takeLogBatch(includePartialBatch);
-            if (batch == null) {
-                return;
-            }
-
-            d("[ModuleLog] deliverLogBatches, uploading a gathered log batch, size:[" + batch.payload.length() + "] characters");
-            if (!requestQueue.sendSdkLogs(batch.payload)) {
-                //the queue refused it (torn down, or tracking flipped off in between), so the lines are still ours
-                restoreLogBatch(batch);
-                return;
-            }
-
-            if (hasFullLogBatch()) {
+            if (uploadLogBatch(requestQueue, includePartialBatch) && hasMoreToDeliver(includePartialBatch)) {
                 scheduleLogDelivery(includePartialBatch);
             }
         } catch (Exception ex) {
@@ -484,13 +689,79 @@ public class ModuleLog {
         }
     }
 
+    /**
+     * Runs the delivery again once the request queue has sent everything it holds, the waiting log batch included, so a
+     * backlog keeps going out one batch at a time instead of one batch per timer tick. A partial batch may go out then
+     * too, since nothing else sends the remainder while the app is in the background. Only one such run waits at a time.
+     *
+     * @param requestQueue the queue holding the waiting batch
+     */
+    private void resumeDeliveryWhenQueueDrains(@NonNull final RequestQueueProvider requestQueue) {
+        if (!deliveryAwaitsQueueDrain.compareAndSet(false, true)) {
+            return;
+        }
+
+        requestQueue.registerInternalGlobalRequestCallbackAction(() -> {
+            deliveryAwaitsQueueDrain.set(false);
+            scheduleLogDelivery(true);
+        });
+
+        //the queue may have been sent between the check and the registration, and then only its next request would run it
+        if (!requestQueue.queueContainsSdkLogs() && deliveryAwaitsQueueDrain.compareAndSet(true, false)) {
+            scheduleLogDelivery(true);
+        }
+    }
+
+    /**
+     * Takes one batch out of the buffer and hands it to the request queue, putting it back if the queue refuses it. The
+     * caller marks its thread as this feature's own transport work.
+     *
+     * @param requestQueue the queue to hand the batch to
+     * @param includePartialBatch whether a batch smaller than the batch size may be taken
+     * @return true when a batch was handed over
+     */
+    private boolean uploadLogBatch(@NonNull final RequestQueueProvider requestQueue, final boolean includePartialBatch) {
+        LogBatch batch = takeLogBatch(includePartialBatch);
+        if (batch == null) {
+            return false;
+        }
+
+        d("[ModuleLog] uploadLogBatch, uploading a gathered log batch, size:[" + batch.payload.length() + "] characters");
+        if (!requestQueue.sendSdkLogs(batch.payload)) {
+            //the queue refused it (torn down, or tracking flipped off in between), so the lines are still ours
+            restoreLogBatch(batch);
+            return false;
+        }
+        return true;
+    }
+
+    /** Stops the delivery thread and lets a delivery already under way finish, so it can not land after what follows. */
+    private void awaitLogDelivery() {
+        ExecutorService executor = logDeliveryExecutor;
+        if (executor == null) {
+            return;
+        }
+
+        executor.shutdown();
+        try {
+            //bounded, as the caller is usually the main thread
+            if (!executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                w("[ModuleLog] awaitLogDelivery, a log batch delivery is still running");
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     /** One batch taken out of the buffer: the payload plus what it was built from, so a refused send can put it back. */
     private static class LogBatch {
+        final String gatherId;
         final String payload;
         final List<LogLine> lines;
         final int dropped;
 
-        LogBatch(String payload, List<LogLine> lines, int dropped) {
+        LogBatch(String gatherId, String payload, List<LogLine> lines, int dropped) {
+            this.gatherId = gatherId;
             this.payload = payload;
             this.lines = lines;
             this.dropped = dropped;
@@ -500,7 +771,7 @@ public class ModuleLog {
     /** Takes up to one batch of the oldest lines, or null when there is nothing to upload. */
     @Nullable private LogBatch takeLogBatch(final boolean includePartialBatch) {
         synchronized (logBufferLock) {
-            if (!isGatheringLogs() || logGatherId == null || gatheredLines.isEmpty()) {
+            if (!isGatheringLogs() || logGatherId == null || gatheredLines.size() == 0) {
                 return null;
             }
             if (!includePartialBatch && gatheredLines.size() < logGatherBatchSize) {
@@ -508,18 +779,15 @@ public class ModuleLog {
             }
 
             final int count = Math.min(logGatherBatchSize, gatheredLines.size());
-            List<LogLine> taken = new ArrayList<>(gatheredLines.subList(0, count));
+            List<LogLine> taken = gatheredLines.first(count);
             String payload = buildLogBatchPayload(logGatherId, droppedLogLineCount, taken);
             if (payload == null) {
                 //could not be serialised, keep the lines for the next attempt
                 return null;
             }
 
-            for (LogLine line : taken) {
-                gatheredChars -= line.message.length();
-            }
-            gatheredLines.subList(0, count).clear();
-            LogBatch batch = new LogBatch(payload, taken, droppedLogLineCount);
+            gatheredLines.removeFirst(count);
+            LogBatch batch = new LogBatch(logGatherId, payload, taken, droppedLogLineCount);
             //the loss is reported once, with the batch that follows it
             droppedLogLineCount = 0;
 
@@ -527,13 +795,16 @@ public class ModuleLog {
         }
     }
 
-    /** Puts a batch the queue refused back at the front of the buffer, oldest first, drop count included. */
+    /**
+     * Puts a batch the queue refused back at the front of the buffer, oldest first, drop count included. A batch of a
+     * gather that has ended since is dropped instead, the next gather must not adopt it.
+     */
     private void restoreLogBatch(@NonNull final LogBatch batch) {
         synchronized (logBufferLock) {
-            gatheredLines.addAll(0, batch.lines);
-            for (LogLine line : batch.lines) {
-                gatheredChars += line.message.length();
+            if (!isGatheringLogs() || !batch.gatherId.equals(logGatherId)) {
+                return;
             }
+            gatheredLines.addFirst(batch.lines);
             droppedLogLineCount += batch.dropped;
             trimBufferLocked();
         }
@@ -542,6 +813,19 @@ public class ModuleLog {
     private boolean hasFullLogBatch() {
         synchronized (logBufferLock) {
             return isGatheringLogs() && gatheredLines.size() >= logGatherBatchSize;
+        }
+    }
+
+    /**
+     * @param includePartialBatch whether a batch smaller than the batch size may go, as for a flush
+     * @return true while a full batch is held, or any line at all when a partial batch may go
+     */
+    private boolean hasMoreToDeliver(final boolean includePartialBatch) {
+        if (!includePartialBatch) {
+            return hasFullLogBatch();
+        }
+        synchronized (logBufferLock) {
+            return isGatheringLogs() && gatheredLines.size() > 0;
         }
     }
 
@@ -564,31 +848,93 @@ public class ModuleLog {
         }
     }
 
-    /** Enforces both ceilings by dropping the oldest lines and counting them into 'd'. */
+    /**
+     * Enforces both ceilings on the buffer by dropping the oldest lines. While gathering they count into 'd'. While still
+     * undecided every level is captured, so the drops are counted per level, and only the levels the adopted directive
+     * asks for are added to 'd' later.
+     */
     private void trimBufferLocked() {
-        while (gatheredLines.size() > ModuleConfiguration.logGatheringMaxBufferedLines
-            || (gatheredChars > gatheredCharCeiling && gatheredLines.size() > 1)) {
-            gatheredChars -= gatheredLines.remove(0).message.length();
-            droppedLogLineCount++;
+        List<LogLine> dropped = gatheredLines.trim();
+        if (isGatheringLogs()) {
+            droppedLogLineCount += dropped.size();
+            return;
         }
-    }
 
-    /** Drops held lines of unwanted levels. Not counted as dropped, they were never wanted. */
-    private void filterBufferLocked() {
-        Iterator<LogLine> iterator = gatheredLines.iterator();
-        while (iterator.hasNext()) {
-            LogLine line = iterator.next();
-            if (logGatherLevels.indexOf(line.level) < 0) {
-                gatheredChars -= line.message.length();
-                iterator.remove();
+        for (LogLine line : dropped) {
+            int levelIndex = ModuleConfiguration.logGatheringAllLevels.indexOf(line.level);
+            if (levelIndex >= 0) {
+                undecidedDropsPerLevel[levelIndex]++;
             }
         }
     }
 
+    /**
+     * Adds the lines dropped while undecided to 'd', for the levels the gather asks for only.
+     *
+     * @param levels the levels of the adopted directive
+     */
+    private void adoptUndecidedDropsLocked(@NonNull final String levels) {
+        for (int i = 0; i < undecidedDropsPerLevel.length; i++) {
+            if (levels.indexOf(ModuleConfiguration.logGatheringAllLevels.charAt(i)) >= 0) {
+                droppedLogLineCount += undecidedDropsPerLevel[i];
+            }
+            undecidedDropsPerLevel[i] = 0;
+        }
+    }
+
+    /**
+     * Takes every held line as one batch of the given gather.
+     *
+     * @param gatherId the gather the lines belong to
+     * @return the batch, or null when nothing is held or it could not be serialised
+     */
+    @Nullable private LogBatch takeAllLinesLocked(@NonNull final String gatherId) {
+        if (gatheredLines.size() == 0) {
+            return null;
+        }
+        List<LogLine> lines = gatheredLines.first(gatheredLines.size());
+        String payload = buildLogBatchPayload(gatherId, droppedLogLineCount, lines);
+        return payload == null ? null : new LogBatch(gatherId, payload, lines, droppedLogLineCount);
+    }
+
+    /** Hands the last batch of a stopped gather to the request queue, once. The lines are gone if the queue refuses it. */
+    private void uploadTailBatch() {
+        final LogBatch tail;
+        synchronized (logBufferLock) {
+            tail = pendingTailBatch;
+            pendingTailBatch = null;
+        }
+
+        final RequestQueueProvider requestQueue = requestQueueProvider;
+        if (tail == null || requestQueue == null || !sdkInitFinished) {
+            return;
+        }
+
+        setOwnTransportWork(true);
+        try {
+            d("[ModuleLog] uploadTailBatch, uploading the last [" + tail.lines.size() + "] lines of the stopped gather");
+            if (!requestQueue.sendSdkLogs(tail.payload)) {
+                d("[ModuleLog] uploadTailBatch, the request queue refused the last batch, its lines are dropped");
+            }
+        } catch (Exception ex) {
+            e("[ModuleLog] uploadTailBatch, failed to upload the last batch, " + ex);
+        } finally {
+            setOwnTransportWork(false);
+        }
+    }
+
+    /** Drops the lines of unwanted levels from both lists. Not counted as dropped, they were never wanted. */
+    private void filterBufferLocked() {
+        final String levels = logGatherLevels;
+        gatheredLines.removeIf(line -> levels.indexOf(line.level) < 0);
+        linesAwaitingConsent.removeIf(line -> levels.indexOf(line.level) < 0);
+    }
+
     private void clearBufferLocked() {
         gatheredLines.clear();
-        gatheredChars = 0;
+        linesAwaitingConsent.clear();
         droppedLogLineCount = 0;
+        Arrays.fill(undecidedDropsPerLevel, 0);
     }
 
     @Nullable private static String buildLogBatchPayload(@NonNull final String gatherId, final int dropped, @NonNull final List<LogLine> batch) {
@@ -638,14 +984,116 @@ public class ModuleLog {
     }
 
     private static class LogLine {
+        final long sequence;
         final long timestamp;
         final char level;
         @NonNull final String message;
+        //the features any one of whose consent lets the line go, null when it needs both the events and the users consent
+        @Nullable final String[] consentFeatures;
 
-        LogLine(final long timestamp, final char level, @NonNull final String message) {
+        LogLine(final long sequence, final long timestamp, final char level, @NonNull final String message, @Nullable final String[] consentFeatures) {
+            this.sequence = sequence;
             this.timestamp = timestamp;
             this.level = level;
             this.message = message;
+            this.consentFeatures = consentFeatures;
+        }
+    }
+
+    /** Selects log lines, see {@link LogLineList#removeIf(LinePredicate)}. */
+    private interface LinePredicate {
+        /**
+         * @param line the line to look at
+         * @return true to select it
+         */
+        boolean test(@NonNull LogLine line);
+    }
+
+    /** Lines in capture order and the characters they hold, kept within both ceilings by dropping the oldest. */
+    private static final class LogLineList {
+        @NonNull private final List<LogLine> lines = new ArrayList<>();
+        private int chars = 0;
+
+        /** @return how many lines the list holds */
+        int size() {
+            return lines.size();
+        }
+
+        /** @param line the line to add after the others */
+        void add(@NonNull final LogLine line) {
+            lines.add(line);
+            chars += line.message.length();
+        }
+
+        /** @param added lines to add, after which the list is put back in capture order */
+        void merge(@NonNull final List<LogLine> added) {
+            for (LogLine line : added) {
+                add(line);
+            }
+            Collections.sort(lines, (first, second) -> Long.compare(first.sequence, second.sequence));
+        }
+
+        /** @param restored lines taken from the front, put back in front of the rest */
+        void addFirst(@NonNull final List<LogLine> restored) {
+            lines.addAll(0, restored);
+            for (LogLine line : restored) {
+                chars += line.message.length();
+            }
+        }
+
+        /**
+         * @param count how many lines to copy, at most the size
+         * @return a copy of the oldest lines, which stay in the list
+         */
+        @NonNull List<LogLine> first(final int count) {
+            return new ArrayList<>(lines.subList(0, count));
+        }
+
+        /** @param count how many of the oldest lines to remove, at most the size */
+        void removeFirst(final int count) {
+            List<LogLine> removed = lines.subList(0, count);
+            for (LogLine line : removed) {
+                chars -= line.message.length();
+            }
+            removed.clear();
+        }
+
+        /**
+         * @param predicate selects the lines to remove
+         * @return the removed lines, in their order
+         */
+        @NonNull List<LogLine> removeIf(@NonNull final LinePredicate predicate) {
+            List<LogLine> removed = new ArrayList<>();
+            Iterator<LogLine> iterator = lines.iterator();
+            while (iterator.hasNext()) {
+                LogLine line = iterator.next();
+                if (predicate.test(line)) {
+                    iterator.remove();
+                    chars -= line.message.length();
+                    removed.add(line);
+                }
+            }
+            return removed;
+        }
+
+        /** @return the oldest lines that were dropped to bring the list within both ceilings, oldest first */
+        @NonNull List<LogLine> trim() {
+            List<LogLine> dropped = Collections.emptyList();
+            while (lines.size() > ModuleConfiguration.logGatheringMaxBufferedLines || (chars > gatheredCharCeiling && lines.size() > 1)) {
+                if (dropped.isEmpty()) {
+                    dropped = new ArrayList<>();
+                }
+                LogLine line = lines.remove(0);
+                chars -= line.message.length();
+                dropped.add(line);
+            }
+            return dropped;
+        }
+
+        /** Removes every line. */
+        void clear() {
+            lines.clear();
+            chars = 0;
         }
     }
 }

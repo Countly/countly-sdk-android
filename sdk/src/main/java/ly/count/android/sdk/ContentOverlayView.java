@@ -11,6 +11,8 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -283,6 +285,12 @@ class ContentOverlayView extends FrameLayout {
                 // The overlay is reattached via ModuleContent.onActivityStarted, which calls attachToActivity()
                 // and re-sets currentHostActivity for the next host.
                 overlay.currentHostActivity = null;
+
+                // without activity starts nothing reattaches the overlay, and it would hold the one-at-a-time guard for good
+                if (!overlay.cly.applicationClassProvided && !overlay.cly.calledAtLeastOnceOnStart) {
+                    Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, the owning instance can not reattach the overlay, closing it");
+                    overlay.close(new HashMap<>());
+                }
             }
         }
     }
@@ -868,6 +876,14 @@ class ContentOverlayView extends FrameLayout {
 
     private void eventAction(Map<String, Object> query) {
         Log.i(Countly.TAG, "[ContentOverlayView] eventAction, event action detected");
+        //a teardown on another thread stops the instance before the overlay's destroy reaches the main thread
+        ModuleEvents.Events events = cly.events();
+        ModuleRequestQueue.RequestQueue requestQueue = cly.requestQueue();
+        if (events == null || requestQueue == null) {
+            Log.w(Countly.TAG, "[ContentOverlayView] eventAction, the instance was stopped, ignoring the action");
+            return;
+        }
+
         // splitQuery only stores "event" as a JSONArray when its JSON validates; a malformed payload
         // from web content falls back to a raw String, so guard the cast (as resizeMeAction guards
         // resize_me) to keep a ClassCastException from propagating out of shouldOverrideUrlLoading.
@@ -901,13 +917,13 @@ class ContentOverlayView extends FrameLayout {
                         segmentation.put(key, value);
                     }
 
-                    cly.events().recordEvent(eventJson.get("key").toString(), segmentation);
+                    events.recordEvent(eventJson.get("key").toString(), ModuleContent.withGlobalContentSegmentation(cly, segmentation));
                 } catch (JSONException e) {
                     Log.e(Countly.TAG, "[ContentOverlayView] eventAction, Failed to parse event JSON", e);
                 }
             }
 
-            cly.requestQueue().attemptToSendStoredRequests();
+            requestQueue.attemptToSendStoredRequests();
         }
     }
 
@@ -1289,7 +1305,17 @@ class ContentOverlayView extends FrameLayout {
         }
     }
 
+    /**
+     * Tears the overlay down. The WebView and the window may only be touched on the main thread, so a call from
+     * any other thread, such as an instance being stopped from background code, is moved there.
+     */
     void destroy() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            Log.d(Countly.TAG, "[ContentOverlayView] destroy, called off the main thread, moving it to the main thread");
+            new Handler(Looper.getMainLooper()).post(this::destroy);
+            return;
+        }
+
         Log.d(Countly.TAG, "[ContentOverlayView] destroy, destroying content overlay");
 
         exitImmersiveMode();

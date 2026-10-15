@@ -241,7 +241,7 @@ public class ModuleFeedback extends ModuleBase {
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final String closeButtonText, @Nullable final FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
             L.e("[ModuleFeedback] Can't present widget with null widget info");
 
@@ -356,7 +356,7 @@ public class ModuleFeedback extends ModuleBase {
                         L.d("[ModuleFeedback] Calling on main thread");
 
                         try {
-                            showFeedbackWidget(context, widgetInfo, closeButtonText, devCallback, preparedWidgetUrl);
+                            showFeedbackWidget(context, widgetInfo, devCallback, preparedWidgetUrl);
 
                             if (devCallback != null) {
                                 devCallback.onFinished(null);
@@ -373,7 +373,7 @@ public class ModuleFeedback extends ModuleBase {
         }
     }
 
-    private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, String closeButtonText, FeedbackCallback devCallback, String url) {
+    private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, FeedbackCallback devCallback, String url) {
         if (!_cly.config_.webViewEnabled) {
             L.w("[ModuleFeedback] showFeedbackWidget, WebView is disabled via configuration, skipping");
             return;
@@ -390,11 +390,7 @@ public class ModuleFeedback extends ModuleBase {
         webView.requestFocus();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context).setView(webView).setCancelable(false);
-        String usedCloseButtonText = closeButtonText;
-        if (closeButtonText == null || closeButtonText.isEmpty()) {
-            usedCloseButtonText = "Close";
-        }
-        builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
+        builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
             @Override public void onClick(DialogInterface dialogInterface, int i) {
                 L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
                 reportFeedbackWidgetCancelButton(widgetInfo);
@@ -565,7 +561,7 @@ public class ModuleFeedback extends ModuleBase {
                 key = NPS_EVENT_KEY;
             }
 
-            eventProvider.recordEventInternal(key, segm, 1, 0, 0, null, null);
+            eventProvider.recordEventInternal(key, ModuleContent.withGlobalContentSegmentation(_cly, segm), 1, 0, 0, null, null);
         }
     }
 
@@ -817,7 +813,7 @@ public class ModuleFeedback extends ModuleBase {
             segm.putAll(widgetResult);
         }
 
-        eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null, null);
+        eventProvider.recordEventInternal(usedEventKey, ModuleContent.withGlobalContentSegmentation(_cly, segm), 1, 0, 0, null, null);
     }
 
     /**
@@ -867,7 +863,7 @@ public class ModuleFeedback extends ModuleBase {
                     return;
                 }
 
-                presentFeedbackWidgetInternal(selectedWidget, context, null, devCallback);
+                presentFeedbackWidgetInternal(selectedWidget, context, devCallback);
             }
         });
     }
@@ -915,23 +911,6 @@ public class ModuleFeedback extends ModuleBase {
         /**
          * Present a chosen feedback widget
          *
-         * @param widgetInfo
-         * @param context
-         * @param closeButtonText if this is null, no "close" button will be shown
-         * @param devCallback
-         * @deprecated use {@link #presentFeedbackWidget(CountlyFeedbackWidget, Context, FeedbackCallback)} instead
-         */
-        public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable String closeButtonText, @Nullable FeedbackCallback devCallback) {
-            synchronized (_cly) {
-                L.i("[Feedback] Trying to present feedback widget");
-
-                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
-            }
-        }
-
-        /**
-         * Present a chosen feedback widget
-         *
          * @param widgetInfo the widget to present
          * @param context the context to use for displaying the feedback widget
          * @param devCallback callback to be called when the feedback widget is closed
@@ -940,7 +919,7 @@ public class ModuleFeedback extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to present feedback widget");
 
-                presentFeedbackWidgetInternal(widgetInfo, context, null, devCallback);
+                presentFeedbackWidgetInternal(widgetInfo, context, devCallback);
             }
         }
 

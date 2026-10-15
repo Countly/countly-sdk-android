@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
@@ -185,6 +186,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVDropAgeHours = config.dropAgeHours;
         currentVRequiresConsent = config.shouldRequireConsent;
         currentVZoneTimerInterval = config.content.zoneTimerInterval;
+        currentVBackoffMechanism = config.backOffMechanismEnabled;
 
         //seed the automatic tracking flags from the local config: it is the lowest-precedence layer.
         //the SBS layers (provided -> stored -> server) override these in updateConfigVariables, giving the precedence
@@ -198,7 +200,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         //update the config variables according to the new state. No server response yet, so log gathering is only
         //decided here when requests are disabled and no response can ever come
-        updateConfigVariables(config, null);
+        updateConfigVariables(config, null, true);
     }
 
     @Override
@@ -225,7 +227,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     private void startServerConfigUpdateTimer() {
-        serverConfigUpdateTimer.startTimer((long) currentServerConfigUpdateInterval * 60 * 60 * 1000, (long) currentServerConfigUpdateInterval * 60 * 60 * 1000, new Runnable() {
+        //the period is in seconds and the initial delay in milliseconds, see CountlyTimer#startTimer
+        final long intervalSeconds = (long) currentServerConfigUpdateInterval * 60 * 60;
+        serverConfigUpdateTimer.startTimer(intervalSeconds, intervalSeconds * 1000, new Runnable() {
             @Override
             public void run() {
                 fetchConfigFromServer(_cly.config_);
@@ -298,13 +302,16 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
      * @param clyConfig config of the SDK
      * @param serverResponse the freshly downloaded response, or null when the values were restored from storage or
      * provided at init. Only a server response decides the log gathering directive, see {@link #updateLogGatheringDirective(JSONObject)}.
+     * @param decidesLogGathering false for a response requested for another device ID, which decides nothing about gathering
      */
-    private void updateConfigVariables(@NonNull final CountlyConfig clyConfig, @Nullable final JSONObject serverResponse) {
+    private void updateConfigVariables(@NonNull final CountlyConfig clyConfig, @Nullable final JSONObject serverResponse, final boolean decidesLogGathering) {
         L.v("[ModuleConfiguration] updateConfigVariables, from server response:[" + (serverResponse != null) + "]");
 
         //the directive is a top level key read off the live response itself, so it applies even when the inner 'c'
         //object was rejected and nothing was stored
-        updateLogGatheringDirective(serverResponse);
+        if (decidesLogGathering) {
+            updateLogGatheringDirective(serverResponse);
+        }
 
         if (latestRetrievedConfiguration == null) {
             return;
@@ -424,6 +431,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         currentVLogGatheringLevels = sanitizeLogGatheringLevels(directive.opt(keyLGLevels));
         currentVLogGatheringBatchSize = sanitizeLogGatheringBatchSize(directive.opt(keyLGBatchSize));
         L.d("[ModuleConfiguration] readLogGatheringDirective, log gathering is on, id:[" + currentVLogGatheringId + "], levels:[" + currentVLogGatheringLevels + "], batch size:[" + currentVLogGatheringBatchSize + "]");
+    }
+
+    /**
+     * A gather belongs to the user it was armed for, so a device ID change without merge ends it: what is gathered goes
+     * out under the current device ID, the rest is dropped, and only a later server response can arm the next user.
+     * Lines captured while still undecided are dropped as well, a directive arriving later must not adopt them.
+     */
+    void stopLogGatheringForDeviceIdChange() {
+        if (currentVLogGatheringState == LogGatheringState.NOT_GATHERING) {
+            return;
+        }
+
+        L.flushGatheredLogsBeforeDeviceIdChange();
+        setLogGatheringOff();
+        L.applyLogGatheringDirective("device ID changed without merge");
     }
 
     /** No response can arrive this run (failed fetch, temporary device ID), which decides against gathering. */
@@ -842,6 +864,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         String requestData = requestQueueProvider.prepareServerConfigRequest();
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final long fetchStartNs = System.nanoTime();
+        final String requestedForDeviceId = deviceIdProvider.getDeviceId();
+        final int mergesAtRequest = connectionTestMergesSoFar();
 
         immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, true, checkResponse -> {
             if (checkResponse == null) {
@@ -856,11 +880,25 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             long fetchLatencyMs = (System.nanoTime() - fetchStartNs) / 1_000_000L;
             boolean connectionTestArmed = extractConnectionTestFlag(checkResponse);
 
-            saveAndStoreDownloadedConfig(checkResponse);
-            updateConfigVariables(config, checkResponse);
+            //a gather is armed for the device the request was made for, not for whoever the device ID is by now
+            final boolean sameDevice = Objects.equals(requestedForDeviceId, deviceIdProvider.getDeviceId());
+            if (!sameDevice) {
+                L.d("[ModuleConfiguration] fetchConfigFromServer, the device ID changed since the request, its log gathering directive is ignored");
+            }
 
-            if (connectionTestArmed) {
-                notifyConnectionTestArmed(fetchLatencyMs);
+            saveAndStoreDownloadedConfig(checkResponse);
+            updateConfigVariables(config, checkResponse, sameDevice);
+
+            //the report goes under the fetch-time ID, so after a merge, which folds that user away, the test does not run
+            if (connectionTestArmed && connectionTestMergesSoFar() == mergesAtRequest) {
+                notifyConnectionTestArmed(fetchLatencyMs, requestedForDeviceId, mergesAtRequest);
+            } else if (connectionTestArmed) {
+                L.d("[ModuleConfiguration] fetchConfigFromServer, the device ID was changed with merge since the request, skipping the connection test armed for it");
+            }
+
+            if (!sameDevice && currentVLogGatheringState == LogGatheringState.UNDECIDED) {
+                L.d("[ModuleConfiguration] fetchConfigFromServer, log gathering is still undecided, fetching again for the current device ID");
+                fetchConfigFromServer(config);
             }
         }, L);
     }
@@ -888,13 +926,25 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return true;
     }
 
-    private void notifyConnectionTestArmed(final long fetchLatencyMs) {
+    /**
+     * Starts the probe battery the server armed.
+     *
+     * @param fetchLatencyMs latency of the fetch that delivered the flag
+     * @param armedForDeviceId the device ID the fetch was made for, which the server armed the test for
+     */
+    private void notifyConnectionTestArmed(final long fetchLatencyMs, @Nullable final String armedForDeviceId, final int mergesAtRequest) {
         ModuleConnectionTest connectionTest = _cly.moduleConnectionTest;
         if (connectionTest == null) {
             L.d("[ModuleConfiguration] notifyConnectionTestArmed, instance torn down before the response arrived, ignoring");
             return;
         }
-        connectionTest.startBattery(fetchLatencyMs);
+        connectionTest.startBattery(fetchLatencyMs, armedForDeviceId, mergesAtRequest);
+    }
+
+    /** @return the device ID changes with merge so far, as the connection test counts them; 0 once it is torn down */
+    private int connectionTestMergesSoFar() {
+        ModuleConnectionTest connectionTest = _cly.moduleConnectionTest;
+        return connectionTest == null ? 0 : connectionTest.mergesSoFar();
     }
 
     void fetchIfTimeIsUpForFetchingServerConfig() {

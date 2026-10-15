@@ -22,7 +22,7 @@ public class RequestQueueTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true)));
     }
 
     @Test

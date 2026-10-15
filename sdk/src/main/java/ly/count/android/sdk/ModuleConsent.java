@@ -35,7 +35,8 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     public enum ConsentChangeSource {ChangeConsentCall, DeviceIDChangedNotMerged}
 
-    protected boolean requiresConsent = false;
+    //read from every logging thread by the log gathering, through getConsentSilently
+    protected volatile boolean requiresConsent = false;
 
     final Map<String, Boolean> featureConsentValues = new HashMap<>();
     private final Map<String, String[]> groupedFeatures = new HashMap<>();
@@ -86,6 +87,12 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         return getConsentInternal(featureName);
     }
 
+    /** Reads the consent without logging, see {@link ConsentProvider#getConsentSilently(String)}. */
+    @Override
+    public boolean getConsentSilently(@NonNull final String featureName) {
+        return !requiresConsent || getConsentTrue(featureName);
+    }
+
     public boolean anyConsentGiven() {
         if (!requiresConsent) {
             //no consent required - all consent given
@@ -106,13 +113,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             return false;
         }
 
-        if (!requiresConsent) {
-            //return true silently
-            return true;
+        final boolean returnValue = getConsentSilently(featureName);
+        if (requiresConsent) {
+            L.v("[ModuleConsent] getConsentInternal, Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
         }
-
-        boolean returnValue = getConsentTrue(featureName);
-        L.v("[ModuleConsent] getConsentInternal, Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
         return returnValue;
     }
 
@@ -162,7 +166,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             L.d("[ModuleConsent] doPushConsentSpecialAction, named instance does not own push, skipping the process-global consent broadcast");
             return;
         }
-        _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
+        //addressed to this app: an implicit broadcast never reaches the not exported receiver when the app targets API 34+
+        Intent consentIntent = new Intent(Countly.CONSENT_BROADCAST);
+        consentIntent.setPackage(_cly.context_.getPackageName());
+        _cly.context_.sendBroadcast(consentIntent);
     }
 
     /**
@@ -246,6 +253,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         featureConsentValues.putAll(consentUpdateMap);
 
+        if (isConsentGiven && !consentThatWillChange.isEmpty()) {
+            L.releaseConsentedLogLines();
+        }
+
         for (ModuleBase module : _cly.modules) {
             module.onConsentChanged(consentThatWillChange, isConsentGiven, changeSource);
         }
@@ -317,6 +328,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         L.d("[ModuleConsent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
             //handle push consent changes
+            if (!newConsent) {
+                //the server drops the token with the consent, so giving it again must send the token again
+                _cly.resetPushTokenDebounce();
+            }
             doPushConsentSpecialAction(newConsent);
         }
     }

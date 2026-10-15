@@ -51,21 +51,10 @@ abstract class ModuleBase {
      * @param newConfig
      */
     /*
-     * WIRE A NEW OVERRIDE INTO THE DISPATCHER - this applies to every lifecycle hook in this class, not
-     * just to onConfigurationChanged.
-     *
-     * Lifecycle hooks are no longer delivered by iterating Countly's `modules` list. Android delivers them
-     * on the main thread while a teardown on another thread clears that list and nulls the module fields,
-     * which killed a CI run with an NPE escaping Activity.onStop - Android turns that into a host-app
-     * crash. CountlyLifecycleDispatcher therefore holds one process-wide registration, and the dispatch
-     * path calls a fixed set of modules directly from Countly#dispatchActivity* and the
-     * onStart/onStop/onConfigurationChanged internals.
-     *
-     * So overriding one of these methods does nothing on its own. Add the module to the call site too, at
-     * the position init adds it to `modules`: the loops these calls replaced ran in that order and side
-     * effects between modules depend on it. ModuleLifecycleDispatchTests derives both the set and the
-     * order from a live instance's `modules` list and fails on a missing, stale, or reordered call, so
-     * this rule is enforced rather than hoped for.
+     * Every lifecycle hook in this class is delivered by iterating Countly's `modules` list, in the order init adds
+     * the modules. The list is copy on write, so a teardown on another thread can not break an iteration in
+     * progress, and the dispatch gate together with the quiesce in teardown keeps events away from a dying instance.
+     * A module that reaches a sibling through _cly must still read it into a local and check it for null.
      */
     void onConfigurationChanged(Configuration newConfig) {
     }
@@ -73,8 +62,6 @@ abstract class ModuleBase {
     /**
      * Called manually by a countly call from the developer
      */
-    /* Overriding this is not enough: it must also be wired into the dispatch call site, in modules-list
-     * order. See the note above onConfigurationChanged. */
     void onActivityStarted(Activity activity, int updatedActivityCount) {
     }
 
@@ -89,8 +76,6 @@ abstract class ModuleBase {
     /**
      * Called manually by a countly call from the developer
      */
-    /* Overriding this is not enough: it must also be wired into the dispatch call site, in modules-list
-     * order. See the note above onConfigurationChanged. */
     void onActivityStopped(int updatedActivityCount) {
     }
 
@@ -99,8 +84,6 @@ abstract class ModuleBase {
      * clear them here (using identity comparison) to prevent leaking destroyed activities
      * through the Countly singleton.
      */
-    /* Overriding this is not enough: it must also be wired into the dispatch call site, in modules-list
-     * order. See the note above onConfigurationChanged. */
     void onActivityDestroyed(@NonNull Activity activity) {
     }
 
@@ -110,8 +93,6 @@ abstract class ModuleBase {
     //void callbackOnActivityStarted(Activity activity) {
     //}
     //
-    /* Overriding this is not enough: it must also be wired into the dispatch call site, in modules-list
-     * order. See the note above onConfigurationChanged. */
     void callbackOnActivityResumed(Activity activity) {
     }
 
@@ -119,8 +100,6 @@ abstract class ModuleBase {
     //void callbackOnActivityPaused(Activity activity) {
     //}
     //
-    /* Overriding this is not enough: it must also be wired into the dispatch call site, in modules-list
-     * order. See the note above onConfigurationChanged. */
     void callbackOnActivityStopped(Activity activity) {
     }
     //

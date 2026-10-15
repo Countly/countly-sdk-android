@@ -196,7 +196,8 @@ public class CountlyPushActivity extends Activity {
 
         final NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager != null) {
-            manager.cancel(message.hashCode());
+            //an action button does not dismiss the notification the way a tap on its body does
+            CountlyPush.cancelNotification(manager, message);
         }
 
         try {

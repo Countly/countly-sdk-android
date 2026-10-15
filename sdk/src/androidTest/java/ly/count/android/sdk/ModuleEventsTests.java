@@ -45,7 +45,7 @@ public class ModuleEventsTests {
         eventQueueProvider = mock(EventQueueProvider.class);
 
         mCountly = new Countly();
-        config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config = TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true));
         config.eventQueueProvider = eventQueueProvider;
         mCountly.init(config);
     }
@@ -374,7 +374,7 @@ public class ModuleEventsTests {
      */
     @Test
     public void eventsForceClearingEQIntoRQ() {
-        Countly countly = new Countly().init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        Countly countly = new Countly().init(TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true)));
 
         Assert.assertEquals(0, countly.countlyStore.getEventQueueSize());
         Assert.assertEquals(0, countly.countlyStore.getRequests().length);

@@ -62,6 +62,14 @@ class ConnectionQueue implements RequestQueueProvider {
     private SSLSocketFactory sslSocketFactory_;
     private final ScheduledExecutorService backoffScheduler_ = Executors.newSingleThreadScheduledExecutor();
     private final AtomicBoolean backoff_ = new AtomicBoolean(false);
+    /** Set once the owning instance tore this queue down; no processor starts on it after that. */
+    private final AtomicBoolean tornDown_ = new AtomicBoolean(false);
+    /** Set when this queue's processor has to stop before its next request, see {@link #claimStorage(String)}. */
+    final AtomicBoolean processorStop_ = new AtomicBoolean(false);
+    //the processor stop flag of the newest queue per storage namespace
+    private static final Map<String, AtomicBoolean> processorStopByNamespace = new ConcurrentHashMap<>();
+    //how long a push token request waits before it is queued, in milliseconds; tests shorten it
+    static long tokenRequestDelayMs = 10_000;
 
     BaseInfoProvider baseInfoProvider;
     HealthTracker healthTracker;
@@ -367,13 +375,7 @@ class ConnectionQueue implements RequestQueueProvider {
             return;
         }
 
-        final String data = prepareCommonRequestData()
-            + "&token_session=1"
-            + "&android_token=" + UtilsNetworking.urlEncodeString(token)
-            + "&token_provider=" + provider
-            + "&locale=" + UtilsNetworking.urlEncodeString(deviceInfo.mp.getLocale());
-
-        L.d("[Connection Queue] Waiting for 10 seconds before adding token request to queue");
+        L.d("[Connection Queue] Waiting for [" + tokenRequestDelayMs + "] ms before adding token request to queue");
 
         // To ensure begin_session will be fully processed by the server before token_session.
         // Scheduled on this queue's own backoff scheduler, NOT a method-local executor: the local one
@@ -385,11 +387,22 @@ class ConnectionQueue implements RequestQueueProvider {
             backoffScheduler_.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    L.d("[Connection Queue] Finished waiting 10 seconds adding token request");
+                    //built when queued, not when scheduled: the device ID and the push consent can change during the wait
+                    if (!consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
+                        L.d("[Connection Queue] tokenSession, 'push' consent was removed during the wait, dropping the token request");
+                        return;
+                    }
+                    final String data = prepareCommonRequestData()
+                        + "&token_session=1"
+                        + "&android_token=" + UtilsNetworking.urlEncodeString(token)
+                        + "&token_provider=" + provider
+                        + "&locale=" + UtilsNetworking.urlEncodeString(deviceInfo.mp.getLocale());
+
+                    L.d("[Connection Queue] Finished waiting, adding token request");
                     addRequestToQueue(data, false, null);
                     tick();
                 }
-            }, 10, TimeUnit.SECONDS);
+            }, tokenRequestDelayMs, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ex) {
             //the scheduler is already shut down: this queue was discarded by a teardown, drop the token
             //request rather than writing into a store the owning instance no longer manages
@@ -566,11 +579,16 @@ class ConnectionQueue implements RequestQueueProvider {
 
     /** Queues one 'sdk_logs' batch. Consent is checked by the caller, which holds the lines back until it is given. */
     public boolean sendSdkLogs(@NonNull final String logBatch) {
-        return queueSingleParamRequest("sendSdkLogs", ModuleLog.keySdkLogs, logBatch);
+        return queueSingleParamRequest("sendSdkLogs", ModuleLog.keySdkLogs, logBatch, null);
     }
 
-    /** Queues the common parameters plus one URL encoded value and kicks the queue. Returns false if refused. */
-    private boolean queueSingleParamRequest(@NonNull final String caller, @NonNull final String key, @NonNull final String rawValue) {
+    /**
+     * Queues the common parameters plus one URL encoded value and kicks the queue.
+     *
+     * @param deviceId the device ID to file the request under, null for the current one
+     * @return false if the request was refused
+     */
+    private boolean queueSingleParamRequest(@NonNull final String caller, @NonNull final String key, @NonNull final String rawValue, @Nullable final String deviceId) {
         if (!checkInternalState()) {
             return false;
         }
@@ -581,7 +599,8 @@ class ConnectionQueue implements RequestQueueProvider {
         }
         L.d("[ConnectionQueue] " + caller);
 
-        addRequestToQueue(prepareCommonRequestData() + "&" + key + "=" + UtilsNetworking.urlEncodeString(rawValue), false, null);
+        String commonData = deviceId == null ? prepareCommonRequestData() : prepareCommonRequestData(deviceId);
+        addRequestToQueue(commonData + "&" + key + "=" + UtilsNetworking.urlEncodeString(rawValue), false, null);
         tick();
         return true;
     }
@@ -633,10 +652,13 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
-    /** Queues the connection test report as its own request. No consent gate, the report carries no user data. */
+    /**
+     * Queues the connection test report as its own request. There is no consent gate, as the connection test spec
+     * requires: the report holds probe results only, though like every request it carries the device ID.
+     */
     @Override
-    public void sendConnectionTestResults(@NonNull String resultsJson) {
-        queueSingleParamRequest("sendConnectionTestResults", ModuleConnectionTest.keyResults, resultsJson);
+    public boolean sendConnectionTestResults(@NonNull String resultsJson, @Nullable String deviceId) {
+        return queueSingleParamRequest("sendConnectionTestResults", ModuleConnectionTest.keyResults, resultsJson, deviceId);
     }
 
     /**
@@ -859,23 +881,6 @@ class ConnectionQueue implements RequestQueueProvider {
         return data;
     }
 
-    public String prepareRemoteConfigRequestLegacy(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics) {
-        String data = prepareCommonRequestData() + "&method=fetch_remote_config";
-        if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
-            //add session data if consent given
-            data += "&metrics=" + preparedMetrics;
-        }
-
-        //add key filters
-        if (keysInclude != null) {
-            data += "&keys=" + UtilsNetworking.urlEncodeString(keysInclude);
-        } else if (keysExclude != null) {
-            data += "&omit_keys=" + UtilsNetworking.urlEncodeString(keysExclude);
-        }
-
-        return data;
-    }
-
     public String prepareRemoteConfigRequest(@Nullable String keysInclude, @Nullable String keysExclude, @NonNull String preparedMetrics, boolean autoEnroll) {
         String data = prepareCommonRequestData() + "&method=rc";
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
@@ -991,9 +996,12 @@ class ConnectionQueue implements RequestQueueProvider {
      * are non-daemon and therefore live for the rest of the process.
      * <p>
      * {@code shutdown()} rather than {@code shutdownNow()}: a request already being sent is allowed to
-     * finish rather than being interrupted mid-flight.
+     * finish rather than being interrupted mid-flight. The processor then stops before its next request, so it
+     * does not keep draining a queue that a later init of the same instance reads as well.
      */
     void shutdownExecutors() {
+        //only new processors stop: a running one sends what the teardown queued until a queue claims the same storage
+        tornDown_.set(true);
         if (executor_ != null) {
             //shutdown(), not shutdownNow(): a request already on the wire is allowed to finish rather than
             //being interrupted mid-flight
@@ -1003,6 +1011,27 @@ class ConnectionQueue implements RequestQueueProvider {
         //owning instance is gone, because tick() would then revive this discarded queue through
         //ensureExecutor() and drain with a context that teardown already cleared
         backoffScheduler_.shutdownNow();
+    }
+
+    /**
+     * Makes this queue the sender for a storage namespace. A processor that an earlier queue started on the same storage,
+     * such as a stopped instance's that is still sending what its teardown queued, stops before its next request, so
+     * the two do not send the same stored requests side by side.
+     *
+     * @param storageNamespace the namespace of the storage this queue sends from
+     */
+    void claimStorage(@NonNull String storageNamespace) {
+        AtomicBoolean previous = processorStopByNamespace.put(storageNamespace, processorStop_);
+        if (previous != null && previous != processorStop_) {
+            previous.set(true);
+        }
+    }
+
+    /**
+     * Stops this queue's processor before its next request, for a teardown that can not let it finish the queue.
+     */
+    void stopProcessor() {
+        processorStop_.set(true);
     }
 
     /**
@@ -1017,6 +1046,10 @@ class ConnectionQueue implements RequestQueueProvider {
     public synchronized void tick() {
         //todo enable later
         //assert storageProvider != null;
+        if (tornDown_.get()) {
+            L.d("[ConnectionQueue] tick, this queue was torn down, skipping tick");
+            return;
+        }
         if (backoff_.get()) {
             L.i("[ConnectionQueue] tick, currently backed off, skipping tick");
             return;
@@ -1062,7 +1095,24 @@ class ConnectionQueue implements RequestQueueProvider {
             }
         }, internalRequestCallbacks);
         cp.pcc = pcc;
+        cp.stopRequested = processorStop_;
         return cp;
+    }
+
+    /** @return the SSL socket factory this queue's requests go through, null for the platform default */
+    @Nullable SSLSocketFactory getSslSocketFactory() {
+        return sslSocketFactory_;
+    }
+
+    @Override
+    public boolean queueContainsSdkLogs() {
+        final String sdkLogsTag = "&" + ModuleLog.transportMarker;
+        for (String storedRequest : storageProvider.getRequests()) {
+            if (storedRequest.contains(sdkLogsTag)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean queueContainsTemporaryIdItems() {
