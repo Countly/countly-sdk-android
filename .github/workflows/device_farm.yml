@@ -54,6 +54,20 @@ jobs:
       - name: Set AAPT2 for Android 35
         run: echo "android.aapt2FromMavenOverride=/usr/local/lib/android/sdk/build-tools/35.0.0/aapt2" | tee -a gradle.properties
 
+      # A fixed debug key lets each run update the test app in place, so the phone keeps its
+      # per-app battery exemption; a fresh key would force a reinstall that wipes it.
+      - name: Use the farm debug key
+        env:
+          FARM_DEBUG_KEYSTORE: ${{ secrets.FARM_DEBUG_KEYSTORE }}
+        run: |
+          if [ -z "$FARM_DEBUG_KEYSTORE" ]; then
+            echo "::warning::FARM_DEBUG_KEYSTORE is not set, so the test app cannot update the one on the phone"
+            exit 0
+          fi
+          dir="${ANDROID_USER_HOME:-$HOME/.android}"
+          mkdir -p "$dir"
+          echo "$FARM_DEBUG_KEYSTORE" | base64 -d > "$dir/debug.keystore"
+
       - name: Build the SDK and its tests
         run: ./gradlew sdk:assembleDebug sdk:assembleDebugAndroidTest
 
@@ -64,7 +78,7 @@ jobs:
         run: node .github/farm/client.mjs open
 
       - name: Run the instrumented tests on the phone
-        run: ./gradlew sdk:connectedAndroidTest
+        run: ./gradlew sdk:connectedAndroidTest -Pandroid.injected.androidTest.leaveApkInstalledAfterRun=true
 
       - name: Upload test results
         if: always()
