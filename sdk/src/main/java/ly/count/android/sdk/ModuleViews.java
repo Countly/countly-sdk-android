@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,6 +34,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     final static String VIEW_EVENT_KEY = "[CLY]_view";
 
     Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
+
+    WeakReference<Activity> automaticViewActivity = null;//the activity the last automatic view was started for
 
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
@@ -587,21 +590,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         //automatic view tracking, resolved through the SBS precedence chain (server can override the local setting)
         if (configProvider.getAutomaticViewTrackingEnabled()) {
-            if (!isActivityInExceptionList(activity)) {
-                String usedActivityName = "NULL ACTIVITY";
-
-                if (activity != null) {
-                    if (automaticTrackingShouldUseShortName) {
-                        usedActivityName = activity.getClass().getSimpleName();
-                    } else {
-                        usedActivityName = activity.getClass().getName();
-                    }
-                }
-
-                startViewInternal(usedActivityName, automaticViewSegmentation, true);
-            } else {
-                L.d("[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
-            }
+            startAutomaticView(activity, "[onStart]");
         }
 
         //orientation tracking
@@ -611,6 +600,47 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 updateOrientation(orient);
             }
         }
+    }
+
+    /**
+     * Starts the automatic view of an activity that resumes while the last automatic view belongs to another one.
+     * An activity that was not stopped, as below a translucent activity or on a quick return, resumes without
+     * starting again.
+     *
+     * @param activity the activity that resumed
+     */
+    @Override
+    void callbackOnActivityResumed(Activity activity) {
+        if (activity != null && configProvider.getAutomaticViewTrackingEnabled() && (automaticViewActivity == null || automaticViewActivity.get() != activity)) {
+            startAutomaticView(activity, "[onResume]");
+        }
+    }
+
+    /**
+     * Starts the automatic view of an activity that came into view, unless the activity is excluded from automatic
+     * view tracking
+     *
+     * @param activity the activity that came into view
+     * @param source the lifecycle callback it came into view with, for the log
+     */
+    private void startAutomaticView(@Nullable Activity activity, @NonNull String source) {
+        if (isActivityInExceptionList(activity)) {
+            L.d("[ModuleViews] " + source + " Ignoring activity because it's in the exception list");
+            return;
+        }
+
+        String usedActivityName = "NULL ACTIVITY";
+
+        if (activity != null) {
+            if (automaticTrackingShouldUseShortName) {
+                usedActivityName = activity.getClass().getSimpleName();
+            } else {
+                usedActivityName = activity.getClass().getName();
+            }
+        }
+
+        automaticViewActivity = activity == null ? null : new WeakReference<>(activity);
+        startViewInternal(usedActivityName, automaticViewSegmentation, true);
     }
 
     /**
@@ -653,6 +683,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             automaticViewSegmentation = null;
         }
         autoTrackingActivityExceptions = null;
+        automaticViewActivity = null;
     }
 
     public class Views {

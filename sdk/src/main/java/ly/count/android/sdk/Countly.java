@@ -1845,7 +1845,10 @@ public class Countly {
             sessionsModule.endSessionInternal();
         }
 
-        deviceInfo_.inBackground();
+        //an activity stops only after the one replacing it started, so the app leaves the foreground with the last one
+        if (startedCount == 0) {
+            deviceInfo_.inBackground();
+        }
 
         for (ModuleBase module : modules) {
             module.onActivityStopped(startedCount);
