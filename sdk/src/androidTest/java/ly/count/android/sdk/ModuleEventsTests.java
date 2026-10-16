@@ -888,6 +888,52 @@ public class ModuleEventsTests {
     }
 
     /**
+     * "recordEvent" with visibility tracking enabled
+     * Validate that the app stays in the foreground while one activity opens another and the first one stops,
+     * and that it is in the background only once the last activity stops
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_activitySwitch() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        config.experimental.enableVisibilityTracking();
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.onStart(Mockito.mock(Activity.class));
+        countly.onStart(Mockito.mock(TestUtils.Activity2.class));
+        countly.onStop();
+
+        countly.events().recordEvent("fg", TestUtils.map());
+        Assert.assertEquals(1, visibilityOfEventInRQ("fg"));
+
+        countly.onStop();
+
+        countly.events().recordEvent("bg", TestUtils.map());
+        Assert.assertEquals(0, visibilityOfEventInRQ("bg"));
+    }
+
+    /**
+     * The "cly_v" value of the first event with the given key in the request queue
+     */
+    private static int visibilityOfEventInRQ(String key) throws JSONException {
+        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
+            if (request == null || !request.containsKey("events")) {
+                continue;
+            }
+            JSONArray events = new JSONArray(request.get("events"));
+            for (int i = 0; i < events.length(); i++) {
+                JSONObject event = events.getJSONObject(i);
+                if (key.equals(event.getString("key"))) {
+                    return event.getJSONObject("segmentation").getInt("cly_v");
+                }
+            }
+        }
+        throw new AssertionError("no event with key [" + key + "] in the request queue");
+    }
+
+    /**
      * "recordEvent" with visibility tracking disabled
      * Validate that visibility tracking events are not recorded
      * And validate that the "cly_v" value is not set

@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -2247,6 +2249,140 @@ public class ModuleViewsTests {
         }
 
         ModuleEventsTests.validateEventInRQ(TestUtils.commonDeviceId, ModuleViews.VIEW_EVENT_KEY, viewSegmentation, 1, 0.0, durationToAssert, id, pvid, "_CLY_", "_CLY_", idx, size, 0, 1);
+    }
+
+    /**
+     * The view and custom events in the request queue, in order: "+name" for a view start, "-name=N" for a view end
+     * with its duration in seconds, and "key@name" for a custom event with the view it was recorded in
+     */
+    private List<String> viewTimeline() throws JSONException {
+        Map<String, String> viewNamesByID = new HashMap<>();
+        List<String> timeline = new ArrayList<>();
+        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
+            if (request == null || !request.containsKey("events")) {
+                continue;
+            }
+            JSONArray events = new JSONArray(request.get("events"));
+            for (int i = 0; i < events.length(); i++) {
+                JSONObject event = events.getJSONObject(i);
+                String key = event.getString("key");
+                JSONObject segmentation = event.optJSONObject("segmentation");
+                if (ModuleViews.VIEW_EVENT_KEY.equals(key) && segmentation != null) {
+                    String name = segmentation.getString("name");
+                    viewNamesByID.put(event.optString("id"), name);
+                    timeline.add(segmentation.has("visit") ? "+" + name : "-" + name + "=" + Math.round(event.optDouble("dur", 0)));
+                } else if (!key.startsWith("[CLY]_")) {
+                    timeline.add(key + "@" + viewNamesByID.get(event.optString("cvid")));
+                }
+            }
+        }
+        return timeline;
+    }
+
+    /**
+     * Automatic view tracking: an activity that comes back without being stopped, as after a translucent activity
+     * or a quick return, gets its view again, and the activity it left stops counting
+     */
+    @Test
+    public void automaticViews_returnToActivityThatWasNotStopped() throws InterruptedException, JSONException {
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null);
+        cc.setEventQueueSizeToSend(1);
+        Countly mCountly = new Countly().init(cc);
+
+        Activity actA = mock(Activity.class);
+        Activity actB = mock(TestUtils.Activity2.class);
+        String a = actA.getClass().getSimpleName();
+        String b = actB.getClass().getSimpleName();
+
+        mCountly.dispatchActivityStarted(actA);
+        mCountly.dispatchActivityResumed(actA);
+        Thread.sleep(1000);
+        mCountly.dispatchActivityStarted(actB);
+        mCountly.dispatchActivityResumed(actB);
+        Thread.sleep(1000);
+        mCountly.dispatchActivityResumed(actA);
+        mCountly.dispatchActivityStopped(actB);
+        Thread.sleep(2000);
+        mCountly.dispatchActivityStopped(actA);
+
+        Assert.assertEquals(Arrays.asList("+" + a, "-" + a + "=1", "+" + b, "-" + b + "=1", "+" + a, "-" + a + "=2"), viewTimeline());
+    }
+
+    /**
+     * Automatic view tracking: an activity that resumes without having left, as after a dialog or the notification
+     * shade, keeps its view
+     */
+    @Test
+    public void automaticViews_resumeWithoutLeavingKeepsTheView() throws InterruptedException, JSONException {
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null);
+        cc.setEventQueueSizeToSend(1);
+        Countly mCountly = new Countly().init(cc);
+
+        Activity actA = mock(Activity.class);
+        String a = actA.getClass().getSimpleName();
+
+        mCountly.dispatchActivityStarted(actA);
+        mCountly.dispatchActivityResumed(actA);
+        Thread.sleep(1000);
+        mCountly.dispatchActivityResumed(actA);
+        Thread.sleep(1000);
+        mCountly.dispatchActivityStopped(actA);
+
+        Assert.assertEquals(Arrays.asList("+" + a, "-" + a + "=2"), viewTimeline());
+    }
+
+    /**
+     * Automatic view tracking: when an activity excluded from tracking closes, the activity below it keeps its view
+     */
+    @Test
+    public void automaticViews_excludedActivityOnTopKeepsTheViewBelow() throws InterruptedException, JSONException {
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null);
+        cc.setEventQueueSizeToSend(1);
+        cc.setAutomaticViewTrackingExclusions(new Class[] { TestUtils.Activity2.class });
+        Countly mCountly = new Countly().init(cc);
+
+        Activity actA = mock(Activity.class);
+        Activity actB = mock(TestUtils.Activity2.class);
+        String a = actA.getClass().getSimpleName();
+
+        mCountly.dispatchActivityStarted(actA);
+        mCountly.dispatchActivityResumed(actA);
+        Thread.sleep(1000);
+        mCountly.dispatchActivityStarted(actB);
+        mCountly.dispatchActivityResumed(actB);
+        Thread.sleep(1000);
+        mCountly.dispatchActivityResumed(actA);
+        mCountly.dispatchActivityStopped(actB);
+        Thread.sleep(1000);
+        mCountly.dispatchActivityStopped(actA);
+
+        Assert.assertEquals(Arrays.asList("+" + a, "-" + a + "=3"), viewTimeline());
+    }
+
+    /**
+     * Automatic view tracking: an event recorded after returning to an activity that was not stopped belongs to that
+     * activity's view
+     */
+    @Test
+    public void automaticViews_eventAfterReturnBelongsToTheReturnedActivity() throws JSONException {
+        CountlyConfig cc = TestUtils.createViewCountlyConfig(false, true, true, safeViewIDGenerator, null);
+        cc.setEventQueueSizeToSend(1);
+        Countly mCountly = new Countly().init(cc);
+
+        Activity actA = mock(Activity.class);
+        Activity actB = mock(TestUtils.Activity2.class);
+        String a = actA.getClass().getSimpleName();
+
+        mCountly.dispatchActivityStarted(actA);
+        mCountly.dispatchActivityResumed(actA);
+        mCountly.dispatchActivityStarted(actB);
+        mCountly.dispatchActivityResumed(actB);
+        mCountly.dispatchActivityResumed(actA);
+        mCountly.dispatchActivityStopped(actB);
+        mCountly.events().recordEvent("tap");
+
+        List<String> timeline = viewTimeline();
+        Assert.assertEquals("tap@" + a, timeline.get(timeline.size() - 1));
     }
     //todo extract orientation tests
 }
