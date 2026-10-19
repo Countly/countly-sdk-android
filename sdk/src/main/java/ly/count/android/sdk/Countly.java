@@ -95,10 +95,15 @@ public class Countly {
     public static final String CONSENT_BROADCAST = "ly.count.android.sdk.Countly.CONSENT_BROADCAST";
 
     /**
+     * How many custom events are queued locally by default before they are sent
+     */
+    static final int EVENT_QUEUE_SIZE_THRESHOLD_DEFAULT = 100;
+
+    /**
      * Determines how many custom events can be queued locally before
      * an attempt is made to submit them to a Count.ly server.
      */
-    int EVENT_QUEUE_SIZE_THRESHOLD = 100;
+    int EVENT_QUEUE_SIZE_THRESHOLD = EVENT_QUEUE_SIZE_THRESHOLD_DEFAULT;
 
     /**
      * How often onTimer() is called. This is the default value.
@@ -1376,9 +1381,8 @@ public class Countly {
         countlyStore.setLimits(moduleConfiguration.currentVMaxRequestQueueSize);
 
         moduleConfiguration.currentVDropAgeHours = Math.max(moduleConfiguration.currentVDropAgeHours, 0);
-        if (moduleConfiguration.currentVDropAgeHours > 0) {
-            countlyStore.setRequestAgeLimit(moduleConfiguration.currentVDropAgeHours);
-        }
+        //also 0, which turns the store's age limit off when the server stops sending one or sends 0
+        countlyStore.setRequestAgeLimit(moduleConfiguration.currentVDropAgeHours);
 
         if (moduleConfiguration.currentVEventQueueSizeThreshold != null) {
             moduleConfiguration.currentVEventQueueSizeThreshold = Math.max(moduleConfiguration.currentVEventQueueSizeThreshold, 1);
@@ -1667,7 +1671,7 @@ public class Countly {
 
         // Reset configuration values that may have been changed during runtime
         loggingForcedOffForProduction = false;
-        EVENT_QUEUE_SIZE_THRESHOLD = 100;
+        EVENT_QUEUE_SIZE_THRESHOLD = EVENT_QUEUE_SIZE_THRESHOLD_DEFAULT;
 
         COUNTLY_SDK_VERSION_STRING = DEFAULT_COUNTLY_SDK_VERSION_STRING;
         COUNTLY_SDK_NAME = DEFAULT_COUNTLY_SDK_NAME;

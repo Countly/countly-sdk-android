@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -3299,5 +3300,255 @@ public class ModuleConfigurationTests {
         Countly.sharedInstance().views().startView("any_view");
         Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
         Assert.assertEquals(1, countlyStore.getEventQueueSize());
+    }
+
+    // ================ Replaced, not merged, settings ================
+
+    /**
+     * Each settings answer replaces the stored settings. A setting the server stops sending goes back to the
+     * developer's value, or to the SDK default when the developer set none, instead of keeping the last server value.
+     */
+    @Test
+    public void removedSetting_goesBackToTheDeveloperValue() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig().setEventQueueSizeToSend(7);
+        config.sdkInternalLimits.setMaxKeyLength(40);
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().tracking(false).eventQueueSize(3).keyLengthLimit(20).build());
+        Countly countly = new Countly().init(config);
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertEquals(Integer.valueOf(3), countly.moduleConfiguration.currentVEventQueueSizeThreshold);
+        Assert.assertEquals(Integer.valueOf(20), countly.sdkInternalLimits_.maxKeyLength);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().networking(true).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertTrue("tracking was removed and goes back to the default", countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertEquals("the event queue size was removed and goes back to the developer's value", Integer.valueOf(7), countly.moduleConfiguration.currentVEventQueueSizeThreshold);
+        Assert.assertEquals("the key length limit was removed and goes back to the developer's value", Integer.valueOf(40), countly.sdkInternalLimits_.maxKeyLength);
+
+        JSONObject stored = new JSONObject(TestUtils.getCountlyStore().getServerConfig()).getJSONObject(ModuleConfiguration.keyRConfig);
+        Assert.assertEquals("the stored settings are replaced, not merged", 1, stored.length());
+        Assert.assertTrue(stored.getBoolean(ModuleConfiguration.keyRNetworking));
+        countly.halt();
+    }
+
+    /**
+     * An answer with no settings, which the server sends once every setting is removed from SDK Manager, brings back
+     * all developer values: the server no longer requires consent, and tracking and the queue size are the developer's.
+     */
+    @Test
+    public void emptySettings_bringBackAllDeveloperValues() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig().setMaxRequestQueueSize(500);
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().tracking(false).consentRequired(true).requestQueueSize(50).build());
+        Countly countly = new Countly().init(config);
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertTrue(countly.moduleConfiguration.currentVRequiresConsent);
+        Assert.assertEquals(50, countly.moduleConfiguration.currentVMaxRequestQueueSize);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertFalse(countly.moduleConfiguration.currentVRequiresConsent);
+        Assert.assertEquals(500, countly.moduleConfiguration.currentVMaxRequestQueueSize);
+        Assert.assertEquals(0, new JSONObject(TestUtils.getCountlyStore().getServerConfig()).getJSONObject(ModuleConfiguration.keyRConfig).length());
+        countly.halt();
+    }
+
+    /**
+     * A request age limit the server stops sending is turned off everywhere it is used: when sending, and when the full
+     * queue drops its oldest requests.
+     */
+    @Test
+    public void removedRequestAgeLimit_isTurnedOffInTheStoreToo() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().dropOldRequestTime(2).build());
+        Countly countly = new Countly().init(config);
+        Assert.assertEquals(2, countly.moduleConfiguration.currentVDropAgeHours);
+        Assert.assertEquals(2, countly.countlyStore.dropAgeHours);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().tracking(true).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertEquals(0, countly.moduleConfiguration.currentVDropAgeHours);
+        Assert.assertEquals("the store keeps no age limit of its own", 0, countly.countlyStore.dropAgeHours);
+        countly.halt();
+    }
+
+    /**
+     * A filter or journey trigger list the server stops sending is turned off, instead of filtering with the last list.
+     */
+    @Test
+    public void removedFilter_isTurnedOff() throws JSONException {
+        Set<String> blocked = new HashSet<>();
+        blocked.add("blocked_event");
+        CountlyConfig config = TestUtils.createBaseConfig().enableManualSessionControl();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().eventFilterList(blocked, false).journeyTriggerEvents(blocked).build());
+        Countly countly = new Countly().init(config);
+        countly.events().recordEvent("blocked_event");
+        Assert.assertEquals(0, countlyStore.getEventQueueSize());
+        Assert.assertEquals(blocked, countly.moduleConfiguration.getJourneyTriggerEvents());
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().tracking(true).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        countly.events().recordEvent("blocked_event");
+        Assert.assertEquals(1, countlyStore.getEventQueueSize());
+        Assert.assertTrue(countly.moduleConfiguration.getJourneyTriggerEvents().isEmpty());
+        countly.halt();
+    }
+
+    /**
+     * An unusable answer replaces nothing: the settings in use and the stored settings stay as they were.
+     */
+    @Test
+    public void unusableAnswer_keepsTheSettingsInUse() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().tracking(false).build());
+        Countly countly = new Countly().init(config);
+        String storedBefore = TestUtils.getCountlyStore().getServerConfig();
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse("{'v':1,'t':2}");
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertEquals(storedBefore, TestUtils.getCountlyStore().getServerConfig());
+        countly.halt();
+    }
+
+    /**
+     * An app that never set an event queue size goes back to the SDK default as soon as the server stops sending one,
+     * not only at the next start.
+     */
+    @Test
+    public void removedEventQueueSize_withoutDeveloperValue_goesBackToTheSdkDefault() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().eventQueueSize(3).build());
+        Countly countly = new Countly().init(config);
+        Assert.assertEquals(Integer.valueOf(3), countly.moduleConfiguration.currentVEventQueueSizeThreshold);
+        Assert.assertEquals(3, countly.EVENT_QUEUE_SIZE_THRESHOLD);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().tracking(true).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertEquals(Integer.valueOf(Countly.EVENT_QUEUE_SIZE_THRESHOLD_DEFAULT), countly.moduleConfiguration.currentVEventQueueSizeThreshold);
+        Assert.assertEquals(Countly.EVENT_QUEUE_SIZE_THRESHOLD_DEFAULT, countly.EVENT_QUEUE_SIZE_THRESHOLD);
+        countly.halt();
+    }
+
+    /**
+     * Settings a CountlyConfig option sets go back to that option, not to the SDK default, once the server stops sending
+     * them: automatic view tracking, the backoff mechanism, logging, the session update interval, the content zone
+     * interval and the request age limit.
+     */
+    @Test
+    public void removedSettings_goBackToTheDeveloperChoices() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig().enableAutomaticViewTracking().disableBackoffMechanism().setUpdateSessionTimerDelay(30).setRequestDropAgeHours(5);
+        config.content.setZoneTimerInterval(20);
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().automaticViewTracking(false).backoffMechanism(true).logging(false)
+            .sessionUpdateInterval(90).contentZoneInterval(40).dropOldRequestTime(10).build());
+        Countly countly = new Countly().init(config);
+        ModuleConfiguration configuration = countly.moduleConfiguration;
+        Assert.assertFalse(configuration.getAutomaticViewTrackingEnabled());
+        Assert.assertTrue(configuration.getBOMEnabled());
+        Assert.assertFalse(configuration.currentVLoggingEnabled);
+        Assert.assertEquals(Integer.valueOf(90), configuration.currentVSessionUpdateTimerDelay);
+        Assert.assertEquals(40, configuration.currentVZoneTimerInterval);
+        Assert.assertEquals(10, configuration.currentVDropAgeHours);
+
+        configuration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().build());
+        configuration.fetchConfigFromServer(config);
+        Assert.assertTrue(configuration.getAutomaticViewTrackingEnabled());
+        Assert.assertFalse(configuration.getBOMEnabled());
+        Assert.assertTrue(configuration.currentVLoggingEnabled);
+        Assert.assertEquals(Integer.valueOf(30), configuration.currentVSessionUpdateTimerDelay);
+        Assert.assertEquals(20, configuration.currentVZoneTimerInterval);
+        Assert.assertEquals(5, configuration.currentVDropAgeHours);
+        Assert.assertEquals(5, countly.countlyStore.dropAgeHours);
+        countly.halt();
+    }
+
+    /**
+     * Settings given with setSDKBehaviorSettings stand in for the server's until its first answer arrives. That answer
+     * replaces them, so a setting it does not carry goes back to the CountlyConfig value or the SDK default.
+     */
+    @Test
+    public void providedSettings_applyUntilTheFirstServerAnswer() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig().setSDKBehaviorSettings(new ServerConfigBuilder().tracking(false).eventQueueSize(7).build());
+        config.immediateRequestGenerator = createIRGForSpecificResponse(null);
+        Countly countly = new Countly().init(config);
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertEquals(Integer.valueOf(7), countly.moduleConfiguration.currentVEventQueueSizeThreshold);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().requestQueueSize(500).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
+        Assert.assertEquals(Integer.valueOf(Countly.EVENT_QUEUE_SIZE_THRESHOLD_DEFAULT), countly.moduleConfiguration.currentVEventQueueSizeThreshold);
+        Assert.assertEquals(500, countly.moduleConfiguration.currentVMaxRequestQueueSize);
+        JSONObject stored = new JSONObject(TestUtils.getCountlyStore().getServerConfig()).getJSONObject(ModuleConfiguration.keyRConfig);
+        Assert.assertEquals("only the server's answer is stored", 1, stored.length());
+        countly.halt();
+    }
+
+    /**
+     * One unusable value does not throw away the rest of a valid answer: that setting goes back to the developer's value
+     * and every other setting the answer carries is applied.
+     */
+    @Test
+    public void unusableValue_goesBackToTheDeveloperValue_andTheRestOfTheAnswerApplies() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().requestQueueSize(50).build());
+        Countly countly = new Countly().init(config);
+        Assert.assertEquals(50, countly.moduleConfiguration.currentVMaxRequestQueueSize);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse("{\"v\":1,\"t\":2,\"c\":{\"rqs\":\"abc\",\"tracking\":false}}");
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertEquals(1000, countly.moduleConfiguration.currentVMaxRequestQueueSize);
+        Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
+        countly.halt();
+    }
+
+    /**
+     * A filter that the latest answer turns from a whitelist into a blacklist, or back, filters with the list that answer
+     * carries and nothing else.
+     */
+    @Test
+    public void filterType_followsTheLatestAnswer() throws JSONException {
+        Set<String> allowed = new HashSet<>();
+        allowed.add("allowed_event");
+        Set<String> blocked = new HashSet<>();
+        blocked.add("blocked_event");
+        CountlyConfig config = TestUtils.createBaseConfig();
+        config.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().eventFilterList(allowed, true).build());
+        Countly countly = new Countly().init(config);
+        Assert.assertTrue(countly.moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertEquals(allowed, countly.moduleConfiguration.getEventFilterList().filterList);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().eventFilterList(blocked, false).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertFalse(countly.moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertEquals(blocked, countly.moduleConfiguration.getEventFilterList().filterList);
+
+        countly.moduleConfiguration.immediateRequestGenerator = createIRGForSpecificResponse(new ServerConfigBuilder().eventFilterList(allowed, true).build());
+        countly.moduleConfiguration.fetchConfigFromServer(config);
+        Assert.assertTrue(countly.moduleConfiguration.getEventFilterList().isWhitelist);
+        Assert.assertEquals(allowed, countly.moduleConfiguration.getEventFilterList().filterList);
+        countly.halt();
+    }
+
+    /**
+     * Starting with stored settings that match what the developer configured, and getting the same answer again, is not
+     * a configuration change: the event queue size and the session update interval the developer left unset resolve to
+     * the SDK defaults the SDK already uses.
+     */
+    @Test
+    public void unchangedSettings_areNotReportedAsAChange() throws JSONException {
+        String settings = new ServerConfigBuilder().tracking(true).build();
+        TestUtils.getCountlyStore().setServerConfig(settings);
+        final List<String> changeLines = new CopyOnWriteArrayList<>();
+        CountlyConfig config = TestUtils.createBaseConfig().setLogListener((logMessage, logLevel) -> {
+            if (logMessage.contains("SDK configuration has changed")) {
+                changeLines.add(logMessage);
+            }
+        });
+        config.immediateRequestGenerator = createIRGForSpecificResponse(settings);
+        Countly countly = new Countly().init(config);
+        Assert.assertEquals(Integer.valueOf(Countly.EVENT_QUEUE_SIZE_THRESHOLD_DEFAULT), countly.moduleConfiguration.currentVEventQueueSizeThreshold);
+        Assert.assertTrue(changeLines.toString(), changeLines.isEmpty());
+        countly.halt();
     }
 }
