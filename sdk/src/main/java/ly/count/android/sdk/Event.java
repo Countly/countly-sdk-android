@@ -63,6 +63,7 @@ class Event {
     public String pvid;
     public String cvid;
     public String peid;
+    long monotonicStartMs; // start of a timed event on UtilsTime.monotonicTimeMs(), not serialized
 
     Event() {
     }

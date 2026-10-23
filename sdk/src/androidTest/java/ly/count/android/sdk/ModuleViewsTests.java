@@ -2233,7 +2233,7 @@ public class ModuleViewsTests {
             viewSegmentation.put("cly_pvn", pvn);
         }
 
-        //The SDK reports view durations in WHOLE SECONDS (currentTimestampSeconds() - viewStartTimeSeconds),
+        //The SDK reports view durations in WHOLE SECONDS (monotonicTimeSeconds() - viewStartTimeSeconds),
         //and the tests that expect a non-zero duration produce it with Thread.sleep. A 1000 ms sleep plus any
         //scheduling delay therefore measures 1 or 2 depending on which side of a second boundary the clock
         //lands on, which is why CI failed with expected:<1.0> but was:<2.0> on a test that is not about

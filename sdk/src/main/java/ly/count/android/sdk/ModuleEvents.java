@@ -360,7 +360,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         }
         L.d("[ModuleEvents] Starting event: [" + key + "]");
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        timedEvents.put(key, new Event(key, instant.timestampMs, instant.hour, instant.dow));
+        Event timedEvent = new Event(key, instant.timestampMs, instant.hour, instant.dow);
+        timedEvent.monotonicStartMs = UtilsTime.monotonicTimeMs();
+        timedEvents.put(key, timedEvent);
         return true;
     }
 
@@ -385,8 +387,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             }
             L.d("[ModuleEvents] Ending event: [" + key + "]");
 
-            long currentTimestamp = UtilsTime.currentTimestampMs();
-            double duration = (currentTimestamp - event.timestamp) / 1000.0;
+            double duration = (UtilsTime.monotonicTimeMs() - event.monotonicStartMs) / 1000.0;
             UtilsTime.Instant instant = new UtilsTime.Instant(event.timestamp, event.hour, event.dow);
 
             eventProvider.recordEventInternal(key, segmentation, count, sum, duration, instant, null);
