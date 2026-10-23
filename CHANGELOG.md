@@ -49,6 +49,7 @@
   * The token request is filed under the device ID that is current when it is queued.
 * Mitigated an issue where fatal crash reports were lost in explicit storage mode.
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
+* Mitigated an issue where session, view and timed event durations changed when the device clock was adjusted. Event timestamps still follow the device clock.
 
 * Removed the following deprecated calls from "CountlyConfig":
   * "setMaxSegmentationValues(int)", use "sdkInternalLimits.setMaxSegmentationValues(int)" instead

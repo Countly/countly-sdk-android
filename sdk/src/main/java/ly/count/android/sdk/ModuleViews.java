@@ -223,7 +223,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         ViewData currentViewData = new ViewData();
         currentViewData.viewID = safeViewIDGenerator.GenerateValue();
         currentViewData.viewName = viewName;
-        currentViewData.viewStartTimeSeconds = UtilsTime.currentTimestampSeconds();
+        currentViewData.viewStartTimeSeconds = UtilsTime.monotonicTimeSeconds();
         currentViewData.isAutoStoppedView = viewShouldBeAutomaticallyStopped;
 
         viewDataMap.put(currentViewData.viewID, currentViewData);
@@ -294,7 +294,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.currentTimestampSeconds() - vd.viewStartTimeSeconds) + "] s, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
+        L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.monotonicTimeSeconds() - vd.viewStartTimeSeconds) + "] s, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
             L.w("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
@@ -322,7 +322,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         } else if (vd.viewStartTimeSeconds == 0) {
             L.i("[ModuleViews] " + viewRecordingSource + ", view is either paused or didn't run, ignoring start timestamp");
         } else {
-            lastElapsedDurationSeconds = UtilsTime.currentTimestampSeconds() - vd.viewStartTimeSeconds;
+            lastElapsedDurationSeconds = UtilsTime.monotonicTimeSeconds() - vd.viewStartTimeSeconds;
         }
 
         //only record view if the view name is not null
@@ -415,7 +415,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             return;
         }
 
-        vd.viewStartTimeSeconds = UtilsTime.currentTimestampSeconds();
+        vd.viewStartTimeSeconds = UtilsTime.monotonicTimeSeconds();
     }
 
     public void addSegmentationToViewWithIDInternal(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {

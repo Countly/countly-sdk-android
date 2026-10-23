@@ -8,7 +8,7 @@ import java.util.Map;
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
     boolean manualSessionControlHybridModeEnabled = false;
-    long prevSessionDurationStartTime_ = System.currentTimeMillis();
+    long prevSessionDurationStartTime_ = UtilsTime.monotonicTimeMs();
     boolean sessionRunning = false;
     final Sessions sessionInterface;
 
@@ -67,7 +67,7 @@ public class ModuleSessions extends ModuleBase {
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
         sessionRunning = true;
-        prevSessionDurationStartTime_ = System.currentTimeMillis();
+        prevSessionDurationStartTime_ = UtilsTime.monotonicTimeMs();
         if (userProfile != null) {
             userProfile.saveInternal();
         } else {
@@ -195,7 +195,7 @@ public class ModuleSessions extends ModuleBase {
             L.e("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, called with prevSessionDurationStartTime_ being less than 1, returning 0, values was:[" + prevSessionDurationStartTime_ + "]");
             return 0;
         }
-        final long currentTimestampInMilliseconds = System.currentTimeMillis();
+        final long currentTimestampInMilliseconds = UtilsTime.monotonicTimeMs();
         final long unsentSessionLengthInMilliseconds = currentTimestampInMilliseconds - prevSessionDurationStartTime_;
         prevSessionDurationStartTime_ = currentTimestampInMilliseconds;
         int seconds = (int) Math.round(unsentSessionLengthInMilliseconds / 1_000.0d);
