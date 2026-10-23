@@ -380,11 +380,11 @@ public class TestUtils {
     }
 
     /**
-     * Waits until the current wall-clock second has enough room left that a test cannot accidentally cross a
-     * second boundary while it runs.
+     * Waits until the current second of {@link UtilsTime#monotonicTimeMs()} has enough room left that a test
+     * cannot accidentally cross a second boundary while it runs.
      * <p>
-     * The SDK measures durations with {@link UtilsTime#currentTimestampSeconds()}, which truncates
-     * ({@code System.currentTimeMillis() / 1000}). A view started at x.999 and stopped at x+1.001 therefore
+     * The SDK measures view durations with {@link UtilsTime#monotonicTimeSeconds()}, which truncates
+     * ({@code monotonicTimeMs() / 1000}). A view started at x.999 and stopped at x+1.001 therefore
      * reports one whole second for two milliseconds of work, and a test that sleeps 1000ms starting from
      * x.900 reports two. Both are pure boundary luck, not slowness, and they are why the ModuleViews duration
      * tests failed intermittently - one of them carrying the comment "duration comes off sometimes".
@@ -394,7 +394,7 @@ public class TestUtils {
      * for the tests that call it.
      */
     public static void alignToSecondBoundary() {
-        long remainderMs = System.currentTimeMillis() % 1000L;
+        long remainderMs = UtilsTime.monotonicTimeMs() % 1000L;
         //500ms of headroom: enough for a "no duration" test to start and stop a view, and enough that a
         //sleep(1000) plus its overshoot still lands inside the next second
         if (remainderMs <= 500L) {
@@ -469,8 +469,8 @@ public class TestUtils {
 
         Assert.assertTrue(cDuration >= 0);
         if (duration != null) {
-            //Exact, deliberately. Durations come from UtilsTime.currentTimestampSeconds(), which truncates
-            //(System.currentTimeMillis() / 1000), so a view spanning a second boundary reports a whole second
+            //Exact, deliberately. View durations come from UtilsTime.monotonicTimeSeconds(), which truncates
+            //(monotonicTimeMs() / 1000), so a view spanning a second boundary reports a whole second
             //for microseconds of work. That is handled by starting these tests inside a fresh second - see
             //alignToSecondBoundary - rather than by loosening this assertion: "this view recorded no duration"
             //is exactly the kind of thing these tests exist to catch.
