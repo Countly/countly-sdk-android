@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,6 +29,8 @@ public class ModuleRemoteConfig extends ModuleBase {
     private volatile boolean halted = false;
     // dedicated lock for remote config
     private final Object remoteConfigLock = new Object();
+    //guarded by remoteConfigLock; true while the stored values come from a download of all keys for the current user
+    private boolean valuesDownloaded = false;
 
     //if set to true, it will automatically download remote configs on module startup
     boolean automaticDownloadTriggersEnabled;
@@ -280,6 +284,9 @@ public class ModuleRemoteConfig extends ModuleBase {
             rcvs.mergeValues(newRC, clearOldValues);
             L.d("[ModuleRemoteConfig] Finished remote config processing, starting saving");
             saveConfig(rcvs);
+            if (clearOldValues) {
+                valuesDownloaded = true;
+            }
             L.d("[ModuleRemoteConfig] Finished remote config saving");
             return true;
         }
@@ -334,6 +341,7 @@ public class ModuleRemoteConfig extends ModuleBase {
     void clearValueStoreInternal() {
         synchronized (remoteConfigLock) {
             storageProvider.setRemoteConfigValues("");
+            valuesDownloaded = false;
         }
     }
 
@@ -392,6 +400,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             RemoteConfigValueStore rc = loadConfig();
             rc.cacheClearValues();
             saveConfig(rc);
+            valuesDownloaded = false;
         }
     }
 
@@ -403,6 +412,35 @@ public class ModuleRemoteConfig extends ModuleBase {
         if (devProvidedCallback != null) {
             devProvidedCallback.callback(requestResult, message, fullUpdate, downloadedValues);
         }
+    }
+
+    /**
+     * Hands a callback registered with "registerDownloadCallbackAndReplay" the downloaded values, then registers it.
+     * Runs on the main thread, where downloads store and report their values, so none can finish in between and the
+     * callback gets the values exactly once, either here or from that download.
+     *
+     * @param callback the callback to register
+     * @param token its token, nothing happens when it was removed first
+     */
+    void replayAndRegisterDownloadCallback(@NonNull RCDownloadCallback callback, @NonNull RCCallbackToken token) {
+        if (token.isRemoved()) {
+            L.d("[ModuleRemoteConfig] replayAndRegisterDownloadCallback, the token was removed before the registration");
+            return;
+        }
+
+        Map<String, RCData> downloadedValues = null;
+        synchronized (remoteConfigLock) {
+            if (valuesDownloaded) {
+                downloadedValues = getAllRemoteConfigValuesInternal();
+            }
+        }
+
+        if (downloadedValues != null) {
+            L.d("[ModuleRemoteConfig] replayAndRegisterDownloadCallback, calling the callback with the [" + downloadedValues.size() + "] downloaded values");
+            callback.callback(RequestResult.Success, null, true, downloadedValues);
+        }
+
+        token.add();
     }
 
     void RCAutomaticDownloadTrigger(boolean cacheClearOldValues) {
@@ -452,6 +490,7 @@ public class ModuleRemoteConfig extends ModuleBase {
         //under the lock, so a merge that is already writing finishes first and every later one sees the flag
         synchronized (remoteConfigLock) {
             halted = true;
+            valuesDownloaded = false;
         }
         remoteConfigInterface = null;
     }
@@ -680,6 +719,38 @@ public class ModuleRemoteConfig extends ModuleBase {
                 L.i("[RemoteConfig] registerDownloadCallback");
                 downloadCallbacks.add(callback);
             }
+        }
+
+        /**
+         * Register a global callback for when download operations have finished, and hand it the values that were
+         * already downloaded.
+         * When all keys were already downloaded for the current user, the callback is first called with
+         * "RequestResult.Success", no error, "fullValueUpdate" set to true and every stored value, the same values
+         * "getValues()" returns. Otherwise, for example when the values were stored by an earlier run, cleared by
+         * "clearAll()" or cached by a device ID change, the next download calls it as usual.
+         * Like download results, that first call runs on the main thread: before this returns when it is called there,
+         * so the callback cannot use the returned token yet, otherwise as soon as the main thread gets to it.
+         *
+         * @param callback The callback that should be added
+         * @return A token whose "remove()" removes this callback again
+         */
+        public @NonNull RCCallbackToken registerDownloadCallbackAndReplay(@Nullable final RCDownloadCallback callback) {
+            L.i("[RemoteConfig] registerDownloadCallbackAndReplay");
+            final RCCallbackToken token = new RCCallbackToken(L, downloadCallbacks, callback);
+
+            if (callback == null) {
+                L.w("[RemoteConfig] registerDownloadCallbackAndReplay, provided callback is null, ignoring it");
+                return token;
+            }
+
+            //no instance lock: like the getters, this is meant for the main thread and must not wait for it
+            if (Looper.myLooper() == Looper.getMainLooper()) {
+                replayAndRegisterDownloadCallback(callback, token);
+            } else {
+                L.d("[RemoteConfig] registerDownloadCallbackAndReplay, called off the main thread, registering it there");
+                new Handler(Looper.getMainLooper()).post(() -> replayAndRegisterDownloadCallback(callback, token));
+            }
+            return token;
         }
 
         /**

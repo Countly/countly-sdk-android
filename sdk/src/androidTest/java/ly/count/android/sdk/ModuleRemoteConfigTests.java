@@ -1,9 +1,21 @@
 package ly.count.android.sdk;
 
+import android.os.Handler;
+import android.os.Looper;
+import androidx.annotation.NonNull;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import ly.count.android.sdk.internal.RemoteConfigHelper;
 import ly.count.android.sdk.internal.RemoteConfigValueStore;
+import okhttp3.mockwebserver.Dispatcher;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -633,4 +645,493 @@ public class ModuleRemoteConfigTests {
         Assert.assertTrue("nothing may land in the erased store, found:[" + stored + "]", stored == null || stored.isEmpty());
     }
 
+    /**
+     * A callback registered on the main thread after a download finished is called once before the register call
+     * returns, with every stored value as a full update. Registering downloads nothing.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_afterDownload_callsItAtOnceWithStoredValues() {
+        RCServerMock server = new RCServerMock("{\"a\":123,\"b\":\"fg\"}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server).enableRemoteConfigAutomaticTriggers());
+        Assert.assertEquals(1, server.rcRequests);
+
+        RecordingRCCallback late = new RecordingRCCallback();
+        int[] callsWhenReturned = { -1 };
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            countly.remoteConfig().registerDownloadCallbackAndReplay(late);
+            callsWhenReturned[0] = late.calls();
+        });
+
+        Assert.assertEquals(1, callsWhenReturned[0]);
+        Assert.assertEquals(1, late.calls());
+        assertHandedOver(late, 0, TestUtils.map("a", 123, "b", "fg"));
+        Assert.assertSame(Looper.getMainLooper().getThread(), late.threads.get(0));
+        Assert.assertEquals(1, server.rcRequests);
+    }
+
+    /**
+     * Called off the main thread, the registration and the first call happen on the main thread. The callback then
+     * hears later downloads as usual.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_offTheMainThread_handsOverOnTheMainThread() {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server).enableRemoteConfigAutomaticTriggers());
+
+        RecordingRCCallback callback = new RecordingRCCallback();
+        countly.remoteConfig().registerDownloadCallbackAndReplay(callback);
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+        Assert.assertEquals(1, callback.calls());
+        assertHandedOver(callback, 0, TestUtils.map("a", 1));
+        Assert.assertSame(Looper.getMainLooper().getThread(), callback.threads.get(0));
+
+        server.response = "{\"a\":2}";
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(2, callback.calls());
+        assertHandedOver(callback, 1, TestUtils.map("a", 2));
+    }
+
+    /**
+     * A download that finishes while a registration from another thread waits for the main thread is neither lost
+     * nor reported twice: the waiting registration hands its values over once.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_downloadWhileTheRegistrationWaits_handsOverOnce() throws Exception {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server).enableRemoteConfigAutomaticTriggers());
+        RecordingRCCallback callback = new RecordingRCCallback();
+
+        CountDownLatch releaseMainThread = blockMainThread();
+        countly.remoteConfig().registerDownloadCallbackAndReplay(callback);
+        server.response = "{\"a\":2}";
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(0, callback.calls());
+        releaseMainThread.countDown();
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+
+        Assert.assertEquals(1, callback.calls());
+        assertHandedOver(callback, 0, TestUtils.map("a", 2));
+    }
+
+    /**
+     * Removing the token while its registration waits for the main thread cancels the registration, and leaves an
+     * earlier registration of the same callback in place.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_removedWhileTheRegistrationWaits_isNeverRegistered() throws Exception {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server).enableRemoteConfigAutomaticTriggers());
+        RecordingRCCallback callback = new RecordingRCCallback();
+        countly.remoteConfig().registerDownloadCallback(callback);
+
+        CountDownLatch releaseMainThread = blockMainThread();
+        RCCallbackToken token = countly.remoteConfig().registerDownloadCallbackAndReplay(callback);
+        token.remove();
+        releaseMainThread.countDown();
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
+        Assert.assertEquals(0, callback.calls());
+
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(1, callback.calls());
+    }
+
+    /**
+     * Downloads of specific keys alone are no download of all values: the store may still hold values of an earlier
+     * run, so nothing is handed over until all keys are downloaded.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_afterPartialDownloadsOnly_waitsForAFullDownload() {
+        String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
+        RCServerMock server = new RCServerMock("{\"c\":3}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server));
+        countly.remoteConfig().downloadSpecificKeys(new String[] { "c" }, null);
+        countly.remoteConfig().downloadOmittingKeys(new String[] { "a" }, null);
+        Assert.assertEquals(3, countly.remoteConfig().getValues().size());
+        assertNoReplay(countly);
+
+        server.response = "{\"d\":4}";
+        countly.remoteConfig().downloadAllKeys(null);
+        RecordingRCCallback callback = new RecordingRCCallback();
+        registerOnMainThread(countly, callback);
+        Assert.assertEquals(1, callback.calls());
+        assertHandedOver(callback, 0, TestUtils.map("d", 4));
+    }
+
+    /**
+     * Values stored by an earlier run are no finished download: the callback is not called when it is registered,
+     * and the next download calls it once with the downloaded values.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_storedValuesWithoutDownload_waitsForTheDownload() {
+        String[] rcArr = { rcEStr("a", 123), rcEStr("b", "fg") };
+        countlyStore.setRemoteConfigValues(RemoteConfigValueStore.dataFromString(rcArrIntoJSON(rcArr), false, new ModuleLog()).dataToString());
+        RCServerMock server = new RCServerMock("{\"c\":5}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server));
+
+        RecordingRCCallback callback = new RecordingRCCallback();
+        registerOnMainThread(countly, callback);
+        Assert.assertEquals(0, callback.calls());
+        Assert.assertEquals(2, countly.remoteConfig().getValues().size());
+
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(1, callback.calls());
+        assertHandedOver(callback, 0, TestUtils.map("c", 5));
+    }
+
+    /**
+     * A failed download is no finished download: nothing is handed over until a download succeeds.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_afterFailedDownload_waitsForASuccessfulOne() {
+        RCServerMock server = new RCServerMock(null);
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server).enableRemoteConfigAutomaticTriggers());
+        Assert.assertEquals(1, server.rcRequests);
+
+        RecordingRCCallback callback = new RecordingRCCallback();
+        registerOnMainThread(countly, callback);
+        Assert.assertEquals(0, callback.calls());
+
+        server.response = "{\"a\":1}";
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(1, callback.calls());
+        assertHandedOver(callback, 0, TestUtils.map("a", 1));
+    }
+
+    /**
+     * A download that fails after a successful one leaves the stored values in place, and a callback registered then
+     * gets those values.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_failureAfterSuccess_handsOverTheStoredValues() {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server));
+        countly.remoteConfig().downloadAllKeys(null);
+
+        server.response = null;
+        RecordingRCCallback failedDownload = new RecordingRCCallback();
+        countly.remoteConfig().downloadAllKeys(failedDownload);
+        Assert.assertEquals(RequestResult.Error, failedDownload.results.get(0));
+
+        RecordingRCCallback callback = new RecordingRCCallback();
+        registerOnMainThread(countly, callback);
+        Assert.assertEquals(1, callback.calls());
+        assertHandedOver(callback, 0, TestUtils.map("a", 1));
+    }
+
+    /**
+     * After a download of some keys, the callback gets every stored value as a full update, not only the keys of the
+     * last download.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_afterPartialDownload_handsOverAllStoredValues() {
+        RCServerMock server = new RCServerMock("{\"a\":1,\"b\":\"x\"}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server));
+        countly.remoteConfig().downloadAllKeys(null);
+        server.response = "{\"a\":2}";
+        countly.remoteConfig().downloadSpecificKeys(new String[] { "a" }, null);
+
+        RecordingRCCallback callback = new RecordingRCCallback();
+        registerOnMainThread(countly, callback);
+
+        Assert.assertEquals(1, callback.calls());
+        assertHandedOver(callback, 0, TestUtils.map("a", 2, "b", "x"));
+    }
+
+    /**
+     * Registering calls only the new callback. Callbacks registered earlier, at init or with "registerDownloadCallback",
+     * are not called again, and later downloads reach all of them.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_callsOnlyTheNewCallback() {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        RecordingRCCallback global = new RecordingRCCallback();
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(server).enableRemoteConfigAutomaticTriggers();
+        config.RemoteConfigRegisterGlobalCallback(global);
+        Countly countly = new Countly().init(config);
+        RecordingRCCallback plain = new RecordingRCCallback();
+        countly.remoteConfig().registerDownloadCallback(plain);
+        Assert.assertEquals(1, global.calls());
+        Assert.assertEquals(0, plain.calls());
+
+        RecordingRCCallback replayed = new RecordingRCCallback();
+        registerOnMainThread(countly, replayed);
+        Assert.assertEquals(1, global.calls());
+        Assert.assertEquals(0, plain.calls());
+        Assert.assertEquals(1, replayed.calls());
+
+        server.response = "{\"a\":2}";
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(2, global.calls());
+        Assert.assertEquals(1, plain.calls());
+        Assert.assertEquals(2, replayed.calls());
+        assertHandedOver(replayed, 1, TestUtils.map("a", 2));
+    }
+
+    /**
+     * Each token removes its own registration once. Removing twice leaves a second registration of the same callback
+     * in place, and a removed callback hears no later download.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_tokenRemovesItsOwnRegistrationOnce() {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server));
+        RecordingRCCallback callback = new RecordingRCCallback();
+        RCCallbackToken first = registerOnMainThread(countly, callback);
+        RCCallbackToken second = registerOnMainThread(countly, callback);
+
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(2, callback.calls());
+
+        first.remove();
+        first.remove();
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(3, callback.calls());
+
+        second.remove();
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(3, callback.calls());
+    }
+
+    /**
+     * Clearing the values, changing the device ID with or without merge and entering temporary ID mode each mean the
+     * stored values are no longer the current user's download, so nothing is handed over until the next download of
+     * all keys. A download of specific keys meanwhile leaves the cached values in place and does not change that.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_afterClearOrUserChange_waitsForTheNextDownload() {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server).enableRemoteConfigValueCaching());
+
+        countly.remoteConfig().downloadAllKeys(null);
+        countly.remoteConfig().clearAll();
+        assertNoReplay(countly);
+
+        countly.remoteConfig().downloadAllKeys(null);
+        RecordingRCCallback afterNextDownload = new RecordingRCCallback();
+        registerOnMainThread(countly, afterNextDownload).remove();
+        Assert.assertEquals(1, afterNextDownload.calls());
+        assertHandedOver(afterNextDownload, 0, TestUtils.map("a", 1));
+
+        countly.deviceId().changeWithoutMerge("other");
+        Assert.assertFalse(countly.remoteConfig().getValue("a").isCurrentUsersData);
+        assertNoReplay(countly);
+
+        server.response = "{\"b\":2}";
+        countly.remoteConfig().downloadSpecificKeys(new String[] { "b" }, null);
+        Assert.assertFalse(countly.remoteConfig().getValue("a").isCurrentUsersData);
+        assertNoReplay(countly);
+
+        server.response = "{\"a\":1}";
+        countly.remoteConfig().downloadAllKeys(null);
+        countly.deviceId().changeWithMerge("merged");
+        assertNoReplay(countly);
+
+        countly.remoteConfig().downloadAllKeys(null);
+        countly.deviceId().enableTemporaryIdMode();
+        assertNoReplay(countly);
+    }
+
+    /**
+     * Without remote config consent nothing is downloaded, so nothing is handed over. Removing the consent later keeps
+     * the stored values readable, and a callback registered then still gets them, without a download.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_consent() {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(server).enableRemoteConfigAutomaticTriggers().setRequiresConsent(true);
+        Countly countly = new Countly().init(config);
+        Assert.assertEquals(0, server.rcRequests);
+
+        RecordingRCCallback beforeConsent = new RecordingRCCallback();
+        registerOnMainThread(countly, beforeConsent);
+        Assert.assertEquals(0, beforeConsent.calls());
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+        Assert.assertEquals(1, server.rcRequests);
+        Assert.assertEquals(1, beforeConsent.calls());
+
+        countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.remoteConfig });
+        RecordingRCCallback afterRemoval = new RecordingRCCallback();
+        registerOnMainThread(countly, afterRemoval);
+        Assert.assertEquals(1, afterRemoval.calls());
+        assertHandedOver(afterRemoval, 0, TestUtils.map("a", 1));
+        Assert.assertEquals(1, server.rcRequests);
+    }
+
+    /**
+     * A null callback is ignored: its token removes nothing and later downloads still reach the other callbacks.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_nullCallback_isIgnored() {
+        RCServerMock server = new RCServerMock("{\"a\":1}");
+        Countly countly = new Countly().init(TestUtils.createIRGeneratorConfig(server));
+        countly.remoteConfig().downloadAllKeys(null);
+        RecordingRCCallback other = new RecordingRCCallback();
+        countly.remoteConfig().registerDownloadCallback(other);
+
+        RCCallbackToken token = countly.remoteConfig().registerDownloadCallbackAndReplay(null);
+        Assert.assertNotNull(token);
+        token.remove();
+
+        countly.remoteConfig().downloadAllKeys(null);
+        Assert.assertEquals(1, other.calls());
+    }
+
+    /**
+     * End to end against a local server: the automatic download at init stores the served values, a callback
+     * registered afterwards gets them at once, and the server sees exactly one remote config request.
+     */
+    @Test
+    public void registerDownloadCallbackAndReplay_endToEnd() throws Exception {
+        final List<RecordedRequest> rcRequests = new CopyOnWriteArrayList<>();
+        try (MockWebServer server = new MockWebServer()) {
+            server.setDispatcher(new Dispatcher() {
+                @NonNull @Override public MockResponse dispatch(@NonNull RecordedRequest request) {
+                    String body = "{\"result\":\"Success\"}";
+                    if (String.valueOf(request.getPath()).contains("method=rc")) {
+                        rcRequests.add(request);
+                        body = "{\"a\":123,\"b\":\"fg\"}";
+                    }
+                    return new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody(body);
+                }
+            });
+            server.start();
+
+            final CountDownLatch downloaded = new CountDownLatch(1);
+            CountlyConfig config = TestUtils.createBaseConfig().setServerURL(server.url("/").toString()).disableHealthCheck().enableRemoteConfigAutomaticTriggers();
+            config.RemoteConfigRegisterGlobalCallback((downloadResult, error, fullValueUpdate, downloadedValues) -> downloaded.countDown());
+            Countly countly = new Countly().init(config);
+            Assert.assertTrue("the automatic download must finish", downloaded.await(30, TimeUnit.SECONDS));
+
+            RecordingRCCallback late = new RecordingRCCallback();
+            registerOnMainThread(countly, late);
+
+            Assert.assertEquals(1, late.calls());
+            assertHandedOver(late, 0, TestUtils.map("a", 123, "b", "fg"));
+            Assert.assertEquals(1, rcRequests.size());
+            Assert.assertEquals("GET", rcRequests.get(0).getMethod());
+            Assert.assertEquals("/o/sdk", rcRequests.get(0).getRequestUrl().encodedPath());
+            Assert.assertEquals(TestUtils.commonDeviceId, rcRequests.get(0).getRequestUrl().queryParameter("device_id"));
+            Assert.assertEquals(TestUtils.commonAppKey, rcRequests.get(0).getRequestUrl().queryParameter("app_key"));
+        }
+    }
+
+    /**
+     * Calls "registerDownloadCallbackAndReplay" on the main thread, where it hands over the values before it returns.
+     */
+    static RCCallbackToken registerOnMainThread(Countly countly, RCDownloadCallback callback) {
+        RCCallbackToken[] token = { null };
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> token[0] = countly.remoteConfig().registerDownloadCallbackAndReplay(callback));
+        return token[0];
+    }
+
+    /**
+     * Keeps the main thread busy until the returned latch is counted down, so work posted to it waits.
+     */
+    static CountDownLatch blockMainThread() throws InterruptedException {
+        CountDownLatch blocked = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        new Handler(Looper.getMainLooper()).post(() -> {
+            blocked.countDown();
+            try {
+                release.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+        });
+        Assert.assertTrue(blocked.await(10, TimeUnit.SECONDS));
+        return release;
+    }
+
+    /**
+     * Registers a fresh callback with "registerDownloadCallbackAndReplay", asserts it was not called, and removes it.
+     */
+    static void assertNoReplay(Countly countly) {
+        RecordingRCCallback callback = new RecordingRCCallback();
+        registerOnMainThread(countly, callback).remove();
+        Assert.assertEquals(0, callback.calls());
+    }
+
+    /**
+     * Asserts that one recorded call was a successful full update without error that carried exactly the expected
+     * values, all of them the current user's.
+     */
+    static void assertHandedOver(RecordingRCCallback callback, int index, Map<String, Object> expectedValues) {
+        Assert.assertEquals(RequestResult.Success, callback.results.get(index));
+        Assert.assertNull(callback.errors.get(index));
+        Assert.assertTrue(callback.fullValueUpdates.get(index));
+        Map<String, RCData> values = callback.values.get(index);
+        Assert.assertEquals(expectedValues.keySet(), values.keySet());
+        for (Map.Entry<String, Object> entry : expectedValues.entrySet()) {
+            Assert.assertEquals(entry.getValue(), values.get(entry.getKey()).value);
+        }
+        assertCValueCachedState(values, false);
+    }
+
+    /**
+     * Records every call of a download callback with its arguments and the thread it ran on.
+     */
+    static class RecordingRCCallback implements RCDownloadCallback {
+        final List<RequestResult> results = new CopyOnWriteArrayList<>();
+        final List<String> errors = new CopyOnWriteArrayList<>();
+        final List<Boolean> fullValueUpdates = new CopyOnWriteArrayList<>();
+        final List<Map<String, RCData>> values = new CopyOnWriteArrayList<>();
+        final List<Thread> threads = new CopyOnWriteArrayList<>();
+
+        @Override public void callback(RequestResult downloadResult, String error, boolean fullValueUpdate, Map<String, RCData> downloadedValues) {
+            results.add(downloadResult);
+            errors.add(error);
+            fullValueUpdates.add(fullValueUpdate);
+            values.add(downloadedValues);
+            threads.add(Thread.currentThread());
+        }
+
+        /**
+         * @return how many times the callback was called
+         */
+        int calls() {
+            return results.size();
+        }
+    }
+
+    /**
+     * Answers every remote config download at once with "response", where null stands for an unreachable server, and
+     * counts them. Every other immediate request is left unanswered.
+     */
+    static class RCServerMock implements ImmediateRequestGenerator {
+        String response;
+        int rcRequests = 0;
+
+        /**
+         * @param response the JSON the remote config downloads get, null for an unreachable server
+         */
+        RCServerMock(String response) {
+            this.response = response;
+        }
+
+        @Override public ImmediateRequestI CreateImmediateRequestMaker() {
+            return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+                if (!requestData.contains("method=rc")) {
+                    return;
+                }
+                rcRequests++;
+                if (response == null) {
+                    callback.callback(null);
+                    return;
+                }
+                try {
+                    callback.callback(new JSONObject(response));
+                } catch (JSONException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            };
+        }
+
+        @Override public ImmediateRequestI CreatePreflightRequestMaker() {
+            return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
+            };
+        }
+    }
 }
