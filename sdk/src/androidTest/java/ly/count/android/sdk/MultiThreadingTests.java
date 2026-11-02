@@ -21,9 +21,9 @@ public class MultiThreadingTests {
 
         mCountly = new Countly();
         mCountly.halt();
-        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true)));
         mCountly.halt();
-        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "https://test.count.ly").setDeviceId("1234").setLoggingEnabled(true)));
     }
 
     @Test
@@ -127,10 +127,10 @@ public class MultiThreadingTests {
 
                 switch ((threadNumber + iter) % 2) {
                     case 0:
-                        mCountly.views().recordView("View Name:" + threadNumber);
+                        mCountly.views().startAutoStoppedView("View Name:" + threadNumber);
                         break;
                     case 1:
-                        mCountly.views().recordView("View Name:" + threadNumber, segms);
+                        mCountly.views().startAutoStoppedView("View Name:" + threadNumber, segms);
                         break;
                 }
             }
@@ -159,7 +159,7 @@ public class MultiThreadingTests {
     ThreadCall createRatingsJob() {
         return new ThreadCall() {
             @Override public void call(int threadNumber, int iter, long sleepTime) {
-                mCountly.ratings().recordManualRating("widgetID: " + threadNumber, threadNumber % 5, "email" + threadNumber + "" + iter, "comment" + iter, true);
+                mCountly.ratings().recordRatingWidgetWithID("widgetID: " + threadNumber, threadNumber % 5, "email" + threadNumber + "" + iter, "comment" + iter, true);
             }
         };
     }

@@ -118,7 +118,7 @@ public class ActivityExampleFeedback extends AppCompatActivity {
                 return;
             }
 
-            Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, this, "Close", new ModuleFeedback.FeedbackCallback() {
+            Countly.sharedInstance().feedback().presentFeedbackWidget(chosenWidget, this, new ModuleFeedback.FeedbackCallback() {
                 @Override public void onClosed() {
                     Toast.makeText(ActivityExampleFeedback.this, "The feedback widget was closed", Toast.LENGTH_LONG).show();
                 }

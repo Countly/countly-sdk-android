@@ -56,7 +56,7 @@ import static org.mockito.Mockito.mock;
 public class MultiInstanceTests {
     // Names this suite creates. They are halted and their namespaced storage cleared between tests
     // so nothing leaks across tests or across test classes.
-    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove", "instFresh", "instCfgA", "instCfgB", "instPushBcast" };
+    private static final String[] NAMES = { "instB", "instLog", "instLoud", "instTimed", "instFile", "instCreateA", "instCreateB", "ignoredName", "instRemove", "instFresh", "instCfgA", "instCfgB", "instPushBcast", "instHaltFail" };
 
     private static final String PUSH_PREFS_FILE = "ly.count.android.api.messaging";
 
@@ -499,6 +499,78 @@ public class MultiInstanceTests {
         Countly.removeInstance(null);
         Countly.removeInstance(Countly.DEFAULT_NAME);
         Assert.assertSame("default instance survives removeInstance", def, Countly.sharedInstance());
+    }
+
+    /**
+     * A handle kept across removeInstance shares its storage namespace with the object instance(name) hands out next,
+     * so its halt() and stop() are refused instead of erasing or stopping that object. A deviceId() handle kept across
+     * stop() and init() belongs to a torn down module the same way, and must not write a device ID the running
+     * instance never announces.
+     */
+    @Test
+    public void detachedHandles_areRefusedAndLeaveTheLiveInstanceUntouched() {
+        Countly detached = Countly.instance("instRemove");
+        detached.init(baseConfig(APP_KEY_B, DEVICE_B));
+        Countly.removeInstance("instRemove");
+
+        Countly live = Countly.instance("instRemove");
+        live.init(baseConfig(APP_KEY_B, DEVICE_B));
+        live.sessions().beginSession();
+        Assert.assertEquals(1, countRequestsWithKey(TestUtils.getCurrentRQ(live), "begin_session"));
+
+        detached.halt();
+        Assert.assertTrue("a detached handle's halt() must not stop the live instance", live.isInitialized());
+        Assert.assertEquals("a detached handle's halt() must not erase the live instance's queue",
+            1, countRequestsWithKey(TestUtils.getCurrentRQ(live), "begin_session"));
+        Assert.assertEquals(DEVICE_B, TestUtils.getCountlyStore(live).getDeviceID());
+
+        detached.stop();
+        Assert.assertTrue("a detached handle's stop() must not stop the live instance", live.isInitialized());
+
+        ModuleDeviceId.DeviceId staleDeviceId = live.deviceId();
+        live.stop();
+        staleDeviceId.changeWithoutMerge("deviceFromStoppedHandle");
+        Assert.assertEquals("a handle of a stopped instance must not write a device ID",
+            DEVICE_B, store(CountlyStore.sanitizeNamespace("instRemove")).getDeviceID());
+
+        live.init(baseConfig(APP_KEY_B, DEVICE_B));
+        staleDeviceId.changeWithoutMerge("deviceFromStaleHandle");
+        staleDeviceId.changeWithMerge("deviceFromStaleHandle");
+        staleDeviceId.setID("deviceFromStaleHandle");
+        staleDeviceId.enableTemporaryIdMode();
+
+        Assert.assertEquals("a stale handle must not change the device ID", DEVICE_B, live.deviceId().getID());
+        Assert.assertEquals(DEVICE_B, TestUtils.getCountlyStore(live).getDeviceID());
+        Assert.assertEquals(DeviceIdType.DEVELOPER_SUPPLIED, live.deviceId().getType());
+        Assert.assertEquals("a stale handle must not queue a device ID change",
+            0, countRequestsWithKey(TestUtils.getCurrentRQ(live), "old_device_id"));
+    }
+
+    /**
+     * A module whose halt() throws must not abort the teardown half way. The steps after it still run, and the
+     * instance starts again, where an aborted teardown left it without a request queue and with a shut down timer.
+     */
+    @Test
+    public void moduleFailingToHalt_doesNotLeaveTheInstanceUnableToStart() {
+        Countly instance = Countly.instance("instHaltFail");
+        CountlyConfig config = baseConfig(APP_KEY_B, DEVICE_B);
+        config.testModuleListener = new ModuleBase(instance, config) {
+            @Override void halt() {
+                throw new IllegalStateException("module halt failure");
+            }
+        };
+        instance.init(config);
+        Assert.assertTrue(instance.isInitialized());
+
+        instance.halt();
+        Assert.assertFalse(instance.isInitialized());
+        Assert.assertTrue("the teardown must run past the failing module", instance.modules.isEmpty());
+        Assert.assertNull(instance.moduleSessions);
+
+        instance.init(baseConfig(APP_KEY_B, DEVICE_B));
+        Assert.assertTrue("the instance must start again after a module failed to halt", instance.isInitialized());
+        instance.sessions().beginSession();
+        Assert.assertEquals(1, countRequestsWithKey(TestUtils.getCurrentRQ(instance), "begin_session"));
     }
 
     /**
@@ -1114,6 +1186,133 @@ public class MultiInstanceTests {
         def.init(baseConfig(APP_KEY_A, DEVICE_A));
         def.onRegistrationId("real-token", Countly.CountlyMessagingProvider.FCM);
         Assert.assertEquals("an initialised instance must accept the push token", "real-token", def.lastRegistrationCallID);
+    }
+
+    /**
+     * The server keeps a push token on the user that sent it last. A token request a stop() dropped inside its delay is
+     * sent on the next init, the same token within the debounce is dropped for the same user only, and a change without
+     * merge sends the token again for the new user, while a merge leaves the move to the server.
+     */
+    @Test
+    public void pushToken_isSentAgainAfterARestartAndForANewUser() throws InterruptedException {
+        final long delayBefore = ConnectionQueue.tokenRequestDelayMs;
+        try {
+            Countly def = Countly.sharedInstance();
+            ConnectionQueue.tokenRequestDelayMs = 60_000;
+            def.init(baseConfig(APP_KEY_A, DEVICE_A));
+            def.onRegistrationId("push-token", Countly.CountlyMessagingProvider.FCM);
+            def.stop();
+            Assert.assertEquals("the stop dropped the waiting token request", 0, countTokenRequests(def, DEVICE_A));
+
+            ConnectionQueue.tokenRequestDelayMs = 0;
+            def.init(baseConfig(APP_KEY_A, DEVICE_A));
+            Thread.sleep(500);
+            Assert.assertEquals("the next init sends the token again", 1, countTokenRequests(def, DEVICE_A));
+
+            def.onRegistrationId("push-token", Countly.CountlyMessagingProvider.FCM);
+            Thread.sleep(500);
+            Assert.assertEquals("the same token within the debounce is dropped", 1, countTokenRequests(def, DEVICE_A));
+
+            def.deviceId().changeWithoutMerge("deviceNewUser");
+            Thread.sleep(500);
+            Assert.assertEquals("a new user gets the token", 1, countTokenRequests(def, "deviceNewUser"));
+
+            def.deviceId().changeWithMerge("deviceMerged");
+            Thread.sleep(500);
+            Assert.assertEquals("a merge moves the token on the server", 0, countTokenRequests(def, "deviceMerged"));
+        } finally {
+            ConnectionQueue.tokenRequestDelayMs = delayBefore;
+        }
+    }
+
+    /**
+     * The token request carries the device ID current when it is queued, not when it was scheduled. Removing the push
+     * consent makes the server drop the token, so giving it again sends the token again within the debounce interval.
+     * A halt forgets the token, so the next init does not send it on its own.
+     */
+    @Test
+    public void pushToken_followsTheCurrentDeviceIdAndTheConsent() throws InterruptedException {
+        final long delayBefore = ConnectionQueue.tokenRequestDelayMs;
+        final String[] pushOnly = { Countly.CountlyFeatureNames.push };
+        try {
+            Countly def = Countly.sharedInstance();
+            ConnectionQueue.tokenRequestDelayMs = 0;
+            def.init(baseConfig(APP_KEY_A, DEVICE_A).setRequiresConsent(true).setConsentEnabled(pushOnly));
+            def.onRegistrationId("push-token", Countly.CountlyMessagingProvider.FCM);
+            Thread.sleep(500);
+            Assert.assertEquals(1, countTokenRequests(def, DEVICE_A));
+
+            //same token, provider and device ID within the debounce interval: only the consent change lets it through
+            def.consent().removeConsent(pushOnly);
+            def.consent().giveConsent(pushOnly);
+            def.onRegistrationId("push-token", Countly.CountlyMessagingProvider.FCM);
+            Thread.sleep(500);
+            Assert.assertEquals("the token goes out again once the consent is back", 2, countTokenRequests(def, DEVICE_A));
+
+            ConnectionQueue.tokenRequestDelayMs = 300;
+            def.onRegistrationId("push-token-refreshed", Countly.CountlyMessagingProvider.FCM);
+            def.deviceId().changeWithMerge("deviceMergedMeanwhile");
+            Thread.sleep(800);
+            Assert.assertEquals(2, countTokenRequests(def, DEVICE_A));
+            Assert.assertEquals("queued under the ID current then", 1, countTokenRequests(def, "deviceMergedMeanwhile"));
+
+            def.halt();
+            Assert.assertNull(def.lastRegistrationCallID);
+            ConnectionQueue.tokenRequestDelayMs = 0;
+            def.init(baseConfig(APP_KEY_A, DEVICE_A));
+            Thread.sleep(500);
+            Assert.assertEquals("a halted instance does not send the token it had", 0, countTokenRequests(def, DEVICE_A));
+        } finally {
+            ConnectionQueue.tokenRequestDelayMs = delayBefore;
+        }
+    }
+
+    /**
+     * Counts the queued token requests of one device ID.
+     *
+     * @param countly the instance whose queue is read
+     * @param deviceId the device ID the requests carry
+     * @return how many token requests carry it
+     */
+    private static int countTokenRequests(Countly countly, String deviceId) {
+        int found = 0;
+        for (Map<String, String> request : TestUtils.getCurrentRQ("", store(countly.storageNamespace_))) {
+            if (request != null && request.containsKey("token_session") && deviceId.equals(request.get("device_id"))) {
+                found++;
+            }
+        }
+        return found;
+    }
+
+    /**
+     * An unhandled crash belongs to the whole process and every instance holding a handler records it. A named instance
+     * installs its handler only when its own config enables unhandled crash reporting, even when its server settings
+     * switch the reporting on, while the default instance keeps following the server.
+     */
+    @Test
+    public void namedInstance_installsTheCrashHandlerOnlyWhenItsConfigAsks() throws JSONException {
+        Thread.UncaughtExceptionHandler originalDefault = Thread.getDefaultUncaughtExceptionHandler();
+        try {
+            String serverEnablesCrashes = new ServerConfigBuilder().defaults().automaticCrashReporting(true).build();
+
+            Countly notAsked = Countly.instance("instCfgA");
+            notAsked.init(baseConfig(APP_KEY_A, DEVICE_A).setSDKBehaviorSettings(serverEnablesCrashes));
+            Assert.assertTrue(notAsked.moduleConfiguration.getAutomaticCrashReportingEnabled());
+            Assert.assertFalse("the server alone must not make a named instance record app crashes",
+                notAsked.moduleCrash.unhandledCrashHandlerInstalled);
+
+            Countly asked = Countly.instance("instCfgB");
+            CountlyConfig askedConfig = baseConfig(APP_KEY_B, DEVICE_B);
+            askedConfig.crashes.enableCrashReporting();
+            asked.init(askedConfig);
+            Assert.assertTrue(asked.moduleCrash.unhandledCrashHandlerInstalled);
+
+            Countly def = Countly.sharedInstance();
+            def.init(baseConfig(APP_KEY_A, DEVICE_A).setSDKBehaviorSettings(serverEnablesCrashes));
+            Assert.assertTrue("the default instance still follows its server", def.moduleCrash.unhandledCrashHandlerInstalled);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalDefault);
+        }
     }
 
     /**

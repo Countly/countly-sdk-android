@@ -1,19 +1,26 @@
 package ly.count.android.sdk;
 
 import android.annotation.SuppressLint;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Base64;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -489,4 +496,70 @@ public class CountlyWebViewClientTests {
         Assert.assertEquals(1, callbackResults.size());
         Assert.assertFalse("content must be shown (failed=false), not discarded", callbackResults.get(0));
     }
+
+    /**
+     * Content and surveys draw small images, such as the tick of a checkbox, from data: URLs in img tags and in
+     * stylesheets, while the client blocks data: as a sub-resource scheme. The WebView decodes those images itself
+     * without asking the client, unlike a stylesheet image on https, so they render with the SDK's client installed.
+     */
+    @Test
+    public void inlineDataImages_renderWithTheClientInstalled() throws InterruptedException {
+        final List<String> askedUrls = new CopyOnWriteArrayList<>();
+        final List<String> blockedUrls = new CopyOnWriteArrayList<>();
+        final CountDownLatch measured = new CountDownLatch(1);
+        final String[] widths = { null };
+        final String html = "<html><body>"
+            + "<img id='png' src='data:image/png;base64," + pngBase64(3, 2) + "'>"
+            + "<img id='svg' src=\"data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%278%27 height=%278%27%3E%3Cpath d=%27M1 4l2 2 4-4%27/%3E%3C/svg%3E\">"
+            + "<div style=\"width:8px;height:8px;background-image:url('data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%278%27 height=%278%27/%3E')\"></div>"
+            + "<div style=\"width:8px;height:8px;background-image:url('https://countly.example/control-background.png')\"></div>"
+            + "</body></html>";
+
+        createWebView();
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            webView.setWebViewClient(new CountlyWebViewClient() {
+                @Override public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                    WebResourceResponse response = super.shouldInterceptRequest(view, request);
+                    askedUrls.add(request.getUrl().toString());
+                    if (response != null) {
+                        blockedUrls.add(request.getUrl().toString());
+                    }
+                    return response;
+                }
+
+                @Override public void onPageFinished(WebView view, String url) {
+                    //not view.postDelayed: a view that is not attached to a window holds posted actions until it is
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> view.evaluateJavascript(
+                        "document.getElementById('png').naturalWidth + ',' + document.getElementById('svg').naturalWidth",
+                        value -> {
+                            widths[0] = value;
+                            measured.countDown();
+                        }), 300);
+                }
+            });
+            webView.loadDataWithBaseURL("https://countly.example/", html, "text/html", "utf-8", null);
+        });
+
+        Assert.assertTrue("the page did not finish loading", measured.await(10, TimeUnit.SECONDS));
+        Assert.assertEquals("\"3,8\"", widths[0]);
+        //the https background proves the stylesheet images were fetched, and through the client
+        Assert.assertTrue("asked:" + askedUrls, askedUrls.contains("https://countly.example/control-background.png"));
+        for (String asked : askedUrls) {
+            Assert.assertFalse("an inlined image reached the client, asked:" + askedUrls + ", blocked:" + blockedUrls, asked.startsWith("data:image/"));
+        }
+    }
+
+    /**
+     * @param width width of the image
+     * @param height height of the image
+     * @return a solid PNG of that size, base64 encoded
+     */
+    private static String pngBase64(int width, int height) {
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bitmap.eraseColor(Color.BLACK);
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes);
+        return Base64.encodeToString(bytes.toByteArray(), Base64.NO_WRAP);
+    }
+
 }

@@ -8,9 +8,19 @@ COMMIT = "c" * 40
 
 class ChecksTest(unittest.TestCase):
     def test_reports_missing_and_failed_checks(self):
-        runs = {"check_runs": [{"name": "Build and Test the SDK", "conclusion": "success"}, {"name": "Analyze (java)", "conclusion": "failure"}]}
+        actions = {"slug": "github-actions"}
+        runs = {"check_runs": [{"name": "Build and Test the SDK", "conclusion": "success", "app": actions}, {"name": "Analyze (java)", "conclusion": "failure", "app": actions}]}
         required = ["Build and Test the SDK", "Analyze (java)", "OSV scan (all modules)"]
         self.assertEqual(missing_checks(runs, required), ["Analyze (java)", "OSV scan (all modules)"])
+
+    def test_only_runs_of_the_repository_workflows_count(self):
+        runs = {"check_runs": [
+            {"name": "Build and Test the SDK", "conclusion": "success", "app": {"slug": "some-other-app"}},
+            {"name": "Analyze (java)", "conclusion": "success"},
+            {"name": "OSV scan (all modules)", "conclusion": "success", "app": {"slug": "github-actions"}},
+        ]}
+        required = ["Build and Test the SDK", "Analyze (java)", "OSV scan (all modules)"]
+        self.assertEqual(missing_checks(runs, required), ["Build and Test the SDK", "Analyze (java)"])
 
     def test_tag_commit_must_be_on_the_release_branch(self):
         calls = []

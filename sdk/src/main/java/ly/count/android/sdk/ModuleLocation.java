@@ -63,15 +63,16 @@ public class ModuleLocation extends ModuleBase {
     void setLocationInternal(@Nullable String country_code, @Nullable String city, @Nullable String gpsCoordinates, @Nullable String ipAddress) {
         L.d("[ModuleLocation] Calling 'setLocationInternal'");
 
-        L.d("[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
-
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.location)) {
             return;
         }
 
         if (!configProvider.getLocationTrackingEnabled()) {
+            L.d("[ModuleLocation] setLocationInternal, location tracking is disabled by server config, the location is ignored");
             return;
         }
+
+        L.d("[ModuleLocation] Setting location parameters, cc[" + country_code + "] cy[" + city + "] gps[" + gpsCoordinates + "] ip[" + ipAddress + "]");
 
         locationCountryCode = country_code;
         locationCity = city;

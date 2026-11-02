@@ -6,6 +6,7 @@ import android.content.res.Resources;
 import android.util.DisplayMetrics;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
@@ -530,5 +531,42 @@ public class ModuleContentTests {
         Assert.assertEquals("android", recorded.get("platform"));
         Assert.assertTrue(recorded.containsKey("app_version"));
         Assert.assertEquals(8, recorded.size());
+    }
+
+    /**
+     * Reserved feedback widget and content keys are dropped from the global content segmentation
+     * before it is limited, so they neither reach an event that lacks them nor use up the limit,
+     * while an event's own reserved keys are kept and the caller's map is left untouched.
+     */
+    @Test
+    public void globalContentSegmentation_dropsReservedKeysOnlyFromTheGlobalSegmentation() {
+        CountlyConfig config = TestUtils.createIRGeneratorConfig(createCapturingIRGenerator());
+        config.disableHealthCheck().enableManualSessionControl();
+        config.sdkInternalLimits.setMaxSegmentationValues(2);
+        Countly countly = new Countly().init(config);
+        EventProvider ep = TestUtils.setEventProviderToMock(countly, mock(EventProvider.class));
+        ModuleFeedback.CountlyFeedbackWidget widget = ModuleFeedbackTests.createFeedbackWidget(ModuleFeedback.FeedbackWidgetType.nps);
+
+        //ordered so a limit applied before the reserved keys are dropped would trim the two kept ones
+        Map<String, Object> globalSegmentation = new LinkedHashMap<>();
+        globalSegmentation.put("screen", "home");
+        globalSegmentation.put("tier", "gold");
+        globalSegmentation.put("closed", "1");
+        globalSegmentation.put("comment", "global");
+        globalSegmentation.put("answ-1611570700-0", "ch1");
+        globalSegmentation.put("dismissed", 1);
+        globalSegmentation.put("content_id", "global");
+        globalSegmentation.put("journeyId", "global");
+        countly.contents().setGlobalContentSegmentation(globalSegmentation);
+        Assert.assertEquals(8, globalSegmentation.size());
+
+        countly.feedback().reportFeedbackWidgetManually(widget, null, TestUtils.map("rating", 4));
+
+        Map<String, Object> expected = TestUtils.map("screen", "home", "tier", "gold", "rating", 4);
+        ModuleFeedbackTests.fillFeedbackWidgetSegmentationParams(expected, "1234");
+        verify(ep).recordEventInternal(ModuleFeedback.NPS_EVENT_KEY, expected, 1, 0, 0, null, null);
+
+        Map<String, Object> contentEvent = ModuleContent.withGlobalContentSegmentation(countly, TestUtils.map("content_id", "own", "element_id", "buy"));
+        Assert.assertEquals(TestUtils.map("screen", "home", "tier", "gold", "content_id", "own", "element_id", "buy"), contentEvent);
     }
 }

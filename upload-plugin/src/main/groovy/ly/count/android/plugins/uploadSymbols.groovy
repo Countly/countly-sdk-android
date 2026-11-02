@@ -1,11 +1,11 @@
 package ly.count.android.plugins
 
 import okhttp3.*
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
-import org.gradle.api.tasks.StopActionException
 import org.gradle.api.tasks.TaskProvider
 
 class UploadSymbolsPluginExtension {
@@ -53,8 +53,7 @@ class UploadSymbolsPlugin implements Plugin<Project> {
         logger.debug("uploadJavaSymbols, Version name:[ {} ], Upload symbol url:[ {} ], Mapping file path:[ {} ]", buildVersion, url, mappingFilePath)
         File file = new File(mappingFilePath)
         if (!file.exists()) {
-          logger.error("Mapping file not found")
-          throw new StopActionException("Mapping file not found")
+          throw new GradleException("uploadJavaSymbols: mapping file not found at ${mappingFilePath}")
         }
         RequestBody formBody = new MultipartBody.Builder()
             .setType(MultipartBody.FORM)
@@ -75,16 +74,15 @@ class UploadSymbolsPlugin implements Plugin<Project> {
 
         OkHttpClient client = new OkHttpClient()
         Response response = client.newCall(request).execute()
-
-        if (response.code() != 200) {
-          if (response.body() != null) {
-            logger.error("An error occurred while uploading the mapping file: {}", response.body().string())
-          } else {
-            logger.error("An error occurred while uploading the mapping file, response body null")
+        try {
+          if (!response.isSuccessful()) {
+            String responseBody = response.body() != null ? response.body().string() : "no response body"
+            throw new GradleException("uploadJavaSymbols: uploading ${file.name} to ${url} failed with HTTP ${response.code()}: ${responseBody}")
           }
-        } else {
-          logger.debug("File upload successful")
+        } finally {
+          response.close()
         }
+        logger.debug("File upload successful")
       }
     }
 

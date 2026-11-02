@@ -10,7 +10,11 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -37,29 +41,41 @@ class ModuleConnectionTest extends ModuleBase {
 
     /** Feature rows in report order. A row with no paths is the {@code sc} row, measured from the fetch that armed us. */
     static final ProbeRow[] ROWS = {
-        new ProbeRow("core", true, "/o/ping"),
-        new ProbeRow("core-write", false, "/i"),
-        new ProbeRow("sc", false),
-        new ProbeRow("rc", false, "/o/sdk?method=rc"),
-        new ProbeRow("ab", false, "/o/sdk?method=ab_fetch_variants"),
-        new ProbeRow("feedback", false, "/o/sdk?method=feedback"),
-        new ProbeRow("feedback-widget", false, "/o/surveys/nps/widget", "/o/surveys/survey/widget", "/o/feedback/widget"),
-        new ProbeRow("feedback-submit", false, "/i/feedback/inputs"),
-        new ProbeRow("content", false, "/o/sdk/content"),
-        new ProbeRow("feedback-page", false, "/feedback/nps", "/feedback/survey", "/feedback/rating"),
-        new ProbeRow("feedback-assets", true, "/surveys/images/ct-probe.png", "/star-rating/images/ct-probe.png"),
-        new ProbeRow("content-page", false, "/_external/content/"),
+        new ProbeRow("core", true, false, "/o/ping"),
+        new ProbeRow("core-write", false, false, "/i"),
+        new ProbeRow("sc", false, false),
+        new ProbeRow("rc", false, false, "/o/sdk?method=rc"),
+        new ProbeRow("ab", false, false, "/o/sdk?method=ab_fetch_variants"),
+        new ProbeRow("feedback", false, false, "/o/sdk?method=feedback"),
+        new ProbeRow("feedback-widget", false, false, "/o/surveys/nps/widget", "/o/surveys/survey/widget", "/o/feedback/widget", "/o/surveys/rating/widget"),
+        new ProbeRow("feedback-submit", false, false, "/i/feedback/inputs"),
+        new ProbeRow("content", false, false, "/o/sdk/content"),
+        new ProbeRow("feedback-page", false, true, "/feedback/nps", "/feedback/survey", "/feedback/rating"),
+        new ProbeRow("feedback-assets", true, true, "/surveys/images/ct-probe.png", "/star-rating/images/ct-probe.png"),
+        new ProbeRow("content-page", false, true, "/_external/content/"),
     };
 
     static class ProbeRow {
         final String feature;
         /** Rows 1 and 11 have no legitimate 4xx answer, so anything but a 2xx is a fault there. */
         final boolean requiresSuccessStatus;
+        /**
+         * Pages and assets a WebView loads. The WebView neither sends the SDK's custom headers nor uses its SSL socket
+         * factory, so these rows are probed without either, the way the WebView reaches them.
+         */
+        final boolean loadedByWebView;
         final String[] paths;
 
-        ProbeRow(String feature, boolean requiresSuccessStatus, String... paths) {
+        /**
+         * @param feature the row's name in the report
+         * @param requiresSuccessStatus whether only a 2xx counts as reachable
+         * @param loadedByWebView whether a WebView loads these paths, see {@link #loadedByWebView}
+         * @param paths the paths probed, relative to the server URL
+         */
+        ProbeRow(String feature, boolean requiresSuccessStatus, boolean loadedByWebView, String... paths) {
             this.feature = feature;
             this.requiresSuccessStatus = requiresSuccessStatus;
+            this.loadedByWebView = loadedByWebView;
             this.paths = paths;
         }
     }
@@ -89,12 +105,19 @@ class ModuleConnectionTest extends ModuleBase {
 
     /** Issues one probe. Package-private so tests can swap the network out. */
     interface ProbeTransport {
-        /** @param cp supplies the instance's SSL socket factory and custom headers, null only when the queue is mocked */
+        /**
+         * @param timeoutMs the most the whole request may take, connecting and reading included
+         * @param cp supplies the instance's SSL socket factory and custom headers; null for the rows a WebView loads,
+         * and when the queue is mocked
+         */
         @NonNull ProbeOutcome probe(@NonNull String url, int timeoutMs, @Nullable ConnectionProcessor cp);
     }
 
     final AtomicBoolean batteryRunning = new AtomicBoolean(false);
     volatile boolean halted = false;
+    //device ID changes with merge so far, and their number when the running battery was armed
+    private final AtomicInteger mergeCount = new AtomicInteger();
+    private volatile int mergesAtBatteryStart = 0;
 
     // package-private so tests can shrink the deadlines
     int perRequestTimeoutMs = DEFAULT_PER_REQUEST_TIMEOUT_MS;
@@ -106,13 +129,48 @@ class ModuleConnectionTest extends ModuleBase {
         L.v("[ModuleConnectionTest] Initialising");
     }
 
+    /** @return how many times the device ID was changed with merge so far */
+    int mergesSoFar() {
+        return mergeCount.get();
+    }
+
+    /**
+     * Counts the device ID changes with merge, see {@link #runBatteryAndReport(long, String)}.
+     *
+     * @param withoutMerge whether the device ID was changed without merge
+     */
+    @Override
+    void deviceIdChanged(boolean withoutMerge) {
+        if (!withoutMerge) {
+            mergeCount.incrementAndGet();
+        }
+    }
+
     @Override
     void halt() {
         halted = true;
     }
 
-    /** Runs the battery on a background thread, once per delivery. scLatencyMs is negative when unknown. */
-    void startBattery(final long scLatencyMs) {
+    /**
+     * Runs the battery on a background thread, once per delivery.
+     *
+     * @param scLatencyMs latency of the fetch that armed the test, negative when unknown
+     * @param armedForDeviceId the device ID the server armed the test for, which the report is filed under; null
+     * files it under the current one
+     */
+    void startBattery(final long scLatencyMs, @Nullable final String armedForDeviceId) {
+        startBattery(scLatencyMs, armedForDeviceId, mergeCount.get());
+    }
+
+    /**
+     * Runs the battery in the background and queues its report, unless the device ID is changed with merge in the
+     * meantime, see {@link #runBatteryAndReport(long, String)}.
+     *
+     * @param scLatencyMs how long the configuration fetch that armed the test took
+     * @param armedForDeviceId the device ID the test was armed for, which the report is filed under
+     * @param mergesAtArming the merges counted when the arming fetch was made, so a merge since then drops the report
+     */
+    void startBattery(final long scLatencyMs, @Nullable final String armedForDeviceId, final int mergesAtArming) {
         if (halted) {
             L.d("[ModuleConnectionTest] startBattery, module halted, ignoring");
             return;
@@ -123,10 +181,16 @@ class ModuleConnectionTest extends ModuleBase {
             return;
         }
 
+        if (!configProvider.getTrackingEnabled()) {
+            L.w("[ModuleConnectionTest] startBattery, tracking is disabled by server config, so the report could not be queued, skipping the battery");
+            return;
+        }
+
         if (!batteryRunning.compareAndSet(false, true)) {
             L.d("[ModuleConnectionTest] startBattery, a battery is already running, ignoring this delivery");
             return;
         }
+        mergesAtBatteryStart = mergesAtArming;
 
         L.i("[ModuleConnectionTest] startBattery, connection test armed by the server, running the probe battery");
 
@@ -134,7 +198,7 @@ class ModuleConnectionTest extends ModuleBase {
             @Override
             public void run() {
                 try {
-                    runBatteryAndReport(scLatencyMs);
+                    runBatteryAndReport(scLatencyMs, armedForDeviceId);
                 } catch (Throwable t) {
                     L.e("[ModuleConnectionTest] Battery failed unexpectedly, " + t);
                 } finally {
@@ -146,7 +210,13 @@ class ModuleConnectionTest extends ModuleBase {
         worker.start();
     }
 
-    void runBatteryAndReport(long scLatencyMs) {
+    /**
+     * Runs the battery and queues its report.
+     *
+     * @param scLatencyMs how long the configuration fetch that armed the test took, a negative value leaves the 'sc' row out
+     * @param armedForDeviceId the device ID the test was armed for, which the report is filed under
+     */
+    void runBatteryAndReport(long scLatencyMs, @Nullable String armedForDeviceId) {
         List<ResultRow> rows = runBattery(scLatencyMs);
 
         if (halted) {
@@ -154,9 +224,17 @@ class ModuleConnectionTest extends ModuleBase {
             return;
         }
 
+        if (mergeCount.get() != mergesAtBatteryStart) {
+            //the merge cancelled the run on the server, and a report under the old ID would only recreate that user
+            L.d("[ModuleConnectionTest] runBatteryAndReport, the device ID was changed with merge during the battery, dropping the report");
+            return;
+        }
+
         String report = buildReport(rows);
         L.d("[ModuleConnectionTest] runBatteryAndReport, queueing report [" + report + "]");
-        requestQueueProvider.sendConnectionTestResults(report);
+        if (!requestQueueProvider.sendConnectionTestResults(report, armedForDeviceId)) {
+            L.w("[ModuleConnectionTest] runBatteryAndReport, the request queue refused the report, it is dropped");
+        }
     }
 
     @NonNull List<ResultRow> runBattery(long scLatencyMs) {
@@ -206,9 +284,10 @@ class ModuleConnectionTest extends ModuleBase {
         result.ok = true;
         result.pathCount = row.paths.length;
 
+        ConnectionProcessor rowCp = row.loadedByWebView ? null : cp;
         for (int i = 0; i < row.paths.length; i++) {
             String url = buildProbeUrl(serverUrl, row.paths[i]);
-            ProbeOutcome outcome = transport.probe(url, perRequestTimeoutMs, cp);
+            ProbeOutcome outcome = transport.probe(url, perRequestTimeoutMs, rowCp);
             result.ms += outcome.ms;
 
             String failure = grade(outcome, row.requiresSuccessStatus);
@@ -328,11 +407,29 @@ class ModuleConnectionTest extends ModuleBase {
         //matters, so the read stops here
         static final int MAX_DRAIN_BYTES = 64 * 1024;
 
+        //the connect and read timeouts each bound only their own phase, so this ends a request that runs past its total
+        private static final ScheduledThreadPoolExecutor deadlines = createDeadlineExecutor();
+
+        /** A daemon scheduler whose single thread exits while no probe is waiting on it. */
+        private static ScheduledThreadPoolExecutor createDeadlineExecutor() {
+            ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, runnable -> {
+                Thread thread = new Thread(runnable, "Countly-ConnectionTestDeadline");
+                thread.setDaemon(true);
+                return thread;
+            });
+            executor.setKeepAliveTime(5, TimeUnit.SECONDS);
+            executor.allowCoreThreadTimeOut(true);
+            executor.setRemoveOnCancelPolicy(true);
+            return executor;
+        }
+
         @Override
         public @NonNull ProbeOutcome probe(@NonNull String url, int timeoutMs, @Nullable ConnectionProcessor cp) {
             ProbeOutcome outcome = new ProbeOutcome();
             long start = System.nanoTime();
             HttpURLConnection connection = null;
+            ScheduledFuture<?> deadline = null;
+            final AtomicBoolean deadlinePassed = new AtomicBoolean(false);
             int previousSocketTag = UtilsNetworking.tagSocketsOfThread();
             try {
                 if (cp != null) {
@@ -346,6 +443,12 @@ class ModuleConnectionTest extends ModuleBase {
                     connection.setReadTimeout(timeoutMs);
                 }
 
+                final HttpURLConnection timedConnection = connection;
+                deadline = deadlines.schedule(() -> {
+                    deadlinePassed.set(true);
+                    timedConnection.disconnect();
+                }, timeoutMs, TimeUnit.MILLISECONDS);
+
                 outcome.status = connection.getResponseCode();
                 drain(connection);
             } catch (SocketTimeoutException e) {
@@ -353,8 +456,11 @@ class ModuleConnectionTest extends ModuleBase {
                 outcome.failure = errorTimeout;
             } catch (Exception e) {
                 outcome.status = 0;
-                outcome.failure = errorTransport;
+                outcome.failure = deadlinePassed.get() ? errorTimeout : errorTransport;
             } finally {
+                if (deadline != null) {
+                    deadline.cancel(false);
+                }
                 if (connection != null) {
                     connection.disconnect();
                 }

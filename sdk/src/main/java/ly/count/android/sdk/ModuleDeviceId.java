@@ -65,7 +65,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         storageProvider.setDeviceID(null);
         storageProvider.setDeviceIDType(null);
-        _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().remove(PREF_KEY).apply();
+        _cly.context_.getSharedPreferences(CountlyStore.namespacedName(PREFS_NAME, _cly.storageNamespace_), Context.MODE_PRIVATE).edit().remove(PREF_KEY).apply();
     }
 
     void replaceTempIDWithRealIDinRQ(@NonNull String targetDeviceId) {
@@ -388,6 +388,10 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithoutMerge'");
 
+                if (!isLiveHandle("changeWithoutMerge")) {
+                    return;
+                }
+
                 if (deviceId == null) {
                     L.e("[DeviceId] changeDeviceIdWithoutMerge, provided device ID value was 'null'. Request will be ignored");
                     return;
@@ -406,6 +410,10 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         public void changeWithMerge(@Nullable String deviceId) {
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithMerge'");
+
+                if (!isLiveHandle("changeWithMerge")) {
+                    return;
+                }
 
                 if (deviceId == null) {
                     L.e("[DeviceId] changeDeviceIdWithMerge, provided device ID value was 'null'. Request will be ignored");
@@ -439,6 +447,10 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'setID'");
 
+                if (!isLiveHandle("setID")) {
+                    return;
+                }
+
                 setIDInternal(newDeviceID);
             }
         }
@@ -463,8 +475,27 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.i("[DeviceId] Calling 'enableTemporaryIdMode'");
 
+                if (!isLiveHandle("enableTemporaryIdMode")) {
+                    return;
+                }
+
                 changeDeviceIdWithoutMergeInternal(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
             }
+        }
+
+        /**
+         * A handle kept from before its instance was stopped or halted reaches a module that is torn down: it could
+         * still write a new ID into the store while the request that announces it is dropped. Such a call is refused.
+         *
+         * @param call the public call being checked, for the log
+         * @return true when this handle's module still serves a running instance
+         */
+        private boolean isLiveHandle(@NonNull String call) {
+            if (_cly.moduleDeviceId != ModuleDeviceId.this) {
+                L.e("[DeviceId] " + call + ", this handle belongs to an instance that was stopped or halted since, the call is ignored. Use the instance's deviceId() again.");
+                return false;
+            }
+            return true;
         }
     }
 }

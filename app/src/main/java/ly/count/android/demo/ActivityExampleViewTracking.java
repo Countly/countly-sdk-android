@@ -17,7 +17,7 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
     }
 
     public void onClickRecordViewA(View v) {
-        Countly.sharedInstance().views().recordView("View A", null);
+        Countly.sharedInstance().views().startAutoStoppedView("View A", null);
     }
 
     public void onClickRecordViewWithSegmentationA(View v) {
@@ -27,11 +27,11 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
         viewSegmentation.put("Moons", 1.8d);
         viewSegmentation.put("Moose", "Deer");
 
-        Countly.sharedInstance().views().recordView("View A", viewSegmentation);
+        Countly.sharedInstance().views().startAutoStoppedView("View A", viewSegmentation);
     }
 
     public void onClickRecordViewB(View v) {
-        Countly.sharedInstance().views().recordView("View B", null);
+        Countly.sharedInstance().views().startAutoStoppedView("View B", null);
     }
 
     public void onClickRecordViewWithSegmentationB(View v) {
@@ -41,11 +41,11 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
         viewSegmentation.put("Sun", 4.33d);
         viewSegmentation.put("Moose", "Brownie");
 
-        Countly.sharedInstance().views().recordView("View B", viewSegmentation);
+        Countly.sharedInstance().views().startAutoStoppedView("View B", viewSegmentation);
     }
 
     public void onClickRecordViewC(View v) {
-        Countly.sharedInstance().views().recordView("View C", null);
+        Countly.sharedInstance().views().startAutoStoppedView("View C", null);
     }
 
     public void onClickRecordViewWithSegmentationC(View v) {
@@ -55,7 +55,7 @@ public class ActivityExampleViewTracking extends AppCompatActivity {
         viewSegmentation.put("Jupiter", 9.98d);
         viewSegmentation.put("Moose", "Greenie");
 
-        Countly.sharedInstance().views().recordView("View C", viewSegmentation);
+        Countly.sharedInstance().views().startAutoStoppedView("View C", viewSegmentation);
     }
 
     public void onClickMiscTest(View v) {

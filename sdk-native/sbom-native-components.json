@@ -1,7 +1,11 @@
 {
   "checks": [
     { "kind": "gitlink", "path": "sdk-native/src/cpp_precompilation/breakpad", "expect": "1c954c096c9be31e03615cb7de1a392a93145a4c" },
-    { "kind": "blob-sha256", "path": "sdk-native/src/cpp_precompilation/lss/linux_syscall_support.h", "expect": "3becc310bb7f127fef9c970dc3d88e44cf656cf793292d9fcb00129bbd89b4d3" }
+    { "kind": "blob-sha256", "path": "sdk-native/src/cpp_precompilation/lss/linux_syscall_support.h", "expect": "3becc310bb7f127fef9c970dc3d88e44cf656cf793292d9fcb00129bbd89b4d3" },
+    { "kind": "blob-sha256", "path": "sdk-native/libs/arm64-v8a/libc++_shared.so", "expect": "430f7cde7c1a88042bb9e39ae1c1f4b9f5819f3bd95acd1453d2e02c63ba1870" },
+    { "kind": "blob-sha256", "path": "sdk-native/libs/armeabi-v7a/libc++_shared.so", "expect": "fa05819d64cba540d2c1c777195d5b9d7c9cbccff84e2801de11f36a257cedf9" },
+    { "kind": "blob-sha256", "path": "sdk-native/libs/x86/libc++_shared.so", "expect": "71cc7d1cf2577f1b883c25d79cce5b297a532c2c0a4fdfac4fedd7c2891797d9" },
+    { "kind": "blob-sha256", "path": "sdk-native/libs/x86_64/libc++_shared.so", "expect": "e332e97760709c9dd7e02af3a8f6b366a98b0d4ccaf2c5efdfcfa3419cf945d2" }
   ],
   "components": [
     {
@@ -32,6 +36,22 @@
       "hashes": [{ "alg": "SHA-256", "content": "3becc310bb7f127fef9c970dc3d88e44cf656cf793292d9fcb00129bbd89b4d3" }],
       "licenses": [{ "license": { "id": "BSD-3-Clause" } }],
       "externalReferences": [{ "type": "vcs", "url": "https://chromium.googlesource.com/linux-syscall-support" }]
+    },
+    {
+      "type": "library",
+      "bom-ref": "android-ndk-libcxx-shared",
+      "group": "llvm",
+      "name": "libc++_shared",
+      "version": "ndk-r28c",
+      "description": "The LLVM C++ runtime from the Android NDK, shipped next to libcountly_native.so in each ABI",
+      "licenses": [{ "expression": "Apache-2.0 WITH LLVM-exception" }],
+      "properties": [
+        { "name": "sha256:arm64-v8a", "value": "430f7cde7c1a88042bb9e39ae1c1f4b9f5819f3bd95acd1453d2e02c63ba1870" },
+        { "name": "sha256:armeabi-v7a", "value": "fa05819d64cba540d2c1c777195d5b9d7c9cbccff84e2801de11f36a257cedf9" },
+        { "name": "sha256:x86", "value": "71cc7d1cf2577f1b883c25d79cce5b297a532c2c0a4fdfac4fedd7c2891797d9" },
+        { "name": "sha256:x86_64", "value": "e332e97760709c9dd7e02af3a8f6b366a98b0d4ccaf2c5efdfcfa3419cf945d2" }
+      ],
+      "externalReferences": [{ "type": "website", "url": "https://developer.android.com/ndk/guides/cpp-support" }]
     }
   ],
   "tools": [{ "type": "application", "name": "android-ndk", "version": "28.2.13676358" }]

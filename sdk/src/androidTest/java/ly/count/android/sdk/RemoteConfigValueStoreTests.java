@@ -67,8 +67,6 @@ public class RemoteConfigValueStoreTests {
         Assert.assertNotNull(rcvs.values);
         Assert.assertEquals(2, rcvs.values.length());
 
-        Assert.assertEquals(123, rcvs.getValueLegacy("a"));
-        Assert.assertEquals("fg", rcvs.getValueLegacy("b"));
         Assert.assertEquals(123, rcvs.getValue("a").value);
         Assert.assertEquals("fg", rcvs.getValue("b").value);
         Assert.assertFalse(rcvs.getValue("a").isCurrentUsersData);
@@ -94,12 +92,12 @@ public class RemoteConfigValueStoreTests {
         //validate values while using "get"
         Assert.assertEquals(5, rcvs.values.length());
 
-        Assert.assertEquals(123, rcvs.getValueLegacy("321"));
-        Assert.assertEquals("\uD83D\uDE01", rcvs.getValueLegacy("\uD83D\uDE00"));
-        Assert.assertEquals(6.5, rcvs.getValueLegacy("d"));
+        Assert.assertEquals(123, rcvs.getValue("321").value);
+        Assert.assertEquals("\uD83D\uDE01", rcvs.getValue("\uD83D\uDE00").value);
+        Assert.assertEquals(6.5, rcvs.getValue("d").value);
 
-        Object v1 = rcvs.getValueLegacy("c");
-        Object v2 = rcvs.getValueLegacy("e");
+        Object v1 = rcvs.getValue("c").value;
+        Object v2 = rcvs.getValue("e").value;
 
         JSONArray jArr = (JSONArray) v1;
         Assert.assertEquals(4, jArr.length());
@@ -114,16 +112,16 @@ public class RemoteConfigValueStoreTests {
         Assert.assertEquals("op", jObj.get("w"));
 
         //validate that all of the values are the same when returned with getAllValues
-        Map<String, Object> allVals = rcvs.getAllValuesLegacy();
+        Map<String, RCData> allVals = rcvs.getAllValues();
 
         Assert.assertEquals(5, allVals.size());
 
-        Assert.assertEquals(123, allVals.get("321"));
-        Assert.assertEquals("\uD83D\uDE01", allVals.get("\uD83D\uDE00"));
-        Assert.assertEquals(6.5, allVals.get("d"));
+        Assert.assertEquals(123, allVals.get("321").value);
+        Assert.assertEquals("\uD83D\uDE01", allVals.get("\uD83D\uDE00").value);
+        Assert.assertEquals(6.5, allVals.get("d").value);
 
-        Object v3 = allVals.get("c");
-        Object v4 = allVals.get("e");
+        Object v3 = allVals.get("c").value;
+        Object v4 = allVals.get("e").value;
 
         JSONArray jArr2 = (JSONArray) v3;
         Assert.assertEquals(4, jArr2.length());

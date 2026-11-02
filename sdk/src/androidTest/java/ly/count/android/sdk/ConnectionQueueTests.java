@@ -544,4 +544,33 @@ public class ConnectionQueueTests {
         Assert.assertFalse(feedbackRequest.contains("th="));
         Assert.assertFalse(contentRequest.contains("th="));
     }
+
+    /**
+     * A queue that takes over a storage namespace stops the processor an earlier queue may still be sending it with,
+     * and only that one: another namespace's processor and its own keep going. Until then a stopped instance's
+     * processor sends what its teardown queued.
+     */
+    @Test
+    public void claimStorage_stopsOnlyTheProcessorOfTheQueueItTakesOverFrom() {
+        ConnectionQueue stopped = new ConnectionQueue();
+        ConnectionQueue successor = new ConnectionQueue();
+        ConnectionQueue otherInstance = new ConnectionQueue();
+        try {
+            stopped.claimStorage("claimTest");
+            otherInstance.claimStorage("claimTestOther");
+            stopped.shutdownExecutors();
+            Assert.assertFalse("a teardown alone lets the processor finish the queue", stopped.processorStop_.get());
+
+            successor.claimStorage("claimTest");
+            Assert.assertTrue(stopped.processorStop_.get());
+            Assert.assertFalse(successor.processorStop_.get());
+            Assert.assertFalse(otherInstance.processorStop_.get());
+
+            successor.claimStorage("claimTest");
+            Assert.assertFalse("claiming again must not stop the claimer itself", successor.processorStop_.get());
+        } finally {
+            successor.shutdownExecutors();
+            otherInstance.shutdownExecutors();
+        }
+    }
 }

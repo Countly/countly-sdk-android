@@ -144,6 +144,15 @@ class ServerConfigBuilder {
         return this;
     }
 
+    /**
+     * @param enabled whether the request queue backs off from a slow server
+     * @return this builder
+     */
+    ServerConfigBuilder backoffMechanism(boolean enabled) {
+        config.put(ModuleConfiguration.keyRBackoffMechanism, enabled);
+        return this;
+    }
+
     ServerConfigBuilder serverConfigUpdateInterval(int interval) {
         config.put(keyRServerConfigUpdateInterval, interval);
         return this;

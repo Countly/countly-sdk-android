@@ -204,6 +204,125 @@ public class PushNotificationDisplayTests {
     }
 
     /**
+     * A notification waits for its images only as long as the budget allows, then posts with what has arrived, once.
+     */
+    @Test
+    public void slowMedia_notificationPostedWithoutItOnceTheBudgetRunsOut() {
+        int previousBudget = CountlyPush.MEDIA_TOTAL_BUDGET_MS;
+        CountlyPush.MEDIA_TOTAL_BUDGET_MS = 1_000;
+        try {
+            server.enqueue(pngResponse(400, 200).setHeadersDelay(3, TimeUnit.SECONDS));
+            Map<String, String> data = message("id-1", "first", null);
+            data.put("c.m", server.url("/slow.png").toString());
+            long start = SystemClock.uptimeMillis();
+            display(data);
+
+            Notification shown = waitForNotifications(1).get(0).getNotification();
+            Assert.assertTrue("posted when the budget ran out, not when the download ended", SystemClock.uptimeMillis() - start < 2_500);
+            Assert.assertFalse(shown.extras.containsKey(Notification.EXTRA_PICTURE));
+
+            SystemClock.sleep(3_000);
+            List<StatusBarNotification> later = activeNotifications();
+            Assert.assertEquals(1, later.size());
+            Assert.assertFalse(later.get(0).getNotification().extras.containsKey(Notification.EXTRA_PICTURE));
+        } finally {
+            CountlyPush.MEDIA_TOTAL_BUDGET_MS = previousBudget;
+        }
+    }
+
+    /**
+     * An image larger than the download cap is left out without another attempt, and the notification is still shown.
+     */
+    @Test
+    public void oversizedMedia_leftOutWithoutRetrying() {
+        int previousCap = CountlyPush.MEDIA_MAX_BYTES;
+        CountlyPush.MEDIA_MAX_BYTES = 64;
+        try {
+            server.enqueue(pngResponse(400, 200));
+            server.enqueue(pngResponse(400, 200));
+            Map<String, String> data = message("id-1", "first", null);
+            data.put("c.m", server.url("/big.png").toString());
+            display(data);
+
+            Notification shown = waitForNotifications(1).get(0).getNotification();
+            Assert.assertFalse(shown.extras.containsKey(Notification.EXTRA_PICTURE));
+            Assert.assertEquals(1, server.getRequestCount());
+        } finally {
+            CountlyPush.MEDIA_MAX_BYTES = previousCap;
+        }
+    }
+
+    /**
+     * A large image comes out with its longer side exactly at the target, keeping its aspect ratio, never sampled below
+     * it; an image just above the target is scaled rather than halved, one below it keeps its own size, and data that
+     * is not an image gives null.
+     */
+    @Test
+    public void decodeSampled_fitsTheLongerSide() {
+        Bitmap large = CountlyPush.decodeSampled(png(2400, 600), 1024);
+        Assert.assertEquals(1024, large.getWidth());
+        Assert.assertEquals(256, large.getHeight());
+
+        Bitmap justAbove = CountlyPush.decodeSampled(png(300, 300), CountlyPush.LARGE_ICON_MAX_SIZE);
+        Assert.assertEquals(CountlyPush.LARGE_ICON_MAX_SIZE, justAbove.getWidth());
+        Assert.assertEquals(CountlyPush.LARGE_ICON_MAX_SIZE, justAbove.getHeight());
+
+        Bitmap small = CountlyPush.decodeSampled(png(300, 200), 1024);
+        Assert.assertEquals(300, small.getWidth());
+        Assert.assertEquals(200, small.getHeight());
+
+        Assert.assertNull(CountlyPush.decodeSampled(new byte[] { 1, 2, 3 }, 1024));
+    }
+
+    /**
+     * A message whose images take longer is posted after a newer message with the same collapse key, and must not
+     * replace the newer one.
+     */
+    @Test
+    public void sameCollapseKey_olderMessagePostedLateDoesNotReplaceTheNewer() {
+        int previousBudget = CountlyPush.MEDIA_TOTAL_BUDGET_MS;
+        CountlyPush.MEDIA_TOTAL_BUDGET_MS = 1_000;
+        try {
+            server.enqueue(pngResponse(400, 200).setHeadersDelay(3, TimeUnit.SECONDS));
+            Map<String, String> older = message("id-1", "first", "order-42");
+            older.put("c.m", server.url("/slow.png").toString());
+            display(older);
+            display(message("id-2", "second", "order-42"));
+
+            waitForNotifications(1);
+            SystemClock.sleep(2_000);
+            List<StatusBarNotification> shown = activeNotifications();
+            Assert.assertEquals(1, shown.size());
+            Assert.assertEquals("second", shown.get(0).getNotification().extras.getString(Notification.EXTRA_TITLE));
+        } finally {
+            CountlyPush.MEDIA_TOTAL_BUDGET_MS = previousBudget;
+        }
+    }
+
+    /**
+     * An action button tap removes the notification it belongs to, addressed the way it was posted: under its collapse
+     * key, or under its message ID.
+     */
+    @Test
+    public void cancelNotification_removesThePostedNotification() {
+        Map<String, String> collapsed = message("id-1", "first", "order-42");
+        Map<String, String> plain = message("id-2", "second", null);
+        display(collapsed);
+        display(plain);
+        waitForNotifications(2);
+
+        CountlyPush.cancelNotification(manager, CountlyPush.decodeMessage(collapsed));
+        SystemClock.sleep(500);
+        List<StatusBarNotification> shown = activeNotifications();
+        Assert.assertEquals(1, shown.size());
+        Assert.assertEquals("second", shown.get(0).getNotification().extras.getString(Notification.EXTRA_TITLE));
+
+        CountlyPush.cancelNotification(manager, CountlyPush.decodeMessage(plain));
+        SystemClock.sleep(500);
+        Assert.assertEquals(0, activeNotifications().size());
+    }
+
+    /**
      * A large icon bigger than the notification needs is scaled down, keeping its aspect ratio.
      */
     @Test
@@ -245,11 +364,20 @@ public class PushNotificationDisplayTests {
     }
 
     private static MockResponse pngResponse(int width, int height) {
+        return new MockResponse().setResponseCode(200).setHeader("Content-Type", "image/png").setBody(new Buffer().write(png(width, height)));
+    }
+
+    /**
+     * @param width width of the image
+     * @param height height of the image
+     * @return a solid PNG of that size
+     */
+    private static byte[] png(int width, int height) {
         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         bitmap.eraseColor(Color.BLUE);
         ByteArrayOutputStream bytes = new ByteArrayOutputStream();
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, bytes);
-        return new MockResponse().setResponseCode(200).setHeader("Content-Type", "image/png").setBody(new Buffer().write(bytes.toByteArray()));
+        return bytes.toByteArray();
     }
 
     /**

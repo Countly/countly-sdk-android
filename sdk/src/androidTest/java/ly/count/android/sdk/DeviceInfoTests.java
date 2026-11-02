@@ -75,10 +75,11 @@ public class DeviceInfoTests {
 
     @Test
     public void testGetResolution() {
-        final DisplayMetrics metrics = new DisplayMetrics();
-        ((WindowManager) TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(metrics);
-        final String expected = metrics.widthPixels + "x" + metrics.heightPixels;
-        assertEquals(expected, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
+        //the SDK's own metrics leave the display cutout out from API 30, so getRealMetrics can differ
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(TestUtils.getContext());
+        Assert.assertTrue(metrics.widthPixels > 0);
+        Assert.assertTrue(metrics.heightPixels > 0);
+        assertEquals(metrics.widthPixels + "x" + metrics.heightPixels, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
     }
 
     @Test

@@ -5,6 +5,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,6 +34,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     final static String VIEW_EVENT_KEY = "[CLY]_view";
 
     Class[] autoTrackingActivityExceptions = null;//excluded activities from automatic view tracking
+
+    WeakReference<Activity> automaticViewActivity = null;//the activity the last automatic view was started for
 
     Map<String, Object> automaticViewSegmentation = new HashMap<>();//automatic view segmentation
 
@@ -589,22 +592,41 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
     void startStoppedViews() {
         L.d("[ModuleViews] startStoppedViews, app is coming back to the foreground, starting views that were stopped");
 
+        //auto-stopped views come back last: a regular view started after one would close it at once
+        List<ViewData> autoStoppedViews = new ArrayList<>(1);
         Iterator<Map.Entry<String, ViewData>> iterator = viewDataMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, ViewData> value = iterator.next();
-            ViewData vd = value.getValue();
-            if (vd.willStartAgain) {
-                //if the view is auto-stopped, start it again and remove from the cache
-                iterator.remove();
-                String restartedViewID = startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
-
-                if (restartedViewID == null) {
-                    //the view could not be reopened, so no ID the host holds for it points anywhere any more
-                    forgetRestartedView(vd.viewID);
-                } else {
-                    rememberRestartedView(vd.viewID, restartedViewID);
-                }
+            ViewData vd = iterator.next().getValue();
+            if (!vd.willStartAgain) {
+                continue;
             }
+            iterator.remove();
+            if (vd.isAutoStoppedView) {
+                autoStoppedViews.add(vd);
+            } else {
+                restartStoppedView(vd);
+            }
+        }
+
+        for (ViewData vd : autoStoppedViews) {
+            restartStoppedView(vd);
+        }
+    }
+
+    /**
+     * Starts a view that was stopped on background again, and keeps every ID the host was given for it resolving
+     * to the ID it is open under now.
+     *
+     * @param vd ViewData - the view that was stopped on background
+     */
+    private void restartStoppedView(@NonNull ViewData vd) {
+        String restartedViewID = startViewInternal(vd.viewName, vd.viewSegmentation, vd.isAutoStoppedView);
+
+        if (restartedViewID == null) {
+            //the view could not be reopened, so no ID the host holds for it points anywhere any more
+            forgetRestartedView(vd.viewID);
+        } else {
+            rememberRestartedView(vd.viewID, restartedViewID);
         }
     }
 
@@ -644,23 +666,14 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     @Override
     void onActivityStarted(Activity activity, int updatedActivityCount) {
+        //stopped views come back first: a regular view restarted after the activity's view would close it at once
+        if (updatedActivityCount == 1 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
+            startStoppedViews();
+        }
+
         //automatic view tracking, resolved through the SBS precedence chain (server can override the local setting)
         if (configProvider.getAutomaticViewTrackingEnabled()) {
-            if (!isActivityInExceptionList(activity)) {
-                String usedActivityName = "NULL ACTIVITY";
-
-                if (activity != null) {
-                    if (automaticTrackingShouldUseShortName) {
-                        usedActivityName = activity.getClass().getSimpleName();
-                    } else {
-                        usedActivityName = activity.getClass().getName();
-                    }
-                }
-
-                startViewInternal(usedActivityName, automaticViewSegmentation, true);
-            } else {
-                L.d("[ModuleViews] [onStart] Ignoring activity because it's in the exception list");
-            }
+            startAutomaticView(activity, "[onStart]");
         }
 
         //orientation tracking
@@ -670,10 +683,47 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 updateOrientation(orient);
             }
         }
+    }
 
-        if (updatedActivityCount == 1 && (configProvider.getAutomaticViewTrackingEnabled() || restartManualViews)) {
-            startStoppedViews();
+    /**
+     * Starts the automatic view of an activity that resumes while the last automatic view belongs to another one.
+     * An activity that was not stopped, as below a translucent activity or on a quick return, resumes without
+     * starting again.
+     *
+     * @param activity the activity that resumed
+     */
+    @Override
+    void callbackOnActivityResumed(Activity activity) {
+        if (activity != null && configProvider.getAutomaticViewTrackingEnabled() && (automaticViewActivity == null || automaticViewActivity.get() != activity)) {
+            startAutomaticView(activity, "[onResume]");
         }
+    }
+
+    /**
+     * Starts the automatic view of an activity that came into view, unless the activity is excluded from automatic
+     * view tracking
+     *
+     * @param activity the activity that came into view
+     * @param source the lifecycle callback it came into view with, for the log
+     */
+    private void startAutomaticView(@Nullable Activity activity, @NonNull String source) {
+        if (isActivityInExceptionList(activity)) {
+            L.d("[ModuleViews] " + source + " Ignoring activity because it's in the exception list");
+            return;
+        }
+
+        String usedActivityName = "NULL ACTIVITY";
+
+        if (activity != null) {
+            if (automaticTrackingShouldUseShortName) {
+                usedActivityName = activity.getClass().getSimpleName();
+            } else {
+                usedActivityName = activity.getClass().getName();
+            }
+        }
+
+        automaticViewActivity = activity == null ? null : new WeakReference<>(activity);
+        startViewInternal(usedActivityName, automaticViewSegmentation, true);
     }
 
     /**
@@ -716,64 +766,10 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             automaticViewSegmentation = null;
         }
         autoTrackingActivityExceptions = null;
+        automaticViewActivity = null;
     }
 
     public class Views {
-        /**
-         * Check state of automatic view tracking
-         *
-         * @return boolean - true if enabled, false if disabled
-         * @deprecated this call will be removed. There is no replacement
-         */
-        public boolean isAutomaticViewTrackingEnabled() {
-            synchronized (_cly) {
-                L.i("[Views] Calling isAutomaticViewTrackingEnabled");
-
-                return autoViewTracker;
-            }
-        }
-
-        /**
-         * Record a view manually, without automatic tracking
-         * or tracks a view that is not automatically tracked
-         * like a fragment, Message box or a transparent Activity
-         *
-         * @param viewName String - name of the view
-         * @return Returns link to Countly for call chaining
-         * @deprecated Use "Countly.sharedInstance().views().startAutoStoppedView(...)" in place of this
-         */
-        public Countly recordView(@Nullable String viewName) {
-            synchronized (_cly) {
-                // call the general function that has two parameters
-                return recordView(viewName, null);
-            }
-        }
-
-        /**
-         * Record a view manually, without automatic tracking
-         * or tracks a view that is not automatically tracked
-         * like a fragment, Message box or a transparent Activity
-         * with segmentation. (This is the main function that is used)
-         *
-         * @param viewName String - name of the view
-         * @param viewSegmentation Map<String, Object> - segmentation that will be added to the view, set 'null' if none should be added
-         * @deprecated Use "Countly.sharedInstance().views().startAutoStoppedView(...)" in place of this
-         */
-        public Countly recordView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
-            synchronized (_cly) {
-                L.i("[Views] Calling recordView [" + viewName + "]");
-
-                if (autoViewTracker) {
-                    L.e("[Views] recordView, manual view call will be ignored since automatic tracking is enabled.");
-                    return _cly;
-                }
-
-                startViewInternal(viewName, viewSegmentation, true);
-
-                return _cly;
-            }
-        }
-
         /**
          * Record a view manually, without automatic tracking
          * or tracks a view that is not automatically tracked

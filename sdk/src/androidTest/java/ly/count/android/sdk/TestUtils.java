@@ -137,21 +137,26 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig(String deviceId) {
-        CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
+        return withCrashReporting(new CountlyConfig(getApplication(), commonAppKey, commonURL)
             .setDeviceId(deviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
-
-        return cc;
+            .setLoggingEnabled(true));
     }
 
     public static CountlyConfig createBaseConfig(Context context) {
-        CountlyConfig cc = new CountlyConfig(context, commonAppKey, commonURL)
+        return withCrashReporting(new CountlyConfig(context, commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+            .setLoggingEnabled(true));
+    }
 
-        return cc;
+    /**
+     * Enables unhandled crash reporting on a config, so that a config can still be built in one expression.
+     *
+     * @param config the config to enable it on
+     * @return the same config
+     */
+    public static CountlyConfig withCrashReporting(CountlyConfig config) {
+        config.crashes.enableCrashReporting();
+        return config;
     }
 
     public static String[] createStringArray(int count) {

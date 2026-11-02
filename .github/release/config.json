@@ -5,7 +5,8 @@
   "publishedModules": ":sdk,:sdk-native,:upload-plugin",
   "requiredChecks": ["Build and Test the SDK", "OSV scan (all modules)", "Analyze (java)", "Analyze (cpp)"],
   "consumerPairs": [
-    { "name": "AGP 7.4.2 on Gradle 7.5", "gradle": "gradle", "agp": "7.4.2", "compileSdk": "24", "buildTools": "30.0.3" },
+    { "name": "AGP 7.4.2 on Gradle 7.5", "gradle": "{env:GRADLE_7}", "agp": "7.4.2", "compileSdk": "24", "buildTools": "30.0.3" },
+    { "name": "AGP 8.7.3 on Gradle 8.9", "gradle": "{env:GRADLE_8}", "agp": "8.7.3", "compileSdk": "35", "buildTools": "35.0.0" },
     { "name": "the checkout's AGP on the wrapper's Gradle", "gradle": "{gradlew}", "agp": "{project}", "compileSdk": "37", "buildTools": "37.0.0" }
   ],
   "tagRules": [

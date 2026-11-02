@@ -246,18 +246,6 @@ public class Utils {
     }
 
     /**
-     * Returns true if the version you are checking is at or below the build version
-     *
-     * @param version version to check
-     * @return true if the version you are checking is at or below the build version
-     * @deprecated This method is deprecated and will be removed in the future
-     */
-    @androidx.annotation.ChecksSdkIntAtLeast(parameter = 0)
-    public static boolean API(int version) {
-        return Build.VERSION.SDK_INT >= version;
-    }
-
-    /**
      * Determine whether the host app is built as a debuggable build.
      * A non-debuggable build is what a production/release flavor produces.
      *

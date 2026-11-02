@@ -1,6 +1,10 @@
 package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import java.net.URL;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -66,4 +70,34 @@ public class UtilsNetworkingTest {
             Assert.assertEquals(UtilsNetworking.sha256Hash(list_a[a], new ModuleLog()), list_b[a]);
         }
     }
+
+    /**
+     * A resource on the default instance's server, such as a push image, goes through the SSL socket factory that
+     * instance's requests use, so a server trusted only through a custom factory or pinning serves it as well. A resource
+     * on another host gets a plain connection, and so does every resource while the instance is not running.
+     */
+    @Test
+    public void openResourceConnection_usesTheInstanceFactoryForItsOwnHostOnly() throws Exception {
+        SSLContext context = SSLContext.getInstance("TLS");
+        context.init(null, null, null);
+        SSLSocketFactory customFactory = context.getSocketFactory();
+        Countly.sharedInstance().halt();
+        try {
+            HttpsURLConnection notRunning = (HttpsURLConnection) UtilsNetworking.openResourceConnection(new URL("https://test.count.ly/image.png"));
+            Assert.assertNotSame(customFactory, notRunning.getSSLSocketFactory());
+
+            Countly.sharedInstance().init(TestUtils.createBaseConfig().setCustomSSLSocketFactory(customFactory));
+
+            HttpsURLConnection ownHost = (HttpsURLConnection) UtilsNetworking.openResourceConnection(new URL("https://TEST.count.ly/image.png"));
+            Assert.assertSame(customFactory, ownHost.getSSLSocketFactory());
+
+            HttpsURLConnection otherHost = (HttpsURLConnection) UtilsNetworking.openResourceConnection(new URL("https://cdn.example.com/image.png"));
+            Assert.assertNotSame(customFactory, otherHost.getSSLSocketFactory());
+
+            Assert.assertFalse(UtilsNetworking.openResourceConnection(new URL("http://test.count.ly/image.png")) instanceof HttpsURLConnection);
+        } finally {
+            Countly.sharedInstance().halt();
+        }
+    }
+
 }

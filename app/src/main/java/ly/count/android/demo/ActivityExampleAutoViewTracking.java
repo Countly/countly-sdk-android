@@ -21,11 +21,6 @@ public class ActivityExampleAutoViewTracking extends AppCompatActivity {
         setContentView(R.layout.activity_example_auto_views);
     }
 
-    public void onClickRecordView(View v) {
-        Countly.sharedInstance().views().recordView("recordView");
-        Toast.makeText(getApplicationContext(), "Clicked recordView", Toast.LENGTH_SHORT).show();
-    }
-
     public void onClickStartAutoStoppedView(View v) {
         viewID = Countly.sharedInstance().views().startAutoStoppedView("startAutoStoppedView");
         Toast.makeText(getApplicationContext(), "Clicked startAutoStoppedView", Toast.LENGTH_SHORT).show();

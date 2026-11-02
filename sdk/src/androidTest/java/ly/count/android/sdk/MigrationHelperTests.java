@@ -561,6 +561,33 @@ public class MigrationHelperTests {
         Assert.assertEquals(0, rcvs.values.length());
     }
 
+    /**
+     * A store already in the new structure, as a remote config response written after a halt leaves it, is not wrapped
+     * a second time, while a store with a single plain value is still the old structure and gets wrapped whole.
+     */
+    @Test
+    public void performMigration1To2_5() throws JSONException {
+        MigrationHelper mh = new MigrationHelper(cs, mockLog, getApplicationContext());
+
+        cs.setRemoteConfigValues("{\"a\":{\"v\":123,\"c\":1},\"b\":{\"v\":\"fg\",\"c\":0}}");
+        mh.performMigration1To2(new HashMap<>());
+        RemoteConfigValueStore rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false, new ModuleLog());
+
+        Assert.assertEquals(2, rcvs.values.length());
+        Assert.assertEquals(123, rcvs.getValue("a").value);
+        Assert.assertTrue(rcvs.getValue("a").isCurrentUsersData);
+        Assert.assertEquals("fg", rcvs.getValue("b").value);
+        Assert.assertFalse(rcvs.getValue("b").isCurrentUsersData);
+
+        cs.setRemoteConfigValues("{\"a\":{\"v\":123,\"c\":1},\"b\":\"plain\"}");
+        mh.performMigration1To2(new HashMap<>());
+        rcvs = RemoteConfigValueStore.dataFromString(cs.getRemoteConfigValues(), false, new ModuleLog());
+
+        Assert.assertEquals(2, rcvs.values.length());
+        Assert.assertEquals(123, ((JSONObject) rcvs.getValue("a").value).get("v"));
+        Assert.assertEquals("plain", rcvs.getValue("b").value);
+    }
+
     @Test
     public void performMigration2To3_1() {
         SharedPreferences sp = CountlyStore.createPreferencesPush(getApplicationContext());

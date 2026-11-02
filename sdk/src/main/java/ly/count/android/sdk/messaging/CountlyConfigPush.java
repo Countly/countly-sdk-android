@@ -18,15 +18,6 @@ public class CountlyConfigPush {
 
     CountlyNotificationButtonURLHandler notificationButtonURLHandler;
 
-    /**
-     * @param application
-     * @param mode
-     * @deprecated use the other constructor
-     */
-    public CountlyConfigPush(final Application application, Countly.CountlyMessagingMode mode) {
-        this.application = application;
-    }
-
     public CountlyConfigPush(final Application application) {
         this.application = application;
     }

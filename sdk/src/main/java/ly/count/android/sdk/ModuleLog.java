@@ -4,6 +4,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -101,6 +103,10 @@ public class ModuleLog {
 
     @NonNull private final LogLineList gatheredLines = new LogLineList();
     int droppedLogLineCount = 0;
+    //lines dropped while undecided, per level in the order of logGatheringAllLevels; see trimBufferLocked
+    private final int[] undecidedDropsPerLevel = new int[ModuleConfiguration.logGatheringAllLevels.length()];
+    //the last batch of a gather that just stopped, taken under the lock and handed to the queue outside it
+    @Nullable private LogBatch pendingTailBatch = null;
 
     //lines whose consent was not given when they were logged, kept out of every batch until it is
     @NonNull private final LogLineList linesAwaitingConsent = new LogLineList();
@@ -118,6 +124,8 @@ public class ModuleLog {
     private final ThreadLocal<Boolean> uploadingLogBatch = new ThreadLocal<>();
 
     @Nullable private volatile ExecutorService logDeliveryExecutor = null;
+    //set while a delivery waits for the request queue to send the log batch it holds, see resumeDeliveryWhenQueueDrains
+    private final AtomicBoolean deliveryAwaitsQueueDrain = new AtomicBoolean(false);
     private volatile boolean sdkInitFinished = false;
 
     @Nullable private ConfigurationProvider configProvider = null;
@@ -297,6 +305,7 @@ public class ModuleLog {
 
         if (state != ModuleConfiguration.LogGatheringState.GATHERING) {
             shutdownLogDelivery();
+            uploadTailBatch();
             return;
         }
 
@@ -379,6 +388,7 @@ public class ModuleLog {
             logGatherId = null;
             logGatherLevels = ModuleConfiguration.logGatheringAllLevels;
             logGatherBatchSize = ModuleConfiguration.logGatheringDefaultBatchSize;
+            pendingTailBatch = null;
             clearBufferLocked();
         }
     }
@@ -597,7 +607,10 @@ public class ModuleLog {
 
             switch (newState) {
                 case NOT_GATHERING:
-                    //decided against gathering, so everything held speculatively goes
+                    //a stopped gather's held lines go out once under its id; lines held while undecided are dropped
+                    if (wasGathering && previousGatherId != null) {
+                        pendingTailBatch = takeAllLinesLocked(previousGatherId);
+                    }
                     clearBufferLocked();
                     break;
                 case GATHERING:
@@ -606,6 +619,7 @@ public class ModuleLog {
                         clearBufferLocked();
                     } else {
                         //adoption, or a levels/batch size change inside the same gather: what is held is this gather's
+                        adoptUndecidedDropsLocked(newLevels);
                         filterBufferLocked();
                         trimBufferLocked();
                     }
@@ -656,13 +670,45 @@ public class ModuleLog {
                 return;
             }
 
-            if (uploadLogBatch(requestQueue, includePartialBatch) && hasFullLogBatch()) {
+            //one batch waits in the queue at a time, so offline lines stay in the capped buffer instead of crowding it
+            if (requestQueue.queueContainsSdkLogs()) {
+                d("[ModuleLog] deliverLogBatches, a log batch is still waiting in the request queue, delivering the rest once it is sent");
+                resumeDeliveryWhenQueueDrains(requestQueue);
+                return;
+            }
+            //no batch is waiting, so a resume that was asked for and lost would only hold up the next one
+            deliveryAwaitsQueueDrain.set(false);
+
+            if (uploadLogBatch(requestQueue, includePartialBatch) && hasMoreToDeliver(includePartialBatch)) {
                 scheduleLogDelivery(includePartialBatch);
             }
         } catch (Exception ex) {
             e("[ModuleLog] deliverLogBatches, failed to upload the gathered log batch, " + ex);
         } finally {
             setOwnTransportWork(false);
+        }
+    }
+
+    /**
+     * Runs the delivery again once the request queue has sent everything it holds, the waiting log batch included, so a
+     * backlog keeps going out one batch at a time instead of one batch per timer tick. A partial batch may go out then
+     * too, since nothing else sends the remainder while the app is in the background. Only one such run waits at a time.
+     *
+     * @param requestQueue the queue holding the waiting batch
+     */
+    private void resumeDeliveryWhenQueueDrains(@NonNull final RequestQueueProvider requestQueue) {
+        if (!deliveryAwaitsQueueDrain.compareAndSet(false, true)) {
+            return;
+        }
+
+        requestQueue.registerInternalGlobalRequestCallbackAction(() -> {
+            deliveryAwaitsQueueDrain.set(false);
+            scheduleLogDelivery(true);
+        });
+
+        //the queue may have been sent between the check and the registration, and then only its next request would run it
+        if (!requestQueue.queueContainsSdkLogs() && deliveryAwaitsQueueDrain.compareAndSet(true, false)) {
+            scheduleLogDelivery(true);
         }
     }
 
@@ -770,6 +816,19 @@ public class ModuleLog {
         }
     }
 
+    /**
+     * @param includePartialBatch whether a batch smaller than the batch size may go, as for a flush
+     * @return true while a full batch is held, or any line at all when a partial batch may go
+     */
+    private boolean hasMoreToDeliver(final boolean includePartialBatch) {
+        if (!includePartialBatch) {
+            return hasFullLogBatch();
+        }
+        synchronized (logBufferLock) {
+            return isGatheringLogs() && gatheredLines.size() > 0;
+        }
+    }
+
     private void ensureLogDeliveryExecutor() {
         ExecutorService executor = logDeliveryExecutor;
         if (executor == null || executor.isShutdown()) {
@@ -789,9 +848,79 @@ public class ModuleLog {
         }
     }
 
-    /** Enforces both ceilings on the buffer by dropping the oldest lines and counting them into 'd'. */
+    /**
+     * Enforces both ceilings on the buffer by dropping the oldest lines. While gathering they count into 'd'. While still
+     * undecided every level is captured, so the drops are counted per level, and only the levels the adopted directive
+     * asks for are added to 'd' later.
+     */
     private void trimBufferLocked() {
-        droppedLogLineCount += gatheredLines.trim();
+        List<LogLine> dropped = gatheredLines.trim();
+        if (isGatheringLogs()) {
+            droppedLogLineCount += dropped.size();
+            return;
+        }
+
+        for (LogLine line : dropped) {
+            int levelIndex = ModuleConfiguration.logGatheringAllLevels.indexOf(line.level);
+            if (levelIndex >= 0) {
+                undecidedDropsPerLevel[levelIndex]++;
+            }
+        }
+    }
+
+    /**
+     * Adds the lines dropped while undecided to 'd', for the levels the gather asks for only.
+     *
+     * @param levels the levels of the adopted directive
+     */
+    private void adoptUndecidedDropsLocked(@NonNull final String levels) {
+        for (int i = 0; i < undecidedDropsPerLevel.length; i++) {
+            if (levels.indexOf(ModuleConfiguration.logGatheringAllLevels.charAt(i)) >= 0) {
+                droppedLogLineCount += undecidedDropsPerLevel[i];
+            }
+            undecidedDropsPerLevel[i] = 0;
+        }
+    }
+
+    /**
+     * Takes every held line as one batch of the given gather.
+     *
+     * @param gatherId the gather the lines belong to
+     * @return the batch, or null when nothing is held or it could not be serialised
+     */
+    @Nullable private LogBatch takeAllLinesLocked(@NonNull final String gatherId) {
+        if (gatheredLines.size() == 0) {
+            return null;
+        }
+        List<LogLine> lines = gatheredLines.first(gatheredLines.size());
+        String payload = buildLogBatchPayload(gatherId, droppedLogLineCount, lines);
+        return payload == null ? null : new LogBatch(gatherId, payload, lines, droppedLogLineCount);
+    }
+
+    /** Hands the last batch of a stopped gather to the request queue, once. The lines are gone if the queue refuses it. */
+    private void uploadTailBatch() {
+        final LogBatch tail;
+        synchronized (logBufferLock) {
+            tail = pendingTailBatch;
+            pendingTailBatch = null;
+        }
+
+        final RequestQueueProvider requestQueue = requestQueueProvider;
+        if (tail == null || requestQueue == null || !sdkInitFinished) {
+            return;
+        }
+
+        setOwnTransportWork(true);
+        try {
+            d("[ModuleLog] uploadTailBatch, uploading the last [" + tail.lines.size() + "] lines of the stopped gather");
+            if (!requestQueue.sendSdkLogs(tail.payload)) {
+                d("[ModuleLog] uploadTailBatch, the request queue refused the last batch, its lines are dropped");
+            }
+        } catch (Exception ex) {
+            e("[ModuleLog] uploadTailBatch, failed to upload the last batch, " + ex);
+        } finally {
+            setOwnTransportWork(false);
+        }
     }
 
     /** Drops the lines of unwanted levels from both lists. Not counted as dropped, they were never wanted. */
@@ -805,6 +934,7 @@ public class ModuleLog {
         gatheredLines.clear();
         linesAwaitingConsent.clear();
         droppedLogLineCount = 0;
+        Arrays.fill(undecidedDropsPerLevel, 0);
     }
 
     @Nullable private static String buildLogBatchPayload(@NonNull final String gatherId, final int dropped, @NonNull final List<LogLine> batch) {
@@ -946,12 +1076,16 @@ public class ModuleLog {
             return removed;
         }
 
-        /** @return how many of the oldest lines were dropped to bring the list within both ceilings */
-        int trim() {
-            int dropped = 0;
+        /** @return the oldest lines that were dropped to bring the list within both ceilings, oldest first */
+        @NonNull List<LogLine> trim() {
+            List<LogLine> dropped = Collections.emptyList();
             while (lines.size() > ModuleConfiguration.logGatheringMaxBufferedLines || (chars > gatheredCharCeiling && lines.size() > 1)) {
-                chars -= lines.remove(0).message.length();
-                dropped++;
+                if (dropped.isEmpty()) {
+                    dropped = new ArrayList<>();
+                }
+                LogLine line = lines.remove(0);
+                chars -= line.message.length();
+                dropped.add(line);
             }
             return dropped;
         }

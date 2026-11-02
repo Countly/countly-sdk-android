@@ -53,10 +53,7 @@ public class CountlyConfigTests {
             }
         };
 
-        RemoteConfigCallback rcc2 = new RemoteConfigCallback() {
-            @Override public void callback(String error) {
-
-            }
+        RCDownloadCallback rcc2 = (downloadResult, error, fullValueUpdate, downloadedValues) -> {
         };
 
         Map<String, String> hv = new HashMap<>();
@@ -65,12 +62,7 @@ public class CountlyConfigTests {
 
         String[] fn = { "ds dsd", "434f", "ngfhg" };
 
-        CrashFilterCallback callback = new CrashFilterCallback() {
-            @Override
-            public boolean filterCrash(String crash) {
-                return false;
-            }
-        };
+        GlobalCrashFilterCallback callback = crash -> false;
 
         Map<String, Object> vs = new HashMap<>();
         vs.put("ss", "fdf");
@@ -111,7 +103,6 @@ public class CountlyConfigTests {
         config.setContext(c);
         config.setAppKey(s[1]);
         config.setCountlyStore(cs);
-        config.checkForNativeCrashDumps(false);
         config.setDeviceId(s[2]);
         config.setStarRatingSessionLimit(1335);
         config.setStarRatingCallback(rc);
@@ -119,45 +110,44 @@ public class CountlyConfigTests {
         config.setStarRatingTextMessage(s[4]);
         config.setStarRatingTextTitle(s[5]);
         config.setLoggingEnabled(true);
-        config.enableCrashReporting();
-        config.setViewTracking(true);
-        config.setAutoTrackingUseShortName(true);
+        config.crashes.enableCrashReporting();
+        config.enableAutomaticViewTracking();
+        config.enableAutomaticViewShortNames();
         config.addCustomNetworkRequestHeaders(hv);
         config.setPushIntentAddMetadata(true);
-        config.setRemoteConfigAutomaticDownload(true, rcc2);
+        config.enableRemoteConfigAutomaticTriggers();
+        config.RemoteConfigRegisterGlobalCallback(rcc2);
         config.setRequiresConsent(true);
         config.setConsentEnabled(fn);
         config.setHttpPostForced(true);
         config.enableTemporaryDeviceIdMode();
         config.enableClearStoredDeviceId();
-        config.setCrashFilterCallback(callback);
+        config.crashes.setGlobalCrashFilterCallback(callback);
         config.setParameterTamperingProtectionSalt(s[6]);
-        config.setAutomaticViewSegmentation(vs);
-        config.setAutoTrackingExceptions(act);
+        config.setGlobalViewSegmentation(vs);
+        config.setAutomaticViewTrackingExclusions(act);
         config.setTrackOrientationChanges(false);
         config.setEventQueueSizeToSend(1337);
         config.enableManualSessionControl();
-        config.setRecordAllThreadsWithCrash();
+        config.crashes.enableRecordAllThreadsWithCrash();
         config.setDisableUpdateSessionRequests(true);
         config.setShouldIgnoreAppCrawlers(true);
         config.setAppCrawlerNames(appCrawlerNames);
         config.enableCertificatePinning(certificateCerts);
         config.enablePublicKeyPinning(publicKeyCerts);
         config.setCustomSSLSocketFactory(customSSLSocketFactory);
-        config.setEnableAttribution(true);
-        config.setCustomCrashSegment(crashSegments);
+        config.crashes.setCustomCrashSegmentation(crashSegments);
         config.setUpdateSessionTimerDelay(137);
         config.setIfStarRatingDialogIsCancellable(true);
         config.setIfStarRatingShownAutomatically(true);
         config.setStarRatingDisableAskingForEachAppVersion(true);
         config.setApplication(app);
-        config.setRecordAppStartTime(true);
+        config.apm.enableAppStartTimeTracking();
         config.setDisableLocation();
         config.setLocation("CC", "city", "loc", "ip");
         config.setMetricOverride(metricOverride);
-        config.setAppStartTimestampOverride(123L);
-        config.enableManualAppLoadedTrigger();
-        config.enableManualForegroundBackgroundTriggerAPM();
+        config.apm.setAppStartTimestampOverride(123L);
+        config.apm.enableManualAppLoadedTrigger();
         config.setLogListener(logCallback);
 
         Assert.assertEquals(s[0], config.serverURL);
@@ -178,13 +168,13 @@ public class CountlyConfigTests {
         Assert.assertEquals(hv, config.customNetworkRequestHeaders);
         Assert.assertTrue(config.pushIntentAddMetadata);
         Assert.assertTrue(config.enableRemoteConfigAutomaticDownloadTriggers);
-        Assert.assertEquals(rcc2, config.remoteConfigCallbackLegacy);
+        Assert.assertTrue(config.remoteConfigGlobalCallbackList.contains(rcc2));
         Assert.assertTrue(config.shouldRequireConsent);
         Assert.assertArrayEquals(fn, config.enabledFeatureNames);
         Assert.assertTrue(config.httpPostForced);
         Assert.assertTrue(config.temporaryDeviceIdEnabled);
         Assert.assertTrue(config.clearStoredDeviceId);
-        Assert.assertEquals(callback, config.crashFilterCallback);
+        Assert.assertEquals(callback, config.crashes.globalCrashFilterCallback);
         Assert.assertEquals(s[6], config.tamperingProtectionSalt);
         Assert.assertEquals(vs, config.globalViewSegmentation);
         Assert.assertArrayEquals(act, config.automaticViewTrackingExceptions);
@@ -213,7 +203,6 @@ public class CountlyConfigTests {
         Assert.assertEquals(metricOverride, config.metricOverride);
         Assert.assertEquals((Long) 123l, config.apm.appStartTimestampOverride);
         Assert.assertTrue(config.apm.appLoadedManualTrigger);
-        Assert.assertTrue(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertEquals(logCallback, config.providedLogCallback);
 
         config.setLocation("CC", "city", "loc", "ip");
@@ -229,7 +218,7 @@ public class CountlyConfigTests {
     @Test(expected = IllegalArgumentException.class)
     public void autoTrackingExceptionNull() {
         CountlyConfig config = new CountlyConfig();
-        config.setAutoTrackingExceptions(new Class[] { null });
+        config.setAutomaticViewTrackingExclusions(new Class[] { null });
     }
 
     /**
@@ -283,7 +272,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.customNetworkRequestHeaders);
         Assert.assertFalse(config.pushIntentAddMetadata);
         Assert.assertFalse(config.enableRemoteConfigAutomaticDownloadTriggers);
-        Assert.assertNull(config.remoteConfigCallbackLegacy);
+        Assert.assertTrue(config.remoteConfigGlobalCallbackList.isEmpty());
         Assert.assertFalse(config.shouldRequireConsent);
         Assert.assertNull(config.enabledFeatureNames);
         Assert.assertFalse(config.httpPostForced);
@@ -316,7 +305,6 @@ public class CountlyConfigTests {
         Assert.assertNull(config.metricOverride);
         Assert.assertNull(config.apm.appStartTimestampOverride);
         Assert.assertFalse(config.apm.appLoadedManualTrigger);
-        Assert.assertFalse(config.apm.manualForegroundBackgroundTrigger);
         Assert.assertNull(config.providedLogCallback);
     }
 }

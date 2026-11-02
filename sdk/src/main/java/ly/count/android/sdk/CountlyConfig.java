@@ -137,7 +137,6 @@ public class CountlyConfig {
     protected boolean enableAutoEnrollFlag = false;
 
     boolean enableRemoteConfigValueCaching = false;
-    protected RemoteConfigCallback remoteConfigCallbackLegacy = null;
 
     protected List<RCDownloadCallback> remoteConfigGlobalCallbackList = new ArrayList<>(2);
 
@@ -175,11 +174,6 @@ public class CountlyConfig {
     protected SSLSocketFactory customSSLSocketFactory = null;
 
     protected Integer sessionUpdateTimerDelay = null;
-
-    /**
-     * @deprecated This is deprecated, will be removed in the future
-     */
-    protected CrashFilterCallback crashFilterCallback;
 
     protected boolean starRatingDialogIsCancellable = false;
 
@@ -242,32 +236,6 @@ public class CountlyConfig {
      * BREAKING CHANGES WILL BE DONE WITHOUT WARNING
      */
     public PerformanceCounterCollector pcc;
-
-    /**
-     * Sets how many segmentation values can be recorded when recording an event or view.
-     * Values exceeding this count will be ignored.
-     *
-     * @param maxSegmentationValues to set
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxSegmentationValues(int)</pre> instead
-     */
-    public synchronized CountlyConfig setMaxSegmentationValues(int maxSegmentationValues) {
-        sdkInternalLimits.setMaxSegmentationValues(maxSegmentationValues);
-        return this;
-    }
-
-    /**
-     * Set the maximum amount of breadcrumbs that can be recorded.
-     * After exceeding the limit, the oldest values will be removed.
-     *
-     * @param maxBreadcrumbCount to set
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>sdkInternalLimits.setMaxBreadcrumbCount(int)</pre> instead
-     */
-    public synchronized CountlyConfig setMaxBreadcrumbCount(int maxBreadcrumbCount) {
-        sdkInternalLimits.setMaxBreadcrumbCount(maxBreadcrumbCount);
-        return this;
-    }
 
     public CountlyConfig() {
     }
@@ -421,29 +389,6 @@ public class CountlyConfig {
     }
 
     /**
-     * Call to enable uncaught crash reporting
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.enableCrashReporting()</pre> instead
-     */
-    public synchronized CountlyConfig enableCrashReporting() {
-        crashes.enableCrashReporting();
-        return this;
-    }
-
-    /**
-     * Set if automatic view tracking should be enabled
-     *
-     * @param enable
-     * @return Returns the same config object for convenient linking
-     * @deprecated Use "enableAutomaticViewTracking()"
-     */
-    public synchronized CountlyConfig setViewTracking(boolean enable) {
-        this.enableAutomaticViewTracking = enable;
-        return this;
-    }
-
-    /**
      * Enable automatic view tracking
      *
      * @return Returns the same config object for convenient linking
@@ -464,32 +409,10 @@ public class CountlyConfig {
     }
 
     /**
-     * Set if automatic activity tracking should use short names
-     *
-     * @param enable set true if you want short names
-     * @return Returns the same config object for convenient linking
-     * @deprecated use "enableAutomaticViewShortNames()"
-     */
-    public synchronized CountlyConfig setAutoTrackingUseShortName(boolean enable) {
-        this.autoTrackingUseShortName = enable;
-        return this;
-    }
-
-    /**
      * @param segmentation segmentation values that will be added for all recorded views (manual and automatic)
      * @return Returns the same config object for convenient linking
      */
     public synchronized CountlyConfig setGlobalViewSegmentation(Map<String, Object> segmentation) {
-        globalViewSegmentation = segmentation;
-        return this;
-    }
-
-    /**
-     * @param segmentation
-     * @return Returns the same config object for convenient linking
-     * @deprecated please use "setGlobalViewSegmentation(Map<String, Object>)"
-     */
-    public synchronized CountlyConfig setAutomaticViewSegmentation(Map<String, Object> segmentation) {
         globalViewSegmentation = segmentation;
         return this;
     }
@@ -514,17 +437,6 @@ public class CountlyConfig {
     }
 
     /**
-     * Set which activities should be excluded from automatic view tracking
-     *
-     * @param exceptions activities which should be ignored
-     * @return Returns the same config object for convenient linking
-     * @deprecated Use "setAutomaticViewTrackingExclusions(Class[])"
-     */
-    public synchronized CountlyConfig setAutoTrackingExceptions(Class[] exceptions) {
-        return setAutomaticViewTrackingExclusions(exceptions);
-    }
-
-    /**
      * Allows you to add custom header key/value pairs to each request
      * <p>
      * The SDK copies these entries when it initialises, so changing the map you passed in afterwards has
@@ -545,20 +457,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setPushIntentAddMetadata(boolean enable) {
         pushIntentAddMetadata = enable;
-        return this;
-    }
-
-    /**
-     * If enable, will automatically download newest remote config values.
-     *
-     * @param enabled set true for enabling it
-     * @param callback callback called after the update was done
-     * @return Returns the same config object for convenient linking
-     * @deprecated use "enableRemoteConfigAutomaticTriggers" and "RemoteConfigRegisterGlobalCallback" in it's place
-     */
-    public synchronized CountlyConfig setRemoteConfigAutomaticDownload(boolean enabled, RemoteConfigCallback callback) {
-        enableRemoteConfigAutomaticDownloadTriggers = enabled;
-        remoteConfigCallbackLegacy = callback;
         return this;
     }
 
@@ -690,16 +588,6 @@ public class CountlyConfig {
     }
 
     /**
-     * @param callback
-     * @return Returns the same config object for convenient linking
-     * @deprecated This call is deprecated, please use <pre>crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)</pre> instead
-     */
-    public synchronized CountlyConfig setCrashFilterCallback(CrashFilterCallback callback) {
-        crashFilterCallback = callback;
-        return this;
-    }
-
-    /**
      * @param salt
      * @return Returns the same config object for convenient linking
      */
@@ -714,26 +602,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setTrackOrientationChanges(boolean shouldTrackOrientation) {
         trackOrientationChange = shouldTrackOrientation;
-        return this;
-    }
-
-    /**
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.enableRecordAllThreadsWithCrash()</pre> instead
-     */
-    public synchronized CountlyConfig setRecordAllThreadsWithCrash() {
-        crashes.enableRecordAllThreadsWithCrash();
-        return this;
-    }
-
-    /**
-     * Set if attribution should be enabled
-     *
-     * @param enableAttribution set true if you want to enable it, set false if you want to disable it
-     * @return Returns the same config object for convenient linking
-     * @deprecated This call will not do anything anymore. Use 'setDirectAttribution' or 'setIndirectAttribution' for attribution purposes
-     */
-    public synchronized CountlyConfig setEnableAttribution(boolean enableAttribution) {
         return this;
     }
 
@@ -840,29 +708,6 @@ public class CountlyConfig {
     }
 
     /**
-     * Set custom crash segmentation which will be added to all recorded crashes
-     *
-     * @param crashSegment segmentation information. Accepted values are "Integer", "String", "Double", "Boolean"
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, please use <pre>crashes.setCustomCrashSegmentation(Map<String, Object>)</pre> instead
-     */
-    public synchronized CountlyConfig setCustomCrashSegment(Map<String, Object> crashSegment) {
-        crashes.setCustomCrashSegmentation(crashSegment);
-        return this;
-    }
-
-    /**
-     * For use during testing
-     *
-     * @param checkForDumps whether to check for native crash dumps
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated and will always be enabled
-     */
-    protected synchronized CountlyConfig checkForNativeCrashDumps(boolean checkForDumps) {
-        return this;
-    }
-
-    /**
      * Sets the interval for the automatic session update calls
      * min value 1 (1 second)
      *
@@ -958,18 +803,6 @@ public class CountlyConfig {
     }
 
     /**
-     * Enable the recording of the app start time
-     *
-     * @param recordAppStartTime set true if you want to enable the recording of the app start time
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>apm.enableAppStartTracking()</pre> instead
-     */
-    public synchronized CountlyConfig setRecordAppStartTime(boolean recordAppStartTime) {
-        apm.trackAppStartTime = recordAppStartTime;
-        return this;
-    }
-
-    /**
      * Disable location tracking
      *
      * @return Returns the same config object for convenient linking
@@ -1004,40 +837,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setMetricOverride(Map<String, String> providedMetricOverride) {
         metricOverride = providedMetricOverride;
-        return this;
-    }
-
-    /**
-     * Override the app start timestamp in case you have a more precise way to measure it
-     *
-     * @param appStartTimestampOverride The timestamp to use as the app start timestamp
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>apm.setAppStartTimestampOverride()</pre> instead
-     */
-    public synchronized CountlyConfig setAppStartTimestampOverride(long appStartTimestampOverride) {
-        apm.setAppStartTimestampOverride(appStartTimestampOverride);
-        return this;
-    }
-
-    /**
-     * Set to manually trigger the moment when the app has finished loading
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated, use <pre>apm.enableManualAppLoadedTrigger()</pre> instead
-     */
-    public synchronized CountlyConfig enableManualAppLoadedTrigger() {
-        apm.enableManualAppLoadedTrigger();
-        return this;
-    }
-
-    /**
-     * Set this in case you want to control these triggers manually
-     *
-     * @return Returns the same config object for convenient linking
-     * @deprecated this call is deprecated and will be removed in the future
-     */
-    public synchronized CountlyConfig enableManualForegroundBackgroundTriggerAPM() {
-        apm.manualForegroundBackgroundTrigger = true;
         return this;
     }
 
@@ -1108,19 +907,6 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig enableExplicitStorageMode() {
         explicitStorageModeEnabled = true;
-        return this;
-    }
-
-    /**
-     * This is an experimental feature and it can have breaking changes
-     *
-     * With this mode enable, the SDK will acquire additional configuration from it's Countly server
-     *
-     * @return Returns the same config object for convenient linking
-     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
-     * @deprecated and will do nothing
-     */
-    public synchronized CountlyConfig enableServerConfiguration() {
         return this;
     }
 
