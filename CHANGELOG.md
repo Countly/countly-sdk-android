@@ -50,6 +50,7 @@
   * The token request is filed under the device ID that is current when it is queued.
 * Mitigated an issue where fatal crash reports were lost in explicit storage mode.
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
+* Mitigated an issue where "requestQueue().flushQueues()" kept the recorded events that were not in a request yet, so they were still sent.
 
 * Removed the following deprecated calls from "CountlyConfig":
   * "setMaxSegmentationValues(int)", use "sdkInternalLimits.setMaxSegmentationValues(int)" instead
