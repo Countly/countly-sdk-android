@@ -213,7 +213,10 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         final String[] storedRequests = store.getRequests();
         store.replaceRequests(new String[] {});
 
-        L.d("[ModuleRequestQueue] flushRequestQueues removed [" + storedRequests.length + "] requests");
+        final List<Event> storedEvents = store.getEventList();
+        store.removeEvents(storedEvents);
+
+        L.d("[ModuleRequestQueue] flushQueuesInternal removed [" + storedRequests.length + "] requests and [" + storedEvents.size() + "] events");
     }
 
     /**
@@ -385,8 +388,8 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         }
 
         /**
-         * Deletes all stored requests to server.
-         * This includes events, crashes, views, sessions, etc
+         * Deletes all stored requests to server and the recorded events that are not in a request yet.
+         * This includes events, crashes, views, sessions, etc. Started timed events are kept.
          * Call only if you don't need that information
          */
         public void flushQueues() {
