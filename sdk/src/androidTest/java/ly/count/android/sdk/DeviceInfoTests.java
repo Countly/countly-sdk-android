@@ -63,6 +63,16 @@ public class DeviceInfoTests {
         assertEquals("Android", regularDeviceInfo.mp.getOS());
     }
 
+    /**
+     * The running time sent with crash reports comes from the monotonic clock, which a change of the device clock
+     * does not move
+     */
+    @Test
+    public void testGetRunningTime_monotonicClock() {
+        long runningTime = Long.parseLong(regularDeviceInfo.mp.getRunningTime());
+        assertEquals(UtilsTime.monotonicTimeSeconds() - DeviceInfo.startTime, runningTime, 1);
+    }
+
     @Test
     public void testGetOSVersion() {
         assertEquals(android.os.Build.VERSION.RELEASE, regularDeviceInfo.mp.getOSVersion());
