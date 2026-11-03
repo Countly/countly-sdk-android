@@ -2,7 +2,9 @@ package ly.count.android.sdk;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,6 +54,51 @@ public class RequestQueueTests {
         for (int a = 0; a < resRequests.size(); a++) {
             Assert.assertEquals(wantedRes.get(a), resRequests.get(a));
         }
+    }
+
+    /**
+     * flushQueues empties the request queue and the event queue,
+     * so the events recorded since the last batch are not sent either.
+     */
+    @Test
+    public void testFlushQueues_clearsRequestAndEventQueues() {
+        Map<String, String> requestData = new HashMap<>();
+        requestData.put("flush_marker", "before_flush");
+        mCountly.requestQueue().addDirectRequest(requestData);
+        mCountly.events().recordEvent("event_before_flush");
+
+        CountlyStore store = TestUtils.getCountlyStore();
+        Assert.assertEquals(1, store.getEventQueueSize());
+        Assert.assertTrue(requestsContain(store, "flush_marker"));
+
+        mCountly.requestQueue().flushQueues();
+
+        Assert.assertEquals(0, store.getEventQueueSize());
+        Assert.assertFalse(requestsContain(store, "flush_marker"));
+    }
+
+    /**
+     * flushQueues leaves started timed events alone, so a timed event started before the flush is recorded when it ends.
+     */
+    @Test
+    public void testFlushQueues_keepsStartedTimedEvents() {
+        mCountly.events().startEvent("timed_event");
+
+        mCountly.requestQueue().flushQueues();
+        mCountly.events().endEvent("timed_event");
+
+        List<Event> events = TestUtils.getCountlyStore().getEventList();
+        Assert.assertEquals(1, events.size());
+        Assert.assertEquals("timed_event", events.get(0).key);
+    }
+
+    private boolean requestsContain(CountlyStore store, String text) {
+        for (String request : store.getRequests()) {
+            if (request.contains(text)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Test
