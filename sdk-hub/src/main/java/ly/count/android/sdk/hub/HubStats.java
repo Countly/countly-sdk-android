@@ -20,6 +20,7 @@ final class HubStats {
     private static final int BUSY = 3;
     private static final int BYTES_UP = 4;
     private static final int BYTES_DOWN = 5;
+    private static final int EXPIRED = 6;
 
     /**
      * A request was sent to the server and answered.
@@ -58,13 +59,42 @@ final class HubStats {
     }
 
     /**
-     * A request was turned away because too many were already waiting for the uplink.
+     * A request was turned away for now, for example because too many were already waiting for the
+     * uplink, and the app's SDK retries it later.
      *
      * @param packageName the app it came from
      */
     synchronized void onBusy(@NonNull String packageName) {
         countersOf(packageName)[BUSY]++;
         lastProblem = packageName + ": busy";
+    }
+
+    /**
+     * A request waited longer than its caller's budget and was not sent.
+     *
+     * @param packageName the app it came from
+     */
+    synchronized void onExpired(@NonNull String packageName) {
+        countersOf(packageName)[EXPIRED]++;
+        lastProblem = packageName + ": expired before it could be sent";
+    }
+
+    /**
+     * @param packageName the app
+     * @return how many of its requests expired before they could be sent
+     */
+    synchronized long expired(@NonNull String packageName) {
+        long[] counters = perApp.get(packageName);
+        return counters == null ? 0 : counters[EXPIRED];
+    }
+
+    /**
+     * @param packageName the app
+     * @return how many of its requests were turned away for now
+     */
+    synchronized long busy(@NonNull String packageName) {
+        long[] counters = perApp.get(packageName);
+        return counters == null ? 0 : counters[BUSY];
     }
 
     /**
@@ -96,6 +126,15 @@ final class HubStats {
     }
 
     /**
+     * @param packageName the app
+     * @return how many of its requests were sent but got no server response
+     */
+    synchronized long failed(@NonNull String packageName) {
+        long[] counters = perApp.get(packageName);
+        return counters == null ? 0 : counters[FAILED];
+    }
+
+    /**
      * @return how many calls came from callers that are not allowed apps
      */
     synchronized long unknownCallers() {
@@ -112,7 +151,7 @@ final class HubStats {
         for (Map.Entry<String, long[]> app : perApp.entrySet()) {
             long[] c = app.getValue();
             writer.println("  " + app.getKey() + ": delivered=" + c[DELIVERED] + " refused=" + c[REFUSED] + " failed=" + c[FAILED]
-                + " busy=" + c[BUSY] + " bytesUp=" + c[BYTES_UP] + " bytesDown=" + c[BYTES_DOWN]);
+                + " busy=" + c[BUSY] + " expired=" + c[EXPIRED] + " bytesUp=" + c[BYTES_UP] + " bytesDown=" + c[BYTES_DOWN]);
         }
         writer.println("  unknown callers: " + unknownCallers);
         writer.println("  last problem: " + (lastProblem == null ? "none" : lastProblem));
@@ -125,7 +164,7 @@ final class HubStats {
     private @NonNull long[] countersOf(@NonNull String packageName) {
         long[] counters = perApp.get(packageName);
         if (counters == null) {
-            counters = new long[6];
+            counters = new long[7];
             perApp.put(packageName, counters);
         }
         return counters;

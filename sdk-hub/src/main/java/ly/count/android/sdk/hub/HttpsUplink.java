@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -16,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
@@ -30,6 +32,8 @@ final class HttpsUplink implements HubUplink {
     private static final Set<String> HOP_BY_HOP_HEADERS = new HashSet<>(Arrays.asList(
         "host", "connection", "keep-alive", "proxy-connection", "proxy-authorization", "proxy-authenticate",
         "te", "trailer", "transfer-encoding", "upgrade", "content-length"));
+
+    private static SSLSocketFactory platformSocketFactory = null;
 
     private final String serverUrl;
     private final SSLSocketFactory sslSocketFactory;
@@ -62,8 +66,8 @@ final class HttpsUplink implements HubUplink {
         HttpURLConnection connection = (HttpURLConnection) new URL(address).openConnection();
         boolean reusable = false;
         try {
-            if (sslSocketFactory != null && connection instanceof HttpsURLConnection) {
-                ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory);
+            if (connection instanceof HttpsURLConnection) {
+                ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory != null ? sslSocketFactory : platformSocketFactory());
             }
             connection.setConnectTimeout(timeoutMillis);
             connection.setReadTimeout(timeoutMillis);
@@ -97,6 +101,28 @@ final class HttpsUplink implements HubUplink {
                 connection.disconnect();
             }
         }
+    }
+
+    /**
+     * Returns a socket factory with the platform's default TLS settings, which on Android include the
+     * app's network security configuration. It is used instead of
+     * {@link HttpsURLConnection#getDefaultSSLSocketFactory()}, which the host app may have replaced for
+     * its own servers.
+     *
+     * @return the factory, created once
+     * @throws IOException if the platform has no TLS
+     */
+    private static synchronized @NonNull SSLSocketFactory platformSocketFactory() throws IOException {
+        if (platformSocketFactory == null) {
+            try {
+                SSLContext context = SSLContext.getInstance("TLS");
+                context.init(null, null, null);
+                platformSocketFactory = context.getSocketFactory();
+            } catch (GeneralSecurityException e) {
+                throw new IOException("TLS is not available", e);
+            }
+        }
+        return platformSocketFactory;
     }
 
     /**

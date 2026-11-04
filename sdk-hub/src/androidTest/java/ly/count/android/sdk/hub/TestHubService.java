@@ -53,6 +53,7 @@ public class TestHubService extends CountlyHubService {
         }
         return new HubConfig(serverUrl)
             .allowApp(new HubAllowedApp(getPackageName(), APP_KEY))
-            .setMaxRequestBytes(4 * 1024 * 1024);
+            .setMaxRequestBytes(4 * 1024 * 1024)
+            .setLoggingEnabled(true);
     }
 }

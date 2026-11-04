@@ -43,6 +43,14 @@ The demo apps:
    adb shell am start --activity-single-top -n ly.count.android.demo.hub.client.nav/ly.count.android.demo.hub.client.ClientActivity --es action direct
    ```
 
+   Then let the nav and music clients each download their remote config 20 times at once, the way
+   apps starting up ask for several answers in parallel:
+
+   ```
+   adb shell am start --activity-single-top -n ly.count.android.demo.hub.client.nav/ly.count.android.demo.hub.client.ClientActivity --es action burst
+   adb shell am start --activity-single-top -n ly.count.android.demo.hub.client.music/ly.count.android.demo.hub.client.ClientActivity --es action burst
+   ```
+
 5. Check the results.
 
    - The server prints one line per request. `nav_demo_event` and `music_demo_event` arrive, every
@@ -53,12 +61,20 @@ The demo apps:
      adb shell dumpsys activity service ly.count.android.demo.hub.host/.HostHubService
      ```
 
-   - The direct connection attempt of the nav app fails:
+   - The direct connection attempt of the nav app fails, and every burst request is answered:
 
      ```
      adb logcat -d -s HubDemoClient:I
      ... direct connection refused: java.lang.SecurityException: Permission denied (missing INTERNET permission?)
+     ... burst: 20 of 20 remote config requests answered
      ```
+
+     The burst requests reach the hub at the same moment and wait in its queue without holding a
+     thread of the host app; the server receives them one after another on the same `conn=`.
+
+   - The same dumpsys output shows, per app, how many requests were delivered, refused, failed, turned
+     away for now and retried later by the app's SDK (`busy=`), or not sent because they waited past
+     their time (`expired=`), and how many requests are waiting for the uplink.
 
 ## On an Android Automotive emulator
 

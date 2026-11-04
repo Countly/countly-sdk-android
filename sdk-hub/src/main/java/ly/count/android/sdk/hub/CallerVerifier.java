@@ -39,7 +39,7 @@ final class CallerVerifier {
                 continue;
             }
             String certificate = app.signingCertificateSha256;
-            if (certificate == null || HubSignatures.isSignedWith(packageManager, packageName, certificate)) {
+            if (certificate == null || HubSignatures.isUidSignedWith(packageManager, uid, packageName, certificate)) {
                 return app;
             }
         }

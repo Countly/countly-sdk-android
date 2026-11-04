@@ -51,6 +51,15 @@ mavenPublishing {
   coordinates(GROUP.toString(), 'sdk-hub', HUB_VERSION_NAME.toString())
 }
 
+// A release of the SDK publishes every module, which must not publish the hub's own version again, so
+// the hub's publishing tasks run only when the build is started with -PpublishHub
+def publishHub = providers.gradleProperty('publishHub').present
+tasks.configureEach { task ->
+  if (task.name.startsWith('publish')) {
+    task.onlyIf('the hub is published only with -PpublishHub') { publishHub }
+  }
+}
+
 dependencies {
   // The app brings the SDK itself, either 'ly.count.android:sdk' or 'ly.count.android:sdk-nw'
   compileOnly project(':sdk')

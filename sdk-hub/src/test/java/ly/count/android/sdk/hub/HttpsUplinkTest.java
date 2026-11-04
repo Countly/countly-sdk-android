@@ -36,15 +36,17 @@ public class HttpsUplinkTest {
 
     /**
      * A GET request goes to the configured server with its path, query and headers, minus the
-     * hop-by-hop headers, and the server's response comes back as it is.
+     * hop-by-hop and proxy headers, and the server's response comes back as it is. The JVM itself drops
+     * headers such as Host and Connection, so the headers checked here are ones only the uplink removes.
      */
     @Test
     public void get_isForwardedToTheConfiguredServer() throws Exception {
         server.enqueue(new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json").setBody("{\"result\":\"Success\"}"));
         Map<String, String> headers = new LinkedHashMap<>();
         headers.put("X-Custom", "v");
-        headers.put("Connection", "close");
-        headers.put("Host", "elsewhere.example");
+        headers.put("TE", "trailers");
+        headers.put("Proxy-Authorization", "Basic c2VjcmV0");
+        headers.put("proxy-connection", "keep-alive");
 
         HubResponse response = uplink.send(new HubRequest("GET", "/i", "app_key=k&device_id=d", headers, null, 30_000));
 
@@ -53,8 +55,9 @@ public class HttpsUplinkTest {
         Assert.assertEquals("GET", recorded.getMethod());
         Assert.assertEquals("/i?app_key=k&device_id=d", recorded.getPath());
         Assert.assertEquals("v", recorded.getHeader("X-Custom"));
-        Assert.assertNotEquals("elsewhere.example", recorded.getHeader("Host"));
-        Assert.assertNotEquals("close", recorded.getHeader("Connection"));
+        Assert.assertNull(recorded.getHeader("TE"));
+        Assert.assertNull(recorded.getHeader("Proxy-Authorization"));
+        Assert.assertNull(recorded.getHeader("Proxy-Connection"));
         Assert.assertEquals(200, response.getStatus());
         Assert.assertEquals("{\"result\":\"Success\"}", new String(response.getBody(), UTF_8));
         Assert.assertEquals("application/json", response.getHeader("content-type"));
@@ -142,6 +145,26 @@ public class HttpsUplinkTest {
             Assert.fail("expected an IOException for a response above the limit");
         } catch (IOException expected) {
             Assert.assertTrue(expected.getMessage().contains("larger than"));
+        }
+    }
+
+    /**
+     * A server that does not answer within the timeout is a failure, so the single uplink is not held
+     * up by one request.
+     */
+    @Test
+    public void silentServer_timesOut() {
+        server.enqueue(new MockResponse().setHeadersDelay(3, TimeUnit.SECONDS).setBody("{\"result\":\"Success\"}"));
+        String serverUrl = server.url("/").toString();
+        HttpsUplink impatient = new HttpsUplink(serverUrl.substring(0, serverUrl.length() - 1), null, 300, 1024);
+
+        long before = System.currentTimeMillis();
+        try {
+            impatient.send(new HubRequest("GET", "/i", "app_key=k", Collections.<String, String>emptyMap(), null, 30_000));
+            Assert.fail("expected a timeout");
+        } catch (IOException expected) {
+            long waited = System.currentTimeMillis() - before;
+            Assert.assertTrue("waited " + waited + " ms", waited < 2_500);
         }
     }
 

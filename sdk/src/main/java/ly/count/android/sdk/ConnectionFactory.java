@@ -22,8 +22,21 @@ import java.net.URL;
  * or, when that throws, {@link HttpURLConnection#getErrorStream()}, and finally calls
  * {@link HttpURLConnection#disconnect()}. Reading the response headers is the first thing that needs the
  * response, so the request has to be sent no later than that.
+ * <p>
+ * A request from the request queue that gets an error response is normally kept and retried, and
+ * the requests after it wait until it succeeds. When the transport knows that a request can never be
+ * accepted, for example because it is malformed for the transport, it can answer with an error status
+ * and the {@link #FINAL_REFUSAL_HEADER} header. The SDK then drops that request and continues with the
+ * next one, so a single request cannot hold back all later ones. The header is honoured only on
+ * connections a factory created.
  */
 public interface ConnectionFactory {
+    /**
+     * Response header a transport sets, together with an error status, on a request it will never
+     * accept. Its value is the reason, which the SDK logs.
+     */
+    String FINAL_REFUSAL_HEADER = "X-Countly-Final-Refusal";
+
     /**
      * Creates the connection for one server request. It is called on the SDK's background threads.
      *

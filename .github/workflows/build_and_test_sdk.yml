@@ -75,6 +75,14 @@ jobs:
         if: always()
         run: ./gradlew sdk:connectedAndroidTest
 
+      - name: Build and Test the Hub Library
+        if: always()
+        run: ./gradlew sdk-hub:build
+
+      - name: Run the Hub Library Device Tests
+        if: always()
+        run: ./gradlew sdk-hub:connectedAndroidTest
+
       - name: Publish Test Results to PR
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
@@ -84,3 +92,5 @@ jobs:
           files: |
             sdk/build/outputs/androidTest-results/**/*.xml
             sdk-native/build/test-results/**/*.xml
+            sdk-hub/build/test-results/**/*.xml
+            sdk-hub/build/outputs/androidTest-results/**/*.xml

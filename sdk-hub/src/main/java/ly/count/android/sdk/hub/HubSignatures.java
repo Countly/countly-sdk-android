@@ -56,6 +56,25 @@ final class HubSignatures {
     }
 
     /**
+     * Tells whether the app running as the given user id is signed with the certificate of the given
+     * SHA-256 digest. On Android 9 and newer the check goes by the user id itself, the identity the system
+     * attached to the call, rather than by looking a package name up for the hub's own Android user.
+     *
+     * @param packageManager the package manager
+     * @param uid the caller's user id
+     * @param packageName the caller's package, used before Android 9
+     * @param sha256 the SHA-256 digest of the certificate, as hex, with or without ':' separators
+     * @return true when the caller is signed with that certificate
+     */
+    static boolean isUidSignedWith(@NonNull PackageManager packageManager, int uid, @NonNull String packageName, @NonNull String sha256) {
+        if (Build.VERSION.SDK_INT >= 28) {
+            byte[] expected = parseHex(sha256);
+            return expected != null && packageManager.hasSigningCertificate(uid, expected, PackageManager.CERT_INPUT_SHA256);
+        }
+        return isSignedWith(packageManager, packageName, sha256);
+    }
+
+    /**
      * @param hex a SHA-256 digest as hex, with or without ':' separators and spaces
      * @return the 32 digest bytes, or null when the text is not such a digest
      */

@@ -54,7 +54,7 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
                 connection = (HttpURLConnection) cp.urlConnectionForPreflightRequest(urlRequest);
             } catch (IOException e) {
                 L.e("[PreflightRequestMaker] doPreflightRequest, IOException while preparing preflight request :[" + e + "]");
-                return null;
+                return false;
             }
 
             int responseCode = connection.getResponseCode();
@@ -79,7 +79,7 @@ class PreflightRequestMaker extends AsyncTask<Object, Void, Boolean> implements 
         L.v("[PreflightRequestMaker] onPostExecute");
 
         if (callback != null) {
-            callback.callback(result ? new JSONObject() : null);
+            callback.callback(Boolean.TRUE.equals(result) ? new JSONObject() : null);
         }
     }
 }

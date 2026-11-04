@@ -488,6 +488,121 @@ public class ConnectionProcessorTests {
         verify(mockStore, times(0)).removeRequest(anyString());
     }
 
+    /**
+     * Creates a connection that answers with an error status and, when a reason is given, the header
+     * that marks the request as refused for good.
+     */
+    private static HttpURLConnection refusingConnection(int status, String finalRefusal) throws IOException {
+        final HttpURLConnection connection = mock(HttpURLConnection.class);
+        when(connection.getInputStream()).thenThrow(new IOException("Server returned HTTP response code: " + status));
+        when(connection.getErrorStream()).thenReturn(new ByteArrayInputStream("{\"error\":\"refused\"}".getBytes("UTF-8")));
+        when(connection.getResponseCode()).thenReturn(status);
+        when(connection.getHeaderField(ConnectionFactory.FINAL_REFUSAL_HEADER)).thenReturn(finalRefusal);
+        return connection;
+    }
+
+    /**
+     * The header keeps the name every connection factory transport sends, whichever SDK version it was
+     * released with.
+     */
+    @Test
+    public void finalRefusalHeader_keepsItsWireName() {
+        assertEquals("X-Countly-Final-Refusal", ConnectionFactory.FINAL_REFUSAL_HEADER);
+    }
+
+    /**
+     * A request the connection factory's transport refuses for good is dropped instead of retried, and
+     * the requests queued after it are still sent rather than held back behind it.
+     */
+    @Test
+    public void testRun_connectionFactoryFinalRefusal_dropsRequestAndContinues() throws IOException {
+        final String refused = "refused_request";
+        final String next = "next_request";
+        when(mockStore.getRequests()).thenReturn(new String[] { refused, next }, new String[] { next }, new String[0]);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
+        final HttpURLConnection refusedConnection = refusingConnection(400, "path /x is not relayed");
+        final HttpURLConnection nextConnection = mock(HttpURLConnection.class);
+        final CountlyResponseStream nextResponse = new CountlyResponseStream("Success");
+        when(nextConnection.getInputStream()).thenReturn(nextResponse);
+        when(nextConnection.getResponseCode()).thenReturn(200);
+        connectionProcessor.connectionFactory = url -> url.toString().contains(refused) ? refusedConnection : nextConnection;
+
+        connectionProcessor.run();
+
+        verify(mockStore).removeRequest(refused);
+        verify(mockStore).removeRequest(next);
+        verify(healthTrackerMock).logFailedNetworkRequest(400, "{\"error\":\"refused\"}");
+        verify(refusedConnection).disconnect();
+        assertTrue(nextResponse.fullyRead());
+    }
+
+    /**
+     * An error status from the connection factory's transport without the final refusal header is
+     * retried later, like any server error, and holds back the requests after it.
+     */
+    @Test
+    public void testRun_connectionFactoryErrorWithoutFinalRefusal_requestKept() throws IOException {
+        final String kept = "kept_request";
+        when(mockStore.getRequests()).thenReturn(new String[] { kept, "later_request" }, new String[0]);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
+        final HttpURLConnection connection = refusingConnection(403, null);
+        connectionProcessor.connectionFactory = url -> connection;
+
+        connectionProcessor.run();
+
+        verify(mockStore, times(1)).getRequests();
+        verify(mockStore, times(0)).removeRequest(anyString());
+    }
+
+    /**
+     * The final refusal header is honoured only on connections a connection factory created, so a
+     * server, or anything between the app and the server, cannot make the SDK drop requests.
+     */
+    @Test
+    public void testRun_finalRefusalHeaderWithoutConnectionFactory_isIgnored() throws IOException {
+        final String eventData = "blahblahblah";
+        connectionProcessor = spy(connectionProcessor);
+        when(mockStore.getRequests()).thenReturn(new String[] { eventData }, new String[0]);
+        when(mockDeviceId.getDeviceId()).thenReturn(testDeviceId);
+        final HttpURLConnection connection = refusingConnection(400, "refused");
+        doReturn(connection).when(connectionProcessor).urlConnectionForServerRequest(eventData + "&rr=0", null);
+
+        connectionProcessor.run();
+
+        verify(mockStore, times(1)).getRequests();
+        verify(mockStore, times(0)).removeRequest(anyString());
+        verify(connection, times(0)).getHeaderField(ConnectionFactory.FINAL_REFUSAL_HEADER);
+    }
+
+    /**
+     * When the connection factory cannot create the preflight connection of a feedback widget, the
+     * widget is reported as unavailable instead of crashing the app on the main thread.
+     */
+    @Test
+    public void preflight_connectionFactoryThrows_reportsNoResponse() {
+        connectionProcessor.connectionFactory = url -> {
+            throw new IOException("transport unavailable");
+        };
+        final PreflightRequestMaker maker = new PreflightRequestMaker();
+        final boolean[] called = { false };
+        final Object[] response = { new Object() };
+        final ImmediateRequestMaker.InternalImmediateRequestCallback callback = checkResponse -> {
+            called[0] = true;
+            response[0] = checkResponse;
+        };
+
+        final Boolean result = maker.doInBackground("http://server/feedback/nps?widget_id=1", null, connectionProcessor, false, true, callback, moduleLog);
+        maker.onPostExecute(result);
+
+        assertEquals(Boolean.FALSE, result);
+        assertTrue(called[0]);
+        assertNull(response[0]);
+
+        called[0] = false;
+        maker.onPostExecute(null);
+        assertTrue(called[0]);
+    }
+
     @Test
     public void testRun_storeReturnsNullConnections() throws IOException {
         connectionProcessor = spy(connectionProcessor);

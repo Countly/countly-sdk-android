@@ -11,16 +11,19 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 import ly.count.android.sdk.Countly;
 
 /**
  * Records events, sends them through the hub, and shows that the app cannot open a connection itself.
  * <p>
- * The buttons can also be driven from adb, with "--es action record", "--es action send" or
- * "--es action direct" on the start intent, for example:
+ * The buttons can also be driven from adb, with "--es action record", "--es action send",
+ * "--es action burst" or "--es action direct" on the start intent, for example:
  * "adb shell am start -n ly.count.android.demo.hub.client.nav/ly.count.android.demo.hub.client.ClientActivity --es action record".
  */
 public class ClientActivity extends Activity {
+    private static final int BURST_SIZE = 20;
+
     private TextView log;
 
     /**
@@ -41,6 +44,7 @@ public class ClientActivity extends Activity {
         root.addView(title);
         root.addView(button("Record an event and send", v -> record()));
         root.addView(button("Send stored requests", v -> send()));
+        root.addView(button("Download remote config " + BURST_SIZE + " times at once", v -> burst()));
         root.addView(button("Try a direct internet connection", v -> tryDirectConnection()));
 
         log = new TextView(this);
@@ -72,6 +76,8 @@ public class ClientActivity extends Activity {
             record();
         } else if ("send".equals(action)) {
             send();
+        } else if ("burst".equals(action)) {
+            burst();
         } else if ("direct".equals(action)) {
             tryDirectConnection();
         }
@@ -91,6 +97,26 @@ public class ClientActivity extends Activity {
      */
     private void send() {
         Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
+    }
+
+    /**
+     * Downloads the remote config several times at once, the way an app starting up asks for several
+     * answers in parallel, and logs how many requests were answered once all have finished.
+     */
+    private void burst() {
+        final AtomicInteger answered = new AtomicInteger();
+        final AtomicInteger finished = new AtomicInteger();
+        for (int i = 0; i < BURST_SIZE; i++) {
+            Countly.sharedInstance().remoteConfig().downloadAllKeys((result, error, fullValueUpdate, values) -> {
+                if (error == null) {
+                    answered.incrementAndGet();
+                }
+                if (finished.incrementAndGet() == BURST_SIZE) {
+                    final String message = "burst: " + answered.get() + " of " + BURST_SIZE + " remote config requests answered";
+                    runOnUiThread(() -> append(message));
+                }
+            });
+        }
     }
 
     /**

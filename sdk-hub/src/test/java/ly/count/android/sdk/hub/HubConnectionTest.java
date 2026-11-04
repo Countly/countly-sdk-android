@@ -8,6 +8,8 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -269,5 +271,101 @@ public class HubConnectionTest {
         connection.getResponseCode();
 
         Assert.assertEquals(60_000, transport.requests.get(0).getTimeoutMillis());
+    }
+
+    /**
+     * The connection keeps the request headers itself. Before Android 7 the platform's URLConnection
+     * discards them, which would hand every request to the hub without its Content-Type; on the JVM the
+     * base class keeps them anyway, so the overrides are checked to be declared.
+     */
+    @Test
+    public void requestHeaderMethods_areDeclaredByTheConnection() throws NoSuchMethodException {
+        Assert.assertEquals(HubConnection.class, HubConnection.class.getDeclaredMethod("setRequestProperty", String.class, String.class).getDeclaringClass());
+        Assert.assertEquals(HubConnection.class, HubConnection.class.getDeclaredMethod("addRequestProperty", String.class, String.class).getDeclaringClass());
+        Assert.assertEquals(HubConnection.class, HubConnection.class.getDeclaredMethod("getRequestProperty", String.class).getDeclaringClass());
+        Assert.assertEquals(HubConnection.class, HubConnection.class.getDeclaredMethod("getRequestProperties").getDeclaringClass());
+    }
+
+    /**
+     * Setting a header replaces it whatever the case of its name, adding keeps the earlier values, and
+     * reading matches names case-insensitively, returning the last value.
+     */
+    @Test
+    public void requestHeaders_setAddAndRead() throws IOException {
+        RecordingTransport transport = new RecordingTransport();
+        transport.response = response(200, "{}");
+        HubConnection connection = new HubConnection(new URL("https://anything.example/i?app_key=k"), transport);
+        connection.setRequestProperty("Content-Type", "text/plain");
+        connection.setRequestProperty("content-type", "application/x-www-form-urlencoded");
+        connection.addRequestProperty("Accept", "a");
+        connection.addRequestProperty("ACCEPT", "b");
+
+        Assert.assertEquals("application/x-www-form-urlencoded", connection.getRequestProperty("CONTENT-TYPE"));
+        Assert.assertEquals("b", connection.getRequestProperty("accept"));
+        Assert.assertNull(connection.getRequestProperty("X-Missing"));
+        Assert.assertNull(connection.getRequestProperty(null));
+        Map<String, List<String>> properties = connection.getRequestProperties();
+        Assert.assertEquals(2, properties.size());
+        Assert.assertEquals(Collections.singletonList("application/x-www-form-urlencoded"), properties.get("content-type"));
+        Assert.assertEquals(Arrays.asList("a", "b"), properties.get("Accept"));
+
+        connection.getResponseCode();
+
+        HubRequest sent = transport.requests.get(0);
+        Assert.assertEquals(2, sent.getHeaders().size());
+        Assert.assertEquals("application/x-www-form-urlencoded", sent.getHeader("Content-Type"));
+        Assert.assertEquals("a, b", sent.getHeader("Accept"));
+    }
+
+    /**
+     * The headers cannot be changed or read once the request was handed over, and a header needs a
+     * name, as on a regular connection.
+     */
+    @Test
+    public void requestHeaders_guards() throws IOException {
+        RecordingTransport transport = new RecordingTransport();
+        transport.response = response(200, "{}");
+        HubConnection connection = new HubConnection(new URL("https://anything.example/i?app_key=k"), transport);
+        try {
+            connection.setRequestProperty(null, "v");
+            Assert.fail("expected a NullPointerException for a header without a name");
+        } catch (NullPointerException expected) {
+            Assert.assertTrue(connection.getRequestProperties().isEmpty());
+        }
+        try {
+            connection.getRequestProperties().put("X", Collections.singletonList("v"));
+            Assert.fail("expected the headers to be unmodifiable");
+        } catch (UnsupportedOperationException expected) {
+            Assert.assertTrue(connection.getRequestProperties().isEmpty());
+        }
+
+        connection.getResponseCode();
+
+        try {
+            connection.setRequestProperty("X", "v");
+            Assert.fail("expected an IllegalStateException after the hand-over");
+        } catch (IllegalStateException expected) {
+            Assert.assertEquals(1, transport.requests.size());
+        }
+        try {
+            connection.addRequestProperty("X", "v");
+            Assert.fail("expected an IllegalStateException after the hand-over");
+        } catch (IllegalStateException expected) {
+            Assert.assertEquals(1, transport.requests.size());
+        }
+        try {
+            connection.getRequestProperties();
+            Assert.fail("expected an IllegalStateException after the hand-over");
+        } catch (IllegalStateException expected) {
+            Assert.assertEquals(1, transport.requests.size());
+        }
+    }
+
+    /**
+     * The header the hub sets on a final refusal keeps the name SDKs released with any hub version read.
+     */
+    @Test
+    public void finalRefusalHeader_keepsItsWireName() {
+        Assert.assertEquals("X-Countly-Final-Refusal", HubProtocol.FINAL_REFUSAL_HEADER);
     }
 }

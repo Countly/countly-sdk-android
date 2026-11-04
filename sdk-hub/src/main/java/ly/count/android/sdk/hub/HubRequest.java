@@ -101,4 +101,12 @@ public final class HubRequest {
     public int getTimeoutMillis() {
         return timeoutMillis;
     }
+
+    /**
+     * @param newPath the server path to send the request to
+     * @return the same request for another server path
+     */
+    @NonNull HubRequest withPath(@NonNull String newPath) {
+        return new HubRequest(method, newPath, query, headers, body, timeoutMillis);
+    }
 }
