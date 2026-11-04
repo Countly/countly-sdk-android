@@ -169,6 +169,8 @@ public class CountlyConfig {
 
     protected SSLSocketFactory customSSLSocketFactory = null;
 
+    protected ConnectionFactory connectionFactory = null;
+
     protected Integer sessionUpdateTimerDelay = null;
 
     /**
@@ -785,6 +787,35 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setCustomSSLSocketFactory(SSLSocketFactory sslSocketFactory) {
         customSSLSocketFactory = sslSocketFactory;
+        return this;
+    }
+
+    /**
+     * Provide a factory that creates the connections Countly sends its server requests through
+     * (session, event, remote-config, feedback/rating/content availability, health-check and
+     * preflight requests), instead of opening them itself.
+     * <p>
+     * Use this when the app must not open network connections of its own, for example when another app
+     * on the device holds the network access and relays the requests, which is what the
+     * "ly.count.android:sdk-hub" library does.
+     * <p>
+     * Notes:
+     * <ul>
+     *   <li>Countly still builds every request itself, including the checksum when a salt is set, and still
+     *   decides from the response whether a request has to be retried.</li>
+     *   <li>When the factory returns an {@link javax.net.ssl.HttpsURLConnection}, the socket factory from
+     *   {@link #setCustomSSLSocketFactory(SSLSocketFactory)} or the pinning from
+     *   {@link #enablePublicKeyPinning(String[])} and {@link #enableCertificatePinning(String[])} is applied to it
+     *   as usual. Any other connection type is responsible for the security of its own transport.</li>
+     *   <li>Does not apply to WebView-rendered content, feedback and rating widgets (the Android WebView
+     *   uses its own network stack) nor to push notification image downloads.</li>
+     * </ul>
+     *
+     * @param connectionFactory the factory to use; a null value leaves the default behavior unchanged
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setConnectionFactory(ConnectionFactory connectionFactory) {
+        this.connectionFactory = connectionFactory;
         return this;
     }
 

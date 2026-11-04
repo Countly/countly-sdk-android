@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+  <uses-permission android:name="android.permission.INTERNET"/>
+
+  <application android:usesCleartextTraffic="true">
+    <service
+        android:name="ly.count.android.sdk.hub.TestHubService"
+        android:process=":hub"
+        android:exported="false">
+      <intent-filter>
+        <action android:name="ly.count.android.sdk.hub.action.BIND"/>
+      </intent-filter>
+    </service>
+  </application>
+
+</manifest>

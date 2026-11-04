@@ -86,6 +86,7 @@ public class CountlyConfigTests {
         String[] certificateCerts = { "ddsd", "vvcv", "mbnb" };
 
         SSLSocketFactory customSSLSocketFactory = mock(SSLSocketFactory.class);
+        ConnectionFactory connectionFactory = mock(ConnectionFactory.class);
 
         Map<String, Object> crashSegments = new HashMap<>();
         crashSegments.put("s2s", "fdf");
@@ -144,6 +145,7 @@ public class CountlyConfigTests {
         config.enableCertificatePinning(certificateCerts);
         config.enablePublicKeyPinning(publicKeyCerts);
         config.setCustomSSLSocketFactory(customSSLSocketFactory);
+        config.setConnectionFactory(connectionFactory);
         config.setEnableAttribution(true);
         config.setCustomCrashSegment(crashSegments);
         config.setUpdateSessionTimerDelay(137);
@@ -198,6 +200,7 @@ public class CountlyConfigTests {
         Assert.assertArrayEquals(certificateCerts, config.certificatePinningCertificates);
         Assert.assertArrayEquals(publicKeyCerts, config.publicKeyPinningCertificates);
         Assert.assertSame(customSSLSocketFactory, config.customSSLSocketFactory);
+        Assert.assertSame(connectionFactory, config.connectionFactory);
         Assert.assertEquals(crashSegments, config.crashes.customCrashSegment);
         Assert.assertEquals(137, config.sessionUpdateTimerDelay.intValue());
         Assert.assertTrue(config.starRatingDialogIsCancellable);
@@ -304,6 +307,7 @@ public class CountlyConfigTests {
         Assert.assertNull(config.publicKeyPinningCertificates);
         Assert.assertNull(config.certificatePinningCertificates);
         Assert.assertNull(config.customSSLSocketFactory);
+        Assert.assertNull(config.connectionFactory);
         Assert.assertNull(config.crashes.customCrashSegment);
         Assert.assertNull(config.sessionUpdateTimerDelay);
         Assert.assertFalse(config.starRatingDialogIsCancellable);

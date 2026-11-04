@@ -70,9 +70,12 @@ public class ConnectionProcessor implements Runnable {
 
     public PerformanceCounterCollector pcc;
 
+    ConnectionFactory connectionFactory = null;
+
     private enum RequestResult {
         OK,         // success
-        RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
+        RETRY,      // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
+        DROP        // the connection factory's transport refused the request for good
     }
 
     ConnectionProcessor(final String serverURL, final StorageProvider storageProvider, final DeviceIdProvider deviceIdProvider, final ConfigurationProvider configProvider,
@@ -130,7 +133,7 @@ public class ConnectionProcessor implements Runnable {
             pccTsOpenURLConnection = UtilsTime.getNanoTime();
         }
 
-        final URLConnection urlConnection = url.openConnection();
+        final URLConnection urlConnection = openConnection(url);
         // Apply the resolved SSL socket factory (a custom/FIPS factory or the pinning factory) to
         // every HTTPS connection. A plain HTTP connection is left untouched.
         if (sslSocketFactory_ != null && urlConnection instanceof HttpsURLConnection) {
@@ -248,7 +251,7 @@ public class ConnectionProcessor implements Runnable {
         URL url = new URL(preflightData);
 
         long tOpen = pcc != null ? UtilsTime.getNanoTime() : 0;
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        HttpURLConnection conn = (HttpURLConnection) openConnection(url);
 
         if (sslSocketFactory_ != null && conn instanceof HttpsURLConnection) {
             ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory_);
@@ -298,6 +301,20 @@ public class ConnectionProcessor implements Runnable {
 
         L.v("[ConnectionProcessor] urlConnectionForPreflightRequest, Approx data size: [" + approxSize + " B]");
         return conn;
+    }
+
+    /**
+     * Opens the connection for one request, through the configured {@link ConnectionFactory} when there is one.
+     *
+     * @param url the full request URL
+     * @return the connection to configure and send
+     * @throws IOException if the connection cannot be created
+     */
+    private @NonNull URLConnection openConnection(@NonNull URL url) throws IOException {
+        if (connectionFactory != null) {
+            return connectionFactory.openConnection(url);
+        }
+        return url.openConnection();
     }
 
     /**
@@ -534,6 +551,7 @@ public class ConnectionProcessor implements Runnable {
 
                     int responseCode = 0;
                     String responseString = "";
+                    String finalRefusal = null;
                     if (conn instanceof HttpURLConnection) {
                         final HttpURLConnection httpConn = (HttpURLConnection) conn;
 
@@ -547,6 +565,9 @@ public class ConnectionProcessor implements Runnable {
 
                         responseCode = httpConn.getResponseCode();
                         responseString = Utils.inputStreamToString(connInputStream);
+                        if (connectionFactory != null) {
+                            finalRefusal = httpConn.getHeaderField(ConnectionFactory.FINAL_REFUSAL_HEADER);
+                        }
                     }
 
                     long readingStreamTime = UtilsTime.getNanoTime() - pccTsReadingStream;
@@ -592,6 +613,9 @@ public class ConnectionProcessor implements Runnable {
                         //assume redirect
                         L.d("[ConnectionProcessor] Encountered redirect, will retry");
                         rRes = RequestResult.RETRY;
+                    } else if (responseCode >= 400 && finalRefusal != null) {
+                        L.w("[ConnectionProcessor] The request was refused for good by the connection factory's transport, it will be dropped instead of retried, reason:[" + finalRefusal + "]");
+                        rRes = RequestResult.DROP;
                     } else if (responseCode == 400 || responseCode == 404) {
                         L.w("[ConnectionProcessor] Bad request, will still retry");
                         rRes = RequestResult.RETRY;
@@ -619,6 +643,14 @@ public class ConnectionProcessor implements Runnable {
                             backoffCallback_.run();
                             break;
                         }
+                    } else if (rRes == RequestResult.DROP) {
+                        if (requestCallback != null) {
+                            requestCallback.onRequestCompleted(responseString, false);
+                            internalRequestCallbacks_.remove(callbackID);
+                        }
+                        healthTracker.logFailedNetworkRequest(responseCode, responseString);
+                        healthTracker.saveState();
+                        storageProvider_.removeRequest(originalRequest);
                     } else {
                         if (requestCallback != null) {
                             requestCallback.onRequestCompleted(responseString, false);

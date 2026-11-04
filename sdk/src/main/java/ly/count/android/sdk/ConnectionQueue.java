@@ -59,6 +59,7 @@ class ConnectionQueue implements RequestQueueProvider {
     private Future<?> connectionProcessorFuture_;
     private DeviceIdProvider deviceIdProvider_;
     private SSLSocketFactory sslSocketFactory_;
+    private ConnectionFactory connectionFactory_;
     private final ScheduledExecutorService backoffScheduler_ = Executors.newSingleThreadScheduledExecutor();
     private final AtomicBoolean backoff_ = new AtomicBoolean(false);
 
@@ -144,6 +145,15 @@ class ConnectionQueue implements RequestQueueProvider {
         } catch (Throwable e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    /**
+     * Sets the factory that the connection processors open their server connections through.
+     *
+     * @param connectionFactory the factory to use, or null to open connections directly
+     */
+    void setConnectionFactory(ConnectionFactory connectionFactory) {
+        connectionFactory_ = connectionFactory;
     }
 
     public void setDeviceId(DeviceIdProvider deviceIdProvider) {
@@ -992,6 +1002,7 @@ class ConnectionQueue implements RequestQueueProvider {
             }
         }, internalRequestCallbacks);
         cp.pcc = pcc;
+        cp.connectionFactory = connectionFactory_;
         return cp;
     }
 
