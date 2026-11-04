@@ -1106,6 +1106,21 @@ public class ModuleViewsTests {
     }
 
     /**
+     * A view's duration is measured on the monotonic clock, which a change of the device clock does not move
+     */
+    @Test
+    public void viewDurationOnMonotonicClock() {
+        @NonNull CountlyConfig cc = TestUtils.createViewCountlyConfig(false, false, false, safeViewIDGenerator, null);
+        Countly mCountly = new Countly().init(cc);
+        @NonNull EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+
+        String viewID = startViewInFlow(viewNames[0], vals[0], null, null, false, mCountly, ep);
+        mCountly.moduleViews.viewDataMap.get(viewID).viewStartTimeSeconds = UtilsTime.monotonicTimeSeconds() - 3;
+
+        stopViewInFlow(viewNames[0], viewID, null, null, 3, true, mCountly, ep);
+    }
+
+    /**
      * Validate that segmentation can be provided as expected
      * Use ID to stop view: yes
      * Use the "set" and not "update" segmentation call: yes
@@ -2267,7 +2282,7 @@ public class ModuleViewsTests {
             viewSegmentation.put("cly_pvn", pvn);
         }
 
-        //The SDK reports view durations in WHOLE SECONDS (currentTimestampSeconds() - viewStartTimeSeconds),
+        //The SDK reports view durations in WHOLE SECONDS (monotonicTimeSeconds() - viewStartTimeSeconds),
         //and the tests that expect a non-zero duration produce it with Thread.sleep. A 1000 ms sleep plus any
         //scheduling delay therefore measures 1 or 2 depending on which side of a second boundary the clock
         //lands on, which is why CI failed with expected:<1.0> but was:<2.0> on a test that is not about
