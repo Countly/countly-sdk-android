@@ -146,7 +146,6 @@ public class ModuleAPMTests {
 
         mCountly.apm().startNetworkRequest("abc", "111");
         Assert.assertTrue(mCountly.moduleAPM.networkTraces.containsKey(internalTraceKey));
-        Long starVal = mCountly.moduleAPM.networkTraces.get(internalTraceKey);
 
         mCountly.apm().endNetworkRequest("abc", "111", 345, 222, 555);
 
@@ -154,21 +153,20 @@ public class ModuleAPMTests {
 
         verify(requestQueueProvider).sendAPMNetworkTrace(eq("abc"), duration.capture(), eq(345), eq(222), eq(555), start.capture(), stop.capture());
 
-        Assert.assertEquals(starVal, start.getValue());
-        Assert.assertTrue(stop.getValue() > start.getValue());
-        Assert.assertTrue((stop.getValue() - start.getValue()) < 100);
+        Assert.assertEquals(stop.getValue() - start.getValue(), (long) duration.getValue());
+        Assert.assertTrue(duration.getValue() >= 0 && duration.getValue() < 100);
     }
 
     @Test
     public void customTrace() {
         String key = "ddd";
-        Long ts1 = UtilsTime.currentTimestampMs();
+        long ts1 = UtilsTime.monotonicTimeMs();
         mCountly.apm().startTrace(key);
-        Long ts2 = UtilsTime.currentTimestampMs();
+        long ts2 = UtilsTime.monotonicTimeMs();
 
         Assert.assertTrue(mCountly.moduleAPM.codeTraces.containsKey(key));
         Long keyTs = mCountly.moduleAPM.codeTraces.get(key);
-        Assert.assertTrue(ts1 < keyTs && keyTs < ts2);
+        Assert.assertTrue(ts1 <= keyTs && keyTs <= ts2);
 
         mCountly.apm().endTrace(key, null);
 
@@ -178,9 +176,64 @@ public class ModuleAPMTests {
 
         verify(requestQueueProvider).sendAPMCustomTrace(eq(key), duration.capture(), start.capture(), stop.capture(), eq(""));
 
-        Assert.assertEquals(keyTs, start.getValue());
-        Assert.assertTrue(stop.getValue() > start.getValue());
-        Assert.assertTrue((stop.getValue() - start.getValue()) < 100);
+        Assert.assertEquals(stop.getValue() - start.getValue(), (long) duration.getValue());
+        Assert.assertTrue(duration.getValue() >= 0 && duration.getValue() < 100);
+    }
+
+    /**
+     * A custom trace's duration comes from the monotonic clock, and its start timestamp is its end timestamp minus
+     * that duration
+     */
+    @Test
+    public void customTrace_monotonicClock() {
+        mCountly.apm().startTrace("ddd");
+        mCountly.moduleAPM.codeTraces.put("ddd", UtilsTime.monotonicTimeMs() - 2000);
+        mCountly.apm().endTrace("ddd", null);
+
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> start = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> stop = ArgumentCaptor.forClass(Long.class);
+        verify(requestQueueProvider).sendAPMCustomTrace(eq("ddd"), duration.capture(), start.capture(), stop.capture(), eq(""));
+
+        Assert.assertTrue("duration: " + duration.getValue(), duration.getValue() >= 2000 && duration.getValue() < 2100);
+        Assert.assertEquals(stop.getValue() - start.getValue(), (long) duration.getValue());
+    }
+
+    /**
+     * A network trace's response time comes from the monotonic clock, and its start timestamp is its end timestamp
+     * minus that response time
+     */
+    @Test
+    public void networkTrace_monotonicClock() {
+        mCountly.apm().startNetworkRequest("abc", "111");
+        mCountly.moduleAPM.networkTraces.put("abc|111", UtilsTime.monotonicTimeMs() - 2000);
+        mCountly.apm().endNetworkRequest("abc", "111", 200, 10, 20);
+
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> start = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> stop = ArgumentCaptor.forClass(Long.class);
+        verify(requestQueueProvider).sendAPMNetworkTrace(eq("abc"), duration.capture(), eq(200), eq(10), eq(20), start.capture(), stop.capture());
+
+        Assert.assertTrue("response time: " + duration.getValue(), duration.getValue() >= 2000 && duration.getValue() < 2100);
+        Assert.assertEquals(stop.getValue() - start.getValue(), (long) duration.getValue());
+    }
+
+    /**
+     * Foreground and background time comes from the monotonic clock, and its start timestamp is its end timestamp
+     * minus that time
+     */
+    @Test
+    public void foregroundBackgroundTime_monotonicClock() {
+        mCountly.moduleAPM.lastScreenSwitchTime = UtilsTime.monotonicTimeMs() - 3000;
+        mCountly.moduleAPM.doForegroundBackgroundCalculations(true, false);
+
+        ArgumentCaptor<Long> duration = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> start = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<Long> stop = ArgumentCaptor.forClass(Long.class);
+        verify(requestQueueProvider).sendAPMScreenTime(eq(true), duration.capture(), start.capture(), stop.capture());
+
+        Assert.assertTrue("foreground time: " + duration.getValue(), duration.getValue() >= 3000 && duration.getValue() < 3100);
+        Assert.assertEquals(stop.getValue() - start.getValue(), (long) duration.getValue());
     }
 
     @Test

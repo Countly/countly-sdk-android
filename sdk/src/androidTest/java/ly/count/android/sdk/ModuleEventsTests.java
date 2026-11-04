@@ -269,6 +269,44 @@ public class ModuleEventsTests {
         Assert.assertEquals(2, captD, 0.1d);
     }
 
+    /**
+     * The device clock moving an hour forward between "startEvent" and "endEvent" does not change the duration
+     */
+    @Test
+    public void startEndEvent_deviceClockMovedForward() {
+        startEndEventDeviceClockChangedBase(3_600_000L);
+    }
+
+    /**
+     * The device clock moving an hour back between "startEvent" and "endEvent" does not change the duration
+     */
+    @Test
+    public void startEndEvent_deviceClockMovedBack() {
+        startEndEventDeviceClockChangedBase(-3_600_000L);
+    }
+
+    /**
+     * Ends a timed event right after moving its wall-clock start by "clockChangeMs" the other way, which is how a
+     * device clock change between start and end looks to the SDK. The duration must stay near zero, and the
+     * event must keep its wall-clock start as its timestamp.
+     */
+    void startEndEventDeviceClockChangedBase(long clockChangeMs) {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        Assert.assertTrue(mCountly.events().startEvent(eventKey));
+
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
+        startEvent.timestamp -= clockChangeMs;
+
+        Assert.assertTrue(mCountly.events().endEvent(eventKey));
+
+        ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
+        verify(ep).recordEventInternal(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture(), isNull(String.class));
+
+        Assert.assertEquals(startEvent.timestamp, arg.getValue().timestampMs);
+        Assert.assertEquals(0, argD.getValue(), 0.1d);
+    }
+
     @Test
     public void startCancelEndEvent() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
