@@ -34,6 +34,7 @@
 * Mitigated a crash when a content or feedback widget was closed from a background thread, for example by a device ID change without merge or by removing consent.
 * Mitigated an issue where an auto-stopped view could stop being tracked when the app came back from the background.
 * Mitigated an issue where, with automatic view tracking, coming back to an activity that had not been stopped, for example when a translucent activity closed, did not record that activity's view again. The view of the activity that was left kept counting, and events recorded meanwhile were attributed to it.
+* Fixed an issue where a view ID stopped working after the app was backgrounded and foregrounded. The view was reopened under a new ID, so `stopViewWithID`, `pauseViewWithID`, `resumeViewWithID`, and `addSegmentationToViewWithID` no longer recognized the ID returned by `startView`, and the view stayed open.
 * Mitigated an issue where the app was treated as being in the background after moving from one activity to another. Crash reports were marked as happening in the background, and with visibility tracking, events were marked as recorded in the background.
 * Mitigated an issue where a setting removed from the SDK behavior settings in SDK Manager did not go back to the value set in `CountlyConfig`, or to the SDK default.
 * Mitigated an issue where old requests kept being dropped from a full request queue after the SDK behavior settings turned the request age limit off.
