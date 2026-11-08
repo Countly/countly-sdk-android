@@ -65,4 +65,9 @@ interface StorageProvider {
     @NonNull String getHealthCheckCounterState();
 
     void setHealthCheckCounterState(String counterState);
+
+    //which attribution signals were already sent, as a JSON object
+    @NonNull String getAttributionState();
+
+    void setAttributionState(@NonNull String state);
 }

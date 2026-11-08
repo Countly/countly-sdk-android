@@ -67,6 +67,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String PREFERENCE_SERVER_CONFIG = "SERVER_CONFIG";
 
     private static final String PREFERENCE_HEALTH_CHECK_STATE = "HEALTH_CHECK";
+    private static final String PREFERENCE_ATTRIBUTION_STATE = "ATTRIBUTION_STATE";
 
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
@@ -1171,5 +1172,15 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public int getMaxRequestQueueSize() {
         return maxRequestQueueSize;
+    }
+
+    //written straight to preferences also in explicit storage mode: it guards "send once", and losing it
+    //with an unflushed cache would send the install referrer again on the next launch
+    public @NonNull String getAttributionState() {
+        return preferences_.getString(PREFERENCE_ATTRIBUTION_STATE, "");
+    }
+
+    public void setAttributionState(@NonNull String state) {
+        preferences_.edit().putString(PREFERENCE_ATTRIBUTION_STATE, state).apply();
     }
 }

@@ -27,6 +27,11 @@
 * Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
 * Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
 * Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events. Keys these events reserve are dropped from it.
+* Added new attribution signals, sent once each as a raw value the server parses (Countly server with the redesigned attribution). All need the `attribution` consent:
+  * The Google Play Install Referrer is read on first launch and sent as is. This needs the optional `com.android.installreferrer:installreferrer` dependency in the app; without it nothing is read. Plain UTM referrers (Google Ads, partners) and Countly link click IDs are both attributed.
+  * Links that open the app are captured from the launch intent of the activity and sent when they are Countly smart links (`/at/...`) or carry `utm_*`, `cly_clk`, `countly_cid` or `countly_cuid`. Use "attribution().recordDeepLink(Uri)" for other links and for links delivered to `onNewIntent`.
+  * "setAttributionChannel(String)" in "CountlyConfig" sends the channel a build is distributed through, again only when it changes.
+* Added "setDeepLinkCallback(DeepLinkCallback)" to "CountlyConfig". It tells the app where to route: a link that opened the app (`OPENED`), the deep link of a link the app was installed from (`DEFERRED`, first launch), or no link (`NONE`, first launch). It is also called without the `attribution` consent for links that open the app; the first launch is answered once the consent is given.
 
 * Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.
 * Mitigated an issue where an app that stayed in the foreground refreshed its SDK behavior settings only every 4,000 hours instead of every 4 hours.

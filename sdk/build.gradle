@@ -74,6 +74,9 @@ dependencies {
   implementation "androidx.annotation:annotation:${annotationVersion}"
   implementation "androidx.lifecycle:lifecycle-common:${lifecycleVersion}"
   implementation "androidx.lifecycle:lifecycle-process:${lifecycleVersion}"
+  // Optional: the app adds it to have the Play Install Referrer read. The SDK checks for it at runtime
+  // (PlayInstallReferrerReader), so apps without it build and run; consumer-rules.pro keeps R8 quiet.
+  compileOnly "com.android.installreferrer:installreferrer:2.2"
 
   androidTestImplementation 'androidx.test:runner:1.7.0'
   androidTestImplementation 'androidx.test:rules:1.7.0'

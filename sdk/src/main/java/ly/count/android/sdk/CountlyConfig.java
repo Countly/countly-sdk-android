@@ -204,6 +204,10 @@ public class CountlyConfig {
     String daCampaignType = null;
     String daCampaignData = null;
     Map<String, String> iaAttributionValues = null;
+    String attributionChannel = null;
+    DeepLinkCallback deepLinkCallback = null;
+    //tests replace the Play Install Referrer reader; null means the default one
+    InstallReferrerReader installReferrerReader = null;
 
     boolean explicitStorageModeEnabled = false;
 
@@ -881,6 +885,30 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setIndirectAttribution(Map<String, String> attributionValues) {
         iaAttributionValues = attributionValues;
+        return this;
+    }
+
+    /**
+     * Set the channel this build is distributed through, for example the store or partner a separate APK
+     * was built for. It is sent once (again only when it changes) and needs the "attribution" consent.
+     *
+     * @param channel the build channel, null or empty for none
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setAttributionChannel(String channel) {
+        attributionChannel = channel;
+        return this;
+    }
+
+    /**
+     * Set the callback that tells the app where a link wants to take the user: a link that opened the app,
+     * a deferred deep link from the install referrer on first launch, or none on first launch.
+     *
+     * @param callback the callback, null to remove it
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setDeepLinkCallback(DeepLinkCallback callback) {
+        deepLinkCallback = callback;
         return this;
     }
 

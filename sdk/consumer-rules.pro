@@ -15,3 +15,8 @@
 # it, and R8 reports the dangling reference whenever any lambda (the SDK has some) is in the build. Lambdas
 # are rewritten to plain classes, so nothing touches it at runtime; this only silences the bogus report.
 -dontwarn java.lang.invoke.MethodHandleInfo
+
+# The Play Install Referrer library is an optional dependency: PlayInstallReferrerReader references it only
+# after checking at runtime that the app includes it. Apps without it would otherwise fail R8 with
+# "Missing class".
+-dontwarn com.android.installreferrer.**

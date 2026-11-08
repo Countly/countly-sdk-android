@@ -1,7 +1,13 @@
 package ly.count.android.sdk;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -10,11 +16,329 @@ public class ModuleAttribution extends ModuleBase {
 
     Attribution attributionInterface;
 
+    static final String TYPE_REFERRER = "referrer";
+    static final String TYPE_DEEPLINK = "deeplink";
+    static final String TYPE_CHANNEL = "channel";
+
+    //keys of the persisted attribution state
+    static final String STATE_REFERRER_DONE = "referrer_done";
+    static final String STATE_REFERRER_ATTEMPTS = "referrer_attempts";
+    static final String STATE_FIRST_LAUNCH_RESOLVED = "first_launch_resolved";
+    static final String STATE_CHANNEL = "channel";
+
+    //a store that keeps saying "try later" (no Play Store, for one) is asked on this many launches only
+    static final int MAX_REFERRER_ATTEMPTS = 3;
+
+    final Context context;
+    final InstallReferrerReader installReferrerReader;
+    final String attributionChannel;
+    final DeepLinkCallback deepLinkCallback;
+    final String handledIntentExtra;
+
+    boolean referrerReadInProgress = false;
+    //a link opened the app in this process; then the first launch reports no DEFERRED or NONE
+    boolean linkOpenedThisProcess = false;
+    volatile boolean halted = false;
+
     ModuleAttribution(Countly cly, CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleAttribution] Initialising");
 
+        context = config.context;
+        installReferrerReader = config.installReferrerReader != null ? config.installReferrerReader : new PlayInstallReferrerReader();
+        attributionChannel = config.attributionChannel;
+        deepLinkCallback = config.deepLinkCallback;
+        handledIntentExtra = "ly.count.android.sdk.deeplink_handled." + cly.instanceName_;
+
         attributionInterface = new ModuleAttribution.Attribution();
+    }
+
+    // ------------------------------------------------------------------ persisted state
+
+    @NonNull JSONObject readState() {
+        String raw = storageProvider.getAttributionState();
+        if (raw != null && !raw.isEmpty()) {
+            try {
+                return new JSONObject(raw);
+            } catch (JSONException e) {
+                L.w("[ModuleAttribution] readState, stored state is not valid, starting over");
+            }
+        }
+        return new JSONObject();
+    }
+
+    void writeState(@NonNull JSONObject state) {
+        storageProvider.setAttributionState(state.toString());
+    }
+
+    void putState(@NonNull String key, @NonNull Object value) {
+        JSONObject state = readState();
+        try {
+            state.put(key, value);
+        } catch (JSONException ignored) {
+        }
+        writeState(state);
+    }
+
+    // ------------------------------------------------------------------ signals sent once
+
+    /**
+     * Sends what is sent once per install: the build channel and the install referrer. Runs at init and
+     * again when the attribution consent is given.
+     */
+    void processInstallSignals() {
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            L.d("[ModuleAttribution] processInstallSignals, no 'attribution' consent, waiting for it");
+            return;
+        }
+        sendChannelIfNeeded();
+        readInstallReferrerIfNeeded();
+    }
+
+    void sendChannelIfNeeded() {
+        if (attributionChannel == null || attributionChannel.isEmpty()) {
+            return;
+        }
+        String sent = readState().optString(STATE_CHANNEL, "");
+        if (attributionChannel.equals(sent)) {
+            L.v("[ModuleAttribution] sendChannelIfNeeded, channel already sent");
+            return;
+        }
+        L.d("[ModuleAttribution] sendChannelIfNeeded, sending channel [" + attributionChannel + "]");
+        requestQueueProvider.sendAttributionSignal(TYPE_CHANNEL, attributionChannel);
+        putState(STATE_CHANNEL, attributionChannel);
+    }
+
+    void readInstallReferrerIfNeeded() {
+        JSONObject state = readState();
+        if (state.optBoolean(STATE_REFERRER_DONE, false)) {
+            return;
+        }
+        if (referrerReadInProgress) {
+            return;
+        }
+        if (!installReferrerReader.isAvailable()) {
+            //not marked as done: an app update that adds the library still reads it once
+            L.i("[ModuleAttribution] readInstallReferrerIfNeeded, the install referrer library ('com.android.installreferrer:installreferrer') is not in the app, the install referrer is not read");
+            resolveFirstLaunch(null, null);
+            return;
+        }
+        if (context == null) {
+            L.w("[ModuleAttribution] readInstallReferrerIfNeeded, no context, the install referrer is not read");
+            return;
+        }
+
+        referrerReadInProgress = true;
+        L.d("[ModuleAttribution] readInstallReferrerIfNeeded, reading the install referrer");
+        try {
+            installReferrerReader.read(context, this::onInstallReferrerResult);
+        } catch (Throwable t) {
+            L.w("[ModuleAttribution] readInstallReferrerIfNeeded, reading failed: " + t);
+            onInstallReferrerResult(InstallReferrerReader.STATUS_RETRY, null);
+        }
+    }
+
+    void onInstallReferrerResult(int status, @Nullable String referrer) {
+        synchronized (_cly) {
+            referrerReadInProgress = false;
+            if (halted) {
+                return;
+            }
+            L.d("[ModuleAttribution] onInstallReferrerResult, status:[" + status + "], referrer:[" + referrer + "]");
+
+            JSONObject state = readState();
+            if (state.optBoolean(STATE_REFERRER_DONE, false)) {
+                return;
+            }
+
+            if (status == InstallReferrerReader.STATUS_OK) {
+                if (referrer != null && !referrer.isEmpty()) {
+                    if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+                        //consent was removed while reading: keep it for the next time consent is given
+                        L.d("[ModuleAttribution] onInstallReferrerResult, 'attribution' consent was removed meanwhile, not sending");
+                        return;
+                    }
+                    requestQueueProvider.sendAttributionSignal(TYPE_REFERRER, referrer);
+                }
+                putState(STATE_REFERRER_DONE, true);
+                resolveFirstLaunch(referrer == null ? null : deepLinkFromReferrer(referrer), referrer);
+                return;
+            }
+
+            if (status == InstallReferrerReader.STATUS_NOT_SUPPORTED) {
+                putState(STATE_REFERRER_DONE, true);
+                resolveFirstLaunch(null, null);
+                return;
+            }
+
+            int attempts = state.optInt(STATE_REFERRER_ATTEMPTS, 0) + 1;
+            if (attempts >= MAX_REFERRER_ATTEMPTS) {
+                L.w("[ModuleAttribution] onInstallReferrerResult, the install referrer could not be read in " + attempts + " launches, giving up");
+                putState(STATE_REFERRER_DONE, true);
+                resolveFirstLaunch(null, null);
+            } else {
+                putState(STATE_REFERRER_ATTEMPTS, attempts);
+            }
+        }
+    }
+
+    /**
+     * Reports DEFERRED or NONE to the app once, on the first launch.
+     */
+    void resolveFirstLaunch(@Nullable String deferredPath, @Nullable String referrer) {
+        if (readState().optBoolean(STATE_FIRST_LAUNCH_RESOLVED, false)) {
+            return;
+        }
+        putState(STATE_FIRST_LAUNCH_RESOLVED, true);
+        if (linkOpenedThisProcess) {
+            //the link that opened the app was already reported, it is the more specific destination
+            return;
+        }
+        if (deferredPath != null && !deferredPath.isEmpty()) {
+            notifyDeepLink(DeepLinkCallback.Type.DEFERRED, deferredPath, referrer);
+        } else {
+            notifyDeepLink(DeepLinkCallback.Type.NONE, null, null);
+        }
+    }
+
+    // ------------------------------------------------------------------ deep links
+
+    void recordDeepLinkInternal(@Nullable Uri uri, boolean automatic) {
+        if (uri == null || uri.toString().isEmpty()) {
+            L.e("[ModuleAttribution] recordDeepLinkInternal, provided link is not valid. Execution will be aborted.");
+            return;
+        }
+        String url = uri.toString();
+        L.d("[ModuleAttribution] recordDeepLinkInternal, link:[" + url + "], automatic:[" + automatic + "]");
+
+        //an automatically captured link is only sent when it is an attribution link: an app's own links can
+        //carry one time tokens (password resets, sign in links) that have no business on the server
+        if (!automatic || isAttributionLink(uri)) {
+            if (consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+                requestQueueProvider.sendAttributionSignal(TYPE_DEEPLINK, url);
+            } else {
+                L.d("[ModuleAttribution] recordDeepLinkInternal, no 'attribution' consent, the link is not sent");
+            }
+        }
+
+        linkOpenedThisProcess = true;
+        notifyDeepLink(DeepLinkCallback.Type.OPENED, deepLinkPath(uri), url);
+    }
+
+    void captureLaunchLink(@Nullable Activity activity) {
+        if (activity == null) {
+            return;
+        }
+        Intent intent;
+        try {
+            intent = activity.getIntent();
+        } catch (Throwable t) {
+            return;
+        }
+        if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) {
+            return;
+        }
+        Uri data = intent.getData();
+        if (data == null || !isLinkScheme(data.getScheme())) {
+            return;
+        }
+        try {
+            if (intent.getBooleanExtra(handledIntentExtra, false)) {
+                return;
+            }
+            //marked on the intent itself, so the same link is not recorded again when the activity is
+            //recreated (rotation) or restored after process death
+            intent.putExtra(handledIntentExtra, true);
+        } catch (Throwable t) {
+            //unparcelable extras from another app; the link is still recorded once for this resume
+            L.w("[ModuleAttribution] captureLaunchLink, could not mark the intent: " + t);
+        }
+        recordDeepLinkInternal(data, true);
+    }
+
+    void notifyDeepLink(@NonNull DeepLinkCallback.Type type, @Nullable String path, @Nullable String url) {
+        if (deepLinkCallback == null) {
+            return;
+        }
+        try {
+            deepLinkCallback.onDeepLink(type, path, url);
+        } catch (Throwable t) {
+            L.e("[ModuleAttribution] notifyDeepLink, the deep link callback threw: " + t);
+        }
+    }
+
+    static boolean isLinkScheme(@Nullable String scheme) {
+        if (scheme == null || scheme.isEmpty()) {
+            return false;
+        }
+        String s = scheme.toLowerCase(Locale.ROOT);
+        //opening a document or a resource is not a link
+        return !s.equals("content") && !s.equals("file") && !s.equals("android.resource") && !s.equals("data") && !s.equals("javascript");
+    }
+
+    static boolean isSmartLink(@NonNull Uri uri) {
+        List<String> segments = uri.isHierarchical() ? uri.getPathSegments() : null;
+        return segments != null && segments.size() >= 2 && "at".equals(segments.get(0));
+    }
+
+    static boolean isAttributionLink(@NonNull Uri uri) {
+        if (!uri.isHierarchical()) {
+            return false;
+        }
+        if (isSmartLink(uri)) {
+            return true;
+        }
+        for (String name : uri.getQueryParameterNames()) {
+            String n = name.toLowerCase(Locale.ROOT);
+            if (n.startsWith("utm_") || n.equals("cly_clk") || n.equals("countly_cid") || n.equals("countly_cuid")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static boolean isObjectId(@NonNull String s) {
+        return s.matches("[0-9a-fA-F]{24}");
+    }
+
+    /**
+     * Where a link wants to take the user: its {@code dl} parameter, otherwise for a smart link
+     * {@code /at/[<app id>/]<code>/<path>} the path after the code, otherwise the link's path.
+     */
+    static @Nullable String deepLinkPath(@NonNull Uri uri) {
+        if (!uri.isHierarchical()) {
+            return null;
+        }
+        String dl = uri.getQueryParameter("dl");
+        if (dl != null && !dl.isEmpty()) {
+            return dl;
+        }
+        if (isSmartLink(uri)) {
+            List<String> segments = uri.getPathSegments();
+            int codeIndex = segments.size() >= 3 && isObjectId(segments.get(1)) ? 2 : 1;
+            if (segments.size() <= codeIndex + 1) {
+                return null;
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = codeIndex + 1; i < segments.size(); i++) {
+                sb.append('/').append(segments.get(i));
+            }
+            return sb.toString();
+        }
+        String path = uri.getPath();
+        return path == null || path.isEmpty() ? null : path;
+    }
+
+    /**
+     * The {@code dl} parameter of a raw install referrer ("utm_source=x&cly_clk=y&dl=%2Fproduct").
+     */
+    static @Nullable String deepLinkFromReferrer(@NonNull String referrer) {
+        try {
+            String dl = Uri.parse("https://referrer.invalid/?" + referrer).getQueryParameter("dl");
+            return dl == null || dl.isEmpty() ? null : dl;
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     void recordDirectAttributionInternal(@Nullable String campaignType, @Nullable String campaignData) {
@@ -138,6 +462,25 @@ public class ModuleAttribution extends ModuleBase {
     }
 
     @Override
+    void onInitialActivitySeeded(@NonNull Activity activity) {
+        captureLaunchLink(activity);
+    }
+
+    @Override
+    void callbackOnActivityResumed(Activity activity) {
+        synchronized (_cly) {
+            captureLaunchLink(activity);
+        }
+    }
+
+    @Override
+    void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
+        if (newConsent && consentChangeDelta.contains(Countly.CountlyFeatureNames.attribution)) {
+            processInstallSignals();
+        }
+    }
+
+    @Override
     void initFinished(@NonNull CountlyConfig config) {
         //check if any indirect attribution value is set
         if (config.iaAttributionValues != null) {
@@ -159,10 +502,13 @@ public class ModuleAttribution extends ModuleBase {
                 recordDirectAttributionInternal(config.daCampaignType, config.daCampaignData);
             }
         }
+
+        processInstallSignals();
     }
 
     @Override
     public void halt() {
+        halted = true;
         attributionInterface = null;
     }
 
@@ -189,6 +535,21 @@ public class ModuleAttribution extends ModuleBase {
                 L.i("[Attribution] calling 'recordIndirectAttribution'");
 
                 recordIndirectAttributionInternal(attributionValues);
+            }
+        }
+
+        /**
+         * Report the link that opened the app, for example from {@code onNewIntent} of an activity that
+         * is already running. Links in the launch intent of an activity are captured automatically.
+         * The link is sent when the "attribution" consent is given; the deep link callback is called either way.
+         *
+         * @param uri the link that opened the app
+         */
+        public void recordDeepLink(Uri uri) {
+            synchronized (_cly) {
+                L.i("[Attribution] calling 'recordDeepLink'");
+
+                recordDeepLinkInternal(uri, false);
             }
         }
     }

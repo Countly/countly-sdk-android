@@ -2,22 +2,15 @@ package ly.count.android.demo;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
-import com.android.installreferrer.api.InstallReferrerClient;
-import com.android.installreferrer.api.InstallReferrerStateListener;
-import com.android.installreferrer.api.ReferrerDetails;
-import java.net.URLDecoder;
 import ly.count.android.sdk.Countly;
 
 @SuppressWarnings("UnusedParameters")
 public class MainActivity extends AppCompatActivity {
-    private final static String demoTag = "CountlyDemo";
-    InstallReferrerClient referrerClient;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -37,47 +30,8 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        referrerClient = InstallReferrerClient.newBuilder(this).build();
-        referrerClient.startConnection(new InstallReferrerStateListener() {
-            @Override
-            public void onInstallReferrerSetupFinished(int responseCode) {
-                switch (responseCode) {
-                    case InstallReferrerClient.InstallReferrerResponse.OK:
-                        try {
-                            ReferrerDetails response = referrerClient.getInstallReferrer();
-                            String referrerUrl = response.getInstallReferrer();
-                            String campaignId = "someCampaignId";
-                            String userId = "someUserId";
-                            String referrer = URLDecoder.decode(referrerUrl, "UTF-8");
-                            Log.d(Countly.TAG, "Received Referrer url: " + referrer);
-                            String[] parts = referrer.split("&");
-                            for (String part : parts) {
-                                if (part.startsWith("countly_cid")) {
-                                    campaignId = part.replace("countly_cid=", "").trim();
-                                }
-                                if (part.startsWith("countly_cuid")) {
-                                    userId = part.replace("countly_cuid=", "").trim();
-                                }
-                            }
-                            Countly.sharedInstance().attribution().recordDirectAttribution("countly", "{\"cid\":" + campaignId + ",\"cuid\":" + userId + "}");
-                            referrerClient.endConnection();
-                        } catch (Exception e) {
-                            Log.e(demoTag, "Error while parsing referrer", e);
-                        }
-                        break;
-                    case InstallReferrerClient.InstallReferrerResponse.FEATURE_NOT_SUPPORTED:
-                        break;
-                    case InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE:
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            @Override
-            public void onInstallReferrerServiceDisconnected() {
-            }
-        });
+        // The install referrer is read by the SDK on first launch and sent raw to the server, which parses
+        // utm_*, cly_clk, countly_cid / countly_cuid and dl from it. See setDeepLinkCallback in App.
     }
 
     public void onClickButtonCustomEvents(View v) {
