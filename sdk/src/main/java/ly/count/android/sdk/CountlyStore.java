@@ -1189,13 +1189,13 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     }
 
     /**
-     * Adds one automatically detected crash to the stored count. Written synchronously, also in explicit storage mode, as
-     * the process is about to end.
+     * Adds one automatically detected crash to the stored count. It is applied to the preferences in memory only: the
+     * synchronous save of the crash report that follows writes it to storage together with the report, also in explicit
+     * storage mode, so reporting a crash costs one write.
      */
-    @SuppressLint("ApplySharedPref")
     public synchronized void incrementAutomaticCrashCount() {
         int count = preferences_.getInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, 0);
-        preferences_.edit().putInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, count + 1).commit();
+        preferences_.edit().putInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, count + 1).apply();
     }
 
     /**

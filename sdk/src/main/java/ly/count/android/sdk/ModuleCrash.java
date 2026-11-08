@@ -310,8 +310,9 @@ public class ModuleCrash extends ModuleBase {
             String stackTrace = prepareStackTrace(e);
             CrashData crashData = prepareCrashData(stackTrace, false, false, null);
             if (!crashFilterCheck(crashData, false)) {
-                sendCrashReportToQueue(crashData, false);
+                //counted before the report is queued, so the report's synchronous save writes the count too
                 storageProvider.incrementAutomaticCrashCount();
+                sendCrashReportToQueue(crashData, false);
             }
         }
     }

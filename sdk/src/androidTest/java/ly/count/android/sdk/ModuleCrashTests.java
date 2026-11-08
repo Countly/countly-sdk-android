@@ -27,12 +27,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.internal.util.collections.Sets;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
@@ -1578,5 +1580,38 @@ public class ModuleCrashTests {
         store.addRequest("crash=handled", false);
         verify(editor).apply();
         verify(editor).commit();//still only the single "commit" from the fatal crash
+    }
+
+    /**
+     * The health check count of automatically detected crashes is added before the fatal crash is queued. The count is
+     * only applied in memory, so the synchronous write of the crash request is what stores it, and reporting the crash
+     * costs a single write.
+     */
+    @Test
+    public void fatalCrash_automaticCrashCountIsAddedBeforeTheSyncWriteOfTheReport() {
+        Thread.UncaughtExceptionHandler originalHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        try {
+            //terminate the handler chain here so the test process is not brought down
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            });
+
+            CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+            countlyConfig.metricProviderOverride = mmp;
+            Countly countly = new Countly().init(countlyConfig);
+
+            StorageProvider storageSpy = spy(TestUtils.getCountlyStore());
+            countly.connectionQueue_.setStorageProvider(storageSpy);
+            countly.moduleCrash.storageProvider = storageSpy;
+
+            Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), new Exception("Fatal message"));
+
+            InOrder order = inOrder(storageSpy);
+            order.verify(storageSpy).incrementAutomaticCrashCount();
+            order.verify(storageSpy).addRequest(anyString(), eq(true));
+            Assert.assertEquals(1, TestUtils.getCountlyStore().takeAutomaticCrashCount());
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalHandler);
+        }
     }
 }
