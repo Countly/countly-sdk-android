@@ -126,7 +126,8 @@ public class ModuleFeedback extends ModuleBase {
         L.d("[ModuleFeedback] calling 'getAvailableFeedbackWidgetsInternal', callback set:[" + (devCallback != null) + "]");
 
         if (devCallback == null) {
-            L.e("[ModuleFeedback] available feedback widget list can't be retrieved without a callback");
+            L.w("[ModuleFeedback] available feedback widget list can't be retrieved without a callback");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -243,7 +244,8 @@ public class ModuleFeedback extends ModuleBase {
 
     void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
-            L.e("[ModuleFeedback] Can't present widget with null widget info");
+            L.w("[ModuleFeedback] Can't present widget with null widget info");
+            healthTracker.recordLogCode("w700");
 
             if (devCallback != null) {
                 devCallback.onFinished("Can't present widget with null widget info");
@@ -254,7 +256,8 @@ public class ModuleFeedback extends ModuleBase {
         L.d("[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", widget id:[" + widgetInfo.widgetId + "], widget type:[" + widgetInfo.type + "]");
 
         if (context == null) {
-            L.e("[ModuleFeedback] Can't show feedback, provided context is null");
+            L.w("[ModuleFeedback] Can't show feedback, provided context is null");
+            healthTracker.recordLogCode("w700");
             if (devCallback != null) {
                 devCallback.onFinished("Can't show feedback, provided context is null");
             }
@@ -575,12 +578,14 @@ public class ModuleFeedback extends ModuleBase {
         L.d("[ModuleFeedback] calling 'getFeedbackWidgetDataInternal', callback set:[" + (devCallback != null) + "]");
 
         if (devCallback == null) {
-            L.e("[ModuleFeedback] Feedback widget data can't be retrieved without a callback");
+            L.w("[ModuleFeedback] Feedback widget data can't be retrieved without a callback");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (widgetInfo == null) {
-            L.e("[ModuleFeedback] Feedback widget data if provided widget is 'null'");
+            L.w("[ModuleFeedback] Feedback widget data if provided widget is 'null'");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -653,7 +658,8 @@ public class ModuleFeedback extends ModuleBase {
      */
     void reportFeedbackWidgetManuallyInternal(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable JSONObject widgetData, @Nullable Map<String, Object> widgetResult) {
         if (widgetInfo == null) {
-            L.e("[ModuleFeedback] Can't report feedback widget data manually with 'null' widget info");
+            L.w("[ModuleFeedback] Can't report feedback widget data manually with 'null' widget info");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -678,12 +684,15 @@ public class ModuleFeedback extends ModuleBase {
                 Map.Entry<String, Object> entry = iter.next();
                 if (entry.getKey() == null) {
                     L.w("[ModuleFeedback] provided feedback widget result contains a 'null' key, it will be removed, value[" + entry.getValue() + "]");
+                    healthTracker.recordLogCode("w700");
                     iter.remove();
                 } else if (entry.getKey().isEmpty()) {
                     L.w("[ModuleFeedback] provided feedback widget result contains an empty string key, it will be removed, value[" + entry.getValue() + "]");
+                    healthTracker.recordLogCode("w700");
                     iter.remove();
                 } else if (entry.getValue() == null) {
                     L.w("[ModuleFeedback] provided feedback widget result contains a 'null' value, it will be removed, key[" + entry.getKey() + "]");
+                    healthTracker.recordLogCode("w700");
                     iter.remove();
                 }
 
@@ -699,21 +708,24 @@ public class ModuleFeedback extends ModuleBase {
             if (widgetInfo.type == FeedbackWidgetType.nps) {
                 //in case a nps widget was completed
                 if (!widgetResult.containsKey("rating")) {
-                    L.e("Provided NPS widget result does not have a 'rating' field, result can't be reported");
+                    L.w("Provided NPS widget result does not have a 'rating' field, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating data type
                 Object ratingValue = widgetResult.get("rating");
                 if (!(ratingValue instanceof Integer)) {
-                    L.e("Provided NPS widget 'rating' field is not an integer, result can't be reported");
+                    L.w("Provided NPS widget 'rating' field is not an integer, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating value range
                 int ratingValI = (int) ratingValue;
                 if (ratingValI < 0 || ratingValI > 10) {
-                    L.e("Provided NPS widget 'rating' value is out of bounds of the required value '[0;10]', it is probably an error");
+                    L.w("Provided NPS widget 'rating' value is out of bounds of the required value '[0;10]', it is probably an error");
+                    healthTracker.recordLogCode("w700");
                 }
 
                 if (!widgetResult.containsKey("comment")) {
@@ -724,21 +736,24 @@ public class ModuleFeedback extends ModuleBase {
             } else if (widgetInfo.type == FeedbackWidgetType.rating) {
                 //in case a rating widget was completed
                 if (!widgetResult.containsKey("rating")) {
-                    L.e("Provided Rating widget result does not have a 'rating' field, result can't be reported");
+                    L.w("Provided Rating widget result does not have a 'rating' field, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating data type
                 Object ratingValue = widgetResult.get("rating");
                 if (!(ratingValue instanceof Integer)) {
-                    L.e("Provided Rating widget 'rating' field is not an integer, result can't be reported");
+                    L.w("Provided Rating widget 'rating' field is not an integer, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating value range
                 int ratingValI = (int) ratingValue;
                 if (ratingValI < 1 || ratingValI > 5) {
-                    L.e("Provided Rating widget 'rating' value is out of bounds of the required value '[1;5]', it is probably an error");
+                    L.w("Provided Rating widget 'rating' value is out of bounds of the required value '[1;5]', it is probably an error");
+                    healthTracker.recordLogCode("w700");
                 }
             }
         }
@@ -859,7 +874,8 @@ public class ModuleFeedback extends ModuleBase {
                 }
 
                 if (selectedWidget == null) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetNameIDorTag, No feedback widget found with the provided nameIDorTag or type");
+                    L.w("[ModuleFeedback] presentFeedbackWidgetNameIDorTag, No feedback widget found with the provided nameIDorTag or type");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 

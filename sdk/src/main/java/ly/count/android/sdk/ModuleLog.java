@@ -40,6 +40,7 @@ public class ModuleLog {
 
     int countWarnings = 0;
     int countErrors = 0;
+    private final Map<String, Integer> pendingLogCodes = new HashMap<>();
 
     // Per-instance logging state. In a multi-instance setup every Countly object owns its own
     // ModuleLog, so console output honors that instance's own config instead of the singleton's.
@@ -160,6 +161,26 @@ public class ModuleLog {
         }
     }
 
+    /**
+     * Records a health check log code. A code recorded before the health check module exists, for example by a call made
+     * before init or by init itself, is kept and handed over with setHealthChecker. For the SDK's own use; public only so
+     * that the SDK's other packages can reach it.
+     *
+     * @param code the log code
+     */
+    public void trackLogCode(@NonNull String code) {
+        HealthTracker tracker = healthTracker;
+        if (tracker != null) {
+            tracker.recordLogCode(code);
+            return;
+        }
+
+        synchronized (pendingLogCodes) {
+            Integer current = pendingLogCodes.get(code);
+            pendingLogCodes.put(code, current == null ? 1 : current + 1);
+        }
+    }
+
     void setHealthChecker(HealthTracker healthTracker) {
         v("[ModuleLog] Setting healthTracker W:" + countWarnings + " E:" + countErrors);
         this.healthTracker = healthTracker;
@@ -178,6 +199,13 @@ public class ModuleLog {
 
         countWarnings = 0;
         countErrors = 0;
+
+        synchronized (pendingLogCodes) {
+            for (Map.Entry<String, Integer> entry : pendingLogCodes.entrySet()) {
+                healthTracker.recordLogCode(entry.getKey(), entry.getValue());
+            }
+            pendingLogCodes.clear();
+        }
     }
 
     public void v(String msg) {

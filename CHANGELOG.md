@@ -27,6 +27,8 @@
 * Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
 * Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
 * Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events. Keys these events reserve are dropped from it.
+* Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
+* Improved internal logging: calls ignored because a value is missing or invalid are logged as warnings instead of errors, failed requests as debug lines instead of warnings or errors, and the segmentation passing through the internal limits as verbose lines instead of warnings.
 
 * Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.
 * Mitigated an issue where an app that stayed in the foreground refreshed its SDK behavior settings only every 4,000 hours instead of every 4 hours.
@@ -52,6 +54,13 @@
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
 * Mitigated an issue where durations changed when the device clock was adjusted: sessions, views, timed events, APM traces, foreground and background time, and the running time in crash reports. Timestamps still follow the device clock.
 * Mitigated an issue where "requestQueue().flushQueues()" kept the recorded events that were not in a request yet, so they were still sent.
+* Mitigated health check issues:
+  * Warnings, errors and backoffs counted while the health check was on its way were lost when it was delivered.
+  * A health check that could not be sent counted its own failure as an SDK warning and error.
+  * The counts were lost when the app was killed in the foreground.
+  * The longest run of backoffs could be reported shorter than it was.
+  * The app version was sent without the metrics consent.
+* Mitigated an issue where an event recorded with a negative duration kept that duration. The duration is now ignored.
 
 * Removed the following deprecated calls from "CountlyConfig":
   * "setMaxSegmentationValues(int)", use "sdkInternalLimits.setMaxSegmentationValues(int)" instead

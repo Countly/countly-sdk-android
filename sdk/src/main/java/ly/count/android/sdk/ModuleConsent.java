@@ -227,6 +227,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         if (featureNames == null) {
             L.w("[ModuleConsent] setConsentInternal, Calling setConsent with null featureNames!");
+            healthTracker.recordLogCode("w402");
             return;
         }
 
@@ -236,6 +237,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         for (String featureName : featureNames) {
             if (!isValidFeatureName(featureName)) {
                 L.w("[ModuleConsent] setConsentInternal, Given feature: [" + featureName + "] is not a valid name, ignoring it");
+                healthTracker.recordLogCode("w402");
                 continue;
             }
 

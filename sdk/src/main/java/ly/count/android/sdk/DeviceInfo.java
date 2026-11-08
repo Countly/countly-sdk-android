@@ -653,6 +653,7 @@ class DeviceInfo {
             for (String k : metricOverride.keySet()) {
                 if (k == null || k.isEmpty()) {
                     L.w("[DeviceInfo] getMetrics, Provided metric override key can't be null or empty");
+                    L.trackLogCode("w700");
                     continue;
                 }
 
@@ -660,6 +661,7 @@ class DeviceInfo {
 
                 if (overrideValue == null) {
                     L.w("[DeviceInfo] getMetrics, Provided metric override value can't be null, key:[" + k + "]");
+                    L.trackLogCode("w700");
                     continue;
                 }
 
