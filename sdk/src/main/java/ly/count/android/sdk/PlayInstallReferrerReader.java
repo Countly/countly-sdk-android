@@ -42,10 +42,8 @@ class PlayInstallReferrerReader implements InstallReferrerReader {
         }
     }
 
-    private static final class Bridge {
-        private Bridge() {
-        }
-
+    //abstract: only static members, never instantiated
+    private abstract static class Bridge {
         static void read(@NonNull Context context, @NonNull final Callback callback) {
             final InstallReferrerClient client = InstallReferrerClient.newBuilder(context.getApplicationContext()).build();
             client.startConnection(new InstallReferrerStateListener() {
