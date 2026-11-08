@@ -35,16 +35,15 @@ class PlayInstallReferrerReader implements InstallReferrerReader {
             }
         };
         try {
-            Bridge.read(context, once);
+            new Bridge().read(context, once);
         } catch (Exception | LinkageError e) {
             //a library version with a different API, or a store process that misbehaves
             once.onResult(STATUS_RETRY, null);
         }
     }
 
-    //abstract: only static members, never instantiated
-    private abstract static class Bridge {
-        static void read(@NonNull Context context, @NonNull final Callback callback) {
+    private static final class Bridge {
+        void read(@NonNull Context context, @NonNull final Callback callback) {
             final InstallReferrerClient client = InstallReferrerClient.newBuilder(context.getApplicationContext()).build();
             client.startConnection(new InstallReferrerStateListener() {
                 @Override
