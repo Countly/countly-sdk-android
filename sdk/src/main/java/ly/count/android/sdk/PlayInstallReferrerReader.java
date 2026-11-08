@@ -21,7 +21,7 @@ class PlayInstallReferrerReader implements InstallReferrerReader {
         try {
             Class.forName(CLIENT_CLASS);
             return true;
-        } catch (Throwable ignored) {
+        } catch (ClassNotFoundException | LinkageError ignored) {
             return false;
         }
     }
@@ -36,13 +36,16 @@ class PlayInstallReferrerReader implements InstallReferrerReader {
         };
         try {
             Bridge.read(context, once);
-        } catch (Throwable t) {
+        } catch (Exception | LinkageError e) {
             //a library version with a different API, or a store process that misbehaves
             once.onResult(STATUS_RETRY, null);
         }
     }
 
     private static final class Bridge {
+        private Bridge() {
+        }
+
         static void read(@NonNull Context context, @NonNull final Callback callback) {
             final InstallReferrerClient client = InstallReferrerClient.newBuilder(context.getApplicationContext()).build();
             client.startConnection(new InstallReferrerStateListener() {
@@ -57,12 +60,12 @@ class PlayInstallReferrerReader implements InstallReferrerReader {
                         } else {
                             callback.onResult(STATUS_RETRY, null);
                         }
-                    } catch (Throwable t) {
+                    } catch (Exception e) {
                         callback.onResult(STATUS_RETRY, null);
                     } finally {
                         try {
                             client.endConnection();
-                        } catch (Throwable ignored) {
+                        } catch (Exception ignored) {
                         }
                     }
                 }

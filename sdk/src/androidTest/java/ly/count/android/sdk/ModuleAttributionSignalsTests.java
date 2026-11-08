@@ -255,6 +255,45 @@ public class ModuleAttributionSignalsTests {
     }
 
     /**
+     * An opened link with a dl parameter routes to dl, also over the path after the campaign code; the full
+     * URL is sent unchanged.
+     */
+    @Test
+    public void deepLink_openedWithDl() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        FakeReader reader = new FakeReader();
+        reader.referrer = "";
+        Countly countly = new Countly().init(config(rqp, reader));
+        callbacks.clear();
+
+        String url = "https://links.example.com/at/spring24/ignored?dl=%2Fpromo%2Fspring&utm_source=ig";
+        countly.attribution().recordDeepLink(Uri.parse(url));
+
+        verify(rqp, times(1)).sendAttributionSignal("deeplink", url);
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("OPENED|/promo/spring|" + url, callbacks.get(0));
+    }
+
+    /**
+     * A link in the launch intent goes into the real request queue as the full URL.
+     */
+    @Test
+    public void deepLink_launchIntent_realQueue() throws Exception {
+        FakeReader reader = new FakeReader();
+        reader.referrer = "";
+        Countly countly = new Countly().init(config(null, reader));
+
+        String url = "https://links.example.com/at/" + APP_ID + "/spring24/product/7?cly_clk=k1&utm_campaign=spring";
+        countly.dispatchActivityResumed(activityWith(new Intent(Intent.ACTION_VIEW, Uri.parse(url))));
+
+        List<JSONObject> signals = queuedSignals();
+        Assert.assertEquals(1, signals.size());
+        Assert.assertEquals("deeplink", signals.get(0).getString("type"));
+        Assert.assertEquals(url, signals.get(0).getString("value"));
+        Assert.assertTrue(callbacks.contains("OPENED|/product/7|" + url));
+    }
+
+    /**
      * recordDeepLink sends whatever link the app passes, also one that is not an attribution link.
      */
     @Test

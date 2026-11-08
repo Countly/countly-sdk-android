@@ -31,7 +31,10 @@
   * The Google Play Install Referrer is read on first launch and sent as is. This needs the optional `com.android.installreferrer:installreferrer` dependency in the app; without it nothing is read. Plain UTM referrers (Google Ads, partners) and Countly link click IDs are both attributed.
   * Links that open the app are captured from the launch intent of the activity and sent when they are Countly smart links (`/at/...`) or carry `utm_*`, `cly_clk`, `countly_cid` or `countly_cuid`. Use "attribution().recordDeepLink(Uri)" for other links and for links delivered to `onNewIntent`.
   * "setAttributionChannel(String)" in "CountlyConfig" sends the channel a build is distributed through, again only when it changes.
-* Added "setDeepLinkCallback(DeepLinkCallback)" to "CountlyConfig". It tells the app where to route: a link that opened the app (`OPENED`), the deep link of a link the app was installed from (`DEFERRED`, first launch), or no link (`NONE`, first launch). It is also called without the `attribution` consent for links that open the app; the first launch is answered once the consent is given.
+* Added "setDeepLinkCallback(DeepLinkCallback)" to "CountlyConfig". It tells the app where to route:
+  * `OPENED`: a link opened the app. It is called also without the `attribution` consent.
+  * `DEFERRED`: first launch, the app was installed from a link with a deep link.
+  * `NONE`: first launch, no link. The first launch is answered once the `attribution` consent is given.
 
 * Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.
 * Mitigated an issue where an app that stayed in the foreground refreshed its SDK behavior settings only every 4,000 hours instead of every 4 hours.

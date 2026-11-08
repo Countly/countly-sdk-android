@@ -38,7 +38,8 @@ public class ModuleAttribution extends ModuleBase {
     boolean referrerReadInProgress = false;
     //a link opened the app in this process; then the first launch reports no DEFERRED or NONE
     boolean linkOpenedThisProcess = false;
-    volatile boolean halted = false;
+    //read and written under the instance lock
+    boolean halted = false;
 
     ModuleAttribution(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -132,7 +133,7 @@ public class ModuleAttribution extends ModuleBase {
         L.d("[ModuleAttribution] readInstallReferrerIfNeeded, reading the install referrer");
         try {
             installReferrerReader.read(context, this::onInstallReferrerResult);
-        } catch (Throwable t) {
+        } catch (Exception t) {
             L.w("[ModuleAttribution] readInstallReferrerIfNeeded, reading failed: " + t);
             onInstallReferrerResult(InstallReferrerReader.STATUS_RETRY, null);
         }
@@ -232,7 +233,7 @@ public class ModuleAttribution extends ModuleBase {
         Intent intent;
         try {
             intent = activity.getIntent();
-        } catch (Throwable t) {
+        } catch (Exception t) {
             return;
         }
         if (intent == null || !Intent.ACTION_VIEW.equals(intent.getAction())) {
@@ -249,7 +250,7 @@ public class ModuleAttribution extends ModuleBase {
             //marked on the intent itself, so the same link is not recorded again when the activity is
             //recreated (rotation) or restored after process death
             intent.putExtra(handledIntentExtra, true);
-        } catch (Throwable t) {
+        } catch (Exception t) {
             //unparcelable extras from another app; the link is still recorded once for this resume
             L.w("[ModuleAttribution] captureLaunchLink, could not mark the intent: " + t);
         }
@@ -262,7 +263,7 @@ public class ModuleAttribution extends ModuleBase {
         }
         try {
             deepLinkCallback.onDeepLink(type, path, url);
-        } catch (Throwable t) {
+        } catch (Exception t) {
             L.e("[ModuleAttribution] notifyDeepLink, the deep link callback threw: " + t);
         }
     }
@@ -273,7 +274,7 @@ public class ModuleAttribution extends ModuleBase {
         }
         String s = scheme.toLowerCase(Locale.ROOT);
         //opening a document or a resource is not a link
-        return !s.equals("content") && !s.equals("file") && !s.equals("android.resource") && !s.equals("data") && !s.equals("javascript");
+        return !"content".equals(s) && !"file".equals(s) && !"android.resource".equals(s) && !"data".equals(s) && !"javascript".equals(s);
     }
 
     static boolean isSmartLink(@NonNull Uri uri) {
@@ -290,7 +291,7 @@ public class ModuleAttribution extends ModuleBase {
         }
         for (String name : uri.getQueryParameterNames()) {
             String n = name.toLowerCase(Locale.ROOT);
-            if (n.startsWith("utm_") || n.equals("cly_clk") || n.equals("countly_cid") || n.equals("countly_cuid")) {
+            if (n.startsWith("utm_") || "cly_clk".equals(n) || "countly_cid".equals(n) || "countly_cuid".equals(n)) {
                 return true;
             }
         }
@@ -314,19 +315,26 @@ public class ModuleAttribution extends ModuleBase {
             return dl;
         }
         if (isSmartLink(uri)) {
-            List<String> segments = uri.getPathSegments();
-            int codeIndex = segments.size() >= 3 && isObjectId(segments.get(1)) ? 2 : 1;
-            if (segments.size() <= codeIndex + 1) {
-                return null;
-            }
-            StringBuilder sb = new StringBuilder();
-            for (int i = codeIndex + 1; i < segments.size(); i++) {
-                sb.append('/').append(segments.get(i));
-            }
-            return sb.toString();
+            return smartLinkPath(uri.getPathSegments());
         }
         String path = uri.getPath();
         return path == null || path.isEmpty() ? null : path;
+    }
+
+    /**
+     * The path after the campaign code of a smart link's segments ("at", [app id], code, path...), null
+     * when there is none.
+     */
+    static @Nullable String smartLinkPath(@NonNull List<String> segments) {
+        int codeIndex = segments.size() >= 3 && isObjectId(segments.get(1)) ? 2 : 1;
+        if (segments.size() <= codeIndex + 1) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = codeIndex + 1; i < segments.size(); i++) {
+            sb.append('/').append(segments.get(i));
+        }
+        return sb.toString();
     }
 
     /**
@@ -336,7 +344,7 @@ public class ModuleAttribution extends ModuleBase {
         try {
             String dl = Uri.parse("https://referrer.invalid/?" + referrer).getQueryParameter("dl");
             return dl == null || dl.isEmpty() ? null : dl;
-        } catch (Throwable t) {
+        } catch (Exception t) {
             return null;
         }
     }
@@ -508,7 +516,9 @@ public class ModuleAttribution extends ModuleBase {
 
     @Override
     public void halt() {
-        halted = true;
+        synchronized (_cly) {
+            halted = true;
+        }
         attributionInterface = null;
     }
 
