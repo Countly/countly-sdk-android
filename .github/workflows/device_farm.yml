@@ -56,6 +56,8 @@ jobs:
 
       # A fixed debug key lets each run update the test app in place, so the phone keeps its
       # per-app battery exemption; a fresh key would force a reinstall that wipes it.
+      # ANDROID_USER_HOME pins where AGP reads debug.keystore: without it, AGP prefers
+      # $XDG_CONFIG_HOME/.android, which GitHub runners set and sdkmanager creates.
       - name: Use the farm debug key
         env:
           FARM_DEBUG_KEYSTORE: ${{ secrets.FARM_DEBUG_KEYSTORE }}
@@ -64,12 +66,27 @@ jobs:
             echo "::warning::FARM_DEBUG_KEYSTORE is not set, so the test app cannot update the one on the phone"
             exit 0
           fi
-          dir="${ANDROID_USER_HOME:-$HOME/.android}"
+          dir="$RUNNER_TEMP/android-user-home"
           mkdir -p "$dir"
           echo "$FARM_DEBUG_KEYSTORE" | base64 -d > "$dir/debug.keystore"
+          echo "ANDROID_USER_HOME=$dir" >> "$GITHUB_ENV"
 
       - name: Build the SDK and its tests
         run: ./gradlew sdk:assembleDebug sdk:assembleDebugAndroidTest
+
+      # The phone refuses an update signed with another key, so stop before taking it.
+      - name: Check the test app has the farm key
+        env:
+          FARM_CERT_SHA256: 1983cb419cd1e314eb596a200f57e00203f2e4884ffd0044936a64331b1a1239
+        run: |
+          apk=sdk/build/outputs/apk/androidTest/debug/sdk-debug-androidTest.apk
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)apksigner"
+          cert=$("$apksigner" verify --print-certs "$apk" | grep -m1 "SHA-256 digest" | awk '{print $NF}')
+          echo "test app certificate SHA-256: $cert"
+          if [ "$cert" != "$FARM_CERT_SHA256" ]; then
+            echo "::error::The test app is not signed with the farm key, so the phone would refuse it"
+            exit 1
+          fi
 
       - name: Join the device farm queue
         run: node .github/farm/client.mjs oidc countly-sdk-android
@@ -78,7 +95,7 @@ jobs:
         run: node .github/farm/client.mjs open
 
       - name: Run the instrumented tests on the phone
-        run: ./gradlew sdk:connectedAndroidTest -Pandroid.injected.androidTest.leaveApkInstalledAfterRun=true
+        run: ./gradlew sdk:connectedAndroidTest -Pandroid.injected.androidTest.leaveApksInstalledAfterRun=true
 
       - name: Upload test results
         if: always()
