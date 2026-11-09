@@ -11,10 +11,6 @@
 name: Device tests (Android)
 
 on:
-    push:
-      branches:
-        - master
-        - staging
     pull_request:
       branches:
         - master
