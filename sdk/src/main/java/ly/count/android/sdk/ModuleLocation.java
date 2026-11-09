@@ -81,6 +81,7 @@ public class ModuleLocation extends ModuleBase {
 
         if ((country_code == null && city != null) || (city == null && country_code != null)) {
             L.w("[ModuleLocation] In \"setLocation\" both city and country code need to be set at the same time to be sent");
+            healthTracker.recordLogCode("w700");
         }
 
         if (country_code != null || city != null || gpsCoordinates != null || ipAddress != null) {

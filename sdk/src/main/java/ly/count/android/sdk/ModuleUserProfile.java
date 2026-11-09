@@ -217,6 +217,7 @@ public class ModuleUserProfile extends ModuleBase {
         try {
             if (!(value instanceof Double || value instanceof Integer || value instanceof String)) {
                 L.w("[ModuleUserProfile] modifyCustomDataCommon, provided an unsupported type for 'value'");
+                healthTracker.recordLogCode("w700");
                 return;
             }
 
@@ -234,6 +235,7 @@ public class ModuleUserProfile extends ModuleBase {
                 valueAdded = value;
             } else {
                 L.w("[ModuleUserProfile] modifyCustomData, provided an unsupported type for key: [" + key + "], value: [" + value + "], type: [" + value.getClass().getSimpleName() + "], mod: [" + mod + "], omitting call");
+                healthTracker.recordLogCode("w700");
                 return;
             }
 
@@ -270,6 +272,7 @@ public class ModuleUserProfile extends ModuleBase {
     void setPropertiesInternal(@NonNull Map<String, Object> data) {
         if (data.isEmpty()) {
             L.w("[ModuleUserProfile] setPropertiesInternal, no data was provided");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -283,6 +286,7 @@ public class ModuleUserProfile extends ModuleBase {
 
             if (value == null) {
                 L.w("[ModuleUserProfile] setPropertiesInternal, provided value for key [" + key + "] is 'null'");
+                healthTracker.recordLogCode("w700");
                 continue;
             }
 
@@ -318,6 +322,7 @@ public class ModuleUserProfile extends ModuleBase {
                     dataCustomFields.put(truncatedKey, value);
                 } else {
                     L.w("[ModuleUserProfile] setPropertiesInternal, provided an unsupported type for key: [" + key + "], value: [" + value + "], type: [" + value.getClass().getSimpleName() + "], omitting call");
+                    healthTracker.recordLogCode("w700");
                 }
             }
         }
@@ -382,6 +387,7 @@ public class ModuleUserProfile extends ModuleBase {
             File sourceFile = new File(picturePath);
             if (!sourceFile.isFile()) {
                 L.w("[UserData] Provided Picture path file [" + picturePath + "] can not be opened");
+                healthTracker.recordLogCode("w700");
                 picturePath = null;
             }
         }
@@ -396,6 +402,7 @@ public class ModuleUserProfile extends ModuleBase {
                 byear = Integer.parseInt(data.get(ModuleUserProfile.BYEAR_KEY));
             } catch (NumberFormatException e) {
                 L.w("[UserData] Incorrect byear number format");
+                healthTracker.recordLogCode("w700");
                 byear = 0;
             }
         }

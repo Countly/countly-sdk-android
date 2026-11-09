@@ -559,7 +559,7 @@ public class ConnectionProcessor implements Runnable {
                             } catch (JSONException ex) {
                                 //failed to parse, so not a valid json
                                 jsonObject = null;
-                                L.e("[ConnectionProcessor] Failed to parse response [" + responseString + "].");
+                                L.d("[ConnectionProcessor] Failed to parse response [" + responseString + "].");
                             }
 
                             if (jsonObject == null) {
@@ -582,7 +582,7 @@ public class ConnectionProcessor implements Runnable {
                         L.d("[ConnectionProcessor] Encountered redirect, will retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode == 400 || responseCode == 404) {
-                        L.w("[ConnectionProcessor] Bad request, will still retry");
+                        L.d("[ConnectionProcessor] Bad request, will still retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode > 400) {
                         //server down, try again later
@@ -656,7 +656,8 @@ public class ConnectionProcessor implements Runnable {
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
                 if (isRequestOld) {
-                    L.i("[ConnectionProcessor] request is too old, removing request " + originalRequest);
+                    L.w("[ConnectionProcessor] request is too old, removing request " + originalRequest);
+                    healthTracker.recordLogCode("w330");
                 } else {
                     L.i("[ConnectionProcessor] Device identified as an app crawler, removing request " + originalRequest);
                 }

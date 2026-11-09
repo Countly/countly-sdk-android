@@ -65,4 +65,18 @@ interface StorageProvider {
     @NonNull String getHealthCheckCounterState();
 
     void setHealthCheckCounterState(String counterState);
+
+    /**
+     * Adds one automatically detected crash to the count the next start reports in the health check, without the health
+     * check counters, because it runs while the crash is reported. Call it before the crash report is queued: the
+     * synchronous save of the report writes the count to storage too.
+     */
+    void incrementAutomaticCrashCount();
+
+    /**
+     * Returns the automatically detected crashes counted since the last call, and sets the stored count back to 0.
+     *
+     * @return the stored count of automatically detected crashes
+     */
+    int takeAutomaticCrashCount();
 }

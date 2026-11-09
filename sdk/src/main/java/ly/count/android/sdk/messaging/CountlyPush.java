@@ -972,12 +972,15 @@ public class CountlyPush {
         // print error in case preferred push provider is not available
         if (countlyConfigPush.provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             Countly.sharedInstance().L.e("Countly push didn't initialize. No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.trackLogCode("e130");
             return;
         } else if (countlyConfigPush.provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             Countly.sharedInstance().L.e("Countly push didn't initialize. No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.trackLogCode("e130");
             return;
         } else if (countlyConfigPush.provider == null) {
             Countly.sharedInstance().L.e("Countly push didn't initialize. Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            Countly.sharedInstance().L.trackLogCode("e130");
             return;
         }
 
