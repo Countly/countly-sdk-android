@@ -269,6 +269,44 @@ public class ModuleEventsTests {
         Assert.assertEquals(2, captD, 0.1d);
     }
 
+    /**
+     * The device clock moving an hour forward between "startEvent" and "endEvent" does not change the duration
+     */
+    @Test
+    public void startEndEvent_deviceClockMovedForward() {
+        startEndEventDeviceClockChangedBase(3_600_000L);
+    }
+
+    /**
+     * The device clock moving an hour back between "startEvent" and "endEvent" does not change the duration
+     */
+    @Test
+    public void startEndEvent_deviceClockMovedBack() {
+        startEndEventDeviceClockChangedBase(-3_600_000L);
+    }
+
+    /**
+     * Ends a timed event right after moving its wall-clock start by "clockChangeMs" the other way, which is how a
+     * device clock change between start and end looks to the SDK. The duration must stay near zero, and the
+     * event must keep its wall-clock start as its timestamp.
+     */
+    void startEndEventDeviceClockChangedBase(long clockChangeMs) {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        Assert.assertTrue(mCountly.events().startEvent(eventKey));
+
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
+        startEvent.timestamp -= clockChangeMs;
+
+        Assert.assertTrue(mCountly.events().endEvent(eventKey));
+
+        ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
+        verify(ep).recordEventInternal(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture(), isNull(String.class));
+
+        Assert.assertEquals(startEvent.timestamp, arg.getValue().timestampMs);
+        Assert.assertEquals(0, argD.getValue(), 0.1d);
+    }
+
     @Test
     public void startCancelEndEvent() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -885,6 +923,52 @@ public class ModuleEventsTests {
 
         countly.events().recordEvent("bg", TestUtils.map());
         validateEventInRQ("bg", TestUtils.map("cly_v", 0), 1, 0.0d, 0.0d, 6);
+    }
+
+    /**
+     * "recordEvent" with visibility tracking enabled
+     * Validate that the app stays in the foreground while one activity opens another and the first one stops,
+     * and that it is in the background only once the last activity stops
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_activitySwitch() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        config.experimental.enableVisibilityTracking();
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.onStart(Mockito.mock(Activity.class));
+        countly.onStart(Mockito.mock(TestUtils.Activity2.class));
+        countly.onStop();
+
+        countly.events().recordEvent("fg", TestUtils.map());
+        Assert.assertEquals(1, visibilityOfEventInRQ("fg"));
+
+        countly.onStop();
+
+        countly.events().recordEvent("bg", TestUtils.map());
+        Assert.assertEquals(0, visibilityOfEventInRQ("bg"));
+    }
+
+    /**
+     * The "cly_v" value of the first event with the given key in the request queue
+     */
+    private static int visibilityOfEventInRQ(String key) throws JSONException {
+        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
+            if (request == null || !request.containsKey("events")) {
+                continue;
+            }
+            JSONArray events = new JSONArray(request.get("events"));
+            for (int i = 0; i < events.length(); i++) {
+                JSONObject event = events.getJSONObject(i);
+                if (key.equals(event.getString("key"))) {
+                    return event.getJSONObject("segmentation").getInt("cly_v");
+                }
+            }
+        }
+        throw new AssertionError("no event with key [" + key + "] in the request queue");
     }
 
     /**

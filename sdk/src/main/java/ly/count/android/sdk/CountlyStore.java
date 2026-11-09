@@ -67,6 +67,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String PREFERENCE_SERVER_CONFIG = "SERVER_CONFIG";
 
     private static final String PREFERENCE_HEALTH_CHECK_STATE = "HEALTH_CHECK";
+    private static final String PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES = "HEALTH_CHECK_AUTOMATIC_CRASHES";
 
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
@@ -105,6 +106,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     ModuleLog L;
 
     ConfigurationProvider configurationProvider;
+    @Nullable HealthTracker healthTracker;
 
     int maxRequestQueueSize = 1000;
     int dropAgeHours = 0;
@@ -559,6 +561,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
             L.w("[CountlyStore] addRequest, Tracking config is disabled, request will not be added to the request queue.");
+            recordLogCode("w505", 1);
             return;
         }
 
@@ -611,12 +614,13 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         int requestsToRemove;
         if (disableGradualRequestCleaner) {
             requestsToRemove = overflow + 1;
-            L.i("[CountlyStore] deleteOldestRequests, Gradual cleaner disabled. Removing all overflow: " + requestsToRemove + " request");
+            L.w("[CountlyStore] deleteOldestRequests, the request queue is full, gradual cleaner disabled. Removing all overflow: " + requestsToRemove + " request");
         } else {
             requestsToRemove = Math.min(requestRemovalLoopLimit, overflow) + 1; // +1 because it should open a new place for newcomer
-            L.i("[CountlyStore] deleteOldestRequests, Will remove the oldest " + requestsToRemove + " request");
+            L.w("[CountlyStore] deleteOldestRequests, the request queue is full, will remove the oldest " + requestsToRemove + " request");
         }
         requests.subList(0, requestsToRemove).clear(); // sublist reflects all changes to the main list
+        recordLogCode("w310", requestsToRemove);
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_deleteOldestRequest", UtilsTime.getNanoTime() - tsStart);
@@ -689,7 +693,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         // save the new request queue
         if (removedRequests > 0) {
-            L.i("[CountlyStore] checkAndRemoveTooOldRequests, removed " + removedRequests + " outdated requests");
+            L.w("[CountlyStore] checkAndRemoveTooOldRequests, removed " + removedRequests + " outdated requests");
+            recordLogCode("w330", removedRequests);
         }
 
         if (pcc != null) {
@@ -790,6 +795,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
             L.w("[CountlyStore] addEvent, Tracking config is disabled, event will not be added to the request queue.");
+            recordLogCode("w505", 1);
             return;
         }
 
@@ -1167,6 +1173,42 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
             editor.apply();
         }
+    }
+
+    /**
+     * Records a log code for the health check, once the health check module exists.
+     *
+     * @param code the log code
+     * @param count how many times the condition occurred
+     */
+    private void recordLogCode(@NonNull String code, int count) {
+        HealthTracker tracker = healthTracker;
+        if (tracker != null) {
+            tracker.recordLogCode(code, count);
+        }
+    }
+
+    /**
+     * Adds one automatically detected crash to the stored count. It is applied to the preferences in memory only: the
+     * synchronous save of the crash report that follows writes it to storage together with the report, also in explicit
+     * storage mode, so reporting a crash costs one write.
+     */
+    public synchronized void incrementAutomaticCrashCount() {
+        int count = preferences_.getInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, 0);
+        preferences_.edit().putInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, count + 1).apply();
+    }
+
+    /**
+     * Returns the stored count of automatically detected crashes and sets it back to 0.
+     *
+     * @return the stored count
+     */
+    public synchronized int takeAutomaticCrashCount() {
+        int count = preferences_.getInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, 0);
+        if (count != 0) {
+            preferences_.edit().remove(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES).apply();
+        }
+        return count;
     }
 
     public int getMaxRequestQueueSize() {

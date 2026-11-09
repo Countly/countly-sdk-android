@@ -8,7 +8,7 @@ import java.util.Map;
 public class ModuleSessions extends ModuleBase {
     boolean manualSessionControlEnabled = false;
     boolean manualSessionControlHybridModeEnabled = false;
-    long prevSessionDurationStartTime_ = System.currentTimeMillis();
+    long prevSessionDurationStartTime_ = UtilsTime.monotonicTimeMs();
     boolean sessionRunning = false;
     final Sessions sessionInterface;
 
@@ -40,7 +40,16 @@ public class ModuleSessions extends ModuleBase {
     }
 
     void beginSessionInternal() {
-        L.d("[ModuleSessions] 'beginSessionInternal'");
+        beginSessionInternal(true);
+    }
+
+    /**
+     * Begins a session when consent, the behavior settings and the session state allow it.
+     *
+     * @param bySdk true when the SDK begins the session by itself, which the health check counts as "begin:a"
+     */
+    void beginSessionInternal(boolean bySdk) {
+        L.d("[ModuleSessions] 'beginSessionInternal', bySdk:[" + bySdk + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             return;
@@ -52,8 +61,11 @@ public class ModuleSessions extends ModuleBase {
 
         if (sessionIsRunning()) {
             L.w("[ModuleSessions] A session is already running, this 'beginSessionInternal' will be ignored");
-            healthTracker.logSessionStartedWhileRunning();
             return;
+        }
+
+        if (bySdk) {
+            healthTracker.recordUsage("sessions", "begin:a");
         }
 
         //Sibling modules are reached through _cly and teardown nulls those fields, so each one is read once
@@ -67,7 +79,7 @@ public class ModuleSessions extends ModuleBase {
         //prepare metrics
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricOverride, L);
         sessionRunning = true;
-        prevSessionDurationStartTime_ = System.currentTimeMillis();
+        prevSessionDurationStartTime_ = UtilsTime.monotonicTimeMs();
         if (userProfile != null) {
             userProfile.saveInternal();
         } else {
@@ -89,7 +101,16 @@ public class ModuleSessions extends ModuleBase {
     }
 
     void updateSessionInternal() {
-        L.d("[ModuleSessions] 'updateSessionInternal'");
+        updateSessionInternal(true);
+    }
+
+    /**
+     * Sends a session update when consent, the behavior settings and a running session allow it.
+     *
+     * @param bySdk true when the SDK updates the session by itself, which the health check counts as "update:a"
+     */
+    void updateSessionInternal(boolean bySdk) {
+        L.d("[ModuleSessions] 'updateSessionInternal', bySdk:[" + bySdk + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             return;
@@ -101,11 +122,14 @@ public class ModuleSessions extends ModuleBase {
 
         if (!sessionIsRunning()) {
             L.w("[ModuleSessions] No session is running, this 'updateSessionInternal' will be ignored");
-            healthTracker.logSessionUpdatedWhileNotRunning();
             return;
         }
 
         if (!_cly.disableUpdateSessionRequests_) {
+            if (bySdk) {
+                healthTracker.recordUsage("sessions", "update:a");
+            }
+
             ModuleUserProfile userProfile = _cly.moduleUserProfile;
             if (userProfile != null) {
                 userProfile.saveInternal();
@@ -118,7 +142,18 @@ public class ModuleSessions extends ModuleBase {
     }
 
     void endSessionInternal(boolean checkConsent) {
-        L.d("[ModuleSessions] endSessionInternal, checkConsent:[" + checkConsent + "]");
+        endSessionInternal(checkConsent, true);
+    }
+
+    /**
+     * Ends the running session when consent and the behavior settings allow it, and stores the health check counters, as
+     * the end of a session can be the end of the run.
+     *
+     * @param checkConsent false when the sessions consent was just removed and the session still has to end
+     * @param bySdk true when the SDK ends the session by itself, which the health check counts as "end:a"
+     */
+    void endSessionInternal(boolean checkConsent, boolean bySdk) {
+        L.d("[ModuleSessions] endSessionInternal, checkConsent:[" + checkConsent + "], bySdk:[" + bySdk + "]");
 
         if (checkConsent && !consentProvider.getConsent(Countly.CountlyFeatureNames.sessions)) {
             return;
@@ -130,8 +165,11 @@ public class ModuleSessions extends ModuleBase {
 
         if (!sessionIsRunning()) {
             L.w("[ModuleSessions] No session is running, this 'endSessionInternal' will be ignored");
-            healthTracker.logSessionEndedWhileNotRunning();
             return;
+        }
+
+        if (bySdk) {
+            healthTracker.recordUsage("sessions", "end:a");
         }
 
         //resetFirstView below is the frame that killed a CI run: the main thread was inside this method when
@@ -156,6 +194,7 @@ public class ModuleSessions extends ModuleBase {
 
         requestQueueProvider.endSession(roundedSecondsSinceLastSessionDurationUpdate());
         sessionRunning = false;
+        healthTracker.saveState();
 
         if (views != null) {
             views.resetFirstView();//todo these scenarios need to be tested and validated
@@ -178,6 +217,16 @@ public class ModuleSessions extends ModuleBase {
     }
 
     /**
+     * Whether sessions can be tracked now: the sessions consent is given and the behavior settings allow session tracking.
+     * A manual session call that is out of order is reported only then, as it would be ignored anyway otherwise.
+     *
+     * @return true when session calls are not ignored for consent or the behavior settings
+     */
+    boolean sessionsCanBeTracked() {
+        return consentProvider.getConsent(Countly.CountlyFeatureNames.sessions) && configProvider.getSessionTrackingEnabled();
+    }
+
+    /**
      * If a session has been started and is still running
      *
      * @return
@@ -195,12 +244,12 @@ public class ModuleSessions extends ModuleBase {
             L.e("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, called with prevSessionDurationStartTime_ being less than 1, returning 0, values was:[" + prevSessionDurationStartTime_ + "]");
             return 0;
         }
-        final long currentTimestampInMilliseconds = System.currentTimeMillis();
-        final long unsentSessionLengthInMilliseconds = currentTimestampInMilliseconds - prevSessionDurationStartTime_;
-        prevSessionDurationStartTime_ = currentTimestampInMilliseconds;
+        final long monotonicNowMs = UtilsTime.monotonicTimeMs();
+        final long unsentSessionLengthInMilliseconds = monotonicNowMs - prevSessionDurationStartTime_;
+        prevSessionDurationStartTime_ = monotonicNowMs;
         int seconds = (int) Math.round(unsentSessionLengthInMilliseconds / 1_000.0d);
 
-        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctim:[" + currentTimestampInMilliseconds + "], uslim:[" + unsentSessionLengthInMilliseconds + "], uslim_s:[" + seconds + "]");
+        L.d("[ModuleSessions] roundedSecondsSinceLastSessionDurationUpdate, psds_:[" + prevSessionDurationStartTime_ + "], ctim:[" + monotonicNowMs + "], uslim:[" + unsentSessionLengthInMilliseconds + "], uslim_s:[" + seconds + "]");
         return seconds;
     }
 
@@ -260,13 +309,21 @@ public class ModuleSessions extends ModuleBase {
         public void beginSession() {
             synchronized (_cly) {
                 L.i("[Sessions] Calling 'beginSession', automatic session tracking active:[" + automaticSessionTrackingEnabled() + "]");
+                healthTracker.recordUsage("sessions", "begin");
 
                 if (automaticSessionTrackingEnabled()) {
                     L.w("[Sessions] 'beginSession' will be ignored since automatic session tracking is active");
+                    healthTracker.recordLogCode("w740", "sessions");
                     return;
                 }
 
-                beginSessionInternal();
+                if (sessionsCanBeTracked() && sessionIsRunning()) {
+                    L.w("[Sessions] 'beginSession' will be ignored, a session is already running");
+                    healthTracker.recordLogCode("w760", "sessions");
+                    return;
+                }
+
+                beginSessionInternal(false);
             }
         }
 
@@ -274,17 +331,27 @@ public class ModuleSessions extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Sessions] Calling 'updateSession', automatic session tracking active:[" + automaticSessionTrackingEnabled() + "]");
 
+                healthTracker.recordUsage("sessions", "update");
+
                 if (automaticSessionTrackingEnabled()) {
                     L.w("[Sessions] 'updateSession' will be ignored since automatic session tracking is active");
+                    healthTracker.recordLogCode("w740", "sessions");
                     return;
                 }
 
                 if (manualSessionControlHybridModeEnabled) {
                     L.w("[Sessions] 'updateSession' will be ignored since manual session control hybrid mode is enabled");
+                    healthTracker.recordLogCode("w740", "sessions");
                     return;
                 }
 
-                updateSessionInternal();
+                if (sessionsCanBeTracked() && !sessionIsRunning()) {
+                    L.w("[Sessions] 'updateSession' will be ignored, no session is running");
+                    healthTracker.recordLogCode("w760", "sessions");
+                    return;
+                }
+
+                updateSessionInternal(false);
             }
         }
 
@@ -292,12 +359,21 @@ public class ModuleSessions extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Sessions] Calling 'endSession', automatic session tracking active:[" + automaticSessionTrackingEnabled() + "]");
 
+                healthTracker.recordUsage("sessions", "end");
+
                 if (automaticSessionTrackingEnabled()) {
                     L.w("[Sessions] 'endSession' will be ignored since automatic session tracking is active");
+                    healthTracker.recordLogCode("w740", "sessions");
                     return;
                 }
 
-                endSessionInternal();
+                if (sessionsCanBeTracked() && !sessionIsRunning()) {
+                    L.w("[Sessions] 'endSession' will be ignored, no session is running");
+                    healthTracker.recordLogCode("w760", "sessions");
+                    return;
+                }
+
+                endSessionInternal(true, false);
             }
         }
     }

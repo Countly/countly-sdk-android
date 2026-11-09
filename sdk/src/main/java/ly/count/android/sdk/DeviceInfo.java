@@ -60,7 +60,7 @@ import org.json.JSONObject;
  * the current device and operating environment.
  */
 class DeviceInfo {
-    private final static int startTime = UtilsTime.currentTimestampSeconds();
+    final static long startTime = UtilsTime.monotonicTimeSeconds();
     private boolean inBackground = true;
     private static volatile long totalMemory = -1; // -1 until resolved, so a failed read is not retried
     private static volatile String rootedStatus = null;
@@ -497,7 +497,7 @@ class DeviceInfo {
             @Override public String getRunningTime() {
                 String ov = DeviceInfo.this.mpOverride.getRunningTime();
                 if (ov != null) return ov;
-                return Integer.toString(UtilsTime.currentTimestampSeconds() - startTime);
+                return Long.toString(UtilsTime.monotonicTimeSeconds() - startTime);
             }
         };
     }
@@ -653,6 +653,7 @@ class DeviceInfo {
             for (String k : metricOverride.keySet()) {
                 if (k == null || k.isEmpty()) {
                     L.w("[DeviceInfo] getMetrics, Provided metric override key can't be null or empty");
+                    L.trackLogCode("w700");
                     continue;
                 }
 
@@ -660,6 +661,7 @@ class DeviceInfo {
 
                 if (overrideValue == null) {
                     L.w("[DeviceInfo] getMetrics, Provided metric override value can't be null, key:[" + k + "]");
+                    L.trackLogCode("w700");
                     continue;
                 }
 

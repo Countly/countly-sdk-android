@@ -139,8 +139,8 @@ public class ModuleCrash extends ModuleBase {
             buf.read(bytes, 0, bytes.length);
             buf.close();
         } catch (Exception e) {
-            L.e("[ModuleCrash] Failed to read dump file bytes");
-            e.printStackTrace();
+            L.w("[ModuleCrash] Failed to read dump file bytes, [" + e + "]");
+            healthTracker.recordLogCode("w504");
             return;
         }
 
@@ -150,6 +150,7 @@ public class ModuleCrash extends ModuleBase {
         CrashData crashData = prepareCrashData(dumpString, false, true, null);
         if (!crashFilterCheck(crashData, true)) {
             sendCrashReportToQueue(crashData, true);
+            healthTracker.recordUsage("crashes", "record:a");
         }
     }
 
@@ -298,12 +299,19 @@ public class ModuleCrash extends ModuleBase {
      * Records an unhandled crash on this instance. Kept off the handler itself so the handler can stay a
      * static class with no strong link back to this module.
      */
+    /**
+     * Reports a crash the uncaught exception handler caught. The health check counters are stopped first, so the code the
+     * report runs never calls into them; the crash itself is counted in storage and reported by the next start.
+     */
     private void recordUnhandledCrash(@NonNull Throwable e) {
         L.d("[ModuleCrash] Uncaught crash handler triggered");
         if (consentProvider.getConsent(Countly.CountlyFeatureNames.crashes) && configProvider.getAutomaticCrashReportingEnabled()) {
+            healthTracker.stopRecordingForCrash();
             String stackTrace = prepareStackTrace(e);
             CrashData crashData = prepareCrashData(stackTrace, false, false, null);
             if (!crashFilterCheck(crashData, false)) {
+                //counted before the report is queued, so the report's synchronous save writes the count too
+                storageProvider.incrementAutomaticCrashCount();
                 sendCrashReportToQueue(crashData, false);
             }
         }
@@ -385,6 +393,7 @@ public class ModuleCrash extends ModuleBase {
      */
     Countly recordExceptionInternal(@Nullable final Throwable exception, final boolean itIsHandled, final Map<String, Object> customSegmentation) {
         L.i("[ModuleCrash] Logging exception, handled:[" + itIsHandled + "]");
+        healthTracker.recordUsage("crashes", "record");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.crashes)) {
             return _cly;
@@ -418,6 +427,7 @@ public class ModuleCrash extends ModuleBase {
 
         if (breadcrumb == null || breadcrumb.isEmpty()) {
             L.w("[ModuleCrash] addBreadcrumbInternal, Can't add a null or empty crash breadcrumb");
+            healthTracker.recordLogCode("w700", "crashes");
             return _cly;
         }
 
@@ -530,6 +540,7 @@ public class ModuleCrash extends ModuleBase {
         public Countly addCrashBreadcrumb(String record) {
             synchronized (_cly) {
                 L.i("[Crashes] Adding crash breadcrumb");
+                healthTracker.recordUsage("crashes", "log");
 
                 return addBreadcrumbInternal(record);
             }

@@ -318,17 +318,18 @@ public class SdkLogGatheringTests {
     // ================ Configuration Merge ================
 
     /**
-     * The top level keys are carried across a configuration merge by hand, one by one, so a key that is not on that
+     * The top level keys are carried into a replacing configuration by hand, one by one, so a key that is not on that
      * list is lost. 'lg' has to be on it.
      *
      * Verifies that:
-     * 1. a later response that carries a small inner 'c' merges into the stored one instead of replacing it
-     * 2. the 'lg' directive survives that merge
+     * 1. a later response that carries a small inner 'c' replaces the stored one, so a setting it leaves out goes
+     * back to the developer value
+     * 2. the 'lg' directive is carried into that replacement
      * 3. a later response that carries no 'lg' at all does NOT leave the previous directive behind, because an
      * outdated gather id would keep being echoed to a server that has forgotten about it
      */
     @Test
-    public void logGathering_survivesConfigMerge_andIsDroppedWhenTheNextResponseOmitsIt() throws JSONException {
+    public void logGathering_survivesAConfigReplacement_andIsDroppedWhenTheNextResponseOmitsIt() throws JSONException {
         final String[] response = {
             new ServerConfigBuilder()
                 .defaults()
@@ -347,15 +348,15 @@ public class SdkLogGatheringTests {
         pushServerResponse(response, new ServerConfigBuilder().tracking(false).logGatheringOn("gather_id_6", "ew", 25));
 
         Assert.assertFalse(countly.moduleConfiguration.getTrackingEnabled());
-        Assert.assertEquals(1500, countly.moduleConfiguration.currentVMaxRequestQueueSize); // merged, not replaced
-        assertGathering("gather_id_6", "ew", 25); // and the directive came along with the merge
+        Assert.assertEquals(1000, countly.moduleConfiguration.currentVMaxRequestQueueSize); // replaced: back to the developer value
+        assertGathering("gather_id_6", "ew", 25); // and the directive came along with the replacement
         Assert.assertTrue(storedConfig().has(keyRLogGathering));
 
         //the same again, only this time the server sends no directive at all
         pushServerResponse(response, new ServerConfigBuilder().tracking(true).withoutLogGathering());
 
         Assert.assertTrue(countly.moduleConfiguration.getTrackingEnabled());
-        Assert.assertEquals(1500, countly.moduleConfiguration.currentVMaxRequestQueueSize); // still merged
+        Assert.assertEquals(1000, countly.moduleConfiguration.currentVMaxRequestQueueSize);
         Assert.assertFalse(storedConfig().has(keyRLogGathering)); // the directive is gone, not remembered
         assertDecidedAgainstGathering();
     }
