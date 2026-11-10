@@ -1105,6 +1105,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }, internalRequestCallbacks);
         cp.pcc = pcc;
         cp.stopRequested = processorStop_;
+        cp.baseInfoProvider = baseInfoProvider;
         return cp;
     }
 

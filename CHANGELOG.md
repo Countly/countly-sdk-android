@@ -28,6 +28,8 @@
 * Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
 * Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events. Keys these events reserve are dropped from it.
 * Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
+* Added "changeServerUrl(String)" to the request queue interface to change the server URL after init.
+* Added "changeAppKey(String)" to the request queue interface to change the app key after init.
 * Improved internal logging: calls ignored because a value is missing or invalid are logged as warnings instead of errors, failed requests as debug lines instead of warnings or errors, and the segmentation passing through the internal limits as verbose lines instead of warnings.
 
 * Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.

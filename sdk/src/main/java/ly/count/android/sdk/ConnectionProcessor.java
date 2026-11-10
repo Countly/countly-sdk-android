@@ -74,6 +74,9 @@ public class ConnectionProcessor implements Runnable {
     /** Set when this processor has to stop, see {@link ConnectionQueue#claimStorage(String)}; checked before each request. */
     AtomicBoolean stopRequested;
 
+    /** Set by the queue that builds this processor, so that each request goes to the server URL in use when it is sent. */
+    BaseInfoProvider baseInfoProvider;
+
     private enum RequestResult {
         OK,         // success
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
@@ -105,7 +108,7 @@ public class ConnectionProcessor implements Runnable {
         boolean usingHttpPost = requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced() || hasPicturePath;
 
         long approximateDateSize = 0L;
-        String urlStr = serverURL_ + urlEndpoint;
+        String urlStr = getServerURL() + urlEndpoint;
 
         if (usingHttpPost) {
             // for binary images, checksum will be calculated without url encoded value of the requestData
@@ -539,7 +542,7 @@ public class ConnectionProcessor implements Runnable {
                     }
 
                     long readingStreamTime = UtilsTime.getNanoTime() - pccTsReadingStream;
-                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + requestData + ", url: " + serverURL_ + ", Reading stream took:[" + readingStreamTime / 1000000.0d + "] ms");
+                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + requestData + ", url: " + getServerURL() + ", Reading stream took:[" + readingStreamTime / 1000000.0d + "] ms");
 
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_13_ReadingStream", readingStreamTime);
@@ -718,7 +721,8 @@ public class ConnectionProcessor implements Runnable {
     }
 
     String getServerURL() {
-        return serverURL_;
+        BaseInfoProvider provider = baseInfoProvider;
+        return provider == null ? serverURL_ : provider.getServerURL();
     }
 
     /** Bare GET for a connection test probe: this instance's SSL factory and headers, no cache, redirects not followed. */

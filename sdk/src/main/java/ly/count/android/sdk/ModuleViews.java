@@ -603,6 +603,20 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
     }
 
+    /**
+     * Whether views were stopped because the app went to the background and wait for the foreground to start again
+     *
+     * @return true when at least one view waits to start again
+     */
+    boolean hasViewsWaitingToStartAgain() {
+        for (ViewData vd : viewDataMap.values()) {
+            if (vd.willStartAgain) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     void startStoppedViews() {
         L.d("[ModuleViews] startStoppedViews, app is coming back to the foreground, starting views that were stopped");
 

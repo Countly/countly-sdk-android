@@ -903,11 +903,20 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         final long fetchStartNs = System.nanoTime();
         final String requestedForDeviceId = deviceIdProvider.getDeviceId();
         final int mergesAtRequest = connectionTestMergesSoFar();
+        //this module is built before the request queue module, so its own baseInfoProvider is not set
+        final BaseInfoProvider baseInfo = _cly.baseInfoProvider;
+        final String requestedForAppKey = baseInfo.getAppKey();
+        final String requestedFromServerUrl = baseInfo.getServerURL();
 
         immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, true, checkResponse -> {
             if (checkResponse == null) {
                 L.d("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");
                 decideLogGatheringOffIfUndecided("server config fetch failed");
+                return;
+            }
+
+            if (!Objects.equals(requestedForAppKey, baseInfo.getAppKey()) || !Objects.equals(requestedFromServerUrl, baseInfo.getServerURL())) {
+                L.d("[ModuleConfiguration] fetchConfigFromServer, the app key or the server URL changed since the request, its answer is ignored");
                 return;
             }
 
