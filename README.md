@@ -56,3 +56,5 @@ If you like Countly, [why not use one of our badges](https://count.ly/brand-asse
 Glad you asked! For community support, feature requests, and engaging with the Countly Community, please join us at [our Discord Server](https://discord.gg/countly). We're excited to have you there!
 
 Also, we are on [Twitter](https://twitter.com/gocountly) and [LinkedIn](https://www.linkedin.com/company/countly) if you would like to keep up with Countly related updates.
+
+This project is tested with BrowserStack.
