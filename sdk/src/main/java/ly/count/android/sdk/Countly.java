@@ -1207,7 +1207,7 @@ public class Countly {
                 }
 
                 @Override public String getRequestSalt() {
-                    //frozen at init like the app key and server URL, and unlike the live reads above:
+                    //frozen at init, unlike the live reads above:
                     //those return values the SDK itself resolves per instance, while the salt is only
                     //ever set by the developer - reading it live off a (shareable) config would let a
                     //mutation made for another instance silently re-salt this instance's requests and
@@ -2049,12 +2049,12 @@ public class Countly {
      */
     @Nullable SSLSocketFactory sslSocketFactoryForHost(@Nullable String host) {
         ConnectionQueue queue = connectionQueue_;
-        CountlyConfig config = config_;
-        if (!isInitialized() || queue == null || config == null || config.serverURL == null || host == null) {
+        BaseInfoProvider baseInfo = baseInfoProvider;
+        if (!isInitialized() || queue == null || baseInfo == null || baseInfo.getServerURL() == null || host == null) {
             return null;
         }
         try {
-            if (!host.equalsIgnoreCase(new URL(config.serverURL).getHost())) {
+            if (!host.equalsIgnoreCase(new URL(baseInfo.getServerURL()).getHost())) {
                 return null;
             }
         } catch (MalformedURLException e) {

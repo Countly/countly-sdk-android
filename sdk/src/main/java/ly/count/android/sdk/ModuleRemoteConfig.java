@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import ly.count.android.sdk.internal.RemoteConfigHelper;
@@ -96,6 +97,8 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+            final String requestedForAppKey = baseInfoProvider.getAppKey();
+            final String requestedFromServerUrl = baseInfoProvider.getServerURL();
 
             iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
                 L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
@@ -108,6 +111,12 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (halted) {
                     L.d("[ModuleRemoteConfig] the instance was halted before the remote config response arrived, dropping it");
                     NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "The instance was stopped before the remote config response arrived", fullUpdate, null);
+                    return;
+                }
+
+                if (!Objects.equals(requestedForAppKey, baseInfoProvider.getAppKey()) || !Objects.equals(requestedFromServerUrl, baseInfoProvider.getServerURL())) {
+                    L.d("[ModuleRemoteConfig] the app key or the server URL changed before the remote config response arrived, dropping it");
+                    NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "The app key or the server URL changed before the remote config response arrived", fullUpdate, null);
                     return;
                 }
 
