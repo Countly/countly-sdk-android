@@ -1,17 +1,4 @@
-"""
-Keeps the metalava compatibility errors that touch the public API integrators can reach.
-
-Classes in the root packages are public API, and so is every class their signatures name, transitively,
-together with the nested classes of each. Reachability is computed over the base signatures of every
-module, because one module's public API can name another module's classes. A break in any other public
-class (an implementation class that is public only so other packages of the SDK can call it) is printed
-as ignored instead of being reported.
-
-Usage: public_api.py --root-package <package> [...] --signatures <directory of base signatures>
-       --module-dir <module directory> <metalava check log>
-Metalava names this pull request's signature relative to the module directory, so that is where relative
-paths in the log are resolved. Prints each kept error message on its own line to stdout.
-"""
+"""Keeps the metalava compatibility errors that touch the public API integrators can reach."""
 import argparse
 import glob
 import os
@@ -83,11 +70,14 @@ def reachable(signatures, root_packages):
 
 def main():
     """Reads a metalava check log and prints the compatibility errors that touch reachable public API."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--root-package", action="append", required=True)
-    parser.add_argument("--signatures", required=True)
-    parser.add_argument("--module-dir", required=True)
-    parser.add_argument("log")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root-package", action="append", required=True,
+                        help="a package whose classes are public API; repeat it for each root package")
+    parser.add_argument("--signatures", required=True,
+                        help="every module's base signatures: one module's public API can name another's classes")
+    parser.add_argument("--module-dir", required=True,
+                        help="the module's directory: metalava names this pull request's signature relative to it")
+    parser.add_argument("log", help="the metalava compatibility check log")
     arguments = parser.parse_args()
     base = [Signature(path) for path in sorted(glob.glob(os.path.join(arguments.signatures, "*.txt")))]
     if not base:
@@ -109,6 +99,7 @@ def main():
             if owner is None or owner in public:
                 print(message)
             else:
+                # A class that is public only so other SDK packages can call it is not integrator API.
                 print(f"Ignored, {owner} is not reachable from the public API: {message}", file=sys.stderr)
     if found == 0:
         sys.exit("No metalava error lines found in the log.")
