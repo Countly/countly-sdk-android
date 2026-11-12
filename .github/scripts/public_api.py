@@ -1,4 +1,5 @@
-"""Keeps the metalava compatibility errors that touch the public API integrators can reach.
+"""
+Keeps the metalava compatibility errors that touch the public API integrators can reach.
 
 Classes in the root packages are public API, and so is every class their signatures name, transitively,
 together with the nested classes of each. A break in any other public class (an implementation class that is
