@@ -2,13 +2,19 @@
 Keeps the metalava compatibility errors that touch the public API integrators can reach.
 
 Classes in the root packages are public API, and so is every class their signatures name, transitively,
-together with the nested classes of each. A break in any other public class (an implementation class that is
-public only so other packages of the SDK can call it) is printed as ignored instead of being reported.
+together with the nested classes of each. Reachability is computed over the base signatures of every
+module, because one module's public API can name another module's classes. A break in any other public
+class (an implementation class that is public only so other packages of the SDK can call it) is printed
+as ignored instead of being reported.
 
-Usage: public_api.py --root-package <package> [--root-package <package> ...] <metalava check log>
-Prints each kept error message on its own line to stdout.
+Usage: public_api.py --root-package <package> [...] --signatures <directory of base signatures>
+       --module-dir <module directory> <metalava check log>
+Metalava names this pull request's signature relative to the module directory, so that is where relative
+paths in the log are resolved. Prints each kept error message on its own line to stdout.
 """
 import argparse
+import glob
+import os
 import re
 import sys
 
@@ -26,10 +32,10 @@ def _in_package(name, package):
 
 
 class Signature:
-    """One metalava signature file: its class blocks and the classes integrators can reach."""
+    """One metalava signature file: its class blocks and the classes each class's signature names."""
 
-    def __init__(self, path, root_packages):
-        """Parses the signature file at path and computes the classes reachable from root_packages."""
+    def __init__(self, path):
+        """Parses the signature file at path."""
         self.blocks = []
         self.references = {}
         package, current, start = None, None, 0
@@ -47,21 +53,6 @@ class Signature:
                 current = None
             elif current:
                 self.references[current].update(REFERENCE.findall(text))
-        self.reachable = self._reachable(root_packages)
-
-    def _reachable(self, root_packages):
-        """Returns the root package classes, the classes their signatures name, transitively, and nested classes."""
-        classes = set(self.references)
-        pending = [name for name in classes if any(_in_package(name, root) for root in root_packages)]
-        reachable = set()
-        while pending:
-            name = pending.pop()
-            if name in reachable:
-                continue
-            reachable.add(name)
-            pending.extend(other for other in classes if other.startswith(f"{name}."))
-            pending.extend(reference for reference in self.references.get(name, ()) if reference in classes)
-        return reachable
 
     def class_at(self, line):
         """Returns the class whose block contains line, or None for a line outside every class."""
@@ -71,13 +62,37 @@ class Signature:
         return None
 
 
+def reachable(signatures, root_packages):
+    """Returns the root package classes, the classes their signatures name, transitively, and nested classes."""
+    references = {}
+    for signature in signatures:
+        for name, named in signature.references.items():
+            references.setdefault(name, set()).update(named)
+    classes = set(references)
+    pending = [name for name in classes if any(_in_package(name, root) for root in root_packages)]
+    found = set()
+    while pending:
+        name = pending.pop()
+        if name in found:
+            continue
+        found.add(name)
+        pending.extend(other for other in classes if other.startswith(f"{name}."))
+        pending.extend(reference for reference in references.get(name, ()) if reference in classes)
+    return found
+
+
 def main():
     """Reads a metalava check log and prints the compatibility errors that touch reachable public API."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--root-package", action="append", required=True)
+    parser.add_argument("--signatures", required=True)
+    parser.add_argument("--module-dir", required=True)
     parser.add_argument("log")
     arguments = parser.parse_args()
-    roots = set(arguments.root_package)
+    base = [Signature(path) for path in sorted(glob.glob(os.path.join(arguments.signatures, "*.txt")))]
+    if not base:
+        sys.exit(f"No base signatures in {arguments.signatures}.")
+    public = reachable(base, set(arguments.root_package))
     signatures = {}
     found = 0
     with open(arguments.log, encoding="utf-8", errors="replace") as handle:
@@ -86,11 +101,12 @@ def main():
             if not match:
                 continue
             found += 1
-            path, message = match.group("path"), match.group("message")
+            path = os.path.join(arguments.module_dir, match.group("path"))
+            message = match.group("message")
             if path not in signatures:
-                signatures[path] = Signature(path, roots)
+                signatures[path] = Signature(path)
             owner = signatures[path].class_at(int(match.group("line")))
-            if owner is None or owner in signatures[path].reachable:
+            if owner is None or owner in public:
                 print(message)
             else:
                 print(f"Ignored, {owner} is not reachable from the public API: {message}", file=sys.stderr)

@@ -61,6 +61,7 @@ jobs:
             fi
             python3 .github/scripts/public_api.py --root-package ly.count.android.sdk \
               --root-package ly.count.android.sdk.messaging --root-package ly.count.android.sdknative \
+              --signatures "$RUNNER_TEMP/api" --module-dir "${module#:}" \
               "$RUNNER_TEMP/check.log" >> "$RUNNER_TEMP/breaking.txt"
           done
 
