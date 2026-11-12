@@ -1,11 +1,4 @@
-"""
-Writes a Markdown summary of static analysis results stored as SARIF.
-
-Usage: python3 sarif_summary.py <title> <file.sarif or directory> [...]
-
-Prints the number of distinct findings per rule and level, then the first findings with their location. Exits with 1
-when no SARIF file is found, so an analyzer that silently wrote nothing never reads as a clean result.
-"""
+"""Writes a Markdown summary of static analysis results stored as SARIF: findings per rule, then the first 50."""
 import collections
 import json
 import pathlib
@@ -13,6 +6,7 @@ import sys
 import urllib.parse
 import urllib.request
 
+USAGE = "Usage: python3 sarif_summary.py <title> <file.sarif or directory> [...]"
 MAX_LISTED = 50
 
 
@@ -69,9 +63,10 @@ def cell(text):
 def main():
     """Prints the summary for the title and SARIF paths given on the command line."""
     if len(sys.argv) < 3:
-        sys.exit(__doc__)
+        sys.exit(USAGE)
     title, files = sys.argv[1], sarif_files(sys.argv[2:])
     if not files:
+        # An analyzer that silently wrote nothing must not read as a clean result.
         sys.exit(f"::error title={title}::No SARIF file found in {' '.join(sys.argv[2:])}")
     # The same finding in a shared header is reported once per source file that includes it.
     rows = list(dict.fromkeys(findings(files)))
