@@ -218,6 +218,19 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         return preparedConsent.toString();
     }
 
+    /**
+     * Sends the current consent state, as init does, while consent is required
+     */
+    void sendConsentStateInternal() {
+        if (!requiresConsent) {
+            return;
+        }
+
+        String formattedConsentState = formatConsentState(featureConsentValues);
+        L.d("[ModuleConsent] sendConsentStateInternal, Sending the current consent state: [" + formattedConsentState + "]");
+        requestQueueProvider.sendConsentChanges(formattedConsentState);
+    }
+
     void setConsentInternal(@Nullable final String[] featureNames, final boolean isConsentGiven, final ConsentChangeSource changeSource) {
         L.d("[ModuleConsent] setConsentInternal, featureNames: [" + Arrays.toString(featureNames) + "] to value: [" + isConsentGiven + "], changeSource: [" + changeSource + "]");
         if (!requiresConsent) {
@@ -227,6 +240,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         if (featureNames == null) {
             L.w("[ModuleConsent] setConsentInternal, Calling setConsent with null featureNames!");
+            healthTracker.recordLogCode("w402");
             return;
         }
 
@@ -236,6 +250,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         for (String featureName : featureNames) {
             if (!isValidFeatureName(featureName)) {
                 L.w("[ModuleConsent] setConsentInternal, Given feature: [" + featureName + "] is not a valid name, ignoring it");
+                healthTracker.recordLogCode("w402");
                 continue;
             }
 

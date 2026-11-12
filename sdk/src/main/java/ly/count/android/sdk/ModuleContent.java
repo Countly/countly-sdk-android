@@ -94,6 +94,7 @@ public class ModuleContent extends ModuleBase {
             String key = keys.next();
             if (key.startsWith(reservedSurveyAnswerKeyPrefix)) {
                 L.w(tag + ", provided segmentation contains protected key [" + key + "]");
+                healthTracker.recordLogCode("w700");
                 keys.remove();
             }
         }
@@ -723,6 +724,7 @@ public class ModuleContent extends ModuleBase {
         public void previewContent(@Nullable String contentId) {
             if (Utils.isNullOrEmpty(contentId)) {
                 L.w("[ModuleContent] previewContent, contentId is null or empty, skipping");
+                healthTracker.recordLogCode("w700");
                 return;
             }
 

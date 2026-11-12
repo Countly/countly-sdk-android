@@ -24,6 +24,10 @@ public class ModuleAttribution extends ModuleBase {
     static final String STATE_REFERRER_DONE = "referrer_done";
     static final String STATE_REFERRER_ATTEMPTS = "referrer_attempts";
     static final String STATE_FIRST_LAUNCH_RESOLVED = "first_launch_resolved";
+    //the first launch result, kept until the launch activity was looked at
+    static final String STATE_FIRST_LAUNCH_PENDING = "first_launch_pending";
+    static final String STATE_DEFERRED_PATH = "deferred_path";
+    static final String STATE_DEFERRED_URL = "deferred_url";
     static final String STATE_CHANNEL = "channel";
 
     //a store that keeps saying "try later" (no Play Store, for one) is asked on this many launches only
@@ -38,6 +42,11 @@ public class ModuleAttribution extends ModuleBase {
     boolean referrerReadInProgress = false;
     //a link opened the app in this process; then the first launch reports no DEFERRED or NONE
     boolean linkOpenedThisProcess = false;
+    //the intent of the first activity of this process was looked at; until then the first launch is not reported,
+    //because that activity may have been opened by a link
+    boolean launchIntentInspected = false;
+    //a first launch result known only in this process (the referrer library is missing, so every launch finds it again)
+    boolean firstLaunchPendingInMemory = false;
     //read and written under the instance lock
     boolean halted = false;
 
@@ -121,7 +130,11 @@ public class ModuleAttribution extends ModuleBase {
         if (!installReferrerReader.isAvailable()) {
             //not marked as done: an app update that adds the library still reads it once
             L.i("[ModuleAttribution] readInstallReferrerIfNeeded, the install referrer library ('com.android.installreferrer:installreferrer') is not in the app, the install referrer is not read");
-            resolveFirstLaunch(null, null);
+            //not stored: the next launch finds the library missing again, and storing it would write at every init
+            if (!readState().optBoolean(STATE_FIRST_LAUNCH_RESOLVED, false)) {
+                firstLaunchPendingInMemory = true;
+                deliverFirstLaunchIfReady();
+            }
             return;
         }
         if (context == null) {
@@ -184,19 +197,55 @@ public class ModuleAttribution extends ModuleBase {
     }
 
     /**
-     * Reports DEFERRED or NONE to the app once, on the first launch.
+     * Records the first launch result, DEFERRED or NONE. It is reported once the launch activity was looked at
+     * (deliverFirstLaunchIfReady): init usually runs in Application.onCreate, before that activity exists, and a
+     * link that opened the app replaces it. Kept in storage, so a process without any activity (a push, a
+     * service) leaves it for the next one.
      */
     void resolveFirstLaunch(@Nullable String deferredPath, @Nullable String referrer) {
-        if (readState().optBoolean(STATE_FIRST_LAUNCH_RESOLVED, false)) {
+        JSONObject state = readState();
+        if (state.optBoolean(STATE_FIRST_LAUNCH_RESOLVED, false) || state.optBoolean(STATE_FIRST_LAUNCH_PENDING, false)) {
             return;
         }
-        putState(STATE_FIRST_LAUNCH_RESOLVED, true);
+        try {
+            state.put(STATE_FIRST_LAUNCH_PENDING, true);
+            if (deferredPath != null && !deferredPath.isEmpty()) {
+                state.put(STATE_DEFERRED_PATH, deferredPath);
+                state.putOpt(STATE_DEFERRED_URL, referrer);
+            }
+        } catch (JSONException ignored) {
+        }
+        writeState(state);
+        deliverFirstLaunchIfReady();
+    }
+
+    void deliverFirstLaunchIfReady() {
+        if (!launchIntentInspected) {
+            return;
+        }
+        JSONObject state = readState();
+        boolean pending = firstLaunchPendingInMemory || state.optBoolean(STATE_FIRST_LAUNCH_PENDING, false);
+        if (!pending || state.optBoolean(STATE_FIRST_LAUNCH_RESOLVED, false)) {
+            return;
+        }
+        firstLaunchPendingInMemory = false;
+        String deferredPath = state.optString(STATE_DEFERRED_PATH, "");
+        String referrer = state.optString(STATE_DEFERRED_URL, "");
+        state.remove(STATE_FIRST_LAUNCH_PENDING);
+        state.remove(STATE_DEFERRED_PATH);
+        state.remove(STATE_DEFERRED_URL);
+        try {
+            state.put(STATE_FIRST_LAUNCH_RESOLVED, true);
+        } catch (JSONException ignored) {
+        }
+        writeState(state);
+
         if (linkOpenedThisProcess) {
             //the link that opened the app was already reported, it is the more specific destination
             return;
         }
-        if (deferredPath != null && !deferredPath.isEmpty()) {
-            notifyDeepLink(DeepLinkCallback.Type.DEFERRED, deferredPath, referrer);
+        if (!deferredPath.isEmpty()) {
+            notifyDeepLink(DeepLinkCallback.Type.DEFERRED, deferredPath, referrer.isEmpty() ? null : referrer);
         } else {
             notifyDeepLink(DeepLinkCallback.Type.NONE, null, null);
         }
@@ -206,7 +255,8 @@ public class ModuleAttribution extends ModuleBase {
 
     void recordDeepLinkInternal(@Nullable Uri uri, boolean automatic) {
         if (uri == null || uri.toString().isEmpty()) {
-            L.e("[ModuleAttribution] recordDeepLinkInternal, provided link is not valid. Execution will be aborted.");
+            L.w("[ModuleAttribution] recordDeepLinkInternal, provided link is not valid. Execution will be aborted.");
+            healthTracker.recordLogCode("w700");
             return;
         }
         String url = uri.toString();
@@ -230,6 +280,12 @@ public class ModuleAttribution extends ModuleBase {
         if (activity == null) {
             return;
         }
+        recordLaunchLinkIfAny(activity);
+        launchIntentInspected = true;
+        deliverFirstLaunchIfReady();
+    }
+
+    void recordLaunchLinkIfAny(@NonNull Activity activity) {
         Intent intent;
         try {
             intent = activity.getIntent();
@@ -353,12 +409,14 @@ public class ModuleAttribution extends ModuleBase {
         L.d("[ModuleAttribution] recordDirectAttributionInternal, campaign id:[" + campaignType + "], user id:[" + campaignData + "]");
 
         if (campaignType == null || campaignType.isEmpty()) {
-            L.e("[ModuleAttribution] recordDirectAttributionInternal, provided campaign type value is not valid. Execution will be aborted.");
+            L.w("[ModuleAttribution] recordDirectAttributionInternal, provided campaign type value is not valid. Execution will be aborted.");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (campaignData == null || campaignData.isEmpty()) {
-            L.e("[ModuleAttribution] recordDirectAttributionInternal, provided campaign data value is not valid. Execution will be aborted.");
+            L.w("[ModuleAttribution] recordDirectAttributionInternal, provided campaign data value is not valid. Execution will be aborted.");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -366,6 +424,7 @@ public class ModuleAttribution extends ModuleBase {
             //stop execution if the type is not "countly"
             //this is a temporary exception
             L.w("[ModuleAttribution] recordDirectAttributionInternal, recording direct attribution with a type other than 'countly' is currently not supported. Execution will be aborted.");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -384,12 +443,14 @@ public class ModuleAttribution extends ModuleBase {
         try {
             jObj = new JSONObject(campaignData);
         } catch (JSONException e) {
-            L.e("[ModuleAttribution] recordDirectAttributionInternal, recording direct attribution data is not in the correct format. Execution will be aborted.");
+            L.w("[ModuleAttribution] recordDirectAttributionInternal, recording direct attribution data is not in the correct format. Execution will be aborted.");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (!jObj.has("cid")) {
-            L.e("[ModuleAttribution] recordDirectAttributionInternal, direct attribution can't be recorded because the data does not contain the 'cid' value. Execution will be aborted.");
+            L.w("[ModuleAttribution] recordDirectAttributionInternal, direct attribution can't be recorded because the data does not contain the 'cid' value. Execution will be aborted.");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -398,7 +459,8 @@ public class ModuleAttribution extends ModuleBase {
             campaignId = jObj.getString("cid");
 
             if (campaignId.isEmpty()) {
-                L.e("[ModuleAttribution] recordDirectAttributionInternal, 'cid' value can't be empty string. Execution will be aborted.");
+                L.w("[ModuleAttribution] recordDirectAttributionInternal, 'cid' value can't be empty string. Execution will be aborted.");
+                healthTracker.recordLogCode("w700");
                 return;
             }
         } catch (JSONException e) {
@@ -414,6 +476,7 @@ public class ModuleAttribution extends ModuleBase {
 
                 if (campaignUserId.isEmpty()) {
                     L.w("[ModuleAttribution] recordDirectAttributionInternal, 'cuid' value can't be empty string. value will be ignored.");
+                    healthTracker.recordLogCode("w700");
                     campaignUserId = null;
                 }
             }
@@ -433,7 +496,8 @@ public class ModuleAttribution extends ModuleBase {
         L.d("[ModuleAttribution] recordIndirectAttributionInternal, attribution id:[" + attributionId + "]");
 
         if (attributionId == null || attributionId.isEmpty()) {
-            L.e("[ModuleAttribution] recordIndirectAttributionInternal, provided id values are not valid. Execution will be aborted.");
+            L.w("[ModuleAttribution] recordIndirectAttributionInternal, provided id values are not valid. Execution will be aborted.");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -443,12 +507,14 @@ public class ModuleAttribution extends ModuleBase {
             String value = entry.getValue();
 
             if (key == null || key.isEmpty()) {
-                L.e("[ModuleAttribution] recordIndirectAttributionInternal, provided key is not valid [" + key + "].");
+                L.w("[ModuleAttribution] recordIndirectAttributionInternal, provided key is not valid [" + key + "].");
+                healthTracker.recordLogCode("w700");
                 continue;
             }
 
             if (value == null || value.isEmpty()) {
-                L.e("[ModuleAttribution] recordIndirectAttributionInternal, for the key[" + key + "] the provided value is not valid [" + value + "].");
+                L.w("[ModuleAttribution] recordIndirectAttributionInternal, for the key[" + key + "] the provided value is not valid [" + value + "].");
+                healthTracker.recordLogCode("w700");
                 continue;
             }
 
@@ -460,7 +526,8 @@ public class ModuleAttribution extends ModuleBase {
         }
 
         if (jObj.length() == 0) {
-            L.e("[ModuleAttribution] recordIndirectAttributionInternal, no valid attribution values were provided");
+            L.w("[ModuleAttribution] recordIndirectAttributionInternal, no valid attribution values were provided");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -493,7 +560,8 @@ public class ModuleAttribution extends ModuleBase {
         //check if any indirect attribution value is set
         if (config.iaAttributionValues != null) {
             if (config.iaAttributionValues.isEmpty()) {
-                L.e("[ModuleAttribution] provided attribution ID for indirect attribution is empty string.");
+                L.w("[ModuleAttribution] provided attribution ID for indirect attribution is empty string.");
+                healthTracker.recordLogCode("w700");
             } else {
                 recordIndirectAttributionInternal(config.iaAttributionValues);
             }
@@ -502,10 +570,12 @@ public class ModuleAttribution extends ModuleBase {
         //checking if any direct attribution value is set
         if (config.daCampaignData != null || config.daCampaignType != null) {
             if (config.daCampaignType == null || config.daCampaignType.isEmpty()) {
-                L.e("[ModuleAttribution] Can't record direct attribution can't be recorded with an invalid campaign id.");
+                L.w("[ModuleAttribution] Can't record direct attribution can't be recorded with an invalid campaign id.");
+                healthTracker.recordLogCode("w700");
             } else {
                 if (config.daCampaignData != null && config.daCampaignData.isEmpty()) {
-                    L.e("[ModuleAttribution] For direct attribution the provided Campaign user ID can't be empty string.");
+                    L.w("[ModuleAttribution] For direct attribution the provided Campaign user ID can't be empty string.");
+                    healthTracker.recordLogCode("w700");
                 }
                 recordDirectAttributionInternal(config.daCampaignType, config.daCampaignData);
             }

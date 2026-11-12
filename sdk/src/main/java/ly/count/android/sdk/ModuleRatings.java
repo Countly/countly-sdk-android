@@ -54,12 +54,14 @@ public class ModuleRatings extends ModuleBase {
         }
 
         if (widgetId == null) {
-            L.e("[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
+            L.w("[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (widgetId.isEmpty()) {
-            L.e("[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
+            L.w("[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -373,7 +375,8 @@ public class ModuleRatings extends ModuleBase {
      */
     void showStarRatingCustom(@NonNull final Context context, final String title, final String message, final String cancelText, final boolean isCancellable, @Nullable final StarRatingCallback callback) {
         if (!(context instanceof Activity)) {
-            L.e("[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
+            L.w("[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
+            healthTracker.recordLogCode("w700");
 
             return;
         }
@@ -439,7 +442,8 @@ public class ModuleRatings extends ModuleBase {
             if (devCallback != null) {
                 devCallback.callback("Countly widgetId cannot be null or empty");
             }
-            L.e("[ModuleRatings] Countly widgetId cannot be null or empty");
+            L.w("[ModuleRatings] Countly widgetId cannot be null or empty");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -447,7 +451,8 @@ public class ModuleRatings extends ModuleBase {
             if (devCallback != null) {
                 devCallback.callback("When showing feedback popup, Activity can't be null");
             }
-            L.e("[ModuleRatings] When showing feedback popup, Activity can't be null");
+            L.w("[ModuleRatings] When showing feedback popup, Activity can't be null");
+            healthTracker.recordLogCode("w700");
             return;
         }
 

@@ -94,6 +94,14 @@ public class ModuleAttributionSignalsTests {
         return activity;
     }
 
+    /**
+     * The launcher activity resumes without a link, as when the user taps the app icon.
+     */
+    Countly launch(Countly countly) {
+        countly.dispatchActivityResumed(activityWith(new Intent(Intent.ACTION_MAIN)));
+        return countly;
+    }
+
     // ------------------------------------------------------------------ install referrer
 
     /**
@@ -125,13 +133,13 @@ public class ModuleAttributionSignalsTests {
     public void referrer_deferredDeepLinkCallback() {
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
         FakeReader reader = new FakeReader();
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
 
         verify(rqp, times(1)).sendAttributionSignal("referrer", RAW_REFERRER);
         Assert.assertEquals(1, callbacks.size());
         Assert.assertEquals("DEFERRED|/product/42|" + RAW_REFERRER, callbacks.get(0));
 
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
         Assert.assertEquals(1, callbacks.size());
     }
 
@@ -143,7 +151,7 @@ public class ModuleAttributionSignalsTests {
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
         FakeReader reader = new FakeReader();
         reader.referrer = "utm_source=google-play&utm_medium=organic";
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
 
         verify(rqp, times(1)).sendAttributionSignal("referrer", "utm_source=google-play&utm_medium=organic");
         Assert.assertEquals(1, callbacks.size());
@@ -160,7 +168,7 @@ public class ModuleAttributionSignalsTests {
         Assert.assertFalse(new PlayInstallReferrerReader().isAvailable());
 
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
-        Countly countly = new Countly().init(config(rqp, null));
+        Countly countly = launch(new Countly().init(config(rqp, null)));
 
         Assert.assertTrue(countly.moduleAttribution.installReferrerReader instanceof PlayInstallReferrerReader);
         verify(rqp, never()).sendAttributionSignal(anyString(), anyString());
@@ -168,7 +176,7 @@ public class ModuleAttributionSignalsTests {
         Assert.assertEquals("NONE|null|null", callbacks.get(0));
 
         //later launches stay quiet
-        new Countly().init(config(rqp, null));
+        launch(new Countly().init(config(rqp, null)));
         Assert.assertEquals(1, callbacks.size());
     }
 
@@ -180,8 +188,8 @@ public class ModuleAttributionSignalsTests {
         RequestQueueProvider rqp = mock(RequestQueueProvider.class);
         FakeReader reader = new FakeReader();
         reader.status = InstallReferrerReader.STATUS_NOT_SUPPORTED;
-        new Countly().init(config(rqp, reader));
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
+        launch(new Countly().init(config(rqp, reader)));
 
         Assert.assertEquals(1, reader.reads);
         verify(rqp, never()).sendAttributionSignal(anyString(), anyString());
@@ -199,17 +207,17 @@ public class ModuleAttributionSignalsTests {
         FakeReader reader = new FakeReader();
         reader.status = InstallReferrerReader.STATUS_RETRY;
 
-        new Countly().init(config(rqp, reader));
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
+        launch(new Countly().init(config(rqp, reader)));
         Assert.assertEquals(2, reader.reads);
         Assert.assertEquals(0, callbacks.size());
 
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
         Assert.assertEquals(3, reader.reads);
         Assert.assertEquals(1, callbacks.size());
         Assert.assertEquals("NONE|null|null", callbacks.get(0));
 
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
         Assert.assertEquals(3, reader.reads);
         verify(rqp, never()).sendAttributionSignal(anyString(), anyString());
     }
@@ -225,7 +233,7 @@ public class ModuleAttributionSignalsTests {
         new Countly().init(config(rqp, reader));
 
         reader.status = InstallReferrerReader.STATUS_OK;
-        new Countly().init(config(rqp, reader));
+        launch(new Countly().init(config(rqp, reader)));
         verify(rqp, times(1)).sendAttributionSignal("referrer", RAW_REFERRER);
         Assert.assertEquals("DEFERRED|/product/42|" + RAW_REFERRER, callbacks.get(0));
     }
@@ -413,6 +421,115 @@ public class ModuleAttributionSignalsTests {
 
         //no channel: nothing
         new Countly().init(config(null, reader));
+        Assert.assertEquals(2, queuedSignals().size());
+    }
+
+    // ------------------------------------------------------------------ first launch waits for the launch intent
+
+    /**
+     * Init in Application.onCreate, before any activity, without the referrer library: the first launch is not
+     * reported until the launch activity was looked at, so a launch link gives exactly one OPENED and no NONE.
+     */
+    @Test
+    public void firstLaunch_waitsForLaunchIntent_opened() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        Countly countly = new Countly().init(config(rqp, null));
+        Assert.assertEquals(0, callbacks.size());
+
+        String url = "https://links.example.com/at/spring24/checkout?cly_clk=zz9";
+        countly.dispatchActivityResumed(activityWith(new Intent(Intent.ACTION_VIEW, Uri.parse(url))));
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("OPENED|/checkout|" + url, callbacks.get(0));
+
+        launch(countly);
+        Assert.assertEquals(1, callbacks.size());
+    }
+
+    /**
+     * A referrer that answers before any activity: DEFERRED is reported when the launch activity resumes
+     * without a link, and only then.
+     */
+    @Test
+    public void firstLaunch_waitsForLaunchIntent_deferred() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        Countly countly = new Countly().init(config(rqp, new FakeReader()));
+        verify(rqp, times(1)).sendAttributionSignal("referrer", RAW_REFERRER);
+        Assert.assertEquals(0, callbacks.size());
+
+        launch(countly);
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("DEFERRED|/product/42|" + RAW_REFERRER, callbacks.get(0));
+    }
+
+    /**
+     * A referrer that answers before any activity, and the app was opened by a link: only OPENED.
+     */
+    @Test
+    public void firstLaunch_deferredThenLaunchLink_onlyOpened() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        Countly countly = new Countly().init(config(rqp, new FakeReader()));
+
+        String url = "https://links.example.com/at/spring24/sale";
+        countly.dispatchActivityResumed(activityWith(new Intent(Intent.ACTION_VIEW, Uri.parse(url))));
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("OPENED|/sale|" + url, callbacks.get(0));
+    }
+
+    /**
+     * A first process with no activity (started for a push, say) keeps the first launch pending; the next
+     * process reports it once its launch activity resumes.
+     */
+    @Test
+    public void firstLaunch_pendingAcrossProcesses() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        FakeReader reader = new FakeReader();
+        new Countly().init(config(rqp, reader));
+        Assert.assertEquals(0, callbacks.size());
+
+        Countly second = new Countly().init(config(rqp, reader));
+        Assert.assertEquals(1, reader.reads);
+        Assert.assertEquals(0, callbacks.size());
+        launch(second);
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("DEFERRED|/product/42|" + RAW_REFERRER, callbacks.get(0));
+
+        launch(new Countly().init(config(rqp, reader)));
+        Assert.assertEquals(1, callbacks.size());
+    }
+
+    // ------------------------------------------------------------------ explicit storage mode
+
+    /**
+     * In explicit storage mode the send-once markers are stored together with the queued signals: before the
+     * write both are only in memory, so a process death loses both and the next launch sends them again;
+     * after the write both are stored.
+     */
+    @Test
+    public void explicitStorage_markersStoredWithSignals() throws Exception {
+        FakeReader reader = new FakeReader();
+        Countly first = new Countly().init(config(null, reader).setAttributionChannel("partner_x").enableExplicitStorageMode());
+        Assert.assertEquals(1, reader.reads);
+
+        //what a new process would find on disk now
+        CountlyStore disk = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
+        Assert.assertEquals("", disk.getAttributionState());
+        Assert.assertEquals(0, queuedSignals().size());
+
+        //the process dies before the write: the next launch reads and sends again
+        Countly second = new Countly().init(config(null, reader).setAttributionChannel("partner_x").enableExplicitStorageMode());
+        Assert.assertEquals(2, reader.reads);
+
+        second.requestQueue().esWriteCachesToPersistence();
+        disk = new CountlyStore(TestUtils.getContext(), mock(ModuleLog.class));
+        JSONObject state = new JSONObject(disk.getAttributionState());
+        Assert.assertTrue(state.getBoolean(ModuleAttribution.STATE_REFERRER_DONE));
+        Assert.assertEquals("partner_x", state.getString(ModuleAttribution.STATE_CHANNEL));
+        List<JSONObject> signals = queuedSignals();
+        Assert.assertEquals(2, signals.size());
+
+        //stored: a third launch sends nothing more
+        new Countly().init(config(null, reader).setAttributionChannel("partner_x").enableExplicitStorageMode());
+        Assert.assertEquals(2, reader.reads);
         Assert.assertEquals(2, queuedSignals().size());
     }
 

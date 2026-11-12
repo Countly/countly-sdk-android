@@ -260,7 +260,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (viewName == null || viewName.isEmpty()) {
-            L.e("[ModuleViews] startViewInternal, Trying to record view with null or empty view name, ignoring request");
+            L.w("[ModuleViews] startViewInternal, Trying to record view with null or empty view name, ignoring request");
+            healthTracker.recordLogCode("w710", "views");
             return null;
         }
 
@@ -312,7 +313,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     void stopViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> customViewSegmentation) {
         if (viewName == null || viewName.isEmpty()) {
-            L.e("[ModuleViews] stopViewWithNameInternal, Trying to record view with null or empty view name, ignoring request");
+            L.w("[ModuleViews] stopViewWithNameInternal, Trying to record view with null or empty view name, ignoring request");
+            healthTracker.recordLogCode("w700", "views");
             return;
         }
 
@@ -326,7 +328,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (viewID == null) {
-            L.e("[ModuleViews] stopViewWithNameInternal, No view entry found with the provided name :[" + viewName + "]");
+            L.w("[ModuleViews] stopViewWithNameInternal, No view entry found with the provided name :[" + viewName + "]");
+            healthTracker.recordLogCode("w730", "views");
             return;
         }
 
@@ -335,7 +338,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     void stopViewWithIDInternal(@Nullable String viewID, @Nullable Map<String, Object> customViewSegmentation) {
         if (viewID == null || viewID.isEmpty()) {
-            L.e("[ModuleViews] stopViewWithNameInternal, Trying to record view with null or empty view ID, ignoring request");
+            L.w("[ModuleViews] stopViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
+            healthTracker.recordLogCode("w700", "views");
             return;
         }
 
@@ -344,6 +348,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         //todo extract common checks
         if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] stopViewWithIDInternal, there is no view with the provided view id to close");
+            healthTracker.recordLogCode("w730", "views");
             return;
         }
 
@@ -356,7 +361,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         L.d("[ModuleViews] View [" + vd.viewName + "], id:[" + vd.viewID + "] is getting closed, reporting duration: [" + (UtilsTime.monotonicTimeSeconds() - vd.viewStartTimeSeconds) + "] s, current timestamp: [" + UtilsTime.currentTimestampSeconds() + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
-            L.w("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
+            L.v("[ModuleViews] stopViewWithIDInternal, no consent given for views, ignoring call");
             return;
         }
 
@@ -406,14 +411,16 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     void pauseViewWithIDInternal(String viewID) {
         if (viewID == null || viewID.isEmpty()) {
-            L.e("[ModuleViews] pauseViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
+            L.w("[ModuleViews] pauseViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
+            healthTracker.recordLogCode("w700", "views");
             return;
         }
 
         viewID = currentIDFor(viewID);
 
         if (!viewDataMap.containsKey(viewID)) {
-            L.w("[ModuleViews] pauseViewWithIDInternal, there is no view with the provided view id to close");
+            L.w("[ModuleViews] pauseViewWithIDInternal, there is no view with the provided view id to pause");
+            healthTracker.recordLogCode("w730", "views");
             return;
         }
 
@@ -436,6 +443,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (vd.viewStartTimeSeconds == 0) {
             L.w("[ModuleViews] pauseViewWithIDInternal, pausing a view that is already paused. ID:[" + viewID + "], name:[" + vd.viewName + "]");
+            healthTracker.recordLogCode("w731", "views");
             return;
         }
 
@@ -446,14 +454,16 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     void resumeViewWithIDInternal(String viewID) {
         if (viewID == null || viewID.isEmpty()) {
-            L.e("[ModuleViews] resumeViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
+            L.w("[ModuleViews] resumeViewWithIDInternal, Trying to record view with null or empty view ID, ignoring request");
+            healthTracker.recordLogCode("w700", "views");
             return;
         }
 
         viewID = currentIDFor(viewID);
 
         if (!viewDataMap.containsKey(viewID)) {
-            L.w("[ModuleViews] resumeViewWithIDInternal, there is no view with the provided view id to close");
+            L.w("[ModuleViews] resumeViewWithIDInternal, there is no view with the provided view id to resume");
+            healthTracker.recordLogCode("w730", "views");
             return;
         }
 
@@ -476,6 +486,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (vd.viewStartTimeSeconds > 0) {
             L.w("[ModuleViews] resumeViewWithIDInternal, resuming a view that is already running. ID:[" + viewID + "], name:[" + vd.viewName + "]");
+            healthTracker.recordLogCode("w731", "views");
             return;
         }
 
@@ -484,7 +495,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
     public void addSegmentationToViewWithIDInternal(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
         if (viewID == null || viewSegmentation == null || viewID.isEmpty() || viewSegmentation.isEmpty()) {
-            L.e("[Views] addSegmentationToViewWithID, null or empty parameters provided");
+            L.w("[Views] addSegmentationToViewWithID, null or empty parameters provided");
+            healthTracker.recordLogCode("w700", "views");
             return;
         }
 
@@ -492,6 +504,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
         if (!viewDataMap.containsKey(viewID)) {
             L.w("[ModuleViews] addSegmentationToViewWithID, there is no view with the provided view id");
+            healthTracker.recordLogCode("w730", "views");
             return;
         }
 
@@ -534,7 +547,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         if (viewID == null) {
-            L.e("[ModuleViews] addSegmentationToViewWithName, No view entry found with the provided name :[" + viewName + "]");
+            L.w("[ModuleViews] addSegmentationToViewWithName, No view entry found with the provided name :[" + viewName + "]");
+            healthTracker.recordLogCode("w730", "views");
             return;
         }
 
@@ -587,6 +601,20 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
             vd.willStartAgain = true;
             stopViewWithIDInternal(vd.viewID, null);
         }
+    }
+
+    /**
+     * Whether views were stopped because the app went to the background and wait for the foreground to start again
+     *
+     * @return true when at least one view waits to start again
+     */
+    boolean hasViewsWaitingToStartAgain() {
+        for (ViewData vd : viewDataMap.values()) {
+            if (vd.willStartAgain) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void startStoppedViews() {
@@ -723,6 +751,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         }
 
         automaticViewActivity = activity == null ? null : new WeakReference<>(activity);
+        healthTracker.recordUsage("views", "start:a");
         startViewInternal(usedActivityName, automaticViewSegmentation, true);
     }
 
@@ -798,9 +827,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public String startAutoStoppedView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling startAutoStoppedView [" + viewName + "]");
+                healthTracker.recordUsage("views", "startAuto");
 
                 if (autoViewTracker) {
-                    L.e("[Views] startAutoStoppedView, manual view call will be ignored since automatic tracking is enabled.");
+                    L.w("[Views] startAutoStoppedView, manual view call will be ignored since automatic tracking is enabled.");
+                    healthTracker.recordLogCode("w740", "views");
                     return null;
                 }
 
@@ -819,7 +850,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 L.i("[Views] Calling addSegmentationToViewWithID for view ID: [" + viewID + "]");
 
                 if (autoViewTracker) {
-                    L.e("[Views] addSegmentationToViewWithID, manual view call will be ignored since automatic tracking is enabled.");
+                    L.w("[Views] addSegmentationToViewWithID, manual view call will be ignored since automatic tracking is enabled.");
+                    healthTracker.recordLogCode("w740", "views");
                     return;
                 }
 
@@ -838,7 +870,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
                 L.i("[Views] Calling addSegmentationToViewWithName for Name: [" + viewName + "]");
 
                 if (autoViewTracker) {
-                    L.e("[Views] addSegmentationToViewWithName, manual view call will be ignored since automatic tracking is enabled.");
+                    L.w("[Views] addSegmentationToViewWithName, manual view call will be ignored since automatic tracking is enabled.");
+                    healthTracker.recordLogCode("w740", "views");
                     return;
                 }
 
@@ -855,9 +888,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public @Nullable String startView(@Nullable String viewName) {
             synchronized (_cly) {
                 L.i("[Views] Calling startView vn[" + viewName + "]");
+                healthTracker.recordUsage("views", "start");
 
                 if (autoViewTracker) {
-                    L.e("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    L.w("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    healthTracker.recordLogCode("w740", "views");
                     return null;
                 }
 
@@ -875,9 +910,11 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public @Nullable String startView(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling startView vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+                healthTracker.recordUsage("views", "start");
 
                 if (autoViewTracker) {
-                    L.e("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    L.w("[Views] startView, manual view call will be ignored since automatic tracking is enabled.");
+                    healthTracker.recordLogCode("w740", "views");
                     return null;
                 }
 
@@ -893,6 +930,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public void stopViewWithName(@Nullable String viewName) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vn[" + viewName + "]");
+                healthTracker.recordUsage("views", "stop");
 
                 stopViewWithNameInternal(viewName, null);
             }
@@ -907,6 +945,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public void stopViewWithName(@Nullable String viewName, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithName vn[" + viewName + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+                healthTracker.recordUsage("views", "stop");
 
                 stopViewWithNameInternal(viewName, viewSegmentation);
             }
@@ -920,6 +959,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public void stopViewWithID(@Nullable String viewID) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopViewWithID vi[" + viewID + "]");
+                healthTracker.recordUsage("views", "stop");
 
                 stopViewWithIDInternal(viewID, null);
             }
@@ -933,7 +973,8 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
          */
         public void stopViewWithID(@Nullable String viewID, @Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
-                L.i("[Views] Calling stopViewWithName vi[" + viewID + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+                L.i("[Views] Calling stopViewWithID vi[" + viewID + "] sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+                healthTracker.recordUsage("views", "stop");
 
                 stopViewWithIDInternal(viewID, viewSegmentation);
             }
@@ -947,6 +988,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public void pauseViewWithID(@Nullable String viewID) {
             synchronized (_cly) {
                 L.i("[Views] Calling pauseViewWithID vi[" + viewID + "]");
+                healthTracker.recordUsage("views", "pause");
 
                 pauseViewWithIDInternal(viewID);
             }
@@ -960,6 +1002,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public void resumeViewWithID(@Nullable String viewID) {
             synchronized (_cly) {
                 L.i("[Views] Calling resumeViewWithID vi[" + viewID + "]");
+                healthTracker.recordUsage("views", "resume");
 
                 resumeViewWithIDInternal(viewID);
             }
@@ -989,6 +1032,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
 
                 if (segmentation == null) {
                     L.w("[View] When updating segmentation values, they can't be 'null'.");
+                    healthTracker.recordLogCode("w700", "views");
                     return;
                 }
 
@@ -1004,6 +1048,7 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         public void stopAllViews(@Nullable Map<String, Object> viewSegmentation) {
             synchronized (_cly) {
                 L.i("[Views] Calling stopAllViews sg[" + (viewSegmentation == null ? viewSegmentation : viewSegmentation.size()) + "]");
+                healthTracker.recordUsage("views", "stopAll");
 
                 stopAllViewsInternal(viewSegmentation);
             }

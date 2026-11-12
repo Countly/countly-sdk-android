@@ -1,6 +1,8 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import org.json.JSONObject;
 
 class ModuleHealthCheck extends ModuleBase {
 
@@ -19,6 +21,19 @@ class ModuleHealthCheck extends ModuleBase {
         config.healthTracker = hCounter;
         immediateRequestGenerator = config.immediateRequestGenerator;
         healthCheckEnabled = config.healthCheckEnabled;
+    }
+
+    /**
+     * Hands the consent module to the module and its counters, so method usage and log codes of a feature are counted only
+     * while that feature has consent.
+     *
+     * @param consentProvider the consent module of this instance
+     */
+    void setConsentProvider(@Nullable ConsentProvider consentProvider) {
+        this.consentProvider = consentProvider;
+        if (hCounter != null) {
+            hCounter.consentProvider = consentProvider;
+        }
     }
 
     @Override
@@ -41,6 +56,11 @@ class ModuleHealthCheck extends ModuleBase {
         }
     }
 
+    /**
+     * Sends the health check once per initialization as an immediate request. It is skipped while disabled, in temporary
+     * device ID mode (then sent when that mode ends) and once sent. On an accepted answer only the reported amounts are
+     * taken away from the counters. Logs at debug level only, as every warning and error is counted by the health check.
+     */
     void sendHealthCheck() {
         L.v("[ModuleHealthCheck] sendHealthCheck, attempting to send health information");
 
@@ -62,19 +82,28 @@ class ModuleHealthCheck extends ModuleBase {
             return;
         }
 
+        final HealthCheckCounter counter = hCounter;
+        if (counter == null) {
+            L.d("[ModuleHealthCheck] sendHealthCheck, the SDK was halted, not sending a health check");
+            return;
+        }
+
         healthCheckSent = true;
 
-        String preparedMetrics = deviceInfo.getMetricsHealthCheck(_cly.context_, _cly.config_.metricOverride);
+        String preparedMetrics = null;
+        if (consentProvider == null || consentProvider.getConsent(Countly.CountlyFeatureNames.metrics)) {
+            preparedMetrics = deviceInfo.getMetricsHealthCheck(_cly.context_, _cly.config_.metricOverride);
+        }
 
+        final JSONObject snapshot = counter.snapshot();
         StringBuilder requestData = new StringBuilder(requestQueueProvider.prepareHealthCheckRequest(preparedMetrics));
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
-        requestData.append(hCounter.createRequestParam());
+        requestData.append(counter.createRequestParam(snapshot));
 
         immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData.toString(), "/i", cp, false, networkingIsEnabled, checkResponse -> {
             if (checkResponse == null) {
-                L.w("[ModuleHealthCheck] No response for sending health check Probably due to lack of connection to the server");
-                //sending failed, keep counters
+                L.d("[ModuleHealthCheck] No response for sending health check, the counters are kept for the next start");
                 return;
             }
 
@@ -85,15 +114,13 @@ class ModuleHealthCheck extends ModuleBase {
                 return;
             }
 
-            HealthCheckCounter counter = hCounter;
-            if (counter == null) {
+            if (hCounter != counter) {
                 L.d("[ModuleHealthCheck] sendHealthCheck, SDK was halted before the response returned, skipping counter reset");
                 return;
             }
 
-            //at this point we can expect that the request succeed and we can clear the counters
             L.d("[ModuleHealthCheck] sendHealthCheck, SDK health information sent successfully");
-            counter.clearAndSave();
+            counter.clearSentValues(snapshot);
         }, L);
     }
 }

@@ -247,7 +247,8 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
      */
     void changeDeviceIdWithMergeInternal(@NonNull String deviceId) {
         if (deviceId.isEmpty()) {
-            L.e("changeDeviceIdWithMergeInternal, provided device ID can't be empty string");
+            L.w("[ModuleDeviceId] changeDeviceIdWithMergeInternal, provided device ID can't be empty string");
+            healthTracker.recordLogCode("w601");
             return;
         }
 
@@ -294,6 +295,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
     private void setIDInternal(String newDeviceID) {
         if (Utils.isNullOrEmpty(newDeviceID)) {
             L.w("[ModuleDeviceId] setID, Empty id passed to setID method");
+            healthTracker.recordLogCode("w601");
             return;
         }
 
@@ -393,7 +395,8 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
                 }
 
                 if (deviceId == null) {
-                    L.e("[DeviceId] changeDeviceIdWithoutMerge, provided device ID value was 'null'. Request will be ignored");
+                    L.w("[DeviceId] changeDeviceIdWithoutMerge, provided device ID value was 'null'. Request will be ignored");
+                    healthTracker.recordLogCode("w601");
                     return;
                 }
 
@@ -416,7 +419,8 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
                 }
 
                 if (deviceId == null) {
-                    L.e("[DeviceId] changeDeviceIdWithMerge, provided device ID value was 'null'. Request will be ignored");
+                    L.w("[DeviceId] changeDeviceIdWithMerge, provided device ID value was 'null'. Request will be ignored");
+                    healthTracker.recordLogCode("w601");
                     return;
                 }
 

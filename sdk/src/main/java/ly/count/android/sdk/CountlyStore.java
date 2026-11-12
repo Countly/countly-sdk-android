@@ -68,6 +68,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     private static final String PREFERENCE_HEALTH_CHECK_STATE = "HEALTH_CHECK";
     private static final String PREFERENCE_ATTRIBUTION_STATE = "ATTRIBUTION_STATE";
+    private static final String PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES = "HEALTH_CHECK_AUTOMATIC_CRASHES";
 
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
     private static final String CACHED_PUSH_ACTION_INDEX = "PUSH_ACTION_INDEX";
@@ -106,6 +107,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     ModuleLog L;
 
     ConfigurationProvider configurationProvider;
+    @Nullable HealthTracker healthTracker;
 
     int maxRequestQueueSize = 1000;
     int dropAgeHours = 0;
@@ -121,6 +123,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     String esRequestQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
     String esEventQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
     String esHealthCheckCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
+    String esAttributionStateCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
 
     public PerformanceCounterCollector pcc;
 
@@ -383,6 +386,16 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                     }
                 }
 
+                //written in the same commit as the request queue: the send-once markers must never outlive the
+                //attribution requests they stand for
+                if (esAttributionStateCache != null) {
+                    String currentASValue = preferences_.getString(PREFERENCE_ATTRIBUTION_STATE, "");
+                    if (!esAttributionStateCache.equals(currentASValue)) {
+                        writePerformed = true;
+                        spe.putString(PREFERENCE_ATTRIBUTION_STATE, esAttributionStateCache);
+                    }
+                }
+
                 if (writePerformed) {
                     //commit the changes if needed
                     spe.commit();
@@ -560,6 +573,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
             L.w("[CountlyStore] addRequest, Tracking config is disabled, request will not be added to the request queue.");
+            recordLogCode("w505", 1);
             return;
         }
 
@@ -612,12 +626,13 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         int requestsToRemove;
         if (disableGradualRequestCleaner) {
             requestsToRemove = overflow + 1;
-            L.i("[CountlyStore] deleteOldestRequests, Gradual cleaner disabled. Removing all overflow: " + requestsToRemove + " request");
+            L.w("[CountlyStore] deleteOldestRequests, the request queue is full, gradual cleaner disabled. Removing all overflow: " + requestsToRemove + " request");
         } else {
             requestsToRemove = Math.min(requestRemovalLoopLimit, overflow) + 1; // +1 because it should open a new place for newcomer
-            L.i("[CountlyStore] deleteOldestRequests, Will remove the oldest " + requestsToRemove + " request");
+            L.w("[CountlyStore] deleteOldestRequests, the request queue is full, will remove the oldest " + requestsToRemove + " request");
         }
         requests.subList(0, requestsToRemove).clear(); // sublist reflects all changes to the main list
+        recordLogCode("w310", requestsToRemove);
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("CountlyStore_deleteOldestRequest", UtilsTime.getNanoTime() - tsStart);
@@ -690,7 +705,8 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         // save the new request queue
         if (removedRequests > 0) {
-            L.i("[CountlyStore] checkAndRemoveTooOldRequests, removed " + removedRequests + " outdated requests");
+            L.w("[CountlyStore] checkAndRemoveTooOldRequests, removed " + removedRequests + " outdated requests");
+            recordLogCode("w330", removedRequests);
         }
 
         if (pcc != null) {
@@ -791,6 +807,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
         if (configurationProvider != null && !configurationProvider.getTrackingEnabled()) {
             L.w("[CountlyStore] addEvent, Tracking config is disabled, event will not be added to the request queue.");
+            recordLogCode("w505", 1);
             return;
         }
 
@@ -1024,6 +1041,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         esDirtyFlag = false;
         esRequestQueueCache = null;
         esEventQueueCache = null;
+        esAttributionStateCache = null;
 
         //The generated-UUID cache lives in its own (namespaced) file, not in the main store. Without
         //wiping it too, a halt-then-init would silently re-adopt the pre-halt device id through
@@ -1170,17 +1188,64 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         }
     }
 
+    /**
+     * Records a log code for the health check, once the health check module exists.
+     *
+     * @param code the log code
+     * @param count how many times the condition occurred
+     */
+    private void recordLogCode(@NonNull String code, int count) {
+        HealthTracker tracker = healthTracker;
+        if (tracker != null) {
+            tracker.recordLogCode(code, count);
+        }
+    }
+
+    /**
+     * Adds one automatically detected crash to the stored count. It is applied to the preferences in memory only: the
+     * synchronous save of the crash report that follows writes it to storage together with the report, also in explicit
+     * storage mode, so reporting a crash costs one write.
+     */
+    public synchronized void incrementAutomaticCrashCount() {
+        int count = preferences_.getInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, 0);
+        preferences_.edit().putInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, count + 1).apply();
+    }
+
+    /**
+     * Returns the stored count of automatically detected crashes and sets it back to 0.
+     *
+     * @return the stored count
+     */
+    public synchronized int takeAutomaticCrashCount() {
+        int count = preferences_.getInt(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES, 0);
+        if (count != 0) {
+            preferences_.edit().remove(PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES).apply();
+        }
+        return count;
+    }
+
     public int getMaxRequestQueueSize() {
         return maxRequestQueueSize;
     }
 
-    //written straight to preferences also in explicit storage mode: it guards "send once", and losing it
-    //with an unflushed cache would send the install referrer again on the next launch
-    public @NonNull String getAttributionState() {
+    //In explicit storage mode the state is cached and written with the request queue, like the queued attribution
+    //requests themselves: a process death before the write loses both, and the next launch sends them again.
+    public synchronized @NonNull String getAttributionState() {
+        if (explicitStorageModeEnabled) {
+            if (esAttributionStateCache == null) {
+                esAttributionStateCache = preferences_.getString(PREFERENCE_ATTRIBUTION_STATE, "");
+            }
+            return esAttributionStateCache;
+        }
         return preferences_.getString(PREFERENCE_ATTRIBUTION_STATE, "");
     }
 
-    public void setAttributionState(@NonNull String state) {
-        preferences_.edit().putString(PREFERENCE_ATTRIBUTION_STATE, state).apply();
+    public synchronized void setAttributionState(@NonNull String state) {
+        if (explicitStorageModeEnabled) {
+            esAttributionStateCache = state;
+            esDirtyFlag = true;
+        } else {
+            preferences_.edit().putString(PREFERENCE_ATTRIBUTION_STATE, state).apply();
+        }
     }
 }

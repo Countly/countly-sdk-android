@@ -132,7 +132,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         return false;
     }
 
-    public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
+    public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, double dur, UtilsTime.Instant instant, final String eventIdOverride) {
         //assert key != null;
         assert count >= 1;
         assert _cly.isInitialized();
@@ -144,12 +144,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
         L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] recordEventInternal, Valid Countly event key is required. Event will be ignored.");
+            L.w("[ModuleEvents] recordEventInternal, Valid Countly event key is required. Event will be ignored.");
+            healthTracker.recordLogCode("w701", "events");
             return;
         }
         if (count < 1) {
-            L.e("[ModuleEvents] recordEventInternal, event count should be greater than zero. Key:[" + key + "] count:[" + count + "]");
+            L.w("[ModuleEvents] recordEventInternal, event count should be greater than zero. Key:[" + key + "] count:[" + count + "]");
+            healthTracker.recordLogCode("w750", "events");
             count = 1;
+        }
+        if (dur < 0) {
+            L.w("[ModuleEvents] recordEventInternal, event duration can not be negative, it is ignored. Key:[" + key + "] dur:[" + dur + "]");
+            healthTracker.recordLogCode("w750", "events");
+            dur = 0;
         }
 
         //the segmentation is logged once the filters and consent have decided what is recorded, see recordEventToEventQueue
@@ -352,10 +359,13 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
     boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] Can't start event with a null or empty key");
+            L.w("[ModuleEvents] Can't start event with a null or empty key");
+            healthTracker.recordLogCode("w700", "events");
             return false;
         }
         if (timedEvents.containsKey(key)) {
+            L.w("[ModuleEvents] startEventInternal, a timed event with this key is already running, the call is ignored. Key:[" + key + "]");
+            healthTracker.recordLogCode("w722", "events");
             return false;
         }
         L.d("[ModuleEvents] Starting event: [" + key + "]");
@@ -370,7 +380,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         L.d("[ModuleEvents] Ending event: [" + key + "]");
 
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] Can't end event with a null or empty key");
+            L.w("[ModuleEvents] Can't end event with a null or empty key");
+            healthTracker.recordLogCode("w700", "events");
             return false;
         }
 
@@ -382,7 +393,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             }
 
             if (count < 1) {
-                L.e("[ModuleEvents] endEventInternal, event count should be greater than zero, key [" + key + "], dur:[" + count + "]. Count will be reset to '1'.");
+                L.w("[ModuleEvents] endEventInternal, event count should be greater than zero, key [" + key + "], dur:[" + count + "]. Count will be reset to '1'.");
+                healthTracker.recordLogCode("w750", "events");
                 count = 1;
             }
             L.d("[ModuleEvents] Ending event: [" + key + "]");
@@ -393,19 +405,28 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             eventProvider.recordEventInternal(key, segmentation, count, sum, duration, instant, null);
             return true;
         } else {
+            L.w("[ModuleEvents] endEventInternal, no timed event with this key is running, the call is ignored. Key:[" + key + "]");
+            healthTracker.recordLogCode("w720", "events");
             return false;
         }
     }
 
     boolean cancelEventInternal(final String key) {
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] Can't cancel event with a null or empty key");
+            L.w("[ModuleEvents] Can't cancel event with a null or empty key");
+            healthTracker.recordLogCode("w700", "events");
             return false;
         }
 
         Event event = timedEvents.remove(key);
 
-        return event != null;
+        if (event == null) {
+            L.w("[ModuleEvents] cancelEventInternal, no timed event with this key is running, the call is ignored. Key:[" + key + "]");
+            healthTracker.recordLogCode("w721", "events");
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -449,9 +470,11 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public void recordPastEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
             synchronized (_cly) {
                 L.i("[Events] Calling recordPastEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "record");
 
                 if (timestamp <= 0) {
-                    L.e("Provided timestamp has to be greater that zero. Replacing that timestamp with the current time");
+                    L.w("[Events] recordPastEvent, provided timestamp has to be greater that zero. Replacing that timestamp with the current time");
+                    healthTracker.recordLogCode("w750", "events");
                     timestamp = UtilsTime.currentTimestampMs();
                 }
 
@@ -469,6 +492,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public boolean startEvent(@NonNull final String key) {
             synchronized (_cly) {
                 L.i("[Events] Calling startEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "start");
 
                 return startEventInternal(key);
             }
@@ -498,6 +522,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public boolean endEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum) {
             synchronized (_cly) {
                 L.i("[Events] Calling endEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "end");
 
                 return endEventInternal(key, segmentation, count, sum);
             }
@@ -511,6 +536,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public boolean cancelEvent(@NonNull final String key) {
             synchronized (_cly) {
                 L.i("[Events] Calling cancelEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "cancel");
 
                 return cancelEventInternal(key);
             }
@@ -603,6 +629,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public void recordEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur) {
             synchronized (_cly) {
                 L.i("[Events] Calling recordEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "record");
 
                 if (segmentation != null) {
                     UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.sdkInternalLimits_.maxSegmentationValues, "[Events] recordEvent,", L);

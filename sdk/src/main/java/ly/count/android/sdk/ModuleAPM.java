@@ -69,7 +69,8 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'startTraceInternal' with key:[" + traceKey + "]");
 
         if (traceKey == null || traceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -109,6 +110,7 @@ public class ModuleAPM extends ModuleBase {
             }
         } else {
             L.w("[ModuleAPM] endTraceInternal, trying to end trace which was not started");
+            healthTracker.recordLogCode("w700");
         }
     }
 
@@ -116,12 +118,14 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'cancelTraceInternal' with key:[" + traceKey + "]");
 
         if (traceKey == null || traceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (!codeTraces.containsKey(traceKey)) {
             L.w("[ModuleAPM] no trace with key [" + traceKey + "] found");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -171,6 +175,7 @@ public class ModuleAPM extends ModuleBase {
             if (key == null || key.isEmpty() || value == null) {
                 it.remove();
                 L.w("[ModuleAPM] custom metrics can't contain null or empty key/value");
+                healthTracker.recordLogCode("w700");
                 continue;
             }
 
@@ -183,6 +188,7 @@ public class ModuleAPM extends ModuleBase {
                 //remove key longer than 32 characters
                 it.remove();
                 L.w("[ModuleAPM] custom metric key can't be longer than 32 characters, skipping entry, [" + key + "]");
+                healthTracker.recordLogCode("w700");
                 continue;
             }
 
@@ -221,12 +227,14 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'startNetworkRequestInternal' with key:[" + networkTraceKey + "]");
 
         if (networkTraceKey == null || networkTraceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (uniqueId == null || uniqueId.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid uniqueId");
+            L.w("[ModuleAPM] Provided a invalid uniqueId");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -252,12 +260,14 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'endNetworkRequestInternal' with key:[" + networkTraceKey + "]");
 
         if (networkTraceKey == null || networkTraceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (uniqueId == null || uniqueId.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid uniqueId");
+            L.w("[ModuleAPM] Provided a invalid uniqueId");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -274,6 +284,7 @@ public class ModuleAPM extends ModuleBase {
             }
         } else {
             L.w("[ModuleAPM] endNetworkRequestInternal, trying to end trace which was not started");
+            healthTracker.recordLogCode("w700");
         }
     }
 
@@ -291,27 +302,32 @@ public class ModuleAPM extends ModuleBase {
         L.v("[ModuleAPM] Calling 'recordNetworkRequestInternal' with key:[" + networkTraceKey + "]");
 
         if (networkTraceKey == null || networkTraceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key, aborting request");
+            L.w("[ModuleAPM] Provided a invalid trace key, aborting request");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (!(responseCode >= 100 && responseCode < 600)) {
-            L.e("[ModuleAPM] Invalid response code was provided, setting to '0'");
+            L.w("[ModuleAPM] Invalid response code was provided, setting to '0'");
+            healthTracker.recordLogCode("w700");
             responseCode = 0;
         }
 
         if (requestPayloadSize < 0) {
-            L.e("[ModuleAPM] Invalid request payload size was provided, setting to '0'");
+            L.w("[ModuleAPM] Invalid request payload size was provided, setting to '0'");
+            healthTracker.recordLogCode("w700");
             requestPayloadSize = 0;
         }
 
         if (responsePayloadSize < 0) {
-            L.e("[ModuleAPM] Invalid response payload size was provided, setting to '0'");
+            L.w("[ModuleAPM] Invalid response payload size was provided, setting to '0'");
+            healthTracker.recordLogCode("w700");
             responsePayloadSize = 0;
         }
 
         if (startTimestamp > endTimestamp) {
-            L.e("[ModuleAPM] End timestamp is smaller than start timestamp, switching values");
+            L.w("[ModuleAPM] End timestamp is smaller than start timestamp, switching values");
+            healthTracker.recordLogCode("w700");
 
             long tmp = startTimestamp;
             startTimestamp = endTimestamp;
@@ -502,7 +518,8 @@ public class ModuleAPM extends ModuleBase {
                 L.i("[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
 
                 if (traceKey == null || traceKey.isEmpty()) {
-                    L.e("[Apm] Calling 'endTrace' with invalid traceKey");
+                    L.w("[Apm] Calling 'endTrace' with invalid traceKey");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 

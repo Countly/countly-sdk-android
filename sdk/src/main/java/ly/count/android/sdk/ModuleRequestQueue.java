@@ -2,6 +2,8 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -12,8 +14,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
     RequestQueue requestQueueInterface;
 
-    @NonNull String appKey;
-    @NonNull String serverURL;
+    @NonNull volatile String appKey;
+    @NonNull volatile String serverURL;
 
     //app crawlers
     private boolean shouldIgnoreCrawlers = true;//ignore app crawlers by default
@@ -274,17 +276,19 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
 
         L.i("[ModuleRequestQueue] Calling addDirectRequestInternal");
         if (!_cly.isInitialized()) {
-            L.e("Countly.sharedInstance().init must be called before adding direct request, returning");
+            L.w("Countly.sharedInstance().init must be called before adding direct request, returning");
+            L.trackLogCode("w101");
             return;
         }
 
         if (!consentProvider.anyConsentGiven()) {
-            L.e("[ModuleRequestQueue] addDirectRequest, no consent is given, returning");
+            L.v("[ModuleRequestQueue] addDirectRequest, no consent is given, returning");
             return;
         }
 
         if (requestMap == null || requestMap.isEmpty()) {
-            L.e("[ModuleRequestQueue] addDirectRequest, provided requestMap was null or empty, returning");
+            L.w("[ModuleRequestQueue] addDirectRequest, provided requestMap was null or empty, returning");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -300,6 +304,7 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
                     //if it's a predefined field
                     isPreDefinedKey = true;
                     L.w("[ModuleRequestQueue] addDirectRequest, removing provided key: [" + key + "] is a restricted key.");
+                    healthTracker.recordLogCode("w700");
                     break;
                 }
             }
@@ -310,7 +315,8 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
         }
 
         if (filteredRequestMap.isEmpty()) {
-            L.e("[ModuleRequestQueue] addDirectRequest, filteredRequestMap was null or empty, returning");
+            L.w("[ModuleRequestQueue] addDirectRequest, filteredRequestMap was null or empty, returning");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -335,6 +341,160 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
 
         String preparedMetrics = deviceInfo.getMetrics(_cly.context_, metricsOverride, L);
         requestQueueProvider.sendMetricsRequest(preparedMetrics);
+    }
+
+    /**
+     * Switches the server URL in memory and catches the new server up, see {@link RequestQueue#changeServerUrl(String)}
+     *
+     * @param newServerUrl the new server URL
+     */
+    void changeServerUrlInternal(@Nullable String newServerUrl) {
+        String url = newServerUrl;
+        while (url != null && url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+
+        String problem = serverUrlProblem(url);
+        if (problem != null) {
+            L.e("[ModuleRequestQueue] changeServerUrl, the server URL [" + newServerUrl + "] is ignored, " + problem);
+            healthTracker.recordLogCode("e102");
+            return;
+        }
+
+        if (!url.equals(newServerUrl)) {
+            L.w("[ModuleRequestQueue] changeServerUrl, removing the trailing '/' characters from the provided server URL");
+        }
+
+        serverURL = url;
+        L.i("[ModuleRequestQueue] changeServerUrl, requests go to [" + url + "] from now on");
+
+        catchUpAfterChange(false);
+    }
+
+    /**
+     * Tells why a server URL can not be used: it has to be an http or https URL with a host, and start with "https"
+     * while certificate or public key pinning is configured
+     *
+     * @param url the server URL without trailing "/" characters
+     * @return the reason, or null when the URL can be used
+     */
+    private @Nullable String serverUrlProblem(@Nullable String url) {
+        if (Utils.isNullOrEmpty(url)) {
+            return "it is null or empty";
+        }
+
+        URL parsedUrl;
+        try {
+            parsedUrl = new URL(url);
+        } catch (MalformedURLException e) {
+            return "it is not a valid URL";
+        }
+
+        String scheme = parsedUrl.getProtocol();
+        if (!"http".equals(scheme) && !"https".equals(scheme)) {
+            return "its scheme is not http or https";
+        }
+
+        if (Utils.isNullOrEmpty(parsedUrl.getHost())) {
+            return "it has no host";
+        }
+
+        ConnectionQueue connectionQueue = _cly.connectionQueue_;
+        boolean pinningConfigured = connectionQueue != null && (connectionQueue.publicKeyPinCertificates != null || connectionQueue.certificatePinCertificates != null);
+        //as text, not the parsed scheme: with public key pinning, no request is created for a URL not starting with "https"
+        if (pinningConfigured && !url.startsWith("https")) {
+            return "certificate or public key pinning is configured, which needs an https URL";
+        }
+
+        return null;
+    }
+
+    /**
+     * Closes what belongs to the old app under the old key, switches the key in memory and begins again under the new
+     * one, see {@link RequestQueue#changeAppKey(String)}
+     *
+     * @param newAppKey the app key of the new app
+     */
+    void changeAppKeyInternal(@Nullable String newAppKey) {
+        if (Utils.isNullOrEmpty(newAppKey) || "YOUR_APP_KEY".equals(newAppKey)) {
+            L.e("[ModuleRequestQueue] changeAppKey, the app key [" + newAppKey + "] is ignored, it is null, empty or the placeholder from the integration snippet");
+            healthTracker.recordLogCode("e103");
+            return;
+        }
+
+        if (newAppKey.equals(appKey)) {
+            L.w("[ModuleRequestQueue] changeAppKey, the provided app key is the current one, the call is ignored");
+            return;
+        }
+
+        ModuleViews viewsModule = _cly.moduleViews;
+        ModuleUserProfile userProfileModule = _cly.moduleUserProfile;
+        ModuleSessions sessionsModule = _cly.moduleSessions;
+
+        //views stopped for the background were ended already, they start again under the new key with the foreground
+        boolean stopViews = viewsModule != null && !viewsModule.hasViewsWaitingToStartAgain();
+        //the condition the views module restarts views with when the app comes back to the foreground
+        boolean restartViews = stopViews && (configProvider.getAutomaticViewTrackingEnabled() || viewsModule.restartManualViews);
+        boolean sessionWasRunning = sessionsModule != null && sessionsModule.sessionIsRunning();
+
+        //views first: their end events go to the event queue, which is packed next
+        if (restartViews) {
+            viewsModule.stopRunningViewsAndSend();
+        } else if (stopViews) {
+            viewsModule.stopAllViewsInternal(null);
+        }
+
+        sendEventsIfNeeded(true);
+
+        if (userProfileModule != null) {
+            userProfileModule.saveInternal();
+        }
+
+        if (sessionWasRunning) {
+            sessionsModule.endSessionInternal();
+        }
+
+        appKey = newAppKey;
+        L.i("[ModuleRequestQueue] changeAppKey, new requests carry the new app key from now on");
+
+        if (sessionWasRunning) {
+            sessionsModule.beginSessionInternal();
+        }
+
+        if (restartViews) {
+            viewsModule.startStoppedViews();
+        }
+
+        catchUpAfterChange(true);
+    }
+
+    /**
+     * Catches a server or an app that knows nothing of this device up, as init does: sends the push token and the
+     * consent state again, fetches the SDK behavior settings, and downloads the remote config when its automatic
+     * triggers are enabled
+     *
+     * @param clearRemoteConfig true to clear the stored remote config values first, or mark them as cached with value caching
+     */
+    private void catchUpAfterChange(boolean clearRemoteConfig) {
+        ModuleConsent consentModule = _cly.moduleConsent;
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        ModuleRemoteConfig remoteConfigModule = _cly.moduleRemoteConfig;
+
+        _cly.resendLastPushToken("the server URL or the app key changed");
+
+        if (consentModule != null) {
+            consentModule.sendConsentStateInternal();
+        }
+
+        if (configurationModule != null) {
+            configurationModule.fetchConfigFromServer(_cly.config_);
+        }
+
+        if (remoteConfigModule != null) {
+            remoteConfigModule.RCAutomaticDownloadTrigger(clearRemoteConfig);
+        }
+
+        requestQueueProvider.tick();
     }
 
     void esWriteCachesToPersistenceInternal(@Nullable ExplicitStorageCallback callback) {
@@ -501,6 +661,63 @@ public class ModuleRequestQueue extends ModuleBase implements BaseInfoProvider {
                 L.i("[RequestQueue] addCustomNetworkRequestHeaders, Calling addCustomNetworkRequestHeaders");
                 _cly.addCustomNetworkRequestHeaders(customHeaderValues);
             }
+        }
+
+        /**
+         * Sends every request to another server from now on, the queued ones included, and opens later web views
+         * there; a request already on its way finishes at the old server. The new server gets the push token and the
+         * consent state again, and the SDK behavior settings and the automatically triggered remote config are
+         * fetched from it. The app key, salt and custom request headers stay. The URL is kept in memory only: the
+         * next init uses the one in the config. Trailing "/" characters are removed. A null, empty or invalid URL is
+         * ignored, and so is an "http" URL while certificate or public key pinning is configured.
+         *
+         * @param serverUrl the new server URL, for example "https://your.server.ly"
+         */
+        public void changeServerUrl(@Nullable String serverUrl) {
+            synchronized (_cly) {
+                if (isLiveHandle("changeServerUrl")) {
+                    changeServerUrlInternal(serverUrl);
+                }
+            }
+        }
+
+        /**
+         * Reports to another app from now on. Under the old key, the running views stop, the recorded events are
+         * packed into a request, pending user profile changes are saved and the running session ends. Then a session
+         * begins under the new key if one was running, and the views start again unless
+         * "disableViewRestartForManualRecording()" is set without automatic view tracking. The push token and the
+         * consent state are sent again, the SDK behavior settings are fetched, and the stored remote config values
+         * are cleared (marked as cached with value caching) and, with automatic triggers, downloaded again. Queued
+         * requests keep their key: "overwriteAppKeys()" moves them to the new app, "eraseWrongAppKeyRequests()" drops
+         * them. The device ID, consent, server URL and running timed events stay. The key is kept in memory only: the
+         * next init uses the one in the config, and an instance named after its first key keeps that name. A null or
+         * empty key, the "YOUR_APP_KEY" placeholder and the current key are ignored.
+         *
+         * @param appKey the app key of the new app
+         */
+        public void changeAppKey(@Nullable String appKey) {
+            synchronized (_cly) {
+                if (isLiveHandle("changeAppKey")) {
+                    changeAppKeyInternal(appKey);
+                }
+            }
+        }
+
+        /**
+         * Logs a public call and checks that this handle still serves an initialized instance. A handle kept from
+         * before its instance was stopped or halted reaches a module that is torn down, so its calls are ignored.
+         *
+         * @param call the name of the public call, for the log
+         * @return true when the call can go ahead
+         */
+        private boolean isLiveHandle(@NonNull String call) {
+            L.i("[RequestQueue] " + call + ", Calling " + call);
+            if (_cly.isInitialized() && _cly.moduleRequestQueue == ModuleRequestQueue.this) {
+                return true;
+            }
+            L.w("[RequestQueue] " + call + ", the SDK is not initialized or this handle belongs to an instance that was stopped since, the call is ignored");
+            L.trackLogCode("w101");
+            return false;
         }
     }
 }

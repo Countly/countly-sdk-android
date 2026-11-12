@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import ly.count.android.sdk.internal.RemoteConfigHelper;
@@ -96,6 +97,8 @@ public class ModuleRemoteConfig extends ModuleBase {
 
             ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
             final boolean networkingIsEnabled = cp.configProvider_.getNetworkingEnabled();
+            final String requestedForAppKey = baseInfoProvider.getAppKey();
+            final String requestedFromServerUrl = baseInfoProvider.getServerURL();
 
             iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, networkingIsEnabled, checkResponse -> {
                 L.d("[ModuleRemoteConfig] Processing remote config received response, received response is null:[" + (checkResponse == null) + "]");
@@ -108,6 +111,12 @@ public class ModuleRemoteConfig extends ModuleBase {
                 if (halted) {
                     L.d("[ModuleRemoteConfig] the instance was halted before the remote config response arrived, dropping it");
                     NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "The instance was stopped before the remote config response arrived", fullUpdate, null);
+                    return;
+                }
+
+                if (!Objects.equals(requestedForAppKey, baseInfoProvider.getAppKey()) || !Objects.equals(requestedFromServerUrl, baseInfoProvider.getServerURL())) {
+                    L.d("[ModuleRemoteConfig] the app key or the server URL changed before the remote config response arrived, dropping it");
+                    NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "The app key or the server URL changed before the remote config response arrived", fullUpdate, null);
                     return;
                 }
 
@@ -128,6 +137,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to perform a remote config update. " + ex.toString());
+            healthTracker.recordLogCode("e901");
             NotifyDownloadCallbacks(devProvidedCallback, RequestResult.Error, "Encountered internal error while trying to perform a remote config update", fullUpdate, null);
         }
     }
@@ -206,6 +216,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to fetch all A/B test variants/info. " + ex.toString());
+            healthTracker.recordLogCode("e901");
             callback.callback(RequestResult.Error, "Encountered internal error while trying to fetch all A/B test variants/info.");
         }
     }
@@ -223,6 +234,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             // check Key and Variant
             if (TextUtils.isEmpty(key) || TextUtils.isEmpty(variant)) {
                 L.w("[ModuleRemoteConfig] Enrolling A/B test variants, Key/Variant pair is invalid. Aborting.");
+                healthTracker.recordLogCode("w700");
                 callback.callback(RequestResult.Error, "Provided key/variant pair is invalid.");
                 return;
             }
@@ -258,6 +270,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             }, L);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] Encountered internal error while trying to enroll A/B test variants. " + ex.toString());
+            healthTracker.recordLogCode("e901");
             callback.callback(RequestResult.Error, "Encountered internal error while trying to enroll A/B test variants.");
         }
     }
@@ -312,6 +325,7 @@ public class ModuleRemoteConfig extends ModuleBase {
             return rcvs.getValue(key);
         } catch (Exception ex) {
             L.e("[ModuleRemoteConfig] getValue, Call failed:[" + ex.toString() + "]");
+            healthTracker.recordLogCode("e901");
             return new RCData(null, true);
         }
     }
@@ -344,6 +358,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 return rcvs.getAllValues();
             } catch (Exception ex) {
                 L.e("[ModuleRemoteConfig] getAllRemoteConfigValuesInternal, Call failed:[" + ex.toString() + "]");
+                healthTracker.recordLogCode("e901");
                 return new HashMap<>();
             }
         }
@@ -482,6 +497,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
                 if (keysToOmit == null) {
                     L.w("[RemoteConfig] downloadOmittingKeys passed 'keys to ignore' array is null");
+                    healthTracker.recordLogCode("w700");
                 }
 
                 if (callback == null) {
@@ -511,6 +527,7 @@ public class ModuleRemoteConfig extends ModuleBase {
                 }
                 if (keysToInclude == null) {
                     L.w("[RemoteConfig] downloadSpecificKeys passed 'keys to include' array is null");
+                    healthTracker.recordLogCode("w700");
                 }
 
                 if (callback == null) {
@@ -638,6 +655,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (keys == null || keys.length == 0) {
                     L.w("[RemoteConfig] enrollIntoABTestsForKeys, A key should be provided to enroll the user.");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
@@ -822,6 +840,7 @@ public class ModuleRemoteConfig extends ModuleBase {
 
                 if (keyName == null || variantName == null) {
                     L.w("[RemoteConfig] testEnrollIntoVariant, passed key or variant is null. Aborting.");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 

@@ -280,7 +280,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             L.d("[ModuleConfiguration] loadStoredConfig, stored config loaded [" + sConfig + "]");
             saveAndStoreDownloadedConfig(latestRetrievedConfigurationFull);
         } catch (JSONException e) {
-            L.w("[ModuleConfiguration] loadStoredConfig, failed to parse, " + e);
+            L.e("[ModuleConfiguration] loadStoredConfig, the stored behavior settings can not be read and are dropped, " + e);
+            healthTracker.recordLogCode("e503");
 
             latestRetrievedConfigurationFull = null;
             latestRetrievedConfiguration = null;
@@ -309,12 +310,14 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 T extractedValue = clazz.cast(latestRetrievedConfiguration.get(key));
                 if (validator != null && !validator.validate(extractedValue)) {
                     L.w("[ModuleConfiguration] updateConfigs, value for '" + key + "' is not valid according to the validator, value: [" + extractedValue + "]");
+                    healthTracker.recordLogCode("w121");
                 } else {
                     resolvedValue = extractedValue;
                     fromConfiguration = true;
                 }
             } catch (Exception e) {
                 L.w("[ModuleConfiguration] updateConfigs, failed to load '" + key + "', " + e.getMessage());
+                healthTracker.recordLogCode("w121");
             }
         }
 
@@ -772,13 +775,15 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                     break;
                 // --- Unknown keys ---
                 default:
-                    L.w("[ModuleConfiguration] removeUnsupportedKeys, Unknown key: [" + key + "], removing it. value: [" + value + "]");
-                    break;
+                    L.d("[ModuleConfiguration] removeUnsupportedKeys, Unknown key: [" + key + "], removing it. value: [" + value + "]");
+                    keys.remove();
+                    continue;
             }
 
-            // --- If not valid or not known, remove it ---
+            // --- If not valid, remove it ---
             if (!isValid) {
-                L.w("[ModuleConfiguration] removeUnsupportedKeys, Invalid or unknown key: [" + key + "], removing it. value: [" + value + "]");
+                L.w("[ModuleConfiguration] removeUnsupportedKeys, Invalid value for key: [" + key + "], removing it. value: [" + value + "]");
+                healthTracker.recordLogCode("w121");
                 keys.remove();
             }
         }
@@ -789,6 +794,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         boolean validConfig = validateServerConfig(config);
         if (!validConfig) {
             L.w("[ModuleConfiguration] saveAndStoreDownloadedConfig, Retrieved configuration is not valid, ignoring it.");
+            healthTracker.recordLogCode("w121");
             latestRetrievedConfigurationFull = null;
             latestRetrievedConfiguration = null;
             return;
@@ -897,11 +903,20 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         final long fetchStartNs = System.nanoTime();
         final String requestedForDeviceId = deviceIdProvider.getDeviceId();
         final int mergesAtRequest = connectionTestMergesSoFar();
+        //this module is built before the request queue module, so its own baseInfoProvider is not set
+        final BaseInfoProvider baseInfo = _cly.baseInfoProvider;
+        final String requestedForAppKey = baseInfo.getAppKey();
+        final String requestedFromServerUrl = baseInfo.getServerURL();
 
         immediateRequestGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk", cp, false, true, checkResponse -> {
             if (checkResponse == null) {
-                L.w("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");
+                L.d("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");
                 decideLogGatheringOffIfUndecided("server config fetch failed");
+                return;
+            }
+
+            if (!Objects.equals(requestedForAppKey, baseInfo.getAppKey()) || !Objects.equals(requestedFromServerUrl, baseInfo.getServerURL())) {
+                L.d("[ModuleConfiguration] fetchConfigFromServer, the app key or the server URL changed since the request, its answer is ignored");
                 return;
             }
 

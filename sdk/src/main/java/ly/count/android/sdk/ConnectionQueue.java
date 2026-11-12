@@ -972,7 +972,16 @@ class ConnectionQueue implements RequestQueueProvider {
         return prepareCommonRequestData() + "&method=feedback";
     }
 
-    public String prepareHealthCheckRequest(String preparedMetrics) {
+    /**
+     * The base of the health check request, with the app version metrics when they are given.
+     *
+     * @param preparedMetrics URL encoded metrics, or null to send none, as without the metrics consent
+     * @return the request data without the "hc" parameter
+     */
+    public String prepareHealthCheckRequest(@Nullable String preparedMetrics) {
+        if (preparedMetrics == null) {
+            return prepareCommonRequestData();
+        }
         return prepareCommonRequestData() + "&metrics=" + preparedMetrics;
     }
 
@@ -1127,6 +1136,7 @@ class ConnectionQueue implements RequestQueueProvider {
         }, internalRequestCallbacks);
         cp.pcc = pcc;
         cp.stopRequested = processorStop_;
+        cp.baseInfoProvider = baseInfoProvider;
         return cp;
     }
 
