@@ -229,25 +229,22 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
         firstLaunchPendingInMemory = false;
-        String deferredPath = state.optString(STATE_DEFERRED_PATH, "");
-        String referrer = state.optString(STATE_DEFERRED_URL, "");
         state.remove(STATE_FIRST_LAUNCH_PENDING);
-        state.remove(STATE_DEFERRED_PATH);
-        state.remove(STATE_DEFERRED_URL);
+        String deferredPath = (String) state.remove(STATE_DEFERRED_PATH);
+        String referrer = (String) state.remove(STATE_DEFERRED_URL);
         try {
             state.put(STATE_FIRST_LAUNCH_RESOLVED, true);
         } catch (JSONException ignored) {
         }
         writeState(state);
 
-        if (linkOpenedThisProcess) {
-            //the link that opened the app was already reported, it is the more specific destination
-            return;
-        }
-        if (!deferredPath.isEmpty()) {
-            notifyDeepLink(DeepLinkCallback.Type.DEFERRED, deferredPath, referrer.isEmpty() ? null : referrer);
-        } else {
-            notifyDeepLink(DeepLinkCallback.Type.NONE, null, null);
+        //a link that opened the app was already reported, it is the more specific destination
+        if (!linkOpenedThisProcess) {
+            if (deferredPath != null && !deferredPath.isEmpty()) {
+                notifyDeepLink(DeepLinkCallback.Type.DEFERRED, deferredPath, referrer);
+            } else {
+                notifyDeepLink(DeepLinkCallback.Type.NONE, null, null);
+            }
         }
     }
 
