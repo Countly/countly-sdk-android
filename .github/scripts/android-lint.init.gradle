@@ -1,0 +1,21 @@
+// Writes Android Lint's findings as SARIF to <-DlintDir>/<module name>.sarif for the modules listed in -DlintModules
+// (for example :sdk,:sdk-native), and keeps lint from failing the build on them.
+// Only .github/workflows/static_analysis.yml applies it, through --init-script, so no build file changes.
+def lintModules = (System.getProperty('lintModules') ?: '').tokenize(',') as Set
+def lintDir = System.getProperty('lintDir')
+
+allprojects { project ->
+  if (!lintModules.contains(project.path)) {
+    return
+  }
+  if (!lintDir) {
+    throw new org.gradle.api.GradleException('Pass -DlintDir=<directory> to choose where the reports go.')
+  }
+  project.pluginManager.withPlugin('com.android.library') {
+    project.android.lint {
+      abortOnError = false
+      sarifReport = true
+      sarifOutput = new File(lintDir, "${project.name}.sarif")
+    }
+  }
+}

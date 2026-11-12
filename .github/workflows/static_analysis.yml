@@ -1,0 +1,45 @@
+name: Static analysis
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-lint:
+    name: Android Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout SDK code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: corretto
+          java-version: 17
+
+      - name: Set up the Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          # The default also installs "tools", which Google removed from the SDK repository.
+          packages: platform-tools
+
+      # Report-only: the findings go to the job summary and never fail the job, only a failed lint run does.
+      - name: Lint the published modules
+        run: >
+          ./gradlew --no-configuration-cache --init-script .github/scripts/android-lint.init.gradle
+          -DlintModules=:sdk,:sdk-native "-DlintDir=$RUNNER_TEMP/sarif"
+          :sdk:lintRelease :sdk-native:lintRelease
+
+      - name: Summarize the findings
+        run: python3 .github/scripts/sarif_summary.py "Android Lint" "$RUNNER_TEMP/sarif" >> "$GITHUB_STEP_SUMMARY"
