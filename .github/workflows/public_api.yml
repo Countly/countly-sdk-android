@@ -1,0 +1,80 @@
+name: Public API
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: Breaking changes
+    runs-on: ubuntu-24.04
+    env:
+      API_MODULES: ":sdk,:sdk-native"
+    steps:
+      - name: Checkout SDK code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: corretto
+          java-version: 17
+
+      - name: Set up the Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+
+      # The first parent of the pull request's merge commit is the base branch it merges into.
+      - name: Write the public API of the base branch
+        run: |
+          git worktree add "$RUNNER_TEMP/base" HEAD^1
+          cd "$RUNNER_TEMP/base"
+          IFS=, read -ra modules <<< "$API_MODULES"
+          ./gradlew --init-script "$GITHUB_WORKSPACE/.github/scripts/public-api.init.gradle" \
+            -DapiModules="$API_MODULES" -DapiDir="$RUNNER_TEMP/api" "${modules[@]/%/:metalavaGenerateSignatureRelease}"
+
+      - name: Compare the public API with the base branch
+        run: |
+          : > "$RUNNER_TEMP/breaking.txt"
+          IFS=, read -ra modules <<< "$API_MODULES"
+          for module in "${modules[@]}"; do
+            if ./gradlew --init-script .github/scripts/public-api.init.gradle \
+                -DapiModules="$API_MODULES" -DapiDir="$RUNNER_TEMP/api" \
+                "$module:metalavaCheckCompatibilityRelease" > "$RUNNER_TEMP/check.log" 2>&1; then
+              continue
+            fi
+            if ! grep -q 'Found compatibility problems' "$RUNNER_TEMP/check.log"; then
+              cat "$RUNNER_TEMP/check.log"
+              echo "::error::Could not compare the public API of $module with the base branch."
+              exit 1
+            fi
+            python3 .github/scripts/public_api.py --root-package ly.count.android.sdk \
+              --root-package ly.count.android.sdk.messaging --root-package ly.count.android.sdknative \
+              "$RUNNER_TEMP/check.log" >> "$RUNNER_TEMP/breaking.txt"
+          done
+
+      - name: Require a CHANGELOG entry for breaking changes
+        run: |
+          if [ ! -s "$RUNNER_TEMP/breaking.txt" ]; then
+            echo "No breaking change to the public API." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          {
+            echo "### Breaking changes to the public API"
+            echo '```'
+            cat "$RUNNER_TEMP/breaking.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if git diff --quiet HEAD^1 HEAD -- CHANGELOG.md; then
+            echo "::error title=Breaking API change::This pull request breaks the public API without a CHANGELOG.md entry. The job summary lists each break."
+            exit 1
+          fi
+          echo "::warning title=Breaking API change::This pull request breaks the public API. Check that CHANGELOG.md marks it as a breaking change."
