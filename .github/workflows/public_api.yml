@@ -31,6 +31,9 @@ jobs:
 
       - name: Set up the Android SDK
         uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        with:
+          # The default also installs "tools", which Google removed from the SDK repository.
+          packages: platform-tools
 
       # The first parent of the pull request's merge commit is the base branch it merges into.
       - name: Write the public API of the base branch
