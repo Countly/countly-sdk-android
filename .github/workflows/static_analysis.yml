@@ -15,11 +15,12 @@ jobs:
   android-lint:
     name: Android Lint
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout SDK code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 2
           persist-credentials: false
 
       - name: Set up Java
@@ -34,12 +35,32 @@ jobs:
           # The default also installs "tools", which Google removed from the SDK repository.
           packages: platform-tools
 
-      # Report-only: the findings go to the job summary and never fail the job, only a failed lint run does.
+      # On pull requests the base branch is analyzed too, so that only findings it lacks can fail the job.
       - name: Lint the published modules
-        run: >
-          ./gradlew --no-configuration-cache --init-script .github/scripts/android-lint.init.gradle
-          -DlintModules=:sdk,:sdk-native "-DlintDir=$RUNNER_TEMP/sarif"
-          :sdk:lintRelease :sdk-native:lintRelease
+        run: |
+          # Runs Android Lint on the published modules that the checkout in $1 has, writing SARIF to $2.
+          analyze() {
+            modules=()
+            for module in :sdk :sdk-native; do
+              if [ -d "$1/${module#:}" ]; then
+                modules+=("$module")
+              fi
+            done
+            (cd "$1" && ./gradlew --no-configuration-cache --init-script "$GITHUB_WORKSPACE/.github/scripts/android-lint.init.gradle" \
+              -DlintModules="$(IFS=,; echo "${modules[*]}")" "-DlintDir=$2" "${modules[@]/%/:lintRelease}")
+          }
+          analyze "$GITHUB_WORKSPACE" "$RUNNER_TEMP/sarif"
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            # The first parent of the pull request's merge commit is the base branch it merges into.
+            git worktree add "$RUNNER_TEMP/base" HEAD^1
+            analyze "$RUNNER_TEMP/base" "$RUNNER_TEMP/sarif-base"
+          fi
 
+      # Every finding goes to the job summary; a new one at warning or error level fails the job.
       - name: Summarize the findings
-        run: python3 .github/scripts/sarif_summary.py "Android Lint" "$RUNNER_TEMP/sarif" >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          base=()
+          if [ -d "$RUNNER_TEMP/sarif-base" ]; then
+            base=(--base "$RUNNER_TEMP/sarif-base" --base-root "$RUNNER_TEMP/base")
+          fi
+          python3 .github/scripts/sarif_summary.py "Android Lint" "$RUNNER_TEMP/sarif" "${base[@]}" | tee -a "$GITHUB_STEP_SUMMARY"
