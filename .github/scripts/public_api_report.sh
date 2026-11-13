@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Writes the report of a pull request's public API changes to the job summary, and to the step output "report", which
-# the workflow's comment job posts on the pull request. The comment lists at most 200 lines per section.
+# Writes the report of a pull request's public API changes to the job summary, to the step output "report", which
+# the workflow's comment job posts on the pull request, and to $RUNNER_TEMP/ci-report-public-api/report.md, the
+# fragment the CI report comment shows. The comment and the fragment list at most 200 lines per section.
 #   $1 a file with one removed or changed declaration per line
 #   $2 a file with one declaration per line that the pull request adds to the public API
 set -euo pipefail
@@ -44,3 +45,15 @@ delimiter="EOF_$(od -An -N8 -tx1 /dev/urandom | tr -d ' \n')"
   report 200
   echo "$delimiter"
 } >> "$GITHUB_OUTPUT"
+
+removed=$(grep -c . "$breaking" || true)
+new=$(grep -c . "$added" || true)
+summary='No public API change'
+if [ "$removed" -gt 0 ] || [ "$new" -gt 0 ]; then
+  summary="$removed removed or changed, $new added"
+fi
+mkdir -p "$RUNNER_TEMP/ci-report-public-api"
+{
+  printf 'Public API\n%s\n' "$summary"
+  report 200 | tail -n +3
+} > "$RUNNER_TEMP/ci-report-public-api/report.md"
