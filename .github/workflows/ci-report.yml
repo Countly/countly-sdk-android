@@ -1,0 +1,51 @@
+name: CI report
+
+# Keeps one comment on each pull request with the result of every workflow that ran for its head commit, a table
+# first, then one collapsible section per report fragment (an artifact named ci-report-<key> holding report.md: a
+# title line, a summary line, then the details). It runs from the default branch after each listed workflow, so a
+# fork's pull request gets its report too: nothing from the pull request is checked out or run, and the fragments
+# are read as untrusted text.
+on:  # zizmor: ignore[dangerous-triggers] the job reads the pull request's artifacts as text and never runs its code
+  workflow_run:
+    workflows:
+      - "CodeQL"
+      - "Dependency Security Scan"
+      - "Device tests (Android)"
+      - "Public API changelog"
+      - "Public API changes"
+      - "Release tools"
+      - "Static analysis"
+      - "The Countly Android SDK StrictMode Audit"
+      - "The Countly Android SDK Unit Test"
+      - "Validate Gradle Wrapper Checksum"
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: ci-report-${{ github.event.workflow_run.head_sha }}
+  cancel-in-progress: false
+
+jobs:
+  report:
+    name: Update the CI report
+    if: github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Check out the report script
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/scripts/ci_report.py
+          sparse-checkout-cone-mode: false
+
+      - name: Rebuild the report comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: python3 .github/scripts/ci_report.py
