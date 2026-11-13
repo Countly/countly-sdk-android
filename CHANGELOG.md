@@ -31,11 +31,18 @@
   * The Google Play Install Referrer is read on first launch and sent as is. This needs the optional `com.android.installreferrer:installreferrer` dependency in the app; without it nothing is read. Plain UTM referrers (Google Ads, partners) and Countly link click IDs are both attributed.
   * Links that open the app are captured from the launch intent of the activity and sent when they are Countly smart links (`/at/...`) or carry `utm_*`, `cly_clk`, `countly_cid` or `countly_cuid`. Use "attribution().recordDeepLink(Uri)" for other links and for links delivered to `onNewIntent`.
   * "setAttributionChannel(String)" in "CountlyConfig" sends the channel a build is distributed through, again only when it changes.
+  * The Play Install Referrer goes with Play's click and install-begin timestamps (the store's and the device's) and the install version, which the server uses to flag click injection and click flooding.
+  * "setFacebookAppId(String)" in "CountlyConfig" turns on the Meta Install Referrer. On first launch the SDK asks the Facebook, Instagram and Facebook Lite apps which Meta ad led to the install.
+    * Their encrypted answer is sent once, in the same request as the Play referrer. The server decrypts it with the key set in the Attribution settings.
+    * The SDK's manifest now declares these three apps in `<queries>`. The SDK reads them only when a Facebook app id is set.
 * Added "setDeepLinkCallback(DeepLinkCallback)" to "CountlyConfig". It tells the app where to route:
   * `OPENED`: a link opened the app. It is called also without the `attribution` consent.
   * `DEFERRED`: first launch, the app was installed from a link with a deep link.
   * `NONE`: first launch, no link.
   * The first launch is answered once, when the launch activity resumes and the `attribution` consent is given.
+* Added "attribution().recordAdRevenue(amount, network, placement, format, currency, precision)" to record the revenue of one paid ad impression from the ad mediation SDK's impression callback.
+  * It records the `[CLY]_ad_revenue` event with the amount as its sum and the given details as segments. It needs the `events` consent.
+  * Send the amount in the currency the app records purchases in, the SDK converts nothing. For AdMob, divide the micros by 1,000,000.
 * Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
 * Added "changeServerUrl(String)" to the request queue interface to change the server URL after init.
 * Added "changeAppKey(String)" to the request queue interface to change the app key after init.

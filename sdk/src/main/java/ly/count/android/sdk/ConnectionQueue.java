@@ -522,16 +522,6 @@ class ConnectionQueue implements RequestQueueProvider {
     }
 
     public void sendAttributionSignal(@NonNull String type, @NonNull String value) {
-        if (!checkInternalState()) {
-            return;
-        }
-        L.d("[Connection Queue] sendAttributionSignal, type:[" + type + "]");
-
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-            L.d("[Connection Queue] request ignored, 'attribution' consent not given");
-            return;
-        }
-
         if (type.isEmpty() || value.isEmpty()) {
             L.w("[Connection Queue] sendAttributionSignal, attribution not sent, type or value is empty");
             return;
@@ -545,8 +535,27 @@ class ConnectionQueue implements RequestQueueProvider {
             L.e("[Connection Queue] sendAttributionSignal, could not build the signal: " + e);
             return;
         }
+        sendAttributionSignals(signal.toString());
+    }
 
-        String data = prepareCommonRequestData() + "&attribution=" + UtilsNetworking.urlEncodeString(signal.toString());
+    @Override
+    public void sendAttributionSignals(@NonNull String signalsJson) {
+        if (!checkInternalState()) {
+            return;
+        }
+        L.d("[Connection Queue] sendAttributionSignals, signals:[" + signalsJson + "]");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            L.d("[Connection Queue] request ignored, 'attribution' consent not given");
+            return;
+        }
+
+        if (signalsJson.isEmpty()) {
+            L.w("[Connection Queue] sendAttributionSignals, attribution not sent, no signal");
+            return;
+        }
+
+        String data = prepareCommonRequestData() + "&attribution=" + UtilsNetworking.urlEncodeString(signalsJson);
         addRequestToQueue(data, false, null);
 
         tick();

@@ -208,6 +208,9 @@ public class CountlyConfig {
     DeepLinkCallback deepLinkCallback = null;
     //tests replace the Play Install Referrer reader; null means the default one
     InstallReferrerReader installReferrerReader = null;
+    String facebookAppId = null;
+    //reads the Meta Install Referrer; tests set their own
+    MetaReferrerReader metaReferrerReader = null;
 
     boolean explicitStorageModeEnabled = false;
 
@@ -897,6 +900,20 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig setAttributionChannel(String channel) {
         attributionChannel = channel;
+        return this;
+    }
+
+    /**
+     * Set the app's Facebook app id to read the Meta Install Referrer: on first launch the SDK asks the
+     * Facebook, Instagram and Facebook Lite apps which Meta ad led to the install and sends their encrypted
+     * answer once. The server decrypts it with the decryption key set in the Attribution settings.
+     * Nothing is read without it. Needs the "attribution" consent.
+     *
+     * @param facebookAppId the app id from Meta for Developers, null or empty for none
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig setFacebookAppId(String facebookAppId) {
+        this.facebookAppId = facebookAppId;
         return this;
     }
 

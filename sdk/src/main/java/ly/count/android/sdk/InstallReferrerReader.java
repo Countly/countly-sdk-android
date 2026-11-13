@@ -16,8 +16,37 @@ interface InstallReferrerReader {
     //this device or store can never answer
     int STATUS_NOT_SUPPORTED = 2;
 
+    /**
+     * What the store answered. Timestamps are in seconds, 0 when the store did not give them.
+     */
+    final class Details {
+        @Nullable final String referrer;
+        final long clickTs;
+        final long installTs;
+        final long clickTsServer;
+        final long installTsServer;
+        @Nullable final String installVersion;
+
+        Details(@Nullable String referrer) {
+            this(referrer, 0, 0, 0, 0, null);
+        }
+
+        Details(@Nullable String referrer, long clickTs, long installTs, long clickTsServer, long installTsServer, @Nullable String installVersion) {
+            this.referrer = referrer;
+            this.clickTs = clickTs;
+            this.installTs = installTs;
+            this.clickTsServer = clickTsServer;
+            this.installTsServer = installTsServer;
+            this.installVersion = installVersion;
+        }
+    }
+
     interface Callback {
-        void onResult(int status, @Nullable String referrer);
+        void onResult(int status, @Nullable Details details);
+
+        default void onResult(int status, @Nullable String referrer) {
+            onResult(status, referrer == null ? null : new Details(referrer));
+        }
     }
 
     /**

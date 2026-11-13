@@ -28,6 +28,9 @@ interface RequestQueueProvider {
     //a raw attribution signal the server parses: attribution={"type":type,"value":value}
     void sendAttributionSignal(@NonNull String type, @NonNull String value);
 
+    //signals with fields beyond type and value, or a list of them sent together: attribution=<json>
+    void sendAttributionSignals(@NonNull String signalsJson);
+
     void sendCrashReport(@NonNull final String crashData, final boolean nonFatalCrash);
 
     /**

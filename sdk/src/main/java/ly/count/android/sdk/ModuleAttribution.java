@@ -9,6 +9,8 @@ import androidx.annotation.Nullable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.HashMap;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -19,6 +21,10 @@ public class ModuleAttribution extends ModuleBase {
     static final String TYPE_REFERRER = "referrer";
     static final String TYPE_DEEPLINK = "deeplink";
     static final String TYPE_CHANNEL = "channel";
+    static final String TYPE_META_REFERRER = "meta_referrer";
+
+    //the reserved event of an ad impression's revenue
+    static final String AD_REVENUE_EVENT_KEY = "[CLY]_ad_revenue";
 
     //keys of the persisted attribution state
     static final String STATE_REFERRER_DONE = "referrer_done";
@@ -29,6 +35,7 @@ public class ModuleAttribution extends ModuleBase {
     static final String STATE_DEFERRED_PATH = "deferred_path";
     static final String STATE_DEFERRED_URL = "deferred_url";
     static final String STATE_CHANNEL = "channel";
+    static final String STATE_META_DONE = "meta_referrer_done";
 
     //a store that keeps saying "try later" (no Play Store, for one) is asked on this many launches only
     static final int MAX_REFERRER_ATTEMPTS = 3;
@@ -38,8 +45,15 @@ public class ModuleAttribution extends ModuleBase {
     final String attributionChannel;
     final DeepLinkCallback deepLinkCallback;
     final String handledIntentExtra;
+    final String facebookAppId;
+    final MetaReferrerReader metaReferrerReader;
 
     boolean referrerReadInProgress = false;
+    boolean metaReadInProgress = false;
+    //the Meta referrer was looked at in this process; the Play referrer is read after it
+    boolean metaResolvedThisProcess = false;
+    //a Meta referrer read in this process and not sent yet: it goes with the Play referrer when that is read now
+    JSONObject metaSignalPending = null;
     //a link opened the app in this process; then the first launch reports no DEFERRED or NONE
     boolean linkOpenedThisProcess = false;
     //the intent of the first activity of this process was looked at; until then the first launch is not reported,
@@ -59,6 +73,8 @@ public class ModuleAttribution extends ModuleBase {
         attributionChannel = config.attributionChannel;
         deepLinkCallback = config.deepLinkCallback;
         handledIntentExtra = "ly.count.android.sdk.deeplink_handled." + cly.instanceName_;
+        facebookAppId = config.facebookAppId;
+        metaReferrerReader = config.metaReferrerReader != null ? config.metaReferrerReader : new ContentProviderMetaReferrerReader(L);
 
         attributionInterface = new ModuleAttribution.Attribution();
     }
@@ -102,7 +118,147 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
         sendChannelIfNeeded();
+        if (metaReferrerNeeded()) {
+            //the Play referrer is read when Meta's apps answered, so both go in one request
+            readMetaReferrer();
+            return;
+        }
+        readInstallReferrerAndFlushMeta();
+    }
+
+    void readInstallReferrerAndFlushMeta() {
         readInstallReferrerIfNeeded();
+        if (!referrerReadInProgress) {
+            //the Play referrer was already sent, cannot be read, or was answered in the call
+            flushMetaReferrer();
+        }
+    }
+
+    // ------------------------------------------------------------------ Meta Install Referrer
+
+    boolean metaReferrerNeeded() {
+        if (facebookAppId == null || facebookAppId.isEmpty() || metaResolvedThisProcess) {
+            return false;
+        }
+        return !readState().optBoolean(STATE_META_DONE, false);
+    }
+
+    void readMetaReferrer() {
+        if (metaReadInProgress) {
+            return;
+        }
+        if (context == null) {
+            L.w("[ModuleAttribution] readMetaReferrer, no context, the Meta install referrer is not read");
+            metaResolvedThisProcess = true;
+            readInstallReferrerAndFlushMeta();
+            return;
+        }
+        metaReadInProgress = true;
+        L.d("[ModuleAttribution] readMetaReferrer, reading the Meta install referrer");
+        try {
+            metaReferrerReader.read(context, facebookAppId, this::onMetaReferrerResult);
+        } catch (Exception e) {
+            L.w("[ModuleAttribution] readMetaReferrer, reading failed: " + e);
+            onMetaReferrerResult(null);
+        }
+    }
+
+    void onMetaReferrerResult(@Nullable MetaReferrerReader.Result result) {
+        synchronized (_cly) {
+            metaReadInProgress = false;
+            if (halted || metaResolvedThisProcess) {
+                return;
+            }
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+                //consent was removed while reading: read again when it is given
+                L.d("[ModuleAttribution] onMetaReferrerResult, 'attribution' consent was removed meanwhile, not sending");
+                return;
+            }
+            metaResolvedThisProcess = true;
+            if (result == null) {
+                L.d("[ModuleAttribution] onMetaReferrerResult, no Meta app answered");
+                putState(STATE_META_DONE, true);
+            } else {
+                L.d("[ModuleAttribution] onMetaReferrerResult, is_ct:[" + result.isCt + "], actual_timestamp:[" + result.actualTimestamp + "]");
+                JSONObject signal = new JSONObject();
+                try {
+                    signal.put("type", TYPE_META_REFERRER);
+                    signal.put("value", result.installReferrer);
+                    signal.put("ct", result.isCt == 0 ? 0 : 1);
+                    if (result.actualTimestamp > 0) {
+                        signal.put("ts", result.actualTimestamp);
+                    }
+                    metaSignalPending = signal;
+                } catch (JSONException e) {
+                    putState(STATE_META_DONE, true);
+                }
+            }
+            readInstallReferrerAndFlushMeta();
+        }
+    }
+
+    /**
+     * Sends a Meta referrer that did not go with the Play referrer
+     */
+    void flushMetaReferrer() {
+        if (metaSignalPending == null) {
+            return;
+        }
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            //read again when the consent is given
+            metaSignalPending = null;
+            metaResolvedThisProcess = false;
+            return;
+        }
+        JSONObject signal = metaSignalPending;
+        metaSignalPending = null;
+        requestQueueProvider.sendAttributionSignals(signal.toString());
+        putState(STATE_META_DONE, true);
+    }
+
+    /**
+     * The Play referrer with its timestamps, and a Meta referrer read in this process, in one request.
+     * A referrer without timestamps alone is sent as before: {"type":"referrer","value":raw}.
+     */
+    void sendInstallReferrer(@NonNull InstallReferrerReader.Details details) {
+        String referrer = details.referrer;
+        if (referrer == null || referrer.isEmpty()) {
+            return;
+        }
+        JSONObject signal = new JSONObject();
+        try {
+            signal.put("type", TYPE_REFERRER);
+            signal.put("value", referrer);
+            putSeconds(signal, "click_ts", details.clickTs);
+            putSeconds(signal, "install_ts", details.installTs);
+            putSeconds(signal, "click_ts_server", details.clickTsServer);
+            putSeconds(signal, "install_ts_server", details.installTsServer);
+            if (details.installVersion != null && !details.installVersion.isEmpty()) {
+                signal.put("install_version", details.installVersion);
+            }
+        } catch (JSONException e) {
+            L.w("[ModuleAttribution] sendInstallReferrer, could not build the signal: " + e);
+            return;
+        }
+
+        if (metaSignalPending != null) {
+            JSONArray signals = new JSONArray();
+            signals.put(signal);
+            signals.put(metaSignalPending);
+            metaSignalPending = null;
+            requestQueueProvider.sendAttributionSignals(signals.toString());
+            putState(STATE_META_DONE, true);
+        } else if (signal.length() == 2) {
+            requestQueueProvider.sendAttributionSignal(TYPE_REFERRER, referrer);
+        } else {
+            requestQueueProvider.sendAttributionSignals(signal.toString());
+        }
+    }
+
+    static void putSeconds(@NonNull JSONObject signal, @NonNull String name, long seconds) throws JSONException {
+        if (seconds > 0) {
+            signal.put(name, seconds);
+        }
     }
 
     void sendChannelIfNeeded() {
@@ -148,51 +304,58 @@ public class ModuleAttribution extends ModuleBase {
             installReferrerReader.read(context, this::onInstallReferrerResult);
         } catch (Exception t) {
             L.w("[ModuleAttribution] readInstallReferrerIfNeeded, reading failed: " + t);
-            onInstallReferrerResult(InstallReferrerReader.STATUS_RETRY, null);
+            onInstallReferrerResult(InstallReferrerReader.STATUS_RETRY, (InstallReferrerReader.Details) null);
         }
     }
 
-    void onInstallReferrerResult(int status, @Nullable String referrer) {
+    void onInstallReferrerResult(int status, @Nullable InstallReferrerReader.Details details) {
         synchronized (_cly) {
             referrerReadInProgress = false;
             if (halted) {
                 return;
             }
-            L.d("[ModuleAttribution] onInstallReferrerResult, status:[" + status + "], referrer:[" + referrer + "]");
+            handleInstallReferrerResult(status, details);
+            //a Meta referrer that did not go with it goes alone
+            flushMetaReferrer();
+        }
+    }
 
-            JSONObject state = readState();
-            if (state.optBoolean(STATE_REFERRER_DONE, false)) {
-                return;
-            }
+    void handleInstallReferrerResult(int status, @Nullable InstallReferrerReader.Details details) {
+        String referrer = details == null ? null : details.referrer;
+        L.d("[ModuleAttribution] onInstallReferrerResult, status:[" + status + "], referrer:[" + referrer + "]");
 
-            if (status == InstallReferrerReader.STATUS_OK) {
-                if (referrer != null && !referrer.isEmpty()) {
-                    if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-                        //consent was removed while reading: keep it for the next time consent is given
-                        L.d("[ModuleAttribution] onInstallReferrerResult, 'attribution' consent was removed meanwhile, not sending");
-                        return;
-                    }
-                    requestQueueProvider.sendAttributionSignal(TYPE_REFERRER, referrer);
+        JSONObject state = readState();
+        if (state.optBoolean(STATE_REFERRER_DONE, false)) {
+            return;
+        }
+
+        if (status == InstallReferrerReader.STATUS_OK) {
+            if (referrer != null && !referrer.isEmpty()) {
+                if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+                    //consent was removed while reading: keep it for the next time consent is given
+                    L.d("[ModuleAttribution] onInstallReferrerResult, 'attribution' consent was removed meanwhile, not sending");
+                    return;
                 }
-                putState(STATE_REFERRER_DONE, true);
-                resolveFirstLaunch(referrer == null ? null : deepLinkFromReferrer(referrer), referrer);
-                return;
+                sendInstallReferrer(details);
             }
+            putState(STATE_REFERRER_DONE, true);
+            resolveFirstLaunch(referrer == null ? null : deepLinkFromReferrer(referrer), referrer);
+            return;
+        }
 
-            if (status == InstallReferrerReader.STATUS_NOT_SUPPORTED) {
-                putState(STATE_REFERRER_DONE, true);
-                resolveFirstLaunch(null, null);
-                return;
-            }
+        if (status == InstallReferrerReader.STATUS_NOT_SUPPORTED) {
+            putState(STATE_REFERRER_DONE, true);
+            resolveFirstLaunch(null, null);
+            return;
+        }
 
-            int attempts = state.optInt(STATE_REFERRER_ATTEMPTS, 0) + 1;
-            if (attempts >= MAX_REFERRER_ATTEMPTS) {
-                L.w("[ModuleAttribution] onInstallReferrerResult, the install referrer could not be read in " + attempts + " launches, giving up");
-                putState(STATE_REFERRER_DONE, true);
-                resolveFirstLaunch(null, null);
-            } else {
-                putState(STATE_REFERRER_ATTEMPTS, attempts);
-            }
+        int attempts = state.optInt(STATE_REFERRER_ATTEMPTS, 0) + 1;
+        if (attempts >= MAX_REFERRER_ATTEMPTS) {
+            L.w("[ModuleAttribution] onInstallReferrerResult, the install referrer could not be read in " + attempts + " launches, giving up");
+            putState(STATE_REFERRER_DONE, true);
+            resolveFirstLaunch(null, null);
+        } else {
+            putState(STATE_REFERRER_ATTEMPTS, attempts);
         }
     }
 
@@ -245,6 +408,29 @@ public class ModuleAttribution extends ModuleBase {
             } else {
                 notifyDeepLink(DeepLinkCallback.Type.NONE, null, null);
             }
+        }
+    }
+
+    // ------------------------------------------------------------------ ad revenue
+
+    void recordAdRevenueInternal(double amount, @Nullable String network, @Nullable String placement, @Nullable String format, @Nullable String currency, @Nullable String precision) {
+        if (Double.isNaN(amount) || Double.isInfinite(amount) || amount < 0) {
+            L.w("[ModuleAttribution] recordAdRevenueInternal, the amount must be a number of zero or more, not [" + amount + "], the ad revenue is not recorded");
+            healthTracker.recordLogCode("w700");
+            return;
+        }
+        Map<String, Object> segmentation = new HashMap<>();
+        putSegment(segmentation, "network", network);
+        putSegment(segmentation, "placement", placement);
+        putSegment(segmentation, "format", format);
+        putSegment(segmentation, "currency", currency);
+        putSegment(segmentation, "precision", precision);
+        eventProvider.recordEventInternal(AD_REVENUE_EVENT_KEY, segmentation, 1, amount, 0, null, null);
+    }
+
+    static void putSegment(@NonNull Map<String, Object> segmentation, @NonNull String name, @Nullable String value) {
+        if (value != null && !value.isEmpty()) {
+            segmentation.put(name, value);
         }
     }
 
@@ -628,6 +814,41 @@ public class ModuleAttribution extends ModuleBase {
 
                 recordDeepLinkInternal(uri, false);
             }
+        }
+
+        /**
+         * Record the revenue of one paid ad impression, from the impression callback of the ad mediation SDK
+         * (AppLovin MAX {@code onAdRevenuePaid}, Google AdMob {@code OnPaidEventListener}, LevelPlay
+         * {@code onImpressionSuccess}). Call it once per impression. It is recorded as the event
+         * {@code [CLY]_ad_revenue} with the amount as its sum, and Attribution counts it as ad revenue.
+         * <p>
+         * Send the amount in the currency the app records purchases in: the SDK converts nothing. AdMob reports
+         * micros, so divide by 1,000,000 ({@code adValue.getValueMicros() / 1_000_000.0}).
+         * Needs the "events" consent.
+         *
+         * @param amount the impression's revenue, zero or more
+         * @param network the ad network that served it, for example "admob", or null
+         * @param placement the app's placement or ad unit, or null
+         * @param format the ad format, for example "banner", "interstitial" or "rewarded", or null
+         * @param currency the currency the amount is in, kept for reference only, or null
+         * @param precision how exact the amount is as the network says, for example "publisher_defined", "exact" or "estimated", or null
+         */
+        public void recordAdRevenue(double amount, @Nullable String network, @Nullable String placement, @Nullable String format, @Nullable String currency, @Nullable String precision) {
+            synchronized (_cly) {
+                L.i("[Attribution] calling 'recordAdRevenue'");
+
+                recordAdRevenueInternal(amount, network, placement, format, currency, precision);
+            }
+        }
+
+        /**
+         * Record the revenue of one paid ad impression, without details.
+         *
+         * @param amount the impression's revenue, zero or more
+         * @see #recordAdRevenue(double, String, String, String, String, String)
+         */
+        public void recordAdRevenue(double amount) {
+            recordAdRevenue(amount, null, null, null, null, null);
         }
     }
 }
