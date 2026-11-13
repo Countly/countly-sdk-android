@@ -59,6 +59,8 @@ jobs:
       # Every finding goes to the job summary; a new one at warning or error level fails the job.
       - name: Summarize the findings
         run: |
+          # The default shell has no pipefail, and without it tee would hide the summary's exit code.
+          set -o pipefail
           base=()
           if [ -d "$RUNNER_TEMP/sarif-base" ]; then
             base=(--base "$RUNNER_TEMP/sarif-base" --base-root "$RUNNER_TEMP/base")
