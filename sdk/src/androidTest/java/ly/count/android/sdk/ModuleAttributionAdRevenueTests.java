@@ -47,7 +47,7 @@ public class ModuleAttributionAdRevenueTests {
     @Test
     public void recordAdRevenue_allDetails() throws Exception {
         Countly countly = init(null);
-        countly.attribution().recordAdRevenue(0.0125, "admob", "home_banner", "banner", "USD", "publisher_defined");
+        countly.attribution().recordAdRevenue(0.0125, new AdRevenueDetails().setNetwork("admob").setPlacement("home_banner").setFormat("banner").setCurrency("USD").setPrecision("publisher_defined"));
 
         List<JSONObject> events = adRevenueEvents();
         Assert.assertEquals(1, events.size());
@@ -70,7 +70,7 @@ public class ModuleAttributionAdRevenueTests {
     @Test
     public void recordAdRevenue_optionalDetailsOmitted() throws Exception {
         Countly countly = init(null);
-        countly.attribution().recordAdRevenue(0.5, "applovin", null, "", null, null);
+        countly.attribution().recordAdRevenue(0.5, new AdRevenueDetails().setNetwork("applovin").setFormat(""));
         countly.attribution().recordAdRevenue(0.25);
 
         List<JSONObject> events = adRevenueEvents();
@@ -89,12 +89,12 @@ public class ModuleAttributionAdRevenueTests {
     @Test
     public void recordAdRevenue_invalidAmounts() throws Exception {
         Countly countly = init(null);
-        countly.attribution().recordAdRevenue(-1, "admob", null, null, null, null);
-        countly.attribution().recordAdRevenue(Double.NaN, "admob", null, null, null, null);
-        countly.attribution().recordAdRevenue(Double.POSITIVE_INFINITY, "admob", null, null, null, null);
+        countly.attribution().recordAdRevenue(-1, new AdRevenueDetails().setNetwork("admob"));
+        countly.attribution().recordAdRevenue(Double.NaN, new AdRevenueDetails().setNetwork("admob"));
+        countly.attribution().recordAdRevenue(Double.POSITIVE_INFINITY, new AdRevenueDetails().setNetwork("admob"));
         Assert.assertEquals(0, adRevenueEvents().size());
 
-        countly.attribution().recordAdRevenue(0, "admob", null, null, null, null);
+        countly.attribution().recordAdRevenue(0, new AdRevenueDetails().setNetwork("admob"));
         Assert.assertEquals(1, adRevenueEvents().size());
         Assert.assertEquals(0, adRevenueEvents().get(0).getDouble("sum"), 0);
     }
@@ -105,11 +105,11 @@ public class ModuleAttributionAdRevenueTests {
     @Test
     public void recordAdRevenue_eventsConsent() throws Exception {
         Countly countly = init(new String[] { Countly.CountlyFeatureNames.attribution });
-        countly.attribution().recordAdRevenue(1.5, "admob", null, null, null, null);
+        countly.attribution().recordAdRevenue(1.5, new AdRevenueDetails().setNetwork("admob"));
         Assert.assertEquals(0, adRevenueEvents().size());
 
         countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.events });
-        countly.attribution().recordAdRevenue(1.5, "admob", null, null, null, null);
+        countly.attribution().recordAdRevenue(1.5, new AdRevenueDetails().setNetwork("admob"));
         Assert.assertEquals(1, adRevenueEvents().size());
     }
 }

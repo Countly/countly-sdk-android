@@ -40,8 +40,8 @@
   * `DEFERRED`: first launch, the app was installed from a link with a deep link.
   * `NONE`: first launch, no link.
   * The first launch is answered once, when the launch activity resumes and the `attribution` consent is given.
-* Added "attribution().recordAdRevenue(amount, network, placement, format, currency, precision)" to record the revenue of one paid ad impression from the ad mediation SDK's impression callback.
-  * It records the `[CLY]_ad_revenue` event with the amount as its sum and the given details as segments. It needs the `events` consent.
+* Added "attribution().recordAdRevenue(amount, AdRevenueDetails)" to record the revenue of one paid ad impression from the ad mediation SDK's impression callback.
+  * It records the `[CLY]_ad_revenue` event with the amount as its sum. The network, placement, format, currency and precision set on "AdRevenueDetails" are its segments, each optional. It needs the `events` consent.
   * Send the amount in the currency the app records purchases in, the SDK converts nothing. For AdMob, divide the micros by 1,000,000.
 * Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
 * Added "changeServerUrl(String)" to the request queue interface to change the server URL after init.

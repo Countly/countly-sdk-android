@@ -39,7 +39,7 @@ class ContentProviderMetaReferrerReader implements MetaReferrerReader {
     }
 
     ContentProviderMetaReferrerReader(@NonNull String[][] providers, @NonNull ModuleLog L) {
-        this.providers = providers;
+        this.providers = providers.clone();
         this.L = L;
     }
 
@@ -88,45 +88,70 @@ class ContentProviderMetaReferrerReader implements MetaReferrerReader {
     }
 
     @Nullable Result readProvider(@NonNull Context context, @NonNull String authority, @NonNull String expectedPackage, @NonNull String facebookAppId) {
-        ProviderInfo info;
-        try {
-            info = context.getPackageManager().resolveContentProvider(authority, 0);
-        } catch (Exception e) {
+        if (!ownedBy(context, authority, expectedPackage)) {
             return null;
         }
-        if (info == null) {
-            //the app is not installed, or this app cannot see it
-            return null;
-        }
-        if (!expectedPackage.equals(info.packageName)) {
-            L.w("[ContentProviderMetaReferrerReader] readProvider, [" + authority + "] belongs to [" + info.packageName + "], not to [" + expectedPackage + "], not read");
-            return null;
-        }
-
         Uri uri = Uri.parse("content://" + authority + "/" + facebookAppId);
         String[] projection = { COLUMN_INSTALL_REFERRER, COLUMN_IS_CT, COLUMN_ACTUAL_TIMESTAMP };
         try (Cursor cursor = context.getContentResolver().query(uri, projection, null, null, null)) {
-            if (cursor == null || !cursor.moveToFirst()) {
-                return null;
-            }
-            int referrerIndex = cursor.getColumnIndex(COLUMN_INSTALL_REFERRER);
-            if (referrerIndex < 0 || cursor.isNull(referrerIndex)) {
-                return null;
-            }
-            String referrer = cursor.getString(referrerIndex);
-            if (referrer == null || referrer.trim().isEmpty()) {
-                return null;
-            }
-            int isCtIndex = cursor.getColumnIndex(COLUMN_IS_CT);
-            int tsIndex = cursor.getColumnIndex(COLUMN_ACTUAL_TIMESTAMP);
-            //is_ct missing: the server counts it as a click, so send 1
-            int isCt = isCtIndex >= 0 && !cursor.isNull(isCtIndex) && cursor.getInt(isCtIndex) == 0 ? 0 : 1;
-            long ts = tsIndex >= 0 && !cursor.isNull(tsIndex) ? cursor.getLong(tsIndex) : 0;
-            return new Result(referrer, isCt, ts);
+            return cursor != null && cursor.moveToFirst() ? resultOf(cursor) : null;
         } catch (Exception e) {
             //SecurityException when the provider refuses this app, or a provider process that died
             L.d("[ContentProviderMetaReferrerReader] readProvider, [" + authority + "] did not answer: " + e);
             return null;
         }
+    }
+
+    /**
+     * Whether the provider is there and belongs to the expected app
+     */
+    boolean ownedBy(@NonNull Context context, @NonNull String authority, @NonNull String expectedPackage) {
+        ProviderInfo info;
+        try {
+            info = context.getPackageManager().resolveContentProvider(authority, 0);
+        } catch (Exception e) {
+            return false;
+        }
+        if (info == null) {
+            //the app is not installed, or this app cannot see it
+            return false;
+        }
+        if (!expectedPackage.equals(info.packageName)) {
+            L.w("[ContentProviderMetaReferrerReader] ownedBy, [" + authority + "] belongs to [" + info.packageName + "], not to [" + expectedPackage + "], not read");
+            return false;
+        }
+        return true;
+    }
+
+    @Nullable static Result resultOf(@NonNull Cursor cursor) {
+        String referrer = stringOf(cursor, COLUMN_INSTALL_REFERRER);
+        if (isBlank(referrer)) {
+            return null;
+        }
+        //is_ct missing: the server counts it as a click, so send 1
+        int isCt = longOf(cursor, COLUMN_IS_CT, 1) == 0 ? 0 : 1;
+        return new Result(referrer, isCt, longOf(cursor, COLUMN_ACTUAL_TIMESTAMP, 0));
+    }
+
+    @Nullable static String stringOf(@NonNull Cursor cursor, @NonNull String column) {
+        int index = cursor.getColumnIndex(column);
+        return index < 0 || cursor.isNull(index) ? null : cursor.getString(index);
+    }
+
+    static long longOf(@NonNull Cursor cursor, @NonNull String column, long fallback) {
+        int index = cursor.getColumnIndex(column);
+        return index < 0 || cursor.isNull(index) ? fallback : cursor.getLong(index);
+    }
+
+    static boolean isBlank(@Nullable String value) {
+        if (value == null) {
+            return true;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            if (!Character.isWhitespace(value.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

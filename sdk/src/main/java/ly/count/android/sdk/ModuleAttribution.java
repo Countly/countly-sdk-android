@@ -413,18 +413,20 @@ public class ModuleAttribution extends ModuleBase {
 
     // ------------------------------------------------------------------ ad revenue
 
-    void recordAdRevenueInternal(double amount, @Nullable String network, @Nullable String placement, @Nullable String format, @Nullable String currency, @Nullable String precision) {
+    void recordAdRevenueInternal(double amount, @Nullable AdRevenueDetails details) {
         if (Double.isNaN(amount) || Double.isInfinite(amount) || amount < 0) {
             L.w("[ModuleAttribution] recordAdRevenueInternal, the amount must be a number of zero or more, not [" + amount + "], the ad revenue is not recorded");
             healthTracker.recordLogCode("w700");
             return;
         }
         Map<String, Object> segmentation = new HashMap<>();
-        putSegment(segmentation, "network", network);
-        putSegment(segmentation, "placement", placement);
-        putSegment(segmentation, "format", format);
-        putSegment(segmentation, "currency", currency);
-        putSegment(segmentation, "precision", precision);
+        if (details != null) {
+            putSegment(segmentation, "network", details.network);
+            putSegment(segmentation, "placement", details.placement);
+            putSegment(segmentation, "format", details.format);
+            putSegment(segmentation, "currency", details.currency);
+            putSegment(segmentation, "precision", details.precision);
+        }
         eventProvider.recordEventInternal(AD_REVENUE_EVENT_KEY, segmentation, 1, amount, 0, null, null);
     }
 
@@ -820,24 +822,21 @@ public class ModuleAttribution extends ModuleBase {
          * Record the revenue of one paid ad impression, from the impression callback of the ad mediation SDK
          * (AppLovin MAX {@code onAdRevenuePaid}, Google AdMob {@code OnPaidEventListener}, LevelPlay
          * {@code onImpressionSuccess}). Call it once per impression. It is recorded as the event
-         * {@code [CLY]_ad_revenue} with the amount as its sum, and Attribution counts it as ad revenue.
+         * {@code [CLY]_ad_revenue} with the amount as its sum and the details as segments, and Attribution
+         * counts it as ad revenue.
          * <p>
          * Send the amount in the currency the app records purchases in: the SDK converts nothing. AdMob reports
          * micros, so divide by 1,000,000 ({@code adValue.getValueMicros() / 1_000_000.0}).
          * Needs the "events" consent.
          *
          * @param amount the impression's revenue, zero or more
-         * @param network the ad network that served it, for example "admob", or null
-         * @param placement the app's placement or ad unit, or null
-         * @param format the ad format, for example "banner", "interstitial" or "rewarded", or null
-         * @param currency the currency the amount is in, kept for reference only, or null
-         * @param precision how exact the amount is as the network says, for example "publisher_defined", "exact" or "estimated", or null
+         * @param details network, placement, format, currency and precision, each optional; null for none
          */
-        public void recordAdRevenue(double amount, @Nullable String network, @Nullable String placement, @Nullable String format, @Nullable String currency, @Nullable String precision) {
+        public void recordAdRevenue(double amount, @Nullable AdRevenueDetails details) {
             synchronized (_cly) {
                 L.i("[Attribution] calling 'recordAdRevenue'");
 
-                recordAdRevenueInternal(amount, network, placement, format, currency, precision);
+                recordAdRevenueInternal(amount, details);
             }
         }
 
@@ -845,10 +844,10 @@ public class ModuleAttribution extends ModuleBase {
          * Record the revenue of one paid ad impression, without details.
          *
          * @param amount the impression's revenue, zero or more
-         * @see #recordAdRevenue(double, String, String, String, String, String)
+         * @see #recordAdRevenue(double, AdRevenueDetails)
          */
         public void recordAdRevenue(double amount) {
-            recordAdRevenue(amount, null, null, null, null, null);
+            recordAdRevenue(amount, null);
         }
     }
 }
