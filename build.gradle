@@ -78,6 +78,109 @@ subprojects {
       }
     }
     tasks.named('check') { dependsOn verifyConsumerContract }
+
+    // The public API of the release AAR: its public and protected classes and members as javap prints them, members
+    // sorted. apiCheck fails `check` when it differs from api/<module>.api; apiDump rewrites that file after a
+    // deliberate change, which then needs a line in the module's CHANGELOG.md. Classes in a package named internal are
+    // left out: they are public only so that the SDK's own packages can call them.
+    def apiFile = file("api/${project.name}.api")
+    def changelog = file('CHANGELOG.md').exists() ? "${project.name}/CHANGELOG.md" : 'CHANGELOG.md'
+    def releaseAar = layout.buildDirectory.file("outputs/aar/${project.name}-release.aar")
+    def publicApi = { File workDir ->
+      def jar = new File(workDir, 'classes.jar')
+      new java.util.zip.ZipFile(releaseAar.get().asFile).withCloseable { zip -> jar.bytes = zip.getInputStream(zip.getEntry('classes.jar')).bytes }
+      def names = new java.util.zip.ZipFile(jar).withCloseable { zip ->
+        zip.entries().toList()*.name.findAll { it.endsWith('.class') && !it.endsWith('-info.class') }.collect { it[0..-7].replace('/', '.') }.sort()
+      }
+      def javap = ['bin/javap.exe', 'bin/javap'].collect { new File(System.getProperty('java.home'), it) }.find { it.exists() }
+      def output = new StringBuilder()
+      // javap reads no argument files, so the class names go on the command line in batches that fit Windows' limit
+      names.collate(100).each { batch ->
+        def process = new ProcessBuilder([javap.path, '-protected', '-classpath', jar.path] + batch).redirectErrorStream(true).start()
+        def text = process.inputStream.getText('UTF-8')
+        if (process.waitFor() != 0) throw new GradleException("javap failed for :${project.name}:\n${text}")
+        output << text
+      }
+      def classes = []
+      def current = null
+      output.toString().readLines().each { line ->
+        if (current == null) {
+          if (line.endsWith(' {')) current = [header: line, members: []]
+        } else if (line == '}') {
+          classes << current
+          current = null
+        } else {
+          current.members << line.trim()
+        }
+      }
+      def nameOf = { String header -> header.split(' ').find { it.contains('.') } }
+      "// Public API of :${project.name}: the public and protected classes and members of its release AAR, as javap prints them.\n" +
+        "// Classes in a package named internal are left out. ./gradlew :${project.name}:apiDump writes this file, and\n" +
+        "// ./gradlew check fails when the AAR no longer matches it. A change here needs a line in ${changelog} that tells\n" +
+        "// integrators what changed.\n" +
+        classes.findAll { (it.header.startsWith('public ') || it.header.startsWith('protected ')) && !nameOf(it.header).contains('.internal.') }
+          .sort { c -> nameOf(c.header) }
+          .collect { c -> "\n${c.header}\n" + c.members.sort().collect { "  ${it}\n" }.join('') + '}\n' }
+          .join('')
+    }
+    // The lines of an API file with each member prefixed by its class, so that a difference names the class.
+    def qualifiedLines = { String text ->
+      def lines = []
+      def owner = null
+      text.readLines().each { line ->
+        if (line.isEmpty() || line.startsWith('//')) return
+        if (line.endsWith(' {')) {
+          owner = line[0..-3].split(' ').find { it.contains('.') }
+          lines << line[0..-3]
+        } else if (line == '}') {
+          owner = null
+        } else {
+          lines << "${owner}: ${line.trim()}"
+        }
+      }
+      lines
+    }
+    tasks.register('apiDump') {
+      description = "Writes the public API of the release AAR to api/${project.name}.api."
+      dependsOn 'bundleReleaseAar'
+      inputs.file(releaseAar)
+      outputs.file(apiFile)
+      doLast {
+        apiFile.parentFile.mkdirs()
+        apiFile.setText(publicApi(temporaryDir), 'UTF-8')
+        logger.lifecycle("apiDump, wrote ${rootProject.relativePath(apiFile).replace(File.separator, '/')}")
+      }
+    }
+    def apiCheck = tasks.register('apiCheck') {
+      description = "Fails if the public API of the release AAR differs from api/${project.name}.api."
+      dependsOn 'bundleReleaseAar'
+      inputs.file(releaseAar)
+      doLast {
+        def path = rootProject.relativePath(apiFile).replace(File.separator, '/')
+        if (!apiFile.exists()) throw new GradleException("No ${path}: run ./gradlew :${project.name}:apiDump")
+        def committed = apiFile.getText('UTF-8').replace('\r\n', '\n')
+        def current = publicApi(temporaryDir)
+        if (committed != current) {
+          def was = qualifiedLines(committed)
+          def now = qualifiedLines(current)
+          def report = []
+          if (was - now) {
+            report << "Removed or changed, which breaks apps that use it (start the ${changelog} line with \"! Minor breaking change !\"):"
+            report.addAll((was - now).collect { "  - ${it}" })
+          }
+          if (now - was) {
+            report << 'New, or the new form of a changed line:'
+            report.addAll((now - was).collect { "  + ${it}" })
+          }
+          if (report.isEmpty()) report << 'The same lines, in another order.'
+          def summary = System.getenv('GITHUB_STEP_SUMMARY')
+          if (summary) new File(summary).append("### Public API changes of :${project.name} against ${path}\n```\n${report.join('\n')}\n```\n", 'UTF-8')
+          throw new GradleException("The public API of :${project.name} differs from ${path}:\n" + report.join('\n') +
+            "\nIf the change is deliberate, run ./gradlew :${project.name}:apiDump, check the difference and add a line to ${changelog}.")
+        }
+      }
+    }
+    tasks.named('check') { dependsOn apiCheck }
   }
 }
 
