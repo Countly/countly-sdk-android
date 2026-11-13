@@ -98,6 +98,14 @@ jobs:
         id: report
         run: bash .github/scripts/public_api_report.sh "$RUNNER_TEMP/breaking.txt" "$RUNNER_TEMP/added.txt"
 
+      - name: Upload the CI report fragment
+        if: ${{ !cancelled() && steps.report.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-report-public-api
+          path: ${{ runner.temp }}/ci-report-public-api
+          if-no-files-found: ignore
+
       - name: Require a changelog entry for breaking changes
         run: |
           if [ ! -s "$RUNNER_TEMP/breaking.txt" ]; then
