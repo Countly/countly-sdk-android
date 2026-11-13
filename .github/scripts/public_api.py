@@ -25,6 +25,8 @@ class Signature:
         """Parses the signature file at path."""
         self.blocks = []
         self.references = {}
+        self.headers = {}
+        self.members = {}
         package, current, start = None, None, 0
         with open(path, encoding="utf-8") as handle:
             lines = handle.read().splitlines()
@@ -35,11 +37,15 @@ class Signature:
             elif class_match and package:
                 current, start = f"{package}.{class_match.group('name')}", number
                 self.references[current] = set(REFERENCE.findall(text))
+                self.headers[current] = text.strip()
+                self.members[current] = []
             elif current and text == "  }":
                 self.blocks.append((start, number, current))
                 current = None
             elif current:
                 self.references[current].update(REFERENCE.findall(text))
+                if text.strip():
+                    self.members[current].append(text.strip())
 
     def class_at(self, line):
         """Returns the class whose block contains line, or None for a line outside every class."""
@@ -68,6 +74,25 @@ def reachable(signatures, root_packages):
     return found
 
 
+def added(base_dir, head_dir, root_packages):
+    """Returns "class: declaration" lines for the public API the head signatures add to the base ones."""
+    heads = {os.path.basename(path): Signature(path) for path in sorted(glob.glob(os.path.join(head_dir, "*.txt")))}
+    public = reachable(heads.values(), root_packages)
+    lines = []
+    for name, head in heads.items():
+        base_path = os.path.join(base_dir, name)
+        if not os.path.exists(base_path):
+            lines.append(f"{name[:-len('.txt')]}: a new module, all of its public API is new")
+            continue
+        base = Signature(base_path)
+        for owner in sorted(cls for cls in head.members if cls in public):
+            known = set(base.members.get(owner, ()))
+            if owner not in base.members:
+                lines.append(f"{owner}: {head.headers[owner]}")
+            lines.extend(f"{owner}: {member}" for member in head.members[owner] if member not in known)
+    return lines
+
+
 def main():
     """Reads a metalava check log and prints the compatibility errors that touch reachable public API."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -75,10 +100,18 @@ def main():
                         help="a package whose classes are public API; repeat it for each root package")
     parser.add_argument("--signatures", required=True,
                         help="every module's base signatures: one module's public API can name another's classes")
-    parser.add_argument("--module-dir", required=True,
+    parser.add_argument("--module-dir",
                         help="the module's directory: metalava names this pull request's signature relative to it")
-    parser.add_argument("log", help="the metalava compatibility check log")
+    parser.add_argument("--added", metavar="HEAD_DIR",
+                        help="print what the head signatures in this directory add to --signatures")
+    parser.add_argument("log", nargs="?", help="the metalava compatibility check log")
     arguments = parser.parse_args()
+    if arguments.added:
+        for line in added(arguments.signatures, arguments.added, set(arguments.root_package)):
+            print(line)
+        return
+    if not arguments.module_dir or not arguments.log:
+        parser.error("--module-dir and the log are needed unless --added is given")
     base = [Signature(path) for path in sorted(glob.glob(os.path.join(arguments.signatures, "*.txt")))]
     if not base:
         sys.exit(f"No base signatures in {arguments.signatures}.")

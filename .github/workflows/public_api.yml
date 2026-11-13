@@ -1,4 +1,4 @@
-name: Public API
+name: Public API changes
 
 on:
   pull_request:
@@ -13,6 +13,8 @@ concurrency:
 jobs:
   api:
     name: Breaking changes
+    outputs:
+      report: ${{ steps.report.outputs.report }}
     runs-on: ubuntu-24.04
     env:
       # Each module is paired with the changelog that records its breaking changes.
@@ -82,19 +84,25 @@ jobs:
               echo "${entry#*=}" >> "$RUNNER_TEMP/changelogs.txt"
             fi
           done
+          # The head's own signatures, beside the base's, give what this pull request adds to the public API.
+          modules=()
+          for entry in "${entries[@]}"; do
+            modules+=("${entry%%=*}")
+          done
+          ./gradlew --init-script .github/scripts/public-api.init.gradle -DapiModules="$(IFS=,; echo "${modules[*]}")" \
+            -DapiDir="$RUNNER_TEMP/api-head" "${modules[@]/%/:metalavaGenerateSignatureRelease}"
+          python3 .github/scripts/public_api.py --root-package ly.count.android.sdk --root-package ly.count.android.sdk.messaging \
+            --root-package ly.count.android.sdknative --signatures "$RUNNER_TEMP/api" --added "$RUNNER_TEMP/api-head" > "$RUNNER_TEMP/added.txt"
+
+      - name: Report the public API changes
+        id: report
+        run: bash .github/scripts/public_api_report.sh "$RUNNER_TEMP/breaking.txt" "$RUNNER_TEMP/added.txt"
 
       - name: Require a changelog entry for breaking changes
         run: |
           if [ ! -s "$RUNNER_TEMP/breaking.txt" ]; then
-            echo "No breaking change to the public API." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          {
-            echo "### Breaking changes to the public API"
-            echo '```'
-            cat "$RUNNER_TEMP/breaking.txt"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
           missing=""
           while read -r changelog; do
             if git diff --quiet HEAD^1 HEAD -- "$changelog"; then
@@ -106,3 +114,30 @@ jobs:
             exit 1
           fi
           echo "::warning title=Breaking API change::This pull request breaks the public API. Check that the changelog marks it as a breaking change."
+
+  comment:
+    name: Comment the public API changes
+    needs: api
+    # A fork's or Dependabot's pull request only gets a read-only token, so its report stays in the job summary.
+    if: >-
+      always() && needs.api.outputs.report != '' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Post or update the comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          REPORT: ${{ needs.api.outputs.report }}
+        run: |
+          id=$(gh api --paginate "repos/$REPO/issues/$PR/comments" --jq \
+            '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- countly-public-api -->"))) | .id' | tail -n 1)
+          if [ -n "$id" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$id" -f "body=$REPORT" > /dev/null
+          elif ! grep -qx 'No public API change.' <<< "$REPORT"; then
+            gh api --method POST "repos/$REPO/issues/$PR/comments" -f "body=$REPORT" > /dev/null
+          fi
