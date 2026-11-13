@@ -135,6 +135,32 @@ jobs:
               });
             }
 
+      - name: Write the CI report fragment
+        if: ${{ !cancelled() }}
+        env:
+          OUTCOME: ${{ steps.osv.outcome }}
+        run: |
+          dir="$RUNNER_TEMP/ci-report-dependency-scan"
+          mkdir -p "$dir"
+          if [ ! -f osv-report.md ]; then
+            printf 'Dependency scan\nNo report\nThe scan step did not produce a report (outcome: %s). See the workflow logs.\n' "$OUTCOME" > "$dir/report.md"
+            exit 0
+          fi
+          summary='No blocking vulnerability'
+          if [ "$OUTCOME" != success ]; then
+            summary='A dependency has a blocking vulnerability'
+          fi
+          # The CI report section has its own title, so the report's heading is dropped.
+          { printf 'Dependency scan\n%s\n' "$summary"; awk 'NR > 1 || !/^#/' osv-report.md; } > "$dir/report.md"
+
+      - name: Upload the CI report fragment
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-report-dependency-scan
+          path: ${{ runner.temp }}/ci-report-dependency-scan
+          if-no-files-found: ignore
+
       - name: Upload dependency list
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
