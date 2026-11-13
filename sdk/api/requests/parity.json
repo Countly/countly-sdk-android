@@ -1,0 +1,152 @@
+[
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "begin_session": "1",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "hour": "<masked>",
+      "metrics": {
+        "_app_version": "<masked>",
+        "_carrier": "<masked>",
+        "_density": "<masked>",
+        "_device": "<masked>",
+        "_device_type": "<masked>",
+        "_has_hinge": "<masked>",
+        "_locale": "<masked>",
+        "_manufacturer": "<masked>",
+        "_os": "<masked>",
+        "_os_version": "<masked>",
+        "_resolution": "<masked>",
+        "_store": "<masked>"
+      },
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "events": [
+        {
+          "count": 2,
+          "cvid": "<masked>",
+          "dow": "<masked>",
+          "dur": 5,
+          "hour": "<masked>",
+          "id": "<masked>",
+          "key": "purchase",
+          "peid": "<masked>",
+          "segmentation": {
+            "boolList": [
+              true,
+              false,
+              true
+            ],
+            "doubleList": [
+              1.1,
+              2.2,
+              3.3
+            ],
+            "hashirama": -2147483647,
+            "intList": [
+              1,
+              2,
+              3
+            ],
+            "itachi": 1.7976931348623157E308,
+            "kakaski": 4.9E-324,
+            "mapList": [],
+            "mixedList": [
+              "value1",
+              2,
+              3.3,
+              true
+            ],
+            "nar": "uto",
+            "sakura": false,
+            "sasuke": 2147483647,
+            "stringList": [
+              "value1",
+              "value2",
+              "value3"
+            ]
+          },
+          "sum": 9.99,
+          "timestamp": "<masked>"
+        }
+      ],
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>",
+      "user_details": {
+        "byear": 1980,
+        "custom": {
+          "age": 30,
+          "tier": "gold"
+        },
+        "email": "john@example.com",
+        "gender": "M",
+        "name": "John Doe",
+        "organization": "Countly",
+        "phone": "1234567890",
+        "picture": "https://example.com/picture.jpg",
+        "username": "john_d"
+      }
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "session_duration": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "end_session": "1",
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  }
+]

@@ -1,8 +1,9 @@
 name: Public API changelog
 
-# A pull request that changes or removes a record of the public API must also change the CHANGELOG.md that API_FILES
-# pairs it with, so that the release notes tell integrators about every such change. A record the pull request adds needs
-# no line. A path ending in "/" stands for every file under it. The API check keeps each record in step with the SDK.
+# A pull request that changes or removes a record of the public API, or of the requests the SDK sends, must also change
+# the CHANGELOG.md that API_FILES pairs it with, so that the release notes tell integrators about every such change. A
+# record the pull request adds needs no line. A path ending in "/" stands for every file under it. The API and request
+# checks keep each record in step with the SDK.
 on:
   pull_request:
     branches: [master, staging, staging-nw]
@@ -16,7 +17,7 @@ permissions:
 
 jobs:
   changelog:
-    name: A public API change comes with a CHANGELOG line
+    name: A public API or request change comes with a CHANGELOG line
     runs-on: ubuntu-24.04
     steps:
       - name: Check the files the pull request changes
@@ -24,7 +25,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-          API_FILES: sdk/api/sdk.api=CHANGELOG.md sdk-native/api/sdk-native.api=sdk-native/CHANGELOG.md
+          API_FILES: sdk/api/sdk.api=CHANGELOG.md sdk-native/api/sdk-native.api=sdk-native/CHANGELOG.md sdk/api/requests/=CHANGELOG.md
         run: |
           changed=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[] | select(.status != "added") | .filename')
           changes() {
@@ -40,13 +41,13 @@ jobs:
             if changes "$record"; then
               recorded_changed=yes
               if ! changes "$changelog"; then
-                echo "::error::This pull request changes $record, which records the public API, but not $changelog. Add a line that tells integrators what changed."
+                echo "::error::This pull request changes $record, which records the public API or the requests the SDK sends, but not $changelog. Add a line that tells integrators what changed."
                 exit 1
               fi
             fi
           done
           if [ "$recorded_changed" = yes ]; then
-            echo "The recorded public API changes, and the CHANGELOG changes with it."
+            echo "The recorded public API or requests change, and the CHANGELOG changes with them."
           else
-            echo "This pull request changes no recorded public API."
+            echo "This pull request changes neither the recorded public API nor the recorded requests."
           fi
