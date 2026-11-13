@@ -10,6 +10,9 @@ on:
       - master
       - staging
 
+permissions:
+  contents: read
+
 jobs:
   validation:
     name: "Validate Gradle Wrapper SHA-256 checksum"
