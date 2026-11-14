@@ -221,14 +221,16 @@ public class ModuleAttributionHuaweiReferrerTests {
     }
 
     /**
-     * The real reader in this test APK: the HUAWEI library is not in it, and the emulator has no HMS Core,
-     * so it reports unavailable and, asked anyway, answers not supported without binding anything
+     * The real reader in this test APK, which does not include the HUAWEI library: it reports unavailable.
+     * Asked anyway, it answers on the calling thread without crashing: not supported on a device without
+     * HMS Core (an emulator), and "try later" on a HUAWEI device with HMS Core (the CI phone), where the
+     * missing library classes are caught.
      */
     @Test
-    public void huawei_realReader_noLibraryNoHms() {
+    public void huawei_realReader_withoutLibrary() {
         HuaweiInstallReferrerReader reader = new HuaweiInstallReferrerReader();
         Assert.assertFalse(reader.isAvailable());
-        Assert.assertFalse(HuaweiInstallReferrerReader.hmsServicePresent(TestUtils.getContext()));
+        boolean hms = HuaweiInstallReferrerReader.hmsServicePresent(TestUtils.getContext());
 
         AtomicInteger status = new AtomicInteger(-1);
         reader.read(TestUtils.getContext(), new InstallReferrerReader.Callback() {
@@ -237,7 +239,7 @@ public class ModuleAttributionHuaweiReferrerTests {
                 Assert.assertNull(details);
             }
         });
-        Assert.assertEquals(InstallReferrerReader.STATUS_NOT_SUPPORTED, status.get());
+        Assert.assertEquals(hms ? InstallReferrerReader.STATUS_RETRY : InstallReferrerReader.STATUS_NOT_SUPPORTED, status.get());
     }
 
     // ------------------------------------------------------------------ consent with the signal
