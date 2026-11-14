@@ -651,7 +651,7 @@ public class ModuleConfigurationTests {
      */
     @Test
     public void configurationParameterCount() {
-        int configParameterCount = 47; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, journey trigger events, automatic session/view/crash tracking flags, journey trigger views, the top level log gathering directive, and the top level connection test flag
+        int configParameterCount = 48; // plus config, timestamp and version parameters, UPDATE: list filters, user property cache limit, journey trigger events, automatic session/view/crash tracking flags, journey trigger views, the top level log gathering directive, the top level connection test flag, and the top level gzip flag
         int count = 0;
         for (Field field : ModuleConfiguration.class.getDeclaredFields()) {
             if (field.getName().startsWith("keyR")) {

@@ -3,18 +3,22 @@ package ly.count.android.sdk;
 import android.net.TrafficStats;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.zip.GZIPOutputStream;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 
 public class UtilsNetworking {
     // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
     final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    static final int REQUEST_COMPRESSION_MIN_BYTES = 1024;
 
     /**
      * Opens a connection for a resource the SDK downloads outside its request queue, such as a push notification
@@ -129,6 +133,35 @@ public class UtilsNetworking {
             L.e("Cannot tamper-protect params", e);
         }
         return hash;
+    }
+
+    /**
+     * Compresses a request body with gzip, for sending it with the compression marker in the URL
+     *
+     * @param body the url encoded request body, checksum included
+     * @param L logger
+     * @return the gzip bytes, or null when the body is smaller than {@link #REQUEST_COMPRESSION_MIN_BYTES}, compressing
+     * fails, or the result is not smaller than the body
+     */
+    static @Nullable byte[] gzipRequestBody(@NonNull String body, @NonNull ModuleLog L) {
+        byte[] plain = body.getBytes(StandardCharsets.UTF_8);
+        if (plain.length < REQUEST_COMPRESSION_MIN_BYTES) {
+            return null;
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream(plain.length / 2);
+        try (GZIPOutputStream gzip = new GZIPOutputStream(out)) {
+            gzip.write(plain);
+        } catch (IOException e) {
+            L.d("[UtilsNetworking] gzipRequestBody, compressing failed, the body is sent uncompressed: [" + e + "]");
+            return null;
+        }
+
+        byte[] compressed = out.toByteArray();
+        if (compressed.length >= plain.length) {
+            return null;
+        }
+        return compressed;
     }
 
     /**

@@ -72,6 +72,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRJourneyTriggerViews = "jtv";
     final static String keyRLogGathering = "lg"; //top level key, a sibling of 'c', not a member of it
     final static String keyRConnectionTest = "ct"; //top level key, a sibling of 'c', read from a live response and never stored
+    final static String keyRGzip = "gzip"; //top level key, a sibling of 'c', read from a live response and never stored
+    final static String requestKeyGzip = "&gzip=1";
 
     //top level keys of the response that this SDK supports. Anything else that arrives next to them is ignored
     final static Set<String> supportedTopLevelKeys = new HashSet<>(Arrays.asList(keyRVersion, keyRTimestamp, keyRConfig, keyRLogGathering));
@@ -165,6 +167,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     long lastServerConfigFetchTimestamp = -1;
     private final boolean serverConfigRequestsDisabled;
 
+    // REQUEST COMPRESSION
+    private final boolean requestCompressionEnabled;
+    volatile @Nullable String gzipAcceptingServerUrl = null;
+    volatile boolean requestCompressionBlocked = false;
+
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleConfiguration] Initialising");
@@ -179,6 +186,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         serverConfigUpdateTimer = new CountlyTimer();
         serverConfigUpdateInterval = currentServerConfigUpdateInterval;
         serverConfigRequestsDisabled = config.sdkBehaviorSettingsRequestsDisabled;
+        requestCompressionEnabled = config.requestCompressionEnabled;
 
         config.countlyStore.setConfigurationProvider(this);
 
@@ -899,6 +907,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         lastServerConfigFetchTimestamp = UtilsTime.currentTimestampMs();
         String requestData = requestQueueProvider.prepareServerConfigRequest();
+        if (requestCompressionEnabled) {
+            requestData += requestKeyGzip;
+        }
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final long fetchStartNs = System.nanoTime();
         final String requestedForDeviceId = deviceIdProvider.getDeviceId();
@@ -925,6 +936,11 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             //read only here, from a live response, and stripped before the config is cached
             long fetchLatencyMs = (System.nanoTime() - fetchStartNs) / 1_000_000L;
             boolean connectionTestArmed = extractConnectionTestFlag(checkResponse);
+            boolean gzipAccepted = extractGzipFlag(checkResponse);
+            if (requestCompressionEnabled) {
+                gzipAcceptingServerUrl = gzipAccepted ? requestedFromServerUrl : null;
+                L.d("[ModuleConfiguration] fetchConfigFromServer, the server " + (gzipAccepted ? "reads" : "does not say it reads") + " compressed request bodies");
+            }
 
             //a gather is armed for the device the request was made for, not for whoever the device ID is by now
             final boolean sameDevice = Objects.equals(requestedForDeviceId, deviceIdProvider.getDeviceId());
@@ -947,6 +963,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 fetchConfigFromServer(config);
             }
         }, L);
+    }
+
+    /**
+     * Reads and removes the 'gzip' flag from a live response, so it is never cached: only a server answer that
+     * carries true says the server reads compressed request bodies
+     *
+     * @param serverConfigResponse the SDK behavior settings answer
+     * @return true only when the answer had "gzip": true
+     */
+    static boolean extractGzipFlag(@Nullable JSONObject serverConfigResponse) {
+        if (serverConfigResponse == null || !serverConfigResponse.has(keyRGzip)) {
+            return false;
+        }
+
+        return Boolean.TRUE.equals(serverConfigResponse.remove(keyRGzip));
     }
 
     /** Reads and removes the 'ct' flag from a live response, so it is never cached and can never re-arm from storage. */
@@ -1062,6 +1093,18 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public boolean getBOMEnabled() {
         return currentVBackoffMechanism;
+    }
+
+    @Override public boolean getRequestCompressionEnabled() {
+        String acceptingUrl = gzipAcceptingServerUrl;
+        return requestCompressionEnabled && !requestCompressionBlocked && acceptingUrl != null && acceptingUrl.equals(_cly.baseInfoProvider.getServerURL());
+    }
+
+    @Override public void blockRequestCompression() {
+        if (!requestCompressionBlocked) {
+            requestCompressionBlocked = true;
+            L.i("[ModuleConfiguration] blockRequestCompression, a compressed request was refused, requests are sent uncompressed until the SDK starts again");
+        }
     }
 
     @Override public int getBOMAcceptedTimeoutSeconds() {
