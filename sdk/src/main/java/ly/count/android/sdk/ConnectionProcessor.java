@@ -127,11 +127,11 @@ public class ConnectionProcessor implements Runnable {
             L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
         }
 
-        byte[] compressedBody = null;
+        byte[] compressedBody = new byte[0];
         if (usingHttpPost && !hasPicturePath && configProvider_.getRequestCompressionEnabled()) {
             compressedBody = UtilsNetworking.gzipRequestBody(requestData, L);
-            if (compressedBody != null) {
-                urlStr += "?" + REQUEST_COMPRESSION_MARKER;
+            if (compressedBody.length > 0) {
+                urlStr = urlStr.concat("?").concat(REQUEST_COMPRESSION_MARKER);
                 approximateDateSize += compressedBody.length - requestData.length();
                 L.d("[ConnectionProcessor] The request body is sent gzip-compressed, [" + requestData.length() + "] -> [" + compressedBody.length + "] bytes");
             }
@@ -204,7 +204,7 @@ public class ConnectionProcessor implements Runnable {
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                 OutputStream os = conn.getOutputStream();
-                if (compressedBody != null) {
+                if (compressedBody.length > 0) {
                     os.write(compressedBody);
                     os.flush();
                     os.close();

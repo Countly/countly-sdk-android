@@ -140,13 +140,13 @@ public class UtilsNetworking {
      *
      * @param body the url encoded request body, checksum included
      * @param L logger
-     * @return the gzip bytes, or null when the body is smaller than {@link #REQUEST_COMPRESSION_MIN_BYTES}, compressing
-     * fails, or the result is not smaller than the body
+     * @return the gzip bytes, or an empty array when the body is smaller than {@link #REQUEST_COMPRESSION_MIN_BYTES},
+     * compressing fails, or the result is not smaller than the body
      */
-    static @Nullable byte[] gzipRequestBody(@NonNull String body, @NonNull ModuleLog L) {
+    static @NonNull byte[] gzipRequestBody(@NonNull String body, @NonNull ModuleLog L) {
         byte[] plain = body.getBytes(StandardCharsets.UTF_8);
         if (plain.length < REQUEST_COMPRESSION_MIN_BYTES) {
-            return null;
+            return new byte[0];
         }
 
         ByteArrayOutputStream out = new ByteArrayOutputStream(plain.length / 2);
@@ -154,14 +154,11 @@ public class UtilsNetworking {
             gzip.write(plain);
         } catch (IOException e) {
             L.d("[UtilsNetworking] gzipRequestBody, compressing failed, the body is sent uncompressed: [" + e + "]");
-            return null;
+            return new byte[0];
         }
 
         byte[] compressed = out.toByteArray();
-        if (compressed.length >= plain.length) {
-            return null;
-        }
-        return compressed;
+        return compressed.length < plain.length ? compressed : new byte[0];
     }
 
     /**

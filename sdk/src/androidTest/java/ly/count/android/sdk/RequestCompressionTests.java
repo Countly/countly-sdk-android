@@ -144,7 +144,7 @@ public class RequestCompressionTests {
 
         Received refused = server.waitForRequest("big_refused");
         Assert.assertTrue(refused.compressed);
-        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.requestCompressionBlocked));
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.requestCompressionBlocked.get()));
         Assert.assertFalse(countly.moduleConfiguration.getRequestCompressionEnabled());
         Assert.assertTrue(Arrays.toString(TestUtils.getCountlyStore().getRequests()).contains("big_refused"));
 
@@ -207,9 +207,9 @@ public class RequestCompressionTests {
         String small = new String(new char[UtilsNetworking.REQUEST_COMPRESSION_MIN_BYTES - 1]).replace('\0', 'b');
         String big = new String(new char[UtilsNetworking.REQUEST_COMPRESSION_MIN_BYTES]).replace('\0', 'b');
 
-        Assert.assertNull(UtilsNetworking.gzipRequestBody(small, log));
+        Assert.assertEquals(0, UtilsNetworking.gzipRequestBody(small, log).length);
         byte[] compressed = UtilsNetworking.gzipRequestBody(big, log);
-        Assert.assertNotNull(compressed);
+        Assert.assertTrue(compressed.length > 0);
         Assert.assertTrue(compressed.length < big.length());
         Assert.assertEquals(big, gunzip(compressed));
     }

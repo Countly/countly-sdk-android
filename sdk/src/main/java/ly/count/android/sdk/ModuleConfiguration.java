@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -169,8 +171,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     // REQUEST COMPRESSION
     private final boolean requestCompressionEnabled;
-    volatile @Nullable String gzipAcceptingServerUrl = null;
-    volatile boolean requestCompressionBlocked = false;
+    final AtomicReference<String> gzipAcceptingServerUrl = new AtomicReference<>(null);
+    final AtomicBoolean requestCompressionBlocked = new AtomicBoolean(false);
 
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
@@ -938,7 +940,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             boolean connectionTestArmed = extractConnectionTestFlag(checkResponse);
             boolean gzipAccepted = extractGzipFlag(checkResponse);
             if (requestCompressionEnabled) {
-                gzipAcceptingServerUrl = gzipAccepted ? requestedFromServerUrl : null;
+                gzipAcceptingServerUrl.set(gzipAccepted ? requestedFromServerUrl : null);
                 L.d("[ModuleConfiguration] fetchConfigFromServer, the server " + (gzipAccepted ? "reads" : "does not say it reads") + " compressed request bodies");
             }
 
@@ -1096,13 +1098,12 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     @Override public boolean getRequestCompressionEnabled() {
-        String acceptingUrl = gzipAcceptingServerUrl;
-        return requestCompressionEnabled && !requestCompressionBlocked && acceptingUrl != null && acceptingUrl.equals(_cly.baseInfoProvider.getServerURL());
+        String acceptingUrl = gzipAcceptingServerUrl.get();
+        return requestCompressionEnabled && !requestCompressionBlocked.get() && acceptingUrl != null && acceptingUrl.equals(_cly.baseInfoProvider.getServerURL());
     }
 
     @Override public void blockRequestCompression() {
-        if (!requestCompressionBlocked) {
-            requestCompressionBlocked = true;
+        if (requestCompressionBlocked.compareAndSet(false, true)) {
             L.i("[ModuleConfiguration] blockRequestCompression, a compressed request was refused, requests are sent uncompressed until the SDK starts again");
         }
     }
