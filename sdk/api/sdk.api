@@ -3,6 +3,15 @@
 // ./gradlew check fails when the AAR no longer matches it. A change here needs a line in CHANGELOG.md that tells
 // integrators what changed.
 
+public class ly.count.android.sdk.AdRevenueDetails {
+  public ly.count.android.sdk.AdRevenueDetails setCurrency(java.lang.String);
+  public ly.count.android.sdk.AdRevenueDetails setFormat(java.lang.String);
+  public ly.count.android.sdk.AdRevenueDetails setNetwork(java.lang.String);
+  public ly.count.android.sdk.AdRevenueDetails setPlacement(java.lang.String);
+  public ly.count.android.sdk.AdRevenueDetails setPrecision(java.lang.String);
+  public ly.count.android.sdk.AdRevenueDetails();
+}
+
 public class ly.count.android.sdk.AttributionIndirectKey {
   public ly.count.android.sdk.AttributionIndirectKey();
   public static java.lang.String AdvertisingID;
@@ -289,14 +298,17 @@ public class ly.count.android.sdk.CountlyConfig {
   public synchronized ly.count.android.sdk.CountlyConfig setAppCrawlerNames(java.lang.String[]);
   public synchronized ly.count.android.sdk.CountlyConfig setAppKey(java.lang.String);
   public synchronized ly.count.android.sdk.CountlyConfig setApplication(android.app.Application);
+  public synchronized ly.count.android.sdk.CountlyConfig setAttributionChannel(java.lang.String);
   public synchronized ly.count.android.sdk.CountlyConfig setAutomaticViewTrackingExclusions(java.lang.Class[]);
   public synchronized ly.count.android.sdk.CountlyConfig setConsentEnabled(java.lang.String[]);
   public synchronized ly.count.android.sdk.CountlyConfig setContext(android.content.Context);
   public synchronized ly.count.android.sdk.CountlyConfig setCustomSSLSocketFactory(javax.net.ssl.SSLSocketFactory);
+  public synchronized ly.count.android.sdk.CountlyConfig setDeepLinkCallback(ly.count.android.sdk.DeepLinkCallback);
   public synchronized ly.count.android.sdk.CountlyConfig setDeviceId(java.lang.String);
   public synchronized ly.count.android.sdk.CountlyConfig setDirectAttribution(java.lang.String, java.lang.String);
   public synchronized ly.count.android.sdk.CountlyConfig setDisableLocation();
   public synchronized ly.count.android.sdk.CountlyConfig setEventQueueSizeToSend(int);
+  public synchronized ly.count.android.sdk.CountlyConfig setFacebookAppId(java.lang.String);
   public synchronized ly.count.android.sdk.CountlyConfig setGlobalViewSegmentation(java.util.Map<java.lang.String, java.lang.Object>);
   public synchronized ly.count.android.sdk.CountlyConfig setHttpPostForced(boolean);
   public synchronized ly.count.android.sdk.CountlyConfig setIfStarRatingDialogIsCancellable(boolean);
@@ -359,6 +371,7 @@ public class ly.count.android.sdk.CountlyStore implements ly.count.android.sdk.S
   public static void storeMessagingProvider(int, android.content.Context);
   public synchronized int getEventQueueSize();
   public synchronized int takeAutomaticCrashCount();
+  public synchronized java.lang.String getAttributionState();
   public synchronized java.lang.String getCachedAdvertisingId();
   public synchronized java.lang.String getEventsForRequestAndEmptyEventQueue();
   public synchronized java.lang.String getRemoteConfigValues();
@@ -376,6 +389,7 @@ public class ly.count.android.sdk.CountlyStore implements ly.count.android.sdk.S
   public synchronized void replaceRequestList(java.util.List<java.lang.String>);
   public synchronized void replaceRequests(java.lang.String[]);
   public synchronized void replaceRequests_reworked(java.lang.String[]);
+  public synchronized void setAttributionState(java.lang.String);
   public synchronized void setCachedAdvertisingId(java.lang.String);
   public synchronized void setRemoteConfigValues(java.lang.String);
   public synchronized void setStarRatingPreferences(java.lang.String);
@@ -409,6 +423,18 @@ public class ly.count.android.sdk.CrashData {
 
 public interface ly.count.android.sdk.CrashFilterCallback {
   public abstract boolean filterCrash(java.lang.String);
+}
+
+public interface ly.count.android.sdk.DeepLinkCallback {
+  public abstract void onDeepLink(ly.count.android.sdk.DeepLinkCallback$Type, java.lang.String, java.lang.String);
+}
+
+public final class ly.count.android.sdk.DeepLinkCallback$Type extends java.lang.Enum<ly.count.android.sdk.DeepLinkCallback$Type> {
+  public static final ly.count.android.sdk.DeepLinkCallback$Type DEFERRED;
+  public static final ly.count.android.sdk.DeepLinkCallback$Type NONE;
+  public static final ly.count.android.sdk.DeepLinkCallback$Type OPENED;
+  public static ly.count.android.sdk.DeepLinkCallback$Type valueOf(java.lang.String);
+  public static ly.count.android.sdk.DeepLinkCallback$Type[] values();
 }
 
 public class ly.count.android.sdk.DeviceId {
@@ -529,6 +555,9 @@ public class ly.count.android.sdk.ModuleAttribution extends ly.count.android.sdk
 
 public class ly.count.android.sdk.ModuleAttribution$Attribution {
   public ly.count.android.sdk.ModuleAttribution$Attribution(ly.count.android.sdk.ModuleAttribution);
+  public void recordAdRevenue(double);
+  public void recordAdRevenue(double, ly.count.android.sdk.AdRevenueDetails);
+  public void recordDeepLink(android.net.Uri);
   public void recordDirectAttribution(java.lang.String, java.lang.String);
   public void recordIndirectAttribution(java.util.Map<java.lang.String, java.lang.String>);
 }
@@ -537,6 +566,7 @@ public class ly.count.android.sdk.ModuleConsent extends ly.count.android.sdk.Mod
   protected static final java.lang.String[] validFeatureNames;
   protected volatile boolean requiresConsent;
   public boolean anyConsentGiven();
+  public boolean consentRequired();
   public boolean getConsent(java.lang.String);
   public boolean getConsentSilently(java.lang.String);
   public void checkAllConsentInternal();

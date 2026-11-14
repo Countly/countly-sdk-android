@@ -233,7 +233,10 @@ public class App extends Application {
             .setTrackOrientationChanges(true)
             //.setMetricOverride(metricOverride)
             .setWebviewDisplayOption(WebViewDisplayOption.IMMERSIVE)
-            .setUserProperties(customUserProperties);
+            .setUserProperties(customUserProperties)
+            //the SDK reads the Play Install Referrer itself (this app includes com.android.installreferrer)
+            //and reports links that open the app; this callback says where to route
+            .setDeepLinkCallback((type, path, url) -> Log.d(Countly.TAG, "Deep link callback, type:[" + type + "], path:[" + path + "], url:[" + url + "]"));
 
         // crash configuration
         config.crashes

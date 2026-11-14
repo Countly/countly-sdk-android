@@ -66,6 +66,11 @@ interface StorageProvider {
 
     void setHealthCheckCounterState(String counterState);
 
+    //which attribution signals were already sent, as a JSON object
+    @NonNull String getAttributionState();
+
+    void setAttributionState(@NonNull String state);
+
     /**
      * Adds one automatically detected crash to the count the next start reports in the health check, without the health
      * check counters, because it runs while the crash is reported. Call it before the crash report is queued: the

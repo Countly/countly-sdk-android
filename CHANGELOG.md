@@ -27,6 +27,31 @@
 * Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
 * Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
 * Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events. Keys these events reserve are dropped from it.
+* Added new attribution signals, sent once each as a raw value the server parses (Countly server with the redesigned attribution). All need the `attribution` consent:
+  * The Google Play Install Referrer is read on first launch and sent as is. This needs the optional `com.android.installreferrer:installreferrer` dependency in the app; without it nothing is read. Plain UTM referrers (Google Ads, partners) and Countly link click IDs are both attributed.
+  * Links that open the app are captured from the launch intent of the activity and sent when they are Countly smart links (`/at/...`) or carry `utm_*`, `cly_clk`, `countly_cid` or `countly_cuid`. Use "attribution().recordDeepLink(Uri)" for other links and for links delivered to `onNewIntent`.
+  * "setAttributionChannel(String)" in "CountlyConfig" sends the channel a build is distributed through, again only when it changes.
+  * The Play Install Referrer goes with Play's click and install-begin timestamps (the store's and the device's) and the install version, which the server uses to flag click injection and click flooding.
+  * "setFacebookAppId(String)" in "CountlyConfig" turns on the Meta Install Referrer. On first launch the SDK asks the Facebook, Instagram and Facebook Lite apps which Meta ad led to the install.
+    * Their encrypted answer is sent once, in the same request as the Play referrer. The server decrypts it with the key set in the Attribution settings.
+    * The SDK's manifest now declares these three apps in `<queries>`. The SDK reads them only when a Facebook app id is set.
+  * The HUAWEI AppGallery install referrer is read on first launch on devices with HMS Core and sent with `store` set to `huawei`. This needs the optional `com.huawei.hms:ads-installreferrer` dependency in the app; without it nothing is read.
+    * The SDK's manifest declares the HMS Core service it asks in `<queries>`.
+  * The Samsung Galaxy Store install referrer is read on first launch on devices with Galaxy Store 4.5.20.1 or later and sent with `store` set to `samsung`.
+    * This needs the optional `store.galaxy.samsung.installreferrer:samsung_galaxystore_install_referrer` dependency in the app; without it nothing is read.
+    * A store link carries the referrer in its `referrer` parameter, URL-encoded, for example `https://apps.samsung.com/appquery/appDetail.as?appId=com.example.app&referrer=utm_source%3Dpartner%26utm_medium%3Dcpi%26utm_campaign%3Dspring`.
+    * Its click time is when the install button on the store page was tapped, not the ad click. Samsung has no store-signed times as Play has, so both times are sent as Samsung gives them.
+    * The Meta, HUAWEI, Samsung and Play referrers of a first launch go in one request.
+  * When the app requires consent, each signal request also carries the `attribution` consent, so a server that stores campaign data only with that consent has it in the same request.
+* Added "setDeepLinkCallback(DeepLinkCallback)" to "CountlyConfig". It tells the app where to route:
+  * `OPENED`: a link opened the app. It is called also without the `attribution` consent.
+  * `DEFERRED`: first launch, the app was installed from a link with a deep link.
+  * `NONE`: first launch, no link.
+  * The first launch is answered once, when the launch activity resumes and the `attribution` consent is given.
+* Added "attribution().recordAdRevenue(amount, AdRevenueDetails)" to record the revenue of one paid ad impression from the ad mediation SDK's impression callback.
+  * It records the `[CLY]_ad_revenue` event with the amount as its sum. The network, placement, format, currency and precision set on "AdRevenueDetails" are its segments, each optional. It needs the `events` consent.
+  * Send the amount in the currency the app records purchases in, the SDK converts nothing. For AdMob, divide the micros by 1,000,000.
+* For RevenueCat subscription revenue in Attribution, set the RevenueCat app user id to the Countly device id, "Countly.sharedInstance().deviceId().getID()". After a device ID change, log in to RevenueCat with the new one.
 * Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
 * Added "changeServerUrl(String)" to the request queue interface to change the server URL after init.
 * Added "changeAppKey(String)" to the request queue interface to change the app key after init.
