@@ -214,6 +214,7 @@ public class CountlyConfig {
     String sdkBehaviorSettings;
     boolean backOffMechanismEnabled = true;
     boolean sdkBehaviorSettingsRequestsDisabled = false;
+    boolean requestCompressionEnabled = false;
     int requestTimeoutDuration = 30; // in seconds
 
     // If set to true, immediate requests will use serial AsyncTask executor instead of the thread pool
@@ -949,6 +950,18 @@ public class CountlyConfig {
      */
     public synchronized CountlyConfig disableSDKBehaviorSettingsUpdates() {
         this.sdkBehaviorSettingsRequestsDisabled = true;
+        return this;
+    }
+
+    /**
+     * Compress request bodies of at least 1 KB with gzip before sending them.
+     * The SDK compresses only after the server's SDK behavior settings answer said it reads compressed bodies,
+     * so older servers keep getting plain requests. It needs the SDK behavior settings updates to be on.
+     *
+     * @return Returns the same config object for convenient linking
+     */
+    public synchronized CountlyConfig enableRequestCompression() {
+        this.requestCompressionEnabled = true;
         return this;
     }
 

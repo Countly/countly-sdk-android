@@ -52,6 +52,7 @@ import org.json.JSONObject;
 public class ConnectionProcessor implements Runnable {
     private static final String CRLF = "\r\n";
     private static final String charset = "UTF-8";
+    static final String REQUEST_COMPRESSION_MARKER = "content_encoding=gzip";
     private final StorageProvider storageProvider_;
     private final DeviceIdProvider deviceIdProvider_;
     final ConfigurationProvider configProvider_;
@@ -125,6 +126,16 @@ public class ConnectionProcessor implements Runnable {
             urlStr += "&checksum256=" + checksum;
             L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
         }
+
+        byte[] compressedBody = new byte[0];
+        if (usingHttpPost && !hasPicturePath && configProvider_.getRequestCompressionEnabled()) {
+            compressedBody = UtilsNetworking.gzipRequestBody(requestData, L);
+            if (compressedBody.length > 0) {
+                urlStr = urlStr.concat("?").concat(REQUEST_COMPRESSION_MARKER);
+                approximateDateSize += compressedBody.length - requestData.length();
+                L.d("[ConnectionProcessor] The request body is sent gzip-compressed, [" + requestData.length() + "] -> [" + compressedBody.length + "] bytes");
+            }
+        }
         approximateDateSize += urlStr.length();
 
         final URL url = new URL(urlStr);
@@ -193,11 +204,17 @@ public class ConnectionProcessor implements Runnable {
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 
                 OutputStream os = conn.getOutputStream();
-                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, charset));
-                writer.write(requestData);
-                writer.flush();
-                writer.close();
-                os.close();
+                if (compressedBody.length > 0) {
+                    os.write(compressedBody);
+                    os.flush();
+                    os.close();
+                } else {
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, charset));
+                    writer.write(requestData);
+                    writer.flush();
+                    writer.close();
+                    os.close();
+                }
             } else {
                 L.v("[ConnectionProcessor] Using HTTP GET");
                 conn.setDoOutput(false);
@@ -234,6 +251,28 @@ public class ConnectionProcessor implements Runnable {
         L.v("[ConnectionProcessor] Using HTTP POST: [" + usingHttpPost + "] forced:[" + requestInfoProvider_.isHttpPostForced()
             + "] length:[" + (requestData.length() >= 2048) + "] crash:[" + requestData.contains("&crash=") + "] | Approx data size: [" + approximateDateSize + " B]");
         return conn;
+    }
+
+    /**
+     * Tells whether a connection made by {@link #urlConnectionForServerRequest} sends its body gzip-compressed
+     *
+     * @param conn the connection
+     * @return true when its URL carries the compression marker as its query
+     */
+    static boolean isCompressedRequest(@Nullable URLConnection conn) {
+        return conn != null && REQUEST_COMPRESSION_MARKER.equals(conn.getURL().getQuery());
+    }
+
+    /**
+     * Stops request compression until the SDK starts again when the connection sent a compressed body; called after
+     * its answer was not accepted
+     *
+     * @param conn the connection whose answer was not accepted
+     */
+    void blockCompressionIfCompressed(@Nullable URLConnection conn) {
+        if (isCompressedRequest(conn)) {
+            configProvider_.blockRequestCompression();
+        }
     }
 
     synchronized public @NonNull URLConnection urlConnectionForPreflightRequest(@NonNull String preflightData) throws IOException {
@@ -616,6 +655,7 @@ public class ConnectionProcessor implements Runnable {
                             requestCallback.onRequestCompleted(responseString, false);
                             internalRequestCallbacks_.remove(callbackID);
                         }
+                        blockCompressionIfCompressed(conn);
                         // will retry later
                         // warning was logged above, stop processing, let next tick take care of retrying
                         healthTracker.logFailedNetworkRequest(responseCode, responseString);//notify the health tracker of the issue

@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -142,8 +143,12 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
                 return new JSONObject(receivedBuffer);
             } else {
                 L.d("[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + receivedBuffer + "]");
+                cp.blockCompressionIfCompressed(connection);
                 return null;
             }
+        } catch (JSONException e) {
+            L.d("[ImmediateRequestMaker] Received an answer that is not JSON while making a immediate server request, [" + e + "]");
+            cp.blockCompressionIfCompressed(connection);
         } catch (Exception e) {
             L.d("[ImmediateRequestMaker] Received exception while making a immediate server request, [" + e + "]");
         } finally {
