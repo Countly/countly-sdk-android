@@ -84,6 +84,7 @@ jobs:
         run: ./gradlew sdk:connectedAndroidTest
 
       - name: Publish Test Results to PR
+        id: test-results
         # the composite linux variant runs from the pinned source; the root action pulls a mutable Docker tag
         uses: EnricoMi/publish-unit-test-result-action/linux@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
         if: always()
@@ -94,6 +95,26 @@ jobs:
             sdk/build/outputs/androidTest-results/**/*.xml
             sdk-native/build/test-results/**/*.xml
             upload-plugin/build/test-results/**/*.xml
+
+      - name: Write the CI report fragment
+        if: ${{ !cancelled() && steps.test-results.outputs.json != '' }}
+        env:
+          TEST_RESULTS: ${{ steps.test-results.outputs.json }}
+        run: |
+          dir="$RUNNER_TEMP/ci-report-unit-tests"
+          mkdir -p "$dir"
+          jq -r '"Unit tests",
+            "\(.stats.tests_succ) passed, \(.stats.tests_fail + .stats.tests_error) failed, \(.stats.tests_skip) skipped",
+            if .check_url then "The [check run](\(.check_url)) lists every test and each failure." else empty end' \
+            <<< "$TEST_RESULTS" > "$dir/report.md"
+
+      - name: Upload the CI report fragment
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ci-report-unit-tests
+          path: ${{ runner.temp }}/ci-report-unit-tests
+          if-no-files-found: ignore
 
       # Runs after failed tests too: the coverage the emulator wrote is still valid. The test tasks are
       # excluded so a failure is not re-run. No .ec file means the instrumentation process died before

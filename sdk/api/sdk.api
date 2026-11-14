@@ -1,0 +1,1049 @@
+// Public API of :sdk: the public and protected classes and members of its release AAR, as javap prints them.
+// Classes in a package named internal are left out. ./gradlew :sdk:apiDump writes this file, and
+// ./gradlew check fails when the AAR no longer matches it. A change here needs a line in CHANGELOG.md that tells
+// integrators what changed.
+
+public class ly.count.android.sdk.AttributionIndirectKey {
+  public ly.count.android.sdk.AttributionIndirectKey();
+  public static java.lang.String AdvertisingID;
+}
+
+public class ly.count.android.sdk.BreadcrumbHelper {
+  protected java.util.List<java.lang.String> getBreadcrumbs();
+  protected ly.count.android.sdk.BreadcrumbHelper(int, ly.count.android.sdk.ModuleLog);
+  protected void addBreadcrumb(java.lang.String, int, int);
+  protected void clearBreadcrumbs();
+}
+
+public final class ly.count.android.sdk.CertificateTrustManager implements javax.net.ssl.X509TrustManager {
+  public java.security.cert.X509Certificate[] getAcceptedIssuers();
+  public ly.count.android.sdk.CertificateTrustManager(java.lang.String[], java.lang.String[]) throws java.security.cert.CertificateException;
+  public void checkClientTrusted(java.security.cert.X509Certificate[], java.lang.String);
+  public void checkServerTrusted(java.security.cert.X509Certificate[], java.lang.String) throws java.security.cert.CertificateException;
+  public void checkServerTrusted(java.security.cert.X509Certificate[], java.lang.String, java.lang.String) throws java.security.cert.CertificateException;
+}
+
+public class ly.count.android.sdk.ConfigApm {
+  protected boolean appLoadedManualTrigger;
+  protected boolean trackAppStartTime;
+  protected boolean trackForegroundBackground;
+  protected java.lang.Long appStartTimestampOverride;
+  public ly.count.android.sdk.ConfigApm();
+  public synchronized ly.count.android.sdk.ConfigApm enableAppStartTimeTracking();
+  public synchronized ly.count.android.sdk.ConfigApm enableForegroundBackgroundTracking();
+  public synchronized ly.count.android.sdk.ConfigApm enableManualAppLoadedTrigger();
+  public synchronized ly.count.android.sdk.ConfigApm setAppStartTimestampOverride(long);
+}
+
+public class ly.count.android.sdk.ConfigContent {
+  public ly.count.android.sdk.ConfigContent();
+  public synchronized ly.count.android.sdk.ConfigContent setAllowedIntentSchemes(java.util.List<java.lang.String>);
+  public synchronized ly.count.android.sdk.ConfigContent setContentUrlHandler(ly.count.android.sdk.ContentUrlHandler);
+  public synchronized ly.count.android.sdk.ConfigContent setGlobalContentCallback(ly.count.android.sdk.ContentCallback);
+  public synchronized ly.count.android.sdk.ConfigContent setZoneTimerInterval(int);
+}
+
+public class ly.count.android.sdk.ConfigCrashes {
+  protected boolean checkForNativeCrashDumps;
+  protected boolean enableUnhandledCrashReporting;
+  protected boolean recordAllThreadsWithCrash;
+  protected java.util.Map<java.lang.String, java.lang.Object> customCrashSegment;
+  protected ly.count.android.sdk.GlobalCrashFilterCallback globalCrashFilterCallback;
+  public ly.count.android.sdk.ConfigCrashes();
+  public synchronized ly.count.android.sdk.ConfigCrashes enableCrashReporting();
+  public synchronized ly.count.android.sdk.ConfigCrashes enableRecordAllThreadsWithCrash();
+  public synchronized ly.count.android.sdk.ConfigCrashes setCustomCrashSegmentation(java.util.Map<java.lang.String, java.lang.Object>);
+  public synchronized ly.count.android.sdk.ConfigCrashes setGlobalCrashFilterCallback(ly.count.android.sdk.GlobalCrashFilterCallback);
+}
+
+public class ly.count.android.sdk.ConfigExperimental {
+  protected boolean viewNameRecordingEnabled;
+  protected boolean visibilityTrackingEnabled;
+  public ly.count.android.sdk.ConfigExperimental enablePreviousNameRecording();
+  public ly.count.android.sdk.ConfigExperimental enableVisibilityTracking();
+  public ly.count.android.sdk.ConfigExperimental();
+}
+
+public class ly.count.android.sdk.ConfigSdkInternalLimits {
+  protected int maxStackTraceThreadCount;
+  protected int maxValueSizePicture;
+  protected java.lang.Integer maxBreadcrumbCount;
+  protected java.lang.Integer maxKeyLength;
+  protected java.lang.Integer maxSegmentationValues;
+  protected java.lang.Integer maxStackTraceLineLength;
+  protected java.lang.Integer maxStackTraceLinesPerThread;
+  protected java.lang.Integer maxValueSize;
+  public ly.count.android.sdk.ConfigSdkInternalLimits();
+  public synchronized ly.count.android.sdk.ConfigSdkInternalLimits setMaxBreadcrumbCount(int);
+  public synchronized ly.count.android.sdk.ConfigSdkInternalLimits setMaxKeyLength(int);
+  public synchronized ly.count.android.sdk.ConfigSdkInternalLimits setMaxSegmentationValues(int);
+  public synchronized ly.count.android.sdk.ConfigSdkInternalLimits setMaxStackTraceLineLength(int);
+  public synchronized ly.count.android.sdk.ConfigSdkInternalLimits setMaxStackTraceLinesPerThread(int);
+  public synchronized ly.count.android.sdk.ConfigSdkInternalLimits setMaxValueSize(int);
+  public synchronized ly.count.android.sdk.ConfigSdkInternalLimits setMaxValueSizePicture(int);
+}
+
+public class ly.count.android.sdk.ConfigurationProvider$FilterList<T> {
+}
+
+public class ly.count.android.sdk.ConnectionProcessor implements java.lang.Runnable {
+  public ly.count.android.sdk.PerformanceCounterCollector pcc;
+  public synchronized java.net.URLConnection urlConnectionForPreflightRequest(java.lang.String) throws java.io.IOException;
+  public synchronized java.net.URLConnection urlConnectionForServerRequest(java.lang.String, java.lang.String) throws java.io.IOException;
+  public void run();
+}
+
+public interface ly.count.android.sdk.ContentCallback {
+  public abstract void onContentCallback(ly.count.android.sdk.ContentStatus, java.util.Map<java.lang.String, java.lang.Object>);
+}
+
+public final class ly.count.android.sdk.ContentStatus extends java.lang.Enum<ly.count.android.sdk.ContentStatus> {
+  public static final ly.count.android.sdk.ContentStatus CLOSED;
+  public static final ly.count.android.sdk.ContentStatus COMPLETED;
+  public static ly.count.android.sdk.ContentStatus valueOf(java.lang.String);
+  public static ly.count.android.sdk.ContentStatus[] values();
+}
+
+public interface ly.count.android.sdk.ContentUrlHandler {
+  public abstract boolean onContentUrl(java.lang.String);
+}
+
+public class ly.count.android.sdk.Countly {
+  protected boolean isBeginSessionSent;
+  protected ly.count.android.sdk.CountlyConfig config_;
+  protected static final java.lang.String DEFAULT_APP_VERSION;
+  protected static final long TIMER_DELAY_IN_SECONDS;
+  public boolean isInitialized();
+  public boolean isLoggingEnabled();
+  public java.lang.String COUNTLY_SDK_NAME;
+  public java.lang.String COUNTLY_SDK_VERSION_STRING;
+  public ly.count.android.sdk.ModuleAPM$Apm apm();
+  public ly.count.android.sdk.ModuleAttribution$Attribution attribution();
+  public ly.count.android.sdk.ModuleConsent$Consent consent();
+  public ly.count.android.sdk.ModuleContent$Content contents();
+  public ly.count.android.sdk.ModuleCrash$Crashes crashes();
+  public ly.count.android.sdk.ModuleDeviceId$DeviceId deviceId();
+  public ly.count.android.sdk.ModuleEvents$Events events();
+  public ly.count.android.sdk.ModuleFeedback$Feedback feedback();
+  public ly.count.android.sdk.ModuleLocation$Location location();
+  public ly.count.android.sdk.ModuleLog L;
+  public ly.count.android.sdk.ModuleRatings$Ratings ratings();
+  public ly.count.android.sdk.ModuleRemoteConfig$RemoteConfig remoteConfig();
+  public ly.count.android.sdk.ModuleRequestQueue$RequestQueue requestQueue();
+  public ly.count.android.sdk.ModuleSessions$Sessions sessions();
+  public ly.count.android.sdk.ModuleUserProfile$UserProfile userProfile();
+  public ly.count.android.sdk.ModuleViews$Views views();
+  public static final java.lang.String CONSENT_BROADCAST;
+  public static final java.lang.String DEFAULT_NAME;
+  public static final java.lang.String TAG;
+  public static java.util.List<java.lang.String> listInstances();
+  public static ly.count.android.sdk.Countly getInstance(java.lang.String);
+  public static ly.count.android.sdk.Countly instance(java.lang.String);
+  public static ly.count.android.sdk.Countly sharedInstance();
+  public static void applicationOnCreate();
+  public static void haltAllInstances();
+  public static void removeInstance(java.lang.String);
+  public synchronized ly.count.android.sdk.Countly init(ly.count.android.sdk.CountlyConfig);
+  public synchronized void onConfigurationChanged(android.content.res.Configuration);
+  public synchronized void onConfigurationChangedInternal(android.content.res.Configuration);
+  public synchronized void onStart(android.app.Activity);
+  public synchronized void onStop();
+  public void halt();
+  public void onRegistrationId(java.lang.String, ly.count.android.sdk.Countly$CountlyMessagingProvider);
+  public void setLoggingEnabled(boolean);
+  public void stop();
+}
+
+public class ly.count.android.sdk.Countly$CountlyFeatureNames {
+  public ly.count.android.sdk.Countly$CountlyFeatureNames();
+  public static final java.lang.String apm;
+  public static final java.lang.String attribution;
+  public static final java.lang.String clicks;
+  public static final java.lang.String content;
+  public static final java.lang.String crashes;
+  public static final java.lang.String events;
+  public static final java.lang.String feedback;
+  public static final java.lang.String location;
+  public static final java.lang.String metrics;
+  public static final java.lang.String push;
+  public static final java.lang.String remoteConfig;
+  public static final java.lang.String scrolls;
+  public static final java.lang.String sessions;
+  public static final java.lang.String starRating;
+  public static final java.lang.String users;
+  public static final java.lang.String views;
+}
+
+public final class ly.count.android.sdk.Countly$CountlyMessagingMode extends java.lang.Enum<ly.count.android.sdk.Countly$CountlyMessagingMode> {
+  public static final ly.count.android.sdk.Countly$CountlyMessagingMode PRODUCTION;
+  public static final ly.count.android.sdk.Countly$CountlyMessagingMode TEST;
+  public static ly.count.android.sdk.Countly$CountlyMessagingMode valueOf(java.lang.String);
+  public static ly.count.android.sdk.Countly$CountlyMessagingMode[] values();
+}
+
+public final class ly.count.android.sdk.Countly$CountlyMessagingProvider extends java.lang.Enum<ly.count.android.sdk.Countly$CountlyMessagingProvider> {
+  public static final ly.count.android.sdk.Countly$CountlyMessagingProvider FCM;
+  public static final ly.count.android.sdk.Countly$CountlyMessagingProvider HMS;
+  public static ly.count.android.sdk.Countly$CountlyMessagingProvider valueOf(java.lang.String);
+  public static ly.count.android.sdk.Countly$CountlyMessagingProvider[] values();
+}
+
+public class ly.count.android.sdk.CountlyConfig {
+  protected android.app.Activity initialActivity;
+  protected android.app.Application application;
+  protected android.content.Context context;
+  protected boolean autoTrackingUseShortName;
+  protected boolean clearStoredDeviceId;
+  protected boolean disableSDKLoggingInProduction;
+  protected boolean disableUpdateSessionRequests;
+  protected boolean enableAllConsents;
+  protected boolean enableAutoEnrollFlag;
+  protected boolean enableAutomaticViewTracking;
+  protected boolean enableRemoteConfigAutomaticDownloadTriggers;
+  protected boolean httpPostForced;
+  protected boolean loggingEnabled;
+  protected boolean manualSessionControlEnabled;
+  protected boolean manualSessionControlHybridModeEnabled;
+  protected boolean pushIntentAddMetadata;
+  protected boolean shouldIgnoreAppCrawlers;
+  protected boolean shouldRequireConsent;
+  protected boolean starRatingDialogIsCancellable;
+  protected boolean starRatingDisableAskingForEachAppVersion;
+  protected boolean starRatingShownAutomatically;
+  protected boolean temporaryDeviceIdEnabled;
+  protected boolean trackOrientationChange;
+  protected int starRatingSessionLimit;
+  protected java.lang.Class[] automaticViewTrackingExceptions;
+  protected java.lang.Integer eventQueueSizeThreshold;
+  protected java.lang.Integer sessionUpdateTimerDelay;
+  protected java.lang.String appKey;
+  protected java.lang.String deviceID;
+  protected java.lang.String serverURL;
+  protected java.lang.String starRatingTextDismiss;
+  protected java.lang.String starRatingTextMessage;
+  protected java.lang.String starRatingTextTitle;
+  protected java.lang.String tamperingProtectionSalt;
+  protected java.lang.String[] appCrawlerNames;
+  protected java.lang.String[] certificatePinningCertificates;
+  protected java.lang.String[] enabledFeatureNames;
+  protected java.lang.String[] publicKeyPinningCertificates;
+  protected java.util.List<ly.count.android.sdk.RCDownloadCallback> remoteConfigGlobalCallbackList;
+  protected java.util.Map<java.lang.String, java.lang.Object> globalViewSegmentation;
+  protected java.util.Map<java.lang.String, java.lang.Object> providedUserProperties;
+  protected java.util.Map<java.lang.String, java.lang.String> customNetworkRequestHeaders;
+  protected javax.net.ssl.SSLSocketFactory customSSLSocketFactory;
+  protected ly.count.android.sdk.BaseInfoProvider baseInfoProvider;
+  protected ly.count.android.sdk.ConfigurationProvider configProvider;
+  protected ly.count.android.sdk.ConsentProvider consentProvider;
+  protected ly.count.android.sdk.Countly$LifecycleObserver lifecycleObserver;
+  protected ly.count.android.sdk.CountlyStore countlyStore;
+  protected ly.count.android.sdk.DeviceIdProvider deviceIdProvider;
+  protected ly.count.android.sdk.DeviceInfo deviceInfo;
+  protected ly.count.android.sdk.EventProvider eventProvider;
+  protected ly.count.android.sdk.EventQueueProvider eventQueueProvider;
+  protected ly.count.android.sdk.HealthTracker healthTracker;
+  protected ly.count.android.sdk.ImmediateRequestGenerator immediateRequestGenerator;
+  protected ly.count.android.sdk.MetricProvider metricProviderOverride;
+  protected ly.count.android.sdk.ModuleBase testModuleListener;
+  protected ly.count.android.sdk.RequestQueueProvider requestQueueProvider;
+  protected ly.count.android.sdk.SafeIDGenerator safeEventIDGenerator;
+  protected ly.count.android.sdk.SafeIDGenerator safeViewIDGenerator;
+  protected ly.count.android.sdk.StarRatingCallback starRatingCallback;
+  protected ly.count.android.sdk.StorageProvider storageProvider;
+  protected ly.count.android.sdk.ViewIdProvider viewIdProvider;
+  protected synchronized ly.count.android.sdk.CountlyConfig setCountlyStore(ly.count.android.sdk.CountlyStore);
+  protected synchronized ly.count.android.sdk.CountlyConfig setDisableUpdateSessionRequests(boolean);
+  public final ly.count.android.sdk.ConfigApm apm;
+  public final ly.count.android.sdk.ConfigContent content;
+  public final ly.count.android.sdk.ConfigCrashes crashes;
+  public final ly.count.android.sdk.ConfigExperimental experimental;
+  public final ly.count.android.sdk.ConfigSdkInternalLimits sdkInternalLimits;
+  public ly.count.android.sdk.CountlyConfig();
+  public ly.count.android.sdk.CountlyConfig(android.app.Application, java.lang.String, java.lang.String);
+  public ly.count.android.sdk.CountlyConfig(android.content.Context, java.lang.String, java.lang.String);
+  public ly.count.android.sdk.PerformanceCounterCollector pcc;
+  public synchronized ly.count.android.sdk.CountlyConfig RemoteConfigRegisterGlobalCallback(ly.count.android.sdk.RCDownloadCallback);
+  public synchronized ly.count.android.sdk.CountlyConfig addCustomNetworkRequestHeaders(java.util.Map<java.lang.String, java.lang.String>);
+  public synchronized ly.count.android.sdk.CountlyConfig disableBackoffMechanism();
+  public synchronized ly.count.android.sdk.CountlyConfig disableGradualRequestCleaner();
+  public synchronized ly.count.android.sdk.CountlyConfig disableHealthCheck();
+  public synchronized ly.count.android.sdk.CountlyConfig disableSDKBehaviorSettingsUpdates();
+  public synchronized ly.count.android.sdk.CountlyConfig disableSDKLoggingInProduction();
+  public synchronized ly.count.android.sdk.CountlyConfig disableStoringDefaultPushConsent();
+  public synchronized ly.count.android.sdk.CountlyConfig disableViewRestartForManualRecording();
+  public synchronized ly.count.android.sdk.CountlyConfig disableWebView();
+  public synchronized ly.count.android.sdk.CountlyConfig enableAutomaticViewShortNames();
+  public synchronized ly.count.android.sdk.CountlyConfig enableAutomaticViewTracking();
+  public synchronized ly.count.android.sdk.CountlyConfig enableCertificatePinning(java.lang.String[]);
+  public synchronized ly.count.android.sdk.CountlyConfig enableClearStoredDeviceId();
+  public synchronized ly.count.android.sdk.CountlyConfig enableExplicitStorageMode();
+  public synchronized ly.count.android.sdk.CountlyConfig enableManualSessionControl();
+  public synchronized ly.count.android.sdk.CountlyConfig enableManualSessionControlHybridMode();
+  public synchronized ly.count.android.sdk.CountlyConfig enablePublicKeyPinning(java.lang.String[]);
+  public synchronized ly.count.android.sdk.CountlyConfig enableRecommendedSecuritySettings();
+  public synchronized ly.count.android.sdk.CountlyConfig enableRemoteConfigAutomaticTriggers();
+  public synchronized ly.count.android.sdk.CountlyConfig enableRemoteConfigValueCaching();
+  public synchronized ly.count.android.sdk.CountlyConfig enableTemporaryDeviceIdMode();
+  public synchronized ly.count.android.sdk.CountlyConfig enrollABOnRCDownload();
+  public synchronized ly.count.android.sdk.CountlyConfig giveAllConsents();
+  public synchronized ly.count.android.sdk.CountlyConfig setAppCrawlerNames(java.lang.String[]);
+  public synchronized ly.count.android.sdk.CountlyConfig setAppKey(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setApplication(android.app.Application);
+  public synchronized ly.count.android.sdk.CountlyConfig setAutomaticViewTrackingExclusions(java.lang.Class[]);
+  public synchronized ly.count.android.sdk.CountlyConfig setConsentEnabled(java.lang.String[]);
+  public synchronized ly.count.android.sdk.CountlyConfig setContext(android.content.Context);
+  public synchronized ly.count.android.sdk.CountlyConfig setCustomSSLSocketFactory(javax.net.ssl.SSLSocketFactory);
+  public synchronized ly.count.android.sdk.CountlyConfig setDeviceId(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setDirectAttribution(java.lang.String, java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setDisableLocation();
+  public synchronized ly.count.android.sdk.CountlyConfig setEventQueueSizeToSend(int);
+  public synchronized ly.count.android.sdk.CountlyConfig setGlobalViewSegmentation(java.util.Map<java.lang.String, java.lang.Object>);
+  public synchronized ly.count.android.sdk.CountlyConfig setHttpPostForced(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setIfStarRatingDialogIsCancellable(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setIfStarRatingShownAutomatically(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setIndirectAttribution(java.util.Map<java.lang.String, java.lang.String>);
+  public synchronized ly.count.android.sdk.CountlyConfig setInitialActivity(android.app.Activity);
+  public synchronized ly.count.android.sdk.CountlyConfig setLocation(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setLogListener(ly.count.android.sdk.ModuleLog$LogCallback);
+  public synchronized ly.count.android.sdk.CountlyConfig setLoggingEnabled(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setMaxRequestQueueSize(int);
+  public synchronized ly.count.android.sdk.CountlyConfig setMetricOverride(java.util.Map<java.lang.String, java.lang.String>);
+  public synchronized ly.count.android.sdk.CountlyConfig setMetricProvider(ly.count.android.sdk.MetricProvider);
+  public synchronized ly.count.android.sdk.CountlyConfig setParameterTamperingProtectionSalt(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setPushIntentAddMetadata(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setRequestDropAgeHours(int);
+  public synchronized ly.count.android.sdk.CountlyConfig setRequestTimeoutDuration(int);
+  public synchronized ly.count.android.sdk.CountlyConfig setRequiresConsent(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setSDKBehaviorSettings(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setServerURL(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setShouldIgnoreAppCrawlers(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setStarRatingCallback(ly.count.android.sdk.StarRatingCallback);
+  public synchronized ly.count.android.sdk.CountlyConfig setStarRatingDisableAskingForEachAppVersion(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setStarRatingSessionLimit(int);
+  public synchronized ly.count.android.sdk.CountlyConfig setStarRatingTextDismiss(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setStarRatingTextMessage(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setStarRatingTextTitle(java.lang.String);
+  public synchronized ly.count.android.sdk.CountlyConfig setTrackOrientationChanges(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setUpdateSessionTimerDelay(int);
+  public synchronized ly.count.android.sdk.CountlyConfig setUseSerialExecutor(boolean);
+  public synchronized ly.count.android.sdk.CountlyConfig setUserProperties(java.util.Map<java.lang.String, java.lang.Object>);
+  public synchronized ly.count.android.sdk.CountlyConfig setWebviewDisplayOption(ly.count.android.sdk.WebViewDisplayOption);
+}
+
+public class ly.count.android.sdk.CountlyInitProvider extends android.content.ContentProvider {
+  public android.database.Cursor query(android.net.Uri, java.lang.String[], java.lang.String, java.lang.String[], java.lang.String);
+  public android.net.Uri insert(android.net.Uri, android.content.ContentValues);
+  public boolean onCreate();
+  public int delete(android.net.Uri, java.lang.String, java.lang.String[]);
+  public int update(android.net.Uri, android.content.ContentValues, java.lang.String, java.lang.String[]);
+  public java.lang.String getType(android.net.Uri);
+  public ly.count.android.sdk.CountlyInitProvider();
+}
+
+public class ly.count.android.sdk.CountlyStore implements ly.count.android.sdk.StorageProvider,ly.count.android.sdk.EventQueueProvider {
+  public boolean anythingSetInStorage();
+  public int getDataSchemaVersion();
+  public int getMaxRequestQueueSize();
+  public java.lang.String getDeviceID();
+  public java.lang.String getDeviceIDType();
+  public java.lang.String getHealthCheckCounterState();
+  public java.lang.String getServerConfig();
+  public ly.count.android.sdk.CountlyStore(android.content.Context, ly.count.android.sdk.ModuleLog);
+  public ly.count.android.sdk.CountlyStore(android.content.Context, ly.count.android.sdk.ModuleLog, boolean);
+  public ly.count.android.sdk.CountlyStore(android.content.Context, ly.count.android.sdk.ModuleLog, boolean, java.lang.String);
+  public ly.count.android.sdk.PerformanceCounterCollector pcc;
+  public static int getMessagingProvider(android.content.Context);
+  public static java.lang.String sanitizeNamespace(java.lang.String);
+  public static synchronized java.lang.Boolean getConsentPushNoInit(android.content.Context);
+  public static synchronized void cachePushData(java.lang.String, java.lang.String, android.content.Context);
+  public static void storeMessagingProvider(int, android.content.Context);
+  public synchronized int getEventQueueSize();
+  public synchronized int takeAutomaticCrashCount();
+  public synchronized java.lang.String getCachedAdvertisingId();
+  public synchronized java.lang.String getEventsForRequestAndEmptyEventQueue();
+  public synchronized java.lang.String getRemoteConfigValues();
+  public synchronized java.lang.String getRequestQueueRaw();
+  public synchronized java.lang.String getStarRatingPreferences();
+  public synchronized java.lang.String[] getEvents();
+  public synchronized java.lang.String[] getRequests();
+  public synchronized java.util.List<ly.count.android.sdk.Event> getEventList();
+  public synchronized void addRequest(java.lang.String, boolean);
+  public synchronized void clear();
+  public synchronized void esWriteCacheToStorage(ly.count.android.sdk.ExplicitStorageCallback);
+  public synchronized void incrementAutomaticCrashCount();
+  public synchronized void removeEvents(java.util.List<ly.count.android.sdk.Event>);
+  public synchronized void removeRequest(java.lang.String);
+  public synchronized void replaceRequestList(java.util.List<java.lang.String>);
+  public synchronized void replaceRequests(java.lang.String[]);
+  public synchronized void replaceRequests_reworked(java.lang.String[]);
+  public synchronized void setCachedAdvertisingId(java.lang.String);
+  public synchronized void setRemoteConfigValues(java.lang.String);
+  public synchronized void setStarRatingPreferences(java.lang.String);
+  public void recordEventToEventQueue(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int, double, double, long, int, int, java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+  public void setConfigurationProvider(ly.count.android.sdk.ConfigurationProvider);
+  public void setDataSchemaVersion(int);
+  public void setDeviceID(java.lang.String);
+  public void setDeviceIDType(java.lang.String);
+  public void setHealthCheckCounterState(java.lang.String);
+  public void setLimits(int);
+  public void setRequestAgeLimit(int);
+  public void setServerConfig(java.lang.String);
+}
+
+public class ly.count.android.sdk.CrashData {
+  protected int getChangedFieldsAsInt();
+  protected java.lang.String getBreadcrumbsAsString();
+  protected ly.count.android.sdk.CrashData(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, java.util.List<java.lang.String>, java.util.Map<java.lang.String, java.lang.Object>, boolean);
+  protected void calculateChangedFields();
+  public boolean getFatal();
+  public java.lang.String getStackTrace();
+  public java.util.List<java.lang.String> getBreadcrumbs();
+  public java.util.Map<java.lang.String, java.lang.Object> getCrashMetrics();
+  public java.util.Map<java.lang.String, java.lang.Object> getCrashSegmentation();
+  public void setBreadcrumbs(java.util.List<java.lang.String>);
+  public void setCrashMetrics(java.util.Map<java.lang.String, java.lang.Object>);
+  public void setCrashSegmentation(java.util.Map<java.lang.String, java.lang.Object>);
+  public void setFatal(boolean);
+  public void setStackTrace(java.lang.String);
+}
+
+public interface ly.count.android.sdk.CrashFilterCallback {
+  public abstract boolean filterCrash(java.lang.String);
+}
+
+public class ly.count.android.sdk.DeviceId {
+  protected boolean isTemporaryIdModeEnabled();
+  protected java.lang.String getCurrentId();
+  protected ly.count.android.sdk.DeviceId(java.lang.String, ly.count.android.sdk.StorageProvider, ly.count.android.sdk.ModuleLog, ly.count.android.sdk.OpenUDIDProvider);
+  protected ly.count.android.sdk.DeviceIdType getType();
+  protected static final java.lang.String temporaryCountlyDeviceId;
+  protected void changeToCustomId(java.lang.String);
+  protected void enterTempIDMode();
+  protected void setId(ly.count.android.sdk.DeviceIdType, java.lang.String);
+}
+
+public final class ly.count.android.sdk.DeviceIdType extends java.lang.Enum<ly.count.android.sdk.DeviceIdType> {
+  public static final ly.count.android.sdk.DeviceIdType DEVELOPER_SUPPLIED;
+  public static final ly.count.android.sdk.DeviceIdType OPEN_UDID;
+  public static final ly.count.android.sdk.DeviceIdType TEMPORARY_ID;
+  public static ly.count.android.sdk.DeviceIdType valueOf(java.lang.String);
+  public static ly.count.android.sdk.DeviceIdType[] values();
+}
+
+public class ly.count.android.sdk.DiskMetric {
+  public final java.lang.String totalMb;
+  public final java.lang.String usedMb;
+  public ly.count.android.sdk.DiskMetric(java.lang.String, java.lang.String);
+}
+
+public class ly.count.android.sdk.ExperimentInformation {
+  public java.lang.String currentVariant;
+  public java.lang.String experimentDescription;
+  public java.lang.String experimentID;
+  public java.lang.String experimentName;
+  public java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.lang.Object>> variants;
+  public ly.count.android.sdk.ExperimentInformation(java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.util.Map<java.lang.String, java.util.Map<java.lang.String, java.lang.Object>>);
+}
+
+public interface ly.count.android.sdk.FeedbackRatingCallback {
+  public abstract void callback(java.lang.String);
+}
+
+public interface ly.count.android.sdk.GlobalCrashFilterCallback {
+  public abstract boolean filterCrash(ly.count.android.sdk.CrashData);
+}
+
+public class ly.count.android.sdk.HealthCheckCounter implements ly.count.android.sdk.HealthTracker {
+  public int consecutiveBackoffRequest;
+  public int statusCode;
+  public java.lang.String errorMessage;
+  public long countBackoffRequest;
+  public long countLogError;
+  public long countLogWarning;
+  public ly.count.android.sdk.HealthCheckCounter(ly.count.android.sdk.StorageProvider, ly.count.android.sdk.ModuleLog);
+  public void clearAndSave();
+  public void logBackoffRequest();
+  public void logConsecutiveBackoffRequest();
+  public void logError();
+  public void logFailedNetworkRequest(int, java.lang.String);
+  public void logWarning();
+  public void recordLogCode(java.lang.String);
+  public void recordLogCode(java.lang.String, int);
+  public void recordLogCode(java.lang.String, java.lang.String);
+  public void recordUsage(java.lang.String, java.lang.String);
+  public void saveState();
+  public void stopRecordingForCrash();
+}
+
+public interface ly.count.android.sdk.ImmediateRequestMaker$InternalImmediateRequestCallback {
+  public abstract void callback(org.json.JSONObject);
+}
+
+public interface ly.count.android.sdk.MetricProvider {
+  public default android.util.DisplayMetrics getDisplayMetrics(android.content.Context);
+  public default java.lang.String getAppVersion(android.content.Context);
+  public default java.lang.String getBatteryLevel(android.content.Context);
+  public default java.lang.String getCarrier(android.content.Context);
+  public default java.lang.String getCpu();
+  public default java.lang.String getDensity(android.content.Context);
+  public default java.lang.String getDevice();
+  public default java.lang.String getDeviceType(android.content.Context);
+  public default java.lang.String getLocale();
+  public default java.lang.String getManufacturer();
+  public default java.lang.String getOS();
+  public default java.lang.String getOSVersion();
+  public default java.lang.String getOpenGL(android.content.Context);
+  public default java.lang.String getOrientation(android.content.Context);
+  public default java.lang.String getRamCurrent(android.content.Context);
+  public default java.lang.String getRamTotal();
+  public default java.lang.String getResolution(android.content.Context);
+  public default java.lang.String getRunningTime();
+  public default java.lang.String getStore(android.content.Context);
+  public default java.lang.String getTimezoneOffset();
+  public default java.lang.String getTotalRAM();
+  public default java.lang.String hasHinge(android.content.Context);
+  public default java.lang.String isMuted(android.content.Context);
+  public default java.lang.String isOnline(android.content.Context);
+  public default java.lang.String isRooted();
+  public default ly.count.android.sdk.DiskMetric getDiskSpaces(android.content.Context);
+}
+
+public class ly.count.android.sdk.ModuleAPM extends ly.count.android.sdk.ModuleBase {
+}
+
+public class ly.count.android.sdk.ModuleAPM$Apm {
+  public ly.count.android.sdk.ModuleAPM$Apm(ly.count.android.sdk.ModuleAPM);
+  public void cancelAllTraces();
+  public void cancelTrace(java.lang.String);
+  public void endNetworkRequest(java.lang.String, java.lang.String, int, int, int);
+  public void endTrace(java.lang.String, java.util.Map<java.lang.String, java.lang.Integer>);
+  public void recordNetworkTrace(java.lang.String, int, int, int, long, long);
+  public void setAppIsLoaded();
+  public void startNetworkRequest(java.lang.String, java.lang.String);
+  public void startTrace(java.lang.String);
+}
+
+public class ly.count.android.sdk.ModuleAttribution extends ly.count.android.sdk.ModuleBase {
+  public void halt();
+}
+
+public class ly.count.android.sdk.ModuleAttribution$Attribution {
+  public ly.count.android.sdk.ModuleAttribution$Attribution(ly.count.android.sdk.ModuleAttribution);
+  public void recordDirectAttribution(java.lang.String, java.lang.String);
+  public void recordIndirectAttribution(java.util.Map<java.lang.String, java.lang.String>);
+}
+
+public class ly.count.android.sdk.ModuleConsent extends ly.count.android.sdk.ModuleBase implements ly.count.android.sdk.ConsentProvider {
+  protected static final java.lang.String[] validFeatureNames;
+  protected volatile boolean requiresConsent;
+  public boolean anyConsentGiven();
+  public boolean getConsent(java.lang.String);
+  public boolean getConsentSilently(java.lang.String);
+  public void checkAllConsentInternal();
+  public void removeConsentAllInternal(ly.count.android.sdk.ModuleConsent$ConsentChangeSource);
+  public void removeConsentInternal(java.lang.String[], ly.count.android.sdk.ModuleConsent$ConsentChangeSource);
+}
+
+public class ly.count.android.sdk.ModuleConsent$Consent {
+  public boolean getConsent(java.lang.String);
+  public ly.count.android.sdk.ModuleConsent$Consent(ly.count.android.sdk.ModuleConsent);
+  public void checkAllConsent();
+  public void createFeatureGroup(java.lang.String, java.lang.String[]);
+  public void giveConsent(java.lang.String[]);
+  public void giveConsentAll();
+  public void removeConsent(java.lang.String[]);
+  public void removeConsentAll();
+  public void setConsent(java.lang.String[], boolean);
+  public void setConsentFeatureGroup(java.lang.String, boolean);
+}
+
+public final class ly.count.android.sdk.ModuleConsent$ConsentChangeSource extends java.lang.Enum<ly.count.android.sdk.ModuleConsent$ConsentChangeSource> {
+  public static final ly.count.android.sdk.ModuleConsent$ConsentChangeSource ChangeConsentCall;
+  public static final ly.count.android.sdk.ModuleConsent$ConsentChangeSource DeviceIDChangedNotMerged;
+  public static ly.count.android.sdk.ModuleConsent$ConsentChangeSource valueOf(java.lang.String);
+  public static ly.count.android.sdk.ModuleConsent$ConsentChangeSource[] values();
+}
+
+public class ly.count.android.sdk.ModuleContent extends ly.count.android.sdk.ModuleBase {
+}
+
+public class ly.count.android.sdk.ModuleContent$Content {
+  public ly.count.android.sdk.ModuleContent$Content(ly.count.android.sdk.ModuleContent);
+  public void enterContentZone();
+  public void exitContentZone();
+  public void previewContent(java.lang.String);
+  public void refreshContentZone();
+  public void setGlobalContentSegmentation(java.util.Map<java.lang.String, java.lang.Object>);
+}
+
+public class ly.count.android.sdk.ModuleCrash extends ly.count.android.sdk.ModuleBase {
+  public void sendCrashReportToQueue(ly.count.android.sdk.CrashData, boolean);
+}
+
+public class ly.count.android.sdk.ModuleCrash$Crashes {
+  public ly.count.android.sdk.Countly addCrashBreadcrumb(java.lang.String);
+  public ly.count.android.sdk.Countly recordHandledException(java.lang.Exception);
+  public ly.count.android.sdk.Countly recordHandledException(java.lang.Throwable);
+  public ly.count.android.sdk.Countly recordHandledException(java.lang.Throwable, java.util.Map<java.lang.String, java.lang.Object>);
+  public ly.count.android.sdk.Countly recordUnhandledException(java.lang.Exception);
+  public ly.count.android.sdk.Countly recordUnhandledException(java.lang.Throwable);
+  public ly.count.android.sdk.Countly recordUnhandledException(java.lang.Throwable, java.util.Map<java.lang.String, java.lang.Object>);
+  public ly.count.android.sdk.ModuleCrash$Crashes(ly.count.android.sdk.ModuleCrash);
+}
+
+public class ly.count.android.sdk.ModuleDeviceId extends ly.count.android.sdk.ModuleBase implements ly.count.android.sdk.OpenUDIDProvider,ly.count.android.sdk.DeviceIdProvider {
+  public boolean isTemporaryIdEnabled();
+  public java.lang.String getDeviceId();
+  public java.lang.String getUUID();
+  public ly.count.android.sdk.DeviceId getDeviceIdInstance();
+  public static final java.lang.String PREFS_NAME;
+  public static final java.lang.String PREF_KEY;
+  public void initFinished(ly.count.android.sdk.CountlyConfig);
+}
+
+public class ly.count.android.sdk.ModuleDeviceId$DeviceId {
+  public java.lang.String getID();
+  public ly.count.android.sdk.DeviceIdType getType();
+  public ly.count.android.sdk.ModuleDeviceId$DeviceId(ly.count.android.sdk.ModuleDeviceId);
+  public void changeWithMerge(java.lang.String);
+  public void changeWithoutMerge(java.lang.String);
+  public void enableTemporaryIdMode();
+  public void setID(java.lang.String);
+}
+
+public class ly.count.android.sdk.ModuleEvents extends ly.count.android.sdk.ModuleBase implements ly.count.android.sdk.EventProvider {
+  public void recordEventInternal(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int, double, double, ly.count.android.sdk.UtilsTime$Instant, java.lang.String);
+}
+
+public class ly.count.android.sdk.ModuleEvents$Events {
+  public boolean cancelEvent(java.lang.String);
+  public boolean endEvent(java.lang.String);
+  public boolean endEvent(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int, double);
+  public boolean startEvent(java.lang.String);
+  public ly.count.android.sdk.ModuleEvents$Events(ly.count.android.sdk.ModuleEvents);
+  public void recordEvent(java.lang.String);
+  public void recordEvent(java.lang.String, int);
+  public void recordEvent(java.lang.String, int, double);
+  public void recordEvent(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public void recordEvent(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int);
+  public void recordEvent(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int, double);
+  public void recordEvent(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int, double, double);
+  public void recordPastEvent(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int, double, double, long);
+  public void recordPastEvent(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, long);
+}
+
+public class ly.count.android.sdk.ModuleFeedback extends ly.count.android.sdk.ModuleBase {
+}
+
+public class ly.count.android.sdk.ModuleFeedback$CountlyFeedbackWidget implements java.io.Serializable {
+  public java.lang.String name;
+  public java.lang.String widgetId;
+  public java.lang.String widgetVersion;
+  public java.lang.String[] tags;
+  public ly.count.android.sdk.ModuleFeedback$CountlyFeedbackWidget();
+  public ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType type;
+}
+
+public class ly.count.android.sdk.ModuleFeedback$Feedback {
+  public ly.count.android.sdk.ModuleFeedback$Feedback(ly.count.android.sdk.ModuleFeedback);
+  public void getAvailableFeedbackWidgets(ly.count.android.sdk.ModuleFeedback$RetrieveFeedbackWidgets);
+  public void getFeedbackWidgetData(ly.count.android.sdk.ModuleFeedback$CountlyFeedbackWidget, ly.count.android.sdk.ModuleFeedback$RetrieveFeedbackWidgetData);
+  public void presentFeedbackWidget(ly.count.android.sdk.ModuleFeedback$CountlyFeedbackWidget, android.content.Context, ly.count.android.sdk.ModuleFeedback$FeedbackCallback);
+  public void presentNPS(android.content.Context);
+  public void presentNPS(android.content.Context, java.lang.String);
+  public void presentNPS(android.content.Context, java.lang.String, ly.count.android.sdk.ModuleFeedback$FeedbackCallback);
+  public void presentRating(android.content.Context);
+  public void presentRating(android.content.Context, java.lang.String);
+  public void presentRating(android.content.Context, java.lang.String, ly.count.android.sdk.ModuleFeedback$FeedbackCallback);
+  public void presentSurvey(android.content.Context);
+  public void presentSurvey(android.content.Context, java.lang.String);
+  public void presentSurvey(android.content.Context, java.lang.String, ly.count.android.sdk.ModuleFeedback$FeedbackCallback);
+  public void reportFeedbackWidgetManually(ly.count.android.sdk.ModuleFeedback$CountlyFeedbackWidget, org.json.JSONObject, java.util.Map<java.lang.String, java.lang.Object>);
+}
+
+public interface ly.count.android.sdk.ModuleFeedback$FeedbackCallback {
+  public abstract void onClosed();
+  public abstract void onFinished(java.lang.String);
+}
+
+public final class ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType extends java.lang.Enum<ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType> {
+  public static final ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType nps;
+  public static final ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType rating;
+  public static final ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType survey;
+  public static ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType valueOf(java.lang.String);
+  public static ly.count.android.sdk.ModuleFeedback$FeedbackWidgetType[] values();
+}
+
+public interface ly.count.android.sdk.ModuleFeedback$RetrieveFeedbackWidgetData {
+  public abstract void onFinished(org.json.JSONObject, java.lang.String);
+}
+
+public interface ly.count.android.sdk.ModuleFeedback$RetrieveFeedbackWidgets {
+  public abstract void onFinished(java.util.List<ly.count.android.sdk.ModuleFeedback$CountlyFeedbackWidget>, java.lang.String);
+}
+
+public class ly.count.android.sdk.ModuleLocation extends ly.count.android.sdk.ModuleBase {
+}
+
+public class ly.count.android.sdk.ModuleLocation$Location {
+  public ly.count.android.sdk.ModuleLocation$Location(ly.count.android.sdk.ModuleLocation);
+  public void disableLocation();
+  public void setLocation(java.lang.String, java.lang.String, java.lang.String, java.lang.String);
+}
+
+public class ly.count.android.sdk.ModuleLog {
+  public boolean logEnabled();
+  public ly.count.android.sdk.ModuleLog();
+  public void d(java.lang.String);
+  public void e(java.lang.String);
+  public void e(java.lang.String, java.lang.Throwable);
+  public void i(java.lang.String);
+  public void trackLogCode(java.lang.String);
+  public void v(java.lang.String);
+  public void w(java.lang.String);
+  public void w(java.lang.String, java.lang.Throwable);
+}
+
+public interface ly.count.android.sdk.ModuleLog$LogCallback {
+  public abstract void LogHappened(java.lang.String, ly.count.android.sdk.ModuleLog$LogLevel);
+}
+
+public final class ly.count.android.sdk.ModuleLog$LogLevel extends java.lang.Enum<ly.count.android.sdk.ModuleLog$LogLevel> {
+  public static final ly.count.android.sdk.ModuleLog$LogLevel Debug;
+  public static final ly.count.android.sdk.ModuleLog$LogLevel Error;
+  public static final ly.count.android.sdk.ModuleLog$LogLevel Info;
+  public static final ly.count.android.sdk.ModuleLog$LogLevel Verbose;
+  public static final ly.count.android.sdk.ModuleLog$LogLevel Warning;
+  public static ly.count.android.sdk.ModuleLog$LogLevel valueOf(java.lang.String);
+  public static ly.count.android.sdk.ModuleLog$LogLevel[] values();
+}
+
+public class ly.count.android.sdk.ModuleRatings extends ly.count.android.sdk.ModuleBase {
+}
+
+public class ly.count.android.sdk.ModuleRatings$Ratings {
+  public int getAutomaticStarRatingSessionLimit();
+  public int getCurrentVersionsSessionCount();
+  public ly.count.android.sdk.ModuleRatings$Ratings(ly.count.android.sdk.ModuleRatings);
+  public void clearAutomaticStarRatingSessionCount();
+  public void presentRatingWidgetWithID(java.lang.String, java.lang.String, android.app.Activity, ly.count.android.sdk.FeedbackRatingCallback);
+  public void recordRatingWidgetWithID(java.lang.String, int, java.lang.String, java.lang.String, boolean);
+  public void showStarRating(android.app.Activity, ly.count.android.sdk.StarRatingCallback);
+}
+
+public class ly.count.android.sdk.ModuleRemoteConfig extends ly.count.android.sdk.ModuleBase {
+  public static final java.lang.String variantObjectNameKey;
+  public void halt();
+  public void initFinished(ly.count.android.sdk.CountlyConfig);
+}
+
+public class ly.count.android.sdk.ModuleRemoteConfig$RemoteConfig {
+  public java.lang.String[] testingGetVariantsForKey(java.lang.String);
+  public java.util.Map<java.lang.String, java.lang.String[]> testingGetAllVariants();
+  public java.util.Map<java.lang.String, ly.count.android.sdk.ExperimentInformation> testingGetAllExperimentInfo();
+  public java.util.Map<java.lang.String, ly.count.android.sdk.RCData> getAllValuesAndEnroll();
+  public java.util.Map<java.lang.String, ly.count.android.sdk.RCData> getValues();
+  public ly.count.android.sdk.ModuleRemoteConfig$RemoteConfig(ly.count.android.sdk.ModuleRemoteConfig);
+  public ly.count.android.sdk.RCData getValue(java.lang.String);
+  public ly.count.android.sdk.RCData getValueAndEnroll(java.lang.String);
+  public void clearAll();
+  public void downloadAllKeys(ly.count.android.sdk.RCDownloadCallback);
+  public void downloadOmittingKeys(java.lang.String[], ly.count.android.sdk.RCDownloadCallback);
+  public void downloadSpecificKeys(java.lang.String[], ly.count.android.sdk.RCDownloadCallback);
+  public void enrollIntoABTestsForKeys(java.lang.String[]);
+  public void exitABTestsForKeys(java.lang.String[]);
+  public void registerDownloadCallback(ly.count.android.sdk.RCDownloadCallback);
+  public void removeDownloadCallback(ly.count.android.sdk.RCDownloadCallback);
+  public void testingDownloadExperimentInformation(ly.count.android.sdk.RCVariantCallback);
+  public void testingDownloadVariantInformation(ly.count.android.sdk.RCVariantCallback);
+  public void testingEnrollIntoVariant(java.lang.String, java.lang.String, ly.count.android.sdk.RCVariantCallback);
+}
+
+public class ly.count.android.sdk.ModuleRequestQueue extends ly.count.android.sdk.ModuleBase implements ly.count.android.sdk.BaseInfoProvider {
+  protected void sendEventsIfNeeded(boolean);
+  protected void sendEventsIfNeeded(boolean, boolean);
+  public java.lang.String getAppKey();
+  public java.lang.String getServerURL();
+  public synchronized void addDirectRequestInternal(java.util.Map<java.lang.String, java.lang.String>);
+  public synchronized void requestQueueEraseAppKeysRequestsInternal();
+  public synchronized void requestQueueOverwriteAppKeysInternal();
+  public void attemptToSendStoredRequestsInternal();
+  public void flushQueuesInternal();
+}
+
+public class ly.count.android.sdk.ModuleRequestQueue$RequestQueue {
+  public boolean ifShouldIgnoreCrawlers();
+  public boolean isDeviceAppCrawler();
+  public boolean isHttpPostForced();
+  public ly.count.android.sdk.ModuleRequestQueue$RequestQueue(ly.count.android.sdk.ModuleRequestQueue);
+  public void addCustomNetworkRequestHeaders(java.util.Map<java.lang.String, java.lang.String>);
+  public void addDirectRequest(java.util.Map<java.lang.String, java.lang.String>);
+  public void attemptToSendStoredRequests();
+  public void changeAppKey(java.lang.String);
+  public void changeServerUrl(java.lang.String);
+  public void eraseWrongAppKeyRequests();
+  public void esWriteCachesToPersistence();
+  public void esWriteCachesToPersistence(ly.count.android.sdk.ExplicitStorageCallback);
+  public void flushQueues();
+  public void overwriteAppKeys();
+  public void recordMetrics(java.util.Map<java.lang.String, java.lang.String>);
+}
+
+public class ly.count.android.sdk.ModuleSessions extends ly.count.android.sdk.ModuleBase {
+  public boolean sessionIsRunning();
+}
+
+public class ly.count.android.sdk.ModuleSessions$Sessions {
+  public ly.count.android.sdk.ModuleSessions$Sessions(ly.count.android.sdk.ModuleSessions);
+  public void beginSession();
+  public void endSession();
+  public void updateSession();
+}
+
+public class ly.count.android.sdk.ModuleUserProfile extends ly.count.android.sdk.ModuleBase {
+  protected org.json.JSONObject toJSON();
+  public void setData(java.util.Map<java.lang.String, java.lang.String>);
+}
+
+public class ly.count.android.sdk.ModuleUserProfile$UserProfile {
+  public ly.count.android.sdk.ModuleUserProfile$UserProfile(ly.count.android.sdk.ModuleUserProfile);
+  public void clear();
+  public void increment(java.lang.String);
+  public void incrementBy(java.lang.String, int);
+  public void multiply(java.lang.String, int);
+  public void pull(java.lang.String, java.lang.String);
+  public void push(java.lang.String, java.lang.String);
+  public void pushUnique(java.lang.String, java.lang.String);
+  public void save();
+  public void saveMax(java.lang.String, int);
+  public void saveMin(java.lang.String, int);
+  public void setOnce(java.lang.String, java.lang.String);
+  public void setProperties(java.util.Map<java.lang.String, java.lang.Object>);
+  public void setProperty(java.lang.String, java.lang.Object);
+}
+
+public class ly.count.android.sdk.ModuleViews extends ly.count.android.sdk.ModuleBase implements ly.count.android.sdk.ViewIdProvider {
+  public java.lang.String getCurrentViewId();
+  public java.lang.String getPreviousViewId();
+  public void addSegmentationToViewWithIDInternal(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public void addSegmentationToViewWithNameInternal(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public void resetFirstView();
+  public void updateGlobalViewSegmentationInternal(java.util.Map<java.lang.String, java.lang.Object>);
+}
+
+public class ly.count.android.sdk.ModuleViews$Views {
+  public java.lang.String startAutoStoppedView(java.lang.String);
+  public java.lang.String startAutoStoppedView(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public java.lang.String startView(java.lang.String);
+  public java.lang.String startView(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public ly.count.android.sdk.ModuleViews$Views(ly.count.android.sdk.ModuleViews);
+  public void addSegmentationToViewWithID(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public void addSegmentationToViewWithName(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public void pauseViewWithID(java.lang.String);
+  public void resumeViewWithID(java.lang.String);
+  public void setGlobalViewSegmentation(java.util.Map<java.lang.String, java.lang.Object>);
+  public void stopAllViews(java.util.Map<java.lang.String, java.lang.Object>);
+  public void stopViewWithID(java.lang.String);
+  public void stopViewWithID(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public void stopViewWithName(java.lang.String);
+  public void stopViewWithName(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>);
+  public void updateGlobalViewSegmentation(java.util.Map<java.lang.String, java.lang.Object>);
+}
+
+public class ly.count.android.sdk.PerformanceCounterCollector {
+  public java.lang.String ReturnResults();
+  public ly.count.android.sdk.PerformanceCounterCollector();
+  public void Clear();
+  public void TrackCounter(java.lang.String, double);
+  public void TrackCounterTimeNs(java.lang.String, long);
+}
+
+public class ly.count.android.sdk.RCData {
+  public boolean isCurrentUsersData;
+  public java.lang.Object value;
+  public ly.count.android.sdk.RCData(java.lang.Object, boolean);
+}
+
+public interface ly.count.android.sdk.RCDownloadCallback {
+  public abstract void callback(ly.count.android.sdk.RequestResult, java.lang.String, boolean, java.util.Map<java.lang.String, ly.count.android.sdk.RCData>);
+}
+
+public interface ly.count.android.sdk.RCVariantCallback {
+  public abstract void callback(ly.count.android.sdk.RequestResult, java.lang.String);
+}
+
+public interface ly.count.android.sdk.RemoteConfigCallback {
+  public abstract void callback(java.lang.String);
+}
+
+public final class ly.count.android.sdk.RequestResult extends java.lang.Enum<ly.count.android.sdk.RequestResult> {
+  public static final ly.count.android.sdk.RequestResult Error;
+  public static final ly.count.android.sdk.RequestResult NetworkIssue;
+  public static final ly.count.android.sdk.RequestResult Success;
+  public static ly.count.android.sdk.RequestResult valueOf(java.lang.String);
+  public static ly.count.android.sdk.RequestResult[] values();
+}
+
+public interface ly.count.android.sdk.StarRatingCallback {
+  public abstract void onDismiss();
+  public abstract void onRate(int);
+}
+
+public class ly.count.android.sdk.Utils {
+  protected static final java.lang.String COMM_URL;
+  public ly.count.android.sdk.Utils();
+  public static <T> java.util.concurrent.Future<T> runInBackground(java.util.concurrent.Callable<T>);
+  public static android.webkit.WebResourceResponse blankWebResourceResponse();
+  public static boolean isAppInDebuggableMode(android.content.Context);
+  public static boolean isExternalSchemeAllowed(java.lang.String, java.util.Set<java.lang.String>);
+  public static boolean isNotNullOrEmpty(java.lang.String);
+  public static boolean isNullOrEmpty(java.lang.String);
+  public static boolean isRequestTooOld(java.lang.String, int, java.lang.String, ly.count.android.sdk.ModuleLog);
+  public static boolean isWebContentSchemeAllowed(java.lang.String, java.util.Set<java.lang.String>);
+  public static byte[] readStream(java.io.InputStream);
+  public static byte[] readStream(java.io.InputStream, ly.count.android.sdk.ModuleLog);
+  public static java.lang.String combineParamsIntoRequest(java.util.Map<java.lang.String, java.lang.String>);
+  public static java.lang.String formatTimeDifference(long);
+  public static java.lang.String safeRandomVal();
+  public static java.util.Map<java.lang.String, java.lang.String> splitIntoParams(java.lang.String, ly.count.android.sdk.ModuleLog);
+  public static java.util.Set<java.lang.String> normalizeSchemeSet(java.util.List<java.lang.String>);
+  public static java.util.concurrent.Future<?> runInBackground(java.lang.Runnable);
+  public static void applyWebViewSecurityDefaults(android.webkit.WebSettings);
+}
+
+public class ly.count.android.sdk.UtilsInternalLimits {
+  protected static <T> void truncateSegmentationKeys(java.util.Map<java.lang.String, T>, int, ly.count.android.sdk.ModuleLog, java.lang.String);
+  protected static java.lang.String applyInternalLimitsToStackTraces(java.lang.String, int, java.lang.String, ly.count.android.sdk.ModuleLog);
+  protected static java.lang.String truncateKeyLength(java.lang.String, int, ly.count.android.sdk.ModuleLog, java.lang.String);
+  protected static java.lang.String truncateValueSize(java.lang.String, int, ly.count.android.sdk.ModuleLog, java.lang.String);
+  protected static void applySdkInternalLimitsToSegmentation(java.util.Map<java.lang.String, java.lang.Object>, ly.count.android.sdk.ConfigSdkInternalLimits, ly.count.android.sdk.ModuleLog, java.lang.String);
+  protected static void truncateSegmentationKeysValues(java.util.Map<java.lang.String, java.lang.Object>, ly.count.android.sdk.ConfigSdkInternalLimits, ly.count.android.sdk.ModuleLog, java.lang.String);
+}
+
+public class ly.count.android.sdk.UtilsNetworking {
+  protected static java.lang.String encodedArrayBuilder(java.lang.String[]);
+  protected static java.lang.String sha256Hash(java.lang.String, ly.count.android.sdk.ModuleLog);
+  protected static java.lang.String urlDecodeString(java.lang.String);
+  protected static java.lang.String urlEncodeString(java.lang.String);
+  public ly.count.android.sdk.UtilsNetworking();
+  public static java.lang.String bytesToHex(byte[]);
+  public static java.net.URLConnection openResourceConnection(java.net.URL) throws java.io.IOException;
+}
+
+public class ly.count.android.sdk.UtilsTime {
+  protected static int ONE_SECOND_IN_MS;
+  public ly.count.android.sdk.UtilsTime();
+  public static int currentTimestampSeconds();
+  public static synchronized long currentTimestampMs();
+  public static synchronized long getNanoTime();
+  public static synchronized ly.count.android.sdk.UtilsTime$Instant getCurrentInstant();
+}
+
+public class ly.count.android.sdk.UtilsTime$Instant {
+  protected ly.count.android.sdk.UtilsTime$Instant(long, int, int);
+  public final int dow;
+  public final int hour;
+  public final long timestampMs;
+  public static ly.count.android.sdk.UtilsTime$Instant get(long);
+}
+
+public final class ly.count.android.sdk.WebViewDisplayOption extends java.lang.Enum<ly.count.android.sdk.WebViewDisplayOption> {
+  public static final ly.count.android.sdk.WebViewDisplayOption IMMERSIVE;
+  public static final ly.count.android.sdk.WebViewDisplayOption SAFE_AREA;
+  public static ly.count.android.sdk.WebViewDisplayOption valueOf(java.lang.String);
+  public static ly.count.android.sdk.WebViewDisplayOption[] values();
+}
+
+public interface ly.count.android.sdk.WebViewPageLoadedListener {
+  public abstract void onPageLoaded(boolean);
+}
+
+public class ly.count.android.sdk.messaging.CountlyConfigPush {
+  public ly.count.android.sdk.messaging.CountlyConfigPush(android.app.Application);
+  public synchronized ly.count.android.sdk.messaging.CountlyConfigPush enableAdditionalIntentRedirectionChecks();
+  public synchronized ly.count.android.sdk.messaging.CountlyConfigPush enableRecommendedSecuritySettings(java.util.List<java.lang.String>);
+  public synchronized ly.count.android.sdk.messaging.CountlyConfigPush setAllowedIntentClassNames(java.util.List<java.lang.String>);
+  public synchronized ly.count.android.sdk.messaging.CountlyConfigPush setAllowedIntentPackageNames(java.util.List<java.lang.String>);
+  public synchronized ly.count.android.sdk.messaging.CountlyConfigPush setAllowedIntentSchemes(java.util.List<java.lang.String>);
+  public synchronized ly.count.android.sdk.messaging.CountlyConfigPush setNotificationButtonURLHandler(ly.count.android.sdk.messaging.CountlyNotificationButtonURLHandler);
+  public synchronized ly.count.android.sdk.messaging.CountlyConfigPush setProvider(ly.count.android.sdk.Countly$CountlyMessagingProvider);
+}
+
+public interface ly.count.android.sdk.messaging.CountlyNotificationButtonURLHandler {
+  public abstract boolean onClick(java.lang.String, android.content.Context);
+}
+
+public class ly.count.android.sdk.messaging.CountlyPush {
+  protected static ly.count.android.sdk.messaging.CountlyConfigPush countlyConfigPush;
+  public ly.count.android.sdk.messaging.CountlyPush();
+  public static boolean useAdditionalIntentRedirectionChecks;
+  public static final java.lang.String ALLOWED_CLASS_NAMES;
+  public static final java.lang.String ALLOWED_PACKAGE_NAMES;
+  public static final java.lang.String CHANNEL_ID;
+  public static final java.lang.String COUNTLY_BROADCAST_PERMISSION_POSTFIX;
+  public static final java.lang.String EXTRA_ACTION_INDEX;
+  public static final java.lang.String EXTRA_INTENT;
+  public static final java.lang.String EXTRA_MESSAGE;
+  public static final java.lang.String SECURE_NOTIFICATION_BROADCAST;
+  public static java.lang.Boolean displayDialog(android.app.Activity, ly.count.android.sdk.messaging.CountlyPush$Message);
+  public static java.lang.Boolean displayMessage(android.content.Context, java.util.Map<java.lang.String, java.lang.String>, int, android.content.Intent);
+  public static java.lang.Boolean displayMessage(android.content.Context, ly.count.android.sdk.messaging.CountlyPush$Message, int, android.content.Intent);
+  public static java.lang.Boolean displayNotification(android.content.Context, ly.count.android.sdk.messaging.CountlyPush$Message, int, android.content.Intent);
+  public static ly.count.android.sdk.messaging.CountlyPush$Message decodeMessage(java.util.Map<java.lang.String, java.lang.String>);
+  public static void init(ly.count.android.sdk.messaging.CountlyConfigPush) throws java.lang.IllegalStateException;
+  public static void onTokenRefresh(java.lang.String);
+  public static void onTokenRefresh(java.lang.String, ly.count.android.sdk.Countly$CountlyMessagingProvider);
+  public static void setNotificationAccentColor(int, int, int, int);
+}
+
+public interface ly.count.android.sdk.messaging.CountlyPush$Button {
+  public abstract android.net.Uri link();
+  public abstract int icon();
+  public abstract int index();
+  public abstract java.lang.String title();
+  public abstract void recordAction(android.content.Context);
+}
+
+public class ly.count.android.sdk.messaging.CountlyPush$ConsentBroadcastReceiver extends android.content.BroadcastReceiver {
+  public ly.count.android.sdk.messaging.CountlyPush$ConsentBroadcastReceiver();
+  public void onReceive(android.content.Context, android.content.Intent);
+}
+
+public interface ly.count.android.sdk.messaging.CountlyPush$Message extends android.os.Parcelable {
+  public abstract android.net.Uri link();
+  public abstract boolean has(java.lang.String);
+  public abstract java.lang.Integer badge();
+  public abstract java.lang.String data(java.lang.String);
+  public abstract java.lang.String id();
+  public abstract java.lang.String message();
+  public abstract java.lang.String sound();
+  public abstract java.lang.String title();
+  public abstract java.net.URL media();
+  public abstract java.util.List<ly.count.android.sdk.messaging.CountlyPush$Button> buttons();
+  public abstract java.util.Set<java.lang.String> dataKeys();
+  public abstract void recordAction(android.content.Context);
+  public abstract void recordAction(android.content.Context, int);
+  public default java.lang.String collapseKey();
+  public default java.lang.String largeIcon();
+}
+
+public class ly.count.android.sdk.messaging.CountlyPushActivity extends android.app.Activity {
+  protected void onCreate(android.os.Bundle);
+  public ly.count.android.sdk.messaging.CountlyPushActivity();
+}
+
+public class ly.count.android.sdk.messaging.ModulePush {
+  public ly.count.android.sdk.messaging.ModulePush();
+  public static final java.lang.String PUSH_EVENT_ACTION;
+  public static final java.lang.String PUSH_EVENT_ACTION_ID_KEY;
+  public static final java.lang.String PUSH_EVENT_ACTION_INDEX_KEY;
+  public static final java.lang.String PUSH_EVENT_ACTION_PLATFORM_KEY;
+  public static final java.lang.String PUSH_EVENT_ACTION_PLATFORM_VALUE;
+}
+
+public class ly.count.android.sdk.messaging.UtilsMessaging {
+  public boolean _reflectiveClassExists(java.lang.String, ly.count.android.sdk.ModuleLog);
+  public java.lang.Object _reflectiveCall(java.lang.String, java.lang.Object, java.lang.String, ly.count.android.sdk.ModuleLog, java.lang.Object...);
+  public java.lang.Object _reflectiveCallStrict(java.lang.String, java.lang.Object, java.lang.String, ly.count.android.sdk.ModuleLog, java.lang.Object...);
+  public ly.count.android.sdk.messaging.UtilsMessaging();
+}

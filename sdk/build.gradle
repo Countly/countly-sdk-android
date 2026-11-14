@@ -60,6 +60,13 @@ android {
     installOptions = ["-d", "-t"]
   }
   testNamespace 'ly.count.android.sdk.test'
+
+  // scRQ_RequestScenarioTests reads the request records in api/requests/ as assets
+  sourceSets {
+    androidTest {
+      assets.srcDir 'api'
+    }
+  }
 }
 
 def mockitoVersion = "5.23.0"
@@ -85,4 +92,25 @@ dependencies {
 
   androidTestImplementation "org.mockito:mockito-android:${mockitoVersion}"
   androidTestImplementation "com.squareup.okhttp3:mockwebserver:5.5.0"
+}
+
+// After a deliberate change to the requests the SDK queues: run the connected tests, then this task, which writes the
+// records the failing scRQ_RequestScenarioTests printed into api/requests/. Check the difference and add a CHANGELOG.md line.
+tasks.register('requestsUpdate') {
+  description = 'Writes the request records the last connected test run printed into api/requests/.'
+  def results = layout.buildDirectory.dir('outputs/androidTest-results/connected')
+  doLast {
+    def reports = fileTree(results) { include '**/TEST-*.xml' }.files
+    if (reports.isEmpty()) throw new GradleException('No connected test results: run ./gradlew :sdk:connectedDebugAndroidTest first')
+    def written = new TreeSet()
+    reports.each { report ->
+      def failures = new groovy.xml.XmlSlurper().parse(report).'**'.findAll { it.name() == 'failure' }*.text().join('\n')
+      (failures =~ /(?s)----- ([a-z-]+)\.json -----\n(.*?)----- end -----/).each { match ->
+        def lines = match[2].readLines().collect { it.startsWith('| ') ? it.substring(2) : (it == '|' ? '' : it) }
+        file("api/requests/${match[1]}.json").setText(lines.join('\n') + '\n', 'UTF-8')
+        written << match[1]
+      }
+    }
+    logger.lifecycle("requestsUpdate, wrote ${written.isEmpty() ? 'nothing: no scenario failed' : written.collect { "api/requests/${it}.json" }.join(', ')}")
+  }
 }

@@ -1,0 +1,42 @@
+// Applies metalava to the modules listed in -DapiModules (for example :sdk,:sdk-native) and points each module's
+// signature file at <-DapiDir>/<module name>.txt: `metalavaGenerateSignature` writes the module's public API
+// there, and `metalavaCheckCompatibility` checks the module's code against the signature found there.
+// Only .github/workflows/public_api.yml applies it, through --init-script, so no build file changes.
+def apiModules = (System.getProperty('apiModules') ?: '').tokenize(',') as Set
+def apiDir = System.getProperty('apiDir')
+
+rootProject {
+  // On the root build script classpath the plugin shares a class loader with the Android Gradle Plugin it calls.
+  buildscript {
+    repositories {
+      gradlePluginPortal {
+        content {
+          includeGroup 'me.tylerbwong.gradle.metalava'
+        }
+      }
+    }
+    dependencies {
+      classpath 'me.tylerbwong.gradle.metalava:plugin:0.5.1'
+    }
+  }
+}
+
+allprojects { project ->
+  if (!apiModules.contains(project.path)) {
+    return
+  }
+  if (!apiDir) {
+    throw new org.gradle.api.GradleException('Pass -DapiDir=<directory> to choose where the API signatures live.')
+  }
+  ['java-library', 'com.android.library'].each { pluginId ->
+    project.pluginManager.withPlugin(pluginId) {
+      project.pluginManager.apply('me.tylerbwong.gradle.metalava')
+      project.metalava {
+        filename.set(new File(apiDir, "${project.name}.txt").absolutePath)
+        enforceCheck.set(false)
+        // Public methods that return package-private types are lint findings, not compatibility breaks.
+        arguments.addAll('--hide', 'ReferencesHidden,HiddenTypeParameter')
+      }
+    }
+  }
+}

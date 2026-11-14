@@ -1,0 +1,116 @@
+[
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "begin_session": "1",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "hour": "<masked>",
+      "metrics": {
+        "_app_version": "<masked>",
+        "_carrier": "<masked>",
+        "_density": "<masked>",
+        "_device": "<masked>",
+        "_device_type": "<masked>",
+        "_has_hinge": "<masked>",
+        "_locale": "<masked>",
+        "_manufacturer": "<masked>",
+        "_os": "<masked>",
+        "_os_version": "<masked>",
+        "_resolution": "<masked>",
+        "_store": "<masked>"
+      },
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-002",
+      "dow": "<masked>",
+      "hour": "<masked>",
+      "old_device_id": "parity-device-001",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-002",
+      "dow": "<masked>",
+      "events": [
+        {
+          "count": 1,
+          "cvid": "<masked>",
+          "dow": "<masked>",
+          "hour": "<masked>",
+          "id": "<masked>",
+          "key": "after_merge",
+          "peid": "<masked>",
+          "sum": 0,
+          "timestamp": "<masked>"
+        }
+      ],
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-003",
+      "dow": "<masked>",
+      "events": [
+        {
+          "count": 1,
+          "cvid": "<masked>",
+          "dow": "<masked>",
+          "hour": "<masked>",
+          "id": "<masked>",
+          "key": "after_new_id",
+          "peid": "<masked>",
+          "sum": 0,
+          "timestamp": "<masked>"
+        }
+      ],
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-003",
+      "dow": "<masked>",
+      "end_session": "1",
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "session_duration": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  }
+]
