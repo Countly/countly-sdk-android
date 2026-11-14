@@ -1,0 +1,45 @@
+[
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "crash": {
+        "_app_version": "1.0",
+        "_background": "<masked>",
+        "_bat": "<masked>",
+        "_cpu": "<masked>",
+        "_custom": {
+          "tier": "gold"
+        },
+        "_device": "<masked>",
+        "_disk_current": "<masked>",
+        "_disk_total": "<masked>",
+        "_error": "<masked>",
+        "_has_hinge": "Z",
+        "_logs": "breadcrumb one\n",
+        "_manufacturer": "<masked>",
+        "_muted": "<masked>",
+        "_nonfatal": "true",
+        "_ob": 0,
+        "_online": "<masked>",
+        "_opengl": "<masked>",
+        "_orientation": "<masked>",
+        "_os": "<masked>",
+        "_os_version": "<masked>",
+        "_ram_current": "<masked>",
+        "_ram_total": "<masked>",
+        "_resolution": "<masked>",
+        "_root": "<masked>",
+        "_run": "<masked>"
+      },
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  }
+]
