@@ -39,6 +39,7 @@ class ContentProviderMetaReferrerReader extends MetaReferrerReader {
     }
 
     ContentProviderMetaReferrerReader(@NonNull String[][] providers, @NonNull ModuleLog L) {
+        super();
         this.providers = providers.clone();
         this.L = L;
     }

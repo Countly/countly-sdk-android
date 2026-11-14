@@ -176,12 +176,12 @@ public class ModuleAttribution extends ModuleBase {
             signals.add(first);
         }
         signals.addAll(pendingSignals);
-        List<String> doneKeys = new ArrayList<>(pendingDoneKeys);
-        pendingSignals.clear();
-        pendingDoneKeys.clear();
         if (signals.isEmpty()) {
             return;
         }
+        List<String> doneKeys = new ArrayList<>(pendingDoneKeys);
+        pendingSignals.clear();
+        pendingDoneKeys.clear();
         if (signals.size() == 1) {
             requestQueueProvider.sendAttributionSignals(signals.get(0).toString());
         } else {
