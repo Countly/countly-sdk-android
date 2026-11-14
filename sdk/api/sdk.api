@@ -283,6 +283,7 @@ public class ly.count.android.sdk.CountlyConfig {
   public synchronized ly.count.android.sdk.CountlyConfig enableRecommendedSecuritySettings();
   public synchronized ly.count.android.sdk.CountlyConfig enableRemoteConfigAutomaticTriggers();
   public synchronized ly.count.android.sdk.CountlyConfig enableRemoteConfigValueCaching();
+  public synchronized ly.count.android.sdk.CountlyConfig enableRequestCompression();
   public synchronized ly.count.android.sdk.CountlyConfig enableTemporaryDeviceIdMode();
   public synchronized ly.count.android.sdk.CountlyConfig enrollABOnRCDownload();
   public synchronized ly.count.android.sdk.CountlyConfig giveAllConsents();
