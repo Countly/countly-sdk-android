@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * The app has to see these packages on Android 11 and later: the SDK's manifest declares them in {@code <queries>}.
  */
-class ContentProviderMetaReferrerReader implements MetaReferrerReader {
+class ContentProviderMetaReferrerReader extends MetaReferrerReader {
     static final String COLUMN_INSTALL_REFERRER = "install_referrer";
     static final String COLUMN_IS_CT = "is_ct";
     static final String COLUMN_ACTUAL_TIMESTAMP = "actual_timestamp";
@@ -44,7 +44,7 @@ class ContentProviderMetaReferrerReader implements MetaReferrerReader {
     }
 
     @Override
-    public void read(@NonNull final Context context, @NonNull final String facebookAppId, @NonNull final Callback callback) {
+    void read(@NonNull final Context context, @NonNull final String facebookAppId, @NonNull final Callback callback) {
         final Context appContext = context.getApplicationContext() != null ? context.getApplicationContext() : context;
         final AtomicReference<Result> answer = new AtomicReference<>();
         final Thread query = new Thread(() -> {

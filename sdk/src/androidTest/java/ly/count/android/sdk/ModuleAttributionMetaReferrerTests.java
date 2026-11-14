@@ -38,12 +38,12 @@ public class ModuleAttributionMetaReferrerTests {
     /**
      * Stands in for the Meta apps
      */
-    static class FakeMetaReader implements MetaReferrerReader {
+    static class FakeMetaReader extends MetaReferrerReader {
         Result result = new Result(META_RAW, 1, 1_700_000_000L);
         int reads = 0;
         String askedAppId;
 
-        @Override public void read(@NonNull Context context, @NonNull String facebookAppId, @NonNull Callback callback) {
+        @Override void read(@NonNull Context context, @NonNull String facebookAppId, @NonNull Callback callback) {
             reads++;
             askedAppId = facebookAppId;
             callback.onResult(result);
@@ -53,17 +53,17 @@ public class ModuleAttributionMetaReferrerTests {
     /**
      * Stands in for the Play Install Referrer library, with timestamps
      */
-    static class DetailsReader implements InstallReferrerReader {
+    static class DetailsReader extends InstallReferrerReader {
         boolean available = true;
         int status = STATUS_OK;
         Details details = new Details(PLAY_RAW, 1_700_000_100L, 1_700_000_160L, 1_700_000_101L, 1_700_000_158L, "26.1.6");
         int reads = 0;
 
-        @Override public boolean isAvailable() {
+        @Override boolean isAvailable() {
             return available;
         }
 
-        @Override public void read(@NonNull Context context, @NonNull Callback callback) {
+        @Override void read(@NonNull Context context, @NonNull Callback callback) {
             reads++;
             callback.onResult(status, details);
         }

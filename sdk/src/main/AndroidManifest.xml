@@ -6,6 +6,10 @@
     <package android:name="com.facebook.katana"/>
     <package android:name="com.instagram.android"/>
     <package android:name="com.facebook.lite"/>
+    <!-- the HUAWEI AppGallery install referrer service of HMS Core, asked only when the app has its library -->
+    <intent>
+      <action android:name="com.huawei.android.hms.CHANNEL_SERVICE"/>
+    </intent>
   </queries>
 
   <application>

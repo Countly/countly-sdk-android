@@ -556,6 +556,11 @@ class ConnectionQueue implements RequestQueueProvider {
         }
 
         String data = prepareCommonRequestData() + "&attribution=" + UtilsNetworking.urlEncodeString(signalsJson);
+        if (consentProvider.consentRequired()) {
+            //the server may store campaign data only with this consent: it reads the request's own value first, so a
+            //signal never depends on the consent request before it having been processed. Unchanged values record nothing.
+            data += "&consent=" + UtilsNetworking.urlEncodeString("{\"" + Countly.CountlyFeatureNames.attribution + "\":true}");
+        }
         addRequestToQueue(data, false, null);
 
         tick();

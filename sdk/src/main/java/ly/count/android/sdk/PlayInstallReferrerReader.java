@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link #isAvailable()} returns false for them. Every reference to the library's classes is inside
  * {@link Bridge}, which is only loaded after the availability check passed.
  */
-class PlayInstallReferrerReader implements InstallReferrerReader {
+class PlayInstallReferrerReader extends InstallReferrerReader {
     static final String CLIENT_CLASS = "com.android.installreferrer.api.InstallReferrerClient";
 
     @Override
-    public boolean isAvailable() {
+    boolean isAvailable() {
         try {
             Class.forName(CLIENT_CLASS);
             return true;
@@ -28,7 +28,7 @@ class PlayInstallReferrerReader implements InstallReferrerReader {
     }
 
     @Override
-    public void read(@NonNull Context context, @NonNull Callback callback) {
+    void read(@NonNull Context context, @NonNull Callback callback) {
         final AtomicBoolean answered = new AtomicBoolean(false);
         final Callback once = (status, details) -> {
             if (answered.compareAndSet(false, true)) {

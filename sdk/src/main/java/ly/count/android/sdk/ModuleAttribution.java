@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,6 +37,10 @@ public class ModuleAttribution extends ModuleBase {
     static final String STATE_DEFERRED_URL = "deferred_url";
     static final String STATE_CHANNEL = "channel";
     static final String STATE_META_DONE = "meta_referrer_done";
+    static final String STATE_HUAWEI_DONE = "huawei_referrer_done";
+    static final String STATE_HUAWEI_ATTEMPTS = "huawei_referrer_attempts";
+    //the store field of the HUAWEI AppGallery referrer signal
+    static final String STORE_HUAWEI = "huawei";
 
     //a store that keeps saying "try later" (no Play Store, for one) is asked on this many launches only
     static final int MAX_REFERRER_ATTEMPTS = 3;
@@ -47,13 +52,18 @@ public class ModuleAttribution extends ModuleBase {
     final String handledIntentExtra;
     final String facebookAppId;
     final MetaReferrerReader metaReferrerReader;
+    final InstallReferrerReader huaweiReferrerReader;
 
     boolean referrerReadInProgress = false;
     boolean metaReadInProgress = false;
     //the Meta referrer was looked at in this process; the Play referrer is read after it
     boolean metaResolvedThisProcess = false;
-    //a Meta referrer read in this process and not sent yet: it goes with the Play referrer when that is read now
-    JSONObject metaSignalPending = null;
+    boolean huaweiReadInProgress = false;
+    boolean huaweiResolvedThisProcess = false;
+    //signals read in this process and not sent yet (Meta, HUAWEI): they go with the Play referrer when that is read now
+    final List<JSONObject> pendingSignals = new ArrayList<>();
+    //the state keys that mark the pending signals sent
+    final List<String> pendingDoneKeys = new ArrayList<>();
     //a link opened the app in this process; then the first launch reports no DEFERRED or NONE
     boolean linkOpenedThisProcess = false;
     //the intent of the first activity of this process was looked at; until then the first launch is not reported,
@@ -75,6 +85,7 @@ public class ModuleAttribution extends ModuleBase {
         handledIntentExtra = "ly.count.android.sdk.deeplink_handled." + cly.instanceName_;
         facebookAppId = config.facebookAppId;
         metaReferrerReader = config.metaReferrerReader != null ? config.metaReferrerReader : new ContentProviderMetaReferrerReader(L);
+        huaweiReferrerReader = config.huaweiReferrerReader != null ? config.huaweiReferrerReader : new HuaweiInstallReferrerReader();
 
         attributionInterface = new ModuleAttribution.Attribution();
     }
@@ -118,20 +129,92 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
         sendChannelIfNeeded();
+        //the store referrers are read one after another (Meta, HUAWEI, Play), so a first launch's signals go in one request
         if (metaReferrerNeeded()) {
-            //the Play referrer is read when Meta's apps answered, so both go in one request
             readMetaReferrer();
             return;
         }
-        readInstallReferrerAndFlushMeta();
+        readStoreReferrers();
     }
 
-    void readInstallReferrerAndFlushMeta() {
+    /**
+     * After Meta: the HUAWEI AppGallery referrer, then the Play referrer
+     */
+    void readStoreReferrers() {
+        if (huaweiReferrerNeeded()) {
+            readHuaweiReferrer();
+            return;
+        }
+        readInstallReferrerAndFlush();
+    }
+
+    void readInstallReferrerAndFlush() {
         readInstallReferrerIfNeeded();
         if (!referrerReadInProgress) {
             //the Play referrer was already sent, cannot be read, or was answered in the call
-            flushMetaReferrer();
+            flushPendingSignals();
         }
+    }
+
+    /**
+     * Keeps a signal read in this process until the Play referrer goes, or until it is clear it will not
+     *
+     * @param signal the signal
+     * @param doneKey the state key marking it sent
+     */
+    void holdSignal(@NonNull JSONObject signal, @NonNull String doneKey) {
+        pendingSignals.add(signal);
+        pendingDoneKeys.add(doneKey);
+    }
+
+    /**
+     * Sends the held signals: with the Play referrer first when there is one, as a list when more than one
+     */
+    void sendWithPending(@Nullable JSONObject first) {
+        List<JSONObject> signals = new ArrayList<>();
+        if (first != null) {
+            signals.add(first);
+        }
+        signals.addAll(pendingSignals);
+        List<String> doneKeys = new ArrayList<>(pendingDoneKeys);
+        pendingSignals.clear();
+        pendingDoneKeys.clear();
+        if (signals.isEmpty()) {
+            return;
+        }
+        if (signals.size() == 1) {
+            requestQueueProvider.sendAttributionSignals(signals.get(0).toString());
+        } else {
+            requestQueueProvider.sendAttributionSignals(new JSONArray(signals).toString());
+        }
+        if (!doneKeys.isEmpty()) {
+            JSONObject state = readState();
+            for (String key : doneKeys) {
+                try {
+                    state.put(key, true);
+                } catch (JSONException ignored) {
+                }
+            }
+            writeState(state);
+        }
+    }
+
+    /**
+     * Sends the signals that did not go with the Play referrer
+     */
+    void flushPendingSignals() {
+        if (pendingSignals.isEmpty()) {
+            return;
+        }
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            //read again when the consent is given
+            pendingSignals.clear();
+            pendingDoneKeys.clear();
+            metaResolvedThisProcess = false;
+            huaweiResolvedThisProcess = false;
+            return;
+        }
+        sendWithPending(null);
     }
 
     // ------------------------------------------------------------------ Meta Install Referrer
@@ -150,7 +233,7 @@ public class ModuleAttribution extends ModuleBase {
         if (context == null) {
             L.w("[ModuleAttribution] readMetaReferrer, no context, the Meta install referrer is not read");
             metaResolvedThisProcess = true;
-            readInstallReferrerAndFlushMeta();
+            readStoreReferrers();
             return;
         }
         metaReadInProgress = true;
@@ -188,37 +271,92 @@ public class ModuleAttribution extends ModuleBase {
                     if (result.actualTimestamp > 0) {
                         signal.put("ts", result.actualTimestamp);
                     }
-                    metaSignalPending = signal;
+                    holdSignal(signal, STATE_META_DONE);
                 } catch (JSONException e) {
                     putState(STATE_META_DONE, true);
                 }
             }
-            readInstallReferrerAndFlushMeta();
+            readStoreReferrers();
+        }
+    }
+
+    // ------------------------------------------------------------------ HUAWEI AppGallery install referrer
+
+    boolean huaweiReferrerNeeded() {
+        if (huaweiResolvedThisProcess || readState().optBoolean(STATE_HUAWEI_DONE, false)) {
+            return false;
+        }
+        if (!huaweiReferrerReader.isAvailable()) {
+            //not marked as done: an app update that adds the library still reads it once
+            L.v("[ModuleAttribution] huaweiReferrerNeeded, the HUAWEI install referrer library ('com.huawei.hms:ads-installreferrer') is not in the app");
+            return false;
+        }
+        return true;
+    }
+
+    void readHuaweiReferrer() {
+        if (huaweiReadInProgress) {
+            return;
+        }
+        if (context == null) {
+            huaweiResolvedThisProcess = true;
+            readInstallReferrerAndFlush();
+            return;
+        }
+        huaweiReadInProgress = true;
+        L.d("[ModuleAttribution] readHuaweiReferrer, reading the HUAWEI AppGallery install referrer");
+        try {
+            huaweiReferrerReader.read(context, this::onHuaweiReferrerResult);
+        } catch (Exception e) {
+            L.w("[ModuleAttribution] readHuaweiReferrer, reading failed: " + e);
+            onHuaweiReferrerResult(InstallReferrerReader.STATUS_RETRY, (InstallReferrerReader.Details) null);
+        }
+    }
+
+    void onHuaweiReferrerResult(int status, @Nullable InstallReferrerReader.Details details) {
+        synchronized (_cly) {
+            huaweiReadInProgress = false;
+            if (halted || huaweiResolvedThisProcess) {
+                return;
+            }
+            if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+                L.d("[ModuleAttribution] onHuaweiReferrerResult, 'attribution' consent was removed meanwhile, not sending");
+                return;
+            }
+            huaweiResolvedThisProcess = true;
+            String referrer = details == null ? null : details.referrer;
+            L.d("[ModuleAttribution] onHuaweiReferrerResult, status:[" + status + "], referrer:[" + referrer + "]");
+            if (status == InstallReferrerReader.STATUS_RETRY) {
+                //HMS Core could not answer now: asked on MAX_REFERRER_ATTEMPTS launches at most
+                int attempts = readState().optInt(STATE_HUAWEI_ATTEMPTS, 0) + 1;
+                if (attempts >= MAX_REFERRER_ATTEMPTS) {
+                    putState(STATE_HUAWEI_DONE, true);
+                } else {
+                    putState(STATE_HUAWEI_ATTEMPTS, attempts);
+                }
+            } else if (status == InstallReferrerReader.STATUS_OK && referrer != null && !referrer.isEmpty()) {
+                JSONObject signal = new JSONObject();
+                try {
+                    signal.put("type", TYPE_REFERRER);
+                    signal.put("store", STORE_HUAWEI);
+                    signal.put("value", referrer);
+                    putSeconds(signal, "click_ts", details.clickTs);
+                    putSeconds(signal, "install_ts", details.installTs);
+                    holdSignal(signal, STATE_HUAWEI_DONE);
+                } catch (JSONException e) {
+                    putState(STATE_HUAWEI_DONE, true);
+                }
+            } else {
+                //no referrer, or a device without HUAWEI Mobile Services: never asked again
+                putState(STATE_HUAWEI_DONE, true);
+            }
+            readInstallReferrerAndFlush();
         }
     }
 
     /**
-     * Sends a Meta referrer that did not go with the Play referrer
-     */
-    void flushMetaReferrer() {
-        if (metaSignalPending == null) {
-            return;
-        }
-        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
-            //read again when the consent is given
-            metaSignalPending = null;
-            metaResolvedThisProcess = false;
-            return;
-        }
-        JSONObject signal = metaSignalPending;
-        metaSignalPending = null;
-        requestQueueProvider.sendAttributionSignals(signal.toString());
-        putState(STATE_META_DONE, true);
-    }
-
-    /**
-     * The Play referrer with its timestamps, and a Meta referrer read in this process, in one request.
-     * A referrer without timestamps alone is sent as before: {"type":"referrer","value":raw}.
+     * The Play referrer with its timestamps, and the Meta and HUAWEI referrers read in this process, in one request.
+     * A Play referrer without timestamps alone is sent as before: {"type":"referrer","value":raw}.
      */
     void sendInstallReferrer(@NonNull InstallReferrerReader.Details details) {
         String referrer = details.referrer;
@@ -241,17 +379,10 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
 
-        if (metaSignalPending != null) {
-            JSONArray signals = new JSONArray();
-            signals.put(signal);
-            signals.put(metaSignalPending);
-            metaSignalPending = null;
-            requestQueueProvider.sendAttributionSignals(signals.toString());
-            putState(STATE_META_DONE, true);
-        } else if (signal.length() == 2) {
+        if (pendingSignals.isEmpty() && signal.length() == 2) {
             requestQueueProvider.sendAttributionSignal(TYPE_REFERRER, referrer);
         } else {
-            requestQueueProvider.sendAttributionSignals(signal.toString());
+            sendWithPending(signal);
         }
     }
 
@@ -315,8 +446,8 @@ public class ModuleAttribution extends ModuleBase {
                 return;
             }
             handleInstallReferrerResult(status, details);
-            //a Meta referrer that did not go with it goes alone
-            flushMetaReferrer();
+            //the Meta and HUAWEI referrers that did not go with it go on their own
+            flushPendingSignals();
         }
     }
 

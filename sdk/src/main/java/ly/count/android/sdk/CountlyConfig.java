@@ -211,6 +211,8 @@ public class CountlyConfig {
     String facebookAppId = null;
     //reads the Meta Install Referrer; tests set their own
     MetaReferrerReader metaReferrerReader = null;
+    //reads the HUAWEI AppGallery install referrer; tests set their own
+    InstallReferrerReader huaweiReferrerReader = null;
 
     boolean explicitStorageModeEnabled = false;
 

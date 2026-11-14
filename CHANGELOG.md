@@ -35,6 +35,10 @@
   * "setFacebookAppId(String)" in "CountlyConfig" turns on the Meta Install Referrer. On first launch the SDK asks the Facebook, Instagram and Facebook Lite apps which Meta ad led to the install.
     * Their encrypted answer is sent once, in the same request as the Play referrer. The server decrypts it with the key set in the Attribution settings.
     * The SDK's manifest now declares these three apps in `<queries>`. The SDK reads them only when a Facebook app id is set.
+  * The HUAWEI AppGallery install referrer is read on first launch on devices with HMS Core and sent with `store` set to `huawei`. This needs the optional `com.huawei.hms:ads-installreferrer` dependency in the app; without it nothing is read.
+    * The SDK's manifest declares the HMS Core service it asks in `<queries>`.
+    * The Meta, HUAWEI and Play referrers of a first launch go in one request.
+  * When the app requires consent, each signal request also carries the `attribution` consent, so a server that stores campaign data only with that consent has it in the same request.
 * Added "setDeepLinkCallback(DeepLinkCallback)" to "CountlyConfig". It tells the app where to route:
   * `OPENED`: a link opened the app. It is called also without the `attribution` consent.
   * `DEFERRED`: first launch, the app was installed from a link with a deep link.
@@ -43,6 +47,7 @@
 * Added "attribution().recordAdRevenue(amount, AdRevenueDetails)" to record the revenue of one paid ad impression from the ad mediation SDK's impression callback.
   * It records the `[CLY]_ad_revenue` event with the amount as its sum. The network, placement, format, currency and precision set on "AdRevenueDetails" are its segments, each optional. It needs the `events` consent.
   * Send the amount in the currency the app records purchases in, the SDK converts nothing. For AdMob, divide the micros by 1,000,000.
+* For RevenueCat subscription revenue in Attribution, set the RevenueCat app user id to the Countly device id, "Countly.sharedInstance().deviceId().getID()". After a device ID change, log in to RevenueCat with the new one.
 * Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
 * Added "changeServerUrl(String)" to the request queue interface to change the server URL after init.
 * Added "changeAppKey(String)" to the request queue interface to change the app key after init.

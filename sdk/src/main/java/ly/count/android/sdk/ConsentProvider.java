@@ -15,4 +15,9 @@ interface ConsentProvider {
     boolean getConsentSilently(@NonNull String featureName);
 
     boolean anyConsentGiven();
+
+    /**
+     * @return true when the app requires consent (setRequiresConsent), so the SDK reports consent to the server
+     */
+    boolean consentRequired();
 }

@@ -39,17 +39,17 @@ public class ModuleAttributionSignalsTests {
     /**
      * Stands in for the Play Install Referrer library.
      */
-    static class FakeReader implements InstallReferrerReader {
+    static class FakeReader extends InstallReferrerReader {
         boolean available = true;
         int status = STATUS_OK;
         String referrer = RAW_REFERRER;
         int reads = 0;
 
-        @Override public boolean isAvailable() {
+        @Override boolean isAvailable() {
             return available;
         }
 
-        @Override public void read(@NonNull Context context, @NonNull Callback callback) {
+        @Override void read(@NonNull Context context, @NonNull Callback callback) {
             reads++;
             callback.onResult(status, referrer);
         }
