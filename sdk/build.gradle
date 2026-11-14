@@ -95,6 +95,8 @@ dependencies {
   // Optional, the same way: the app adds it to have the HUAWEI AppGallery install referrer read
   // (HuaweiInstallReferrerReader). Resolved from HUAWEI's repository, declared above for this group only.
   compileOnly "com.huawei.hms:ads-installreferrer:3.4.62.300"
+  // Optional, the same way, for the Samsung Galaxy Store install referrer (SamsungInstallReferrerReader).
+  compileOnly "store.galaxy.samsung.installreferrer:samsung_galaxystore_install_referrer:4.0.0"
 
   androidTestImplementation 'androidx.test:runner:1.7.0'
   androidTestImplementation 'androidx.test:rules:1.7.0'

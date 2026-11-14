@@ -213,6 +213,8 @@ public class CountlyConfig {
     MetaReferrerReader metaReferrerReader = null;
     //reads the HUAWEI AppGallery install referrer; tests set their own
     InstallReferrerReader huaweiReferrerReader = null;
+    //reads the Samsung Galaxy Store install referrer; tests set their own
+    InstallReferrerReader samsungReferrerReader = null;
 
     boolean explicitStorageModeEnabled = false;
 

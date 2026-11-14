@@ -16,8 +16,9 @@
 # are rewritten to plain classes, so nothing touches it at runtime; this only silences the bogus report.
 -dontwarn java.lang.invoke.MethodHandleInfo
 
-# The Play and HUAWEI install referrer libraries are optional dependencies: PlayInstallReferrerReader and
-# HuaweiInstallReferrerReader reference them only after checking at runtime that the app includes them. Apps without it would otherwise fail R8 with
+# The Play, HUAWEI and Samsung install referrer libraries are optional dependencies: their readers reference
+# them only after checking at runtime that the app includes them. Apps without it would otherwise fail R8 with
 # "Missing class".
 -dontwarn com.android.installreferrer.**
 -dontwarn com.huawei.hms.ads.installreferrer.**
+-dontwarn com.samsung.android.sdk.sinstallreferrer.**

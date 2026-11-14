@@ -37,7 +37,11 @@
     * The SDK's manifest now declares these three apps in `<queries>`. The SDK reads them only when a Facebook app id is set.
   * The HUAWEI AppGallery install referrer is read on first launch on devices with HMS Core and sent with `store` set to `huawei`. This needs the optional `com.huawei.hms:ads-installreferrer` dependency in the app; without it nothing is read.
     * The SDK's manifest declares the HMS Core service it asks in `<queries>`.
-    * The Meta, HUAWEI and Play referrers of a first launch go in one request.
+  * The Samsung Galaxy Store install referrer is read on first launch on devices with Galaxy Store 4.5.20.1 or later and sent with `store` set to `samsung`.
+    * This needs the optional `store.galaxy.samsung.installreferrer:samsung_galaxystore_install_referrer` dependency in the app; without it nothing is read.
+    * A store link carries the referrer in its `referrer` parameter, URL-encoded, for example `https://apps.samsung.com/appquery/appDetail.as?appId=com.example.app&referrer=utm_source%3Dpartner%26utm_medium%3Dcpi%26utm_campaign%3Dspring`.
+    * Its click time is when the install button on the store page was tapped, not the ad click. Samsung has no store-signed times as Play has, so both times are sent as Samsung gives them.
+    * The Meta, HUAWEI, Samsung and Play referrers of a first launch go in one request.
   * When the app requires consent, each signal request also carries the `attribution` consent, so a server that stores campaign data only with that consent has it in the same request.
 * Added "setDeepLinkCallback(DeepLinkCallback)" to "CountlyConfig". It tells the app where to route:
   * `OPENED`: a link opened the app. It is called also without the `attribution` consent.
