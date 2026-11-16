@@ -305,11 +305,13 @@ public class scRQ_RequestScenarioTests {
             JSONArray result = new JSONArray();
             for (int i = 0; i < events.length(); i++) {
                 JSONObject event = events.getJSONObject(i);
-                List<String> fields = new ArrayList<>(MASKED_EVENT_FIELDS);
+                JSONObject maskedEvent = masked(event, MASKED_EVENT_FIELDS);
                 if ("[CLY]_view".equals(event.optString("key"))) {
-                    fields.add("dur");
+                    // a view's duration is written only when it is above zero (Event.toJSON), so whether a view event
+                    // carries it at all depends on how long the scenario took on the device: it is left out
+                    maskedEvent.remove("dur");
                 }
-                result.put(masked(event, fields));
+                result.put(maskedEvent);
             }
             return result;
         }
