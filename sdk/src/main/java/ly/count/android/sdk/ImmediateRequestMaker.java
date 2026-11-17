@@ -146,8 +146,8 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
                 cp.blockCompressionIfCompressed(connection);
                 return null;
             }
-        } catch (JSONException e) {
-            L.d("[ImmediateRequestMaker] Received an answer that is not JSON while making a immediate server request, [" + e + "]");
+        } catch (JSONException | StringIndexOutOfBoundsException e) {
+            L.d("[ImmediateRequestMaker] Received an answer that is empty or not JSON while making a immediate server request, [" + e + "]");
             cp.blockCompressionIfCompressed(connection);
         } catch (Exception e) {
             L.d("[ImmediateRequestMaker] Received exception while making a immediate server request, [" + e + "]");

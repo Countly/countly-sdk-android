@@ -19,6 +19,8 @@ public class UtilsNetworking {
     // http://stackoverflow.com/questions/9655181/convert-from-byte-array-to-hex-string-in-java
     final private static char[] hexArray = "0123456789ABCDEF".toCharArray();
     static final int REQUEST_COMPRESSION_MIN_BYTES = 1024;
+    // the server refuses a compressed body that is larger than this once decoded
+    static final int REQUEST_COMPRESSION_MAX_BYTES = 1024 * 1024;
 
     /**
      * Opens a connection for a resource the SDK downloads outside its request queue, such as a push notification
@@ -140,12 +142,13 @@ public class UtilsNetworking {
      *
      * @param body the url encoded request body, checksum included
      * @param L logger
-     * @return the gzip bytes, or an empty array when the body is smaller than {@link #REQUEST_COMPRESSION_MIN_BYTES},
-     * compressing fails, or the result is not smaller than the body
+     * @return the gzip bytes, or an empty array when the body is smaller than {@link #REQUEST_COMPRESSION_MIN_BYTES}
+     * or larger than {@link #REQUEST_COMPRESSION_MAX_BYTES}, compressing fails, or the result is not smaller than the
+     * body
      */
     static @NonNull byte[] gzipRequestBody(@NonNull String body, @NonNull ModuleLog L) {
         byte[] plain = body.getBytes(StandardCharsets.UTF_8);
-        if (plain.length < REQUEST_COMPRESSION_MIN_BYTES) {
+        if (plain.length < REQUEST_COMPRESSION_MIN_BYTES || plain.length > REQUEST_COMPRESSION_MAX_BYTES) {
             return new byte[0];
         }
 

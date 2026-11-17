@@ -64,15 +64,16 @@ interface ConfigurationProvider {
     /**
      * @return whether a request body may be sent gzip-compressed now: the developer enabled it, the current server
      * said in its SDK behavior settings answer that it reads compressed bodies, and no compressed request was refused
-     * in this run
+     * since that answer
      */
     default boolean getRequestCompressionEnabled() {
         return false;
     }
 
     /**
-     * Stops request compression until the SDK starts again, called after the server or something in front of it
-     * answered a compressed request without accepting it
+     * Stops request compression until the next SDK behavior settings answer says that the server reads compressed
+     * bodies, or the SDK starts again; called after the server or something in front of it answered a compressed
+     * request without accepting it
      */
     default void blockRequestCompression() {
     }

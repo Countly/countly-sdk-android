@@ -128,7 +128,7 @@ public class ConnectionProcessor implements Runnable {
         }
 
         byte[] compressedBody = new byte[0];
-        if (usingHttpPost && !hasPicturePath && configProvider_.getRequestCompressionEnabled()) {
+        if (usingHttpPost && !hasPicturePath && canCarryCompressionMarker(urlStr) && configProvider_.getRequestCompressionEnabled()) {
             compressedBody = UtilsNetworking.gzipRequestBody(requestData, L);
             if (compressedBody.length > 0) {
                 urlStr = urlStr.concat("?").concat(REQUEST_COMPRESSION_MARKER);
@@ -254,6 +254,17 @@ public class ConnectionProcessor implements Runnable {
     }
 
     /**
+     * Tells whether a request to the given URL can be sent compressed: the compression marker has to be the only query
+     * of the URL, so a request whose URL already has a query is sent plain
+     *
+     * @param url the URL the request goes to, before the marker is added
+     * @return true when the URL has no query
+     */
+    static boolean canCarryCompressionMarker(@NonNull String url) {
+        return url.indexOf('?') == -1;
+    }
+
+    /**
      * Tells whether a connection made by {@link #urlConnectionForServerRequest} sends its body gzip-compressed
      *
      * @param conn the connection
@@ -264,8 +275,7 @@ public class ConnectionProcessor implements Runnable {
     }
 
     /**
-     * Stops request compression until the SDK starts again when the connection sent a compressed body; called after
-     * its answer was not accepted
+     * Stops request compression when the connection sent a compressed body; called after its answer was not accepted
      *
      * @param conn the connection whose answer was not accepted
      */

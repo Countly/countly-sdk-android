@@ -954,9 +954,11 @@ public class CountlyConfig {
     }
 
     /**
-     * Compress request bodies of at least 1 KB with gzip before sending them.
+     * Compress request bodies between 1 KB and 1 MB with gzip before sending them.
      * The SDK compresses only after the server's SDK behavior settings answer said it reads compressed bodies,
      * so older servers keep getting plain requests. It needs the SDK behavior settings updates to be on.
+     * A compressed request that the server, or something in front of it, answers without accepting stops compression
+     * until the next SDK behavior settings answer says again that the server reads compressed bodies.
      *
      * @return Returns the same config object for convenient linking
      */

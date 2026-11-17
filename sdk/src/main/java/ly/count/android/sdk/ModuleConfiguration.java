@@ -941,6 +941,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             boolean gzipAccepted = extractGzipFlag(checkResponse);
             if (requestCompressionEnabled) {
                 gzipAcceptingServerUrl.set(gzipAccepted ? requestedFromServerUrl : null);
+                if (gzipAccepted && requestCompressionBlocked.compareAndSet(true, false)) {
+                    L.i("[ModuleConfiguration] fetchConfigFromServer, a behavior settings answer says that the server reads compressed bodies, requests are compressed again");
+                }
                 L.d("[ModuleConfiguration] fetchConfigFromServer, the server " + (gzipAccepted ? "reads" : "does not say it reads") + " compressed request bodies");
             }
 
@@ -1104,7 +1107,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public void blockRequestCompression() {
         if (requestCompressionBlocked.compareAndSet(false, true)) {
-            L.i("[ModuleConfiguration] blockRequestCompression, a compressed request was refused, requests are sent uncompressed until the SDK starts again");
+            L.i("[ModuleConfiguration] blockRequestCompression, a compressed request was refused, requests are sent uncompressed until a behavior settings answer says that the server reads compressed bodies, or the SDK starts again");
         }
     }
 

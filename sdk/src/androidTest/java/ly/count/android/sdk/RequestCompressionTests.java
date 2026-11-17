@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -28,12 +30,13 @@ import org.junit.runner.RunWith;
 
 /**
  * Request compression, checked on the requests a local server receives: the settings request asks for "gzip", the
- * server's "gzip": true answer turns compression on for request bodies of at least 1 KB, which then go to the
- * endpoint with "content_encoding=gzip" and a gzip body, and a refused compressed request turns it off for the run.
+ * server's "gzip": true answer turns compression on for request bodies between 1 KB and 1 MB, which then go to the
+ * endpoint with "content_encoding=gzip" and a gzip body, and a refused compressed request turns it off until the
+ * next "gzip": true answer.
  */
 @RunWith(AndroidJUnit4.class)
 public class RequestCompressionTests {
-    private static final String BIG_VALUE = new String(new char[2000]).replace('\0', 'a');
+    private static final String BIG_VALUE = repeated('a', 2000);
 
     private final List<TestServer> servers = new ArrayList<>();
 
@@ -130,8 +133,31 @@ public class RequestCompressionTests {
     }
 
     /**
-     * A compressed request the server refuses keeps its place in the queue, compression stops for the rest of the
-     * run, and the retry and later requests go plain.
+     * A request body over 1 MB goes plain, because the server refuses a larger compressed body, and compression
+     * stays on for the requests after it.
+     */
+    @Test
+    public void compressionOn_bodyOverOneMegabyteStaysPlain_compressionStaysOn() throws Exception {
+        TestServer server = startServer(true);
+        Countly countly = new Countly().init(config(server.url).enableRequestCompression());
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.getRequestCompressionEnabled()));
+
+        addDirectRequest(countly, "huge_plain", repeated('a', UtilsNetworking.REQUEST_COMPRESSION_MAX_BYTES));
+
+        Received huge = server.waitForRequest("huge_plain");
+        Assert.assertEquals("/i", huge.path);
+        Assert.assertFalse(huge.compressed);
+        Assert.assertTrue(huge.raw.length > UtilsNetworking.REQUEST_COMPRESSION_MAX_BYTES);
+        Assert.assertTrue(waitForEmptyQueue());
+        Assert.assertFalse(countly.moduleConfiguration.requestCompressionBlocked.get());
+
+        addDirectRequest(countly, "big_after_huge", BIG_VALUE);
+        Assert.assertTrue(server.waitForRequest("big_after_huge").compressed);
+    }
+
+    /**
+     * A compressed request the server refuses keeps its place in the queue, compression stops, and the retry and
+     * later requests go plain.
      */
     @Test
     public void compressedRequestRefused_retryAndLaterRequestsArePlain() throws Exception {
@@ -155,6 +181,93 @@ public class RequestCompressionTests {
 
         addDirectRequest(countly, "big_after_refusal", BIG_VALUE);
         Assert.assertFalse(server.waitForRequest("big_after_refusal").compressed);
+    }
+
+    /**
+     * After a refusal stopped compression, a settings answer without "gzip" leaves it stopped, and the next one with
+     * "gzip": true turns it on again.
+     */
+    @Test
+    public void compressedRequestRefused_nextGzipAnswerTurnsCompressionOnAgain() throws Exception {
+        TestServer server = startServer(true);
+        server.refuseNextCompressed = true;
+        Countly countly = new Countly().init(config(server.url).enableRequestCompression());
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.getRequestCompressionEnabled()));
+
+        addDirectRequest(countly, "big_refused", BIG_VALUE);
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.requestCompressionBlocked.get()));
+
+        server.readsGzip = false;
+        countly.moduleConfiguration.fetchConfigFromServer(countly.config_);
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.gzipAcceptingServerUrl.get() == null));
+        Assert.assertTrue(countly.moduleConfiguration.requestCompressionBlocked.get());
+
+        server.readsGzip = true;
+        countly.moduleConfiguration.fetchConfigFromServer(countly.config_);
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.getRequestCompressionEnabled()));
+        Assert.assertFalse(countly.moduleConfiguration.requestCompressionBlocked.get());
+
+        addDirectRequest(countly, "big_after_new_answer", BIG_VALUE);
+        Assert.assertTrue(server.waitForRequest("big_after_new_answer").compressed);
+    }
+
+    /** A compressed immediate request answered with JSON leaves compression on. */
+    @Test
+    public void compressedImmediateRequestAnsweredWithJson_compressionStaysOn() throws Exception {
+        TestServer server = startServer(true);
+        Countly countly = new Countly().init(config(server.url).enableRequestCompression());
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.getRequestCompressionEnabled()));
+
+        sendImmediateRequest(countly, "/o/sdk", "immediate_json");
+
+        Received request = server.waitForRequest("immediate_json");
+        Assert.assertEquals("/o/sdk?content_encoding=gzip", request.path);
+        Assert.assertTrue(request.compressed);
+        Assert.assertFalse(countly.moduleConfiguration.requestCompressionBlocked.get());
+    }
+
+    /** A compressed immediate request answered with a page that is not JSON was not accepted: compression stops. */
+    @Test
+    public void compressedImmediateRequestAnsweredWithPage_stopsCompression() throws Exception {
+        TestServer server = startServer(true);
+        server.pageAnswerMarker = "immediate_page";
+        Countly countly = new Countly().init(config(server.url).enableRequestCompression());
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.getRequestCompressionEnabled()));
+
+        sendImmediateRequest(countly, "/o/sdk", "immediate_page");
+
+        Assert.assertTrue(server.waitForRequest("immediate_page").compressed);
+        Assert.assertTrue(countly.moduleConfiguration.requestCompressionBlocked.get());
+    }
+
+    /** A compressed immediate request answered with an empty body was not accepted: compression stops. */
+    @Test
+    public void compressedImmediateRequestAnsweredWithNothing_stopsCompression() throws Exception {
+        TestServer server = startServer(true);
+        server.emptyAnswerMarker = "immediate_empty";
+        Countly countly = new Countly().init(config(server.url).enableRequestCompression());
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.getRequestCompressionEnabled()));
+
+        sendImmediateRequest(countly, "/o/sdk", "immediate_empty");
+
+        Assert.assertTrue(server.waitForRequest("immediate_empty").compressed);
+        Assert.assertTrue(countly.moduleConfiguration.requestCompressionBlocked.get());
+    }
+
+    /** A request whose URL already has a query goes plain, because the marker has to be the only query of the URL. */
+    @Test
+    public void requestToUrlWithQuery_staysPlain() throws Exception {
+        TestServer server = startServer(true);
+        Countly countly = new Countly().init(config(server.url).enableRequestCompression());
+        Assert.assertTrue(waitUntil(() -> countly.moduleConfiguration.getRequestCompressionEnabled()));
+
+        sendImmediateRequest(countly, "/o/sdk?method=test", "immediate_with_query");
+
+        Received request = server.waitForRequest("immediate_with_query");
+        Assert.assertEquals("/o/sdk?method=test", request.path);
+        Assert.assertFalse(request.compressed);
+        Assert.assertTrue(ConnectionProcessor.canCarryCompressionMarker("https://a.count.ly/o/sdk"));
+        Assert.assertFalse(ConnectionProcessor.canCarryCompressionMarker("https://a.count.ly/o/sdk?method=rc"));
     }
 
     /** The "gzip" answer is read live and never stored with the behavior settings. */
@@ -200,18 +313,21 @@ public class RequestCompressionTests {
         Assert.assertFalse(ModuleConfiguration.extractGzipFlag(null));
     }
 
-    /** Bodies under 1 KB are not compressed; bigger ones become gzip that decodes back to the body. */
+    /** Bodies under 1 KB or over 1 MB are not compressed; the ones between become gzip that decodes back to the body. */
     @Test
     public void gzipRequestBody_threshold() throws IOException {
         ModuleLog log = new ModuleLog();
-        String small = new String(new char[UtilsNetworking.REQUEST_COMPRESSION_MIN_BYTES - 1]).replace('\0', 'b');
-        String big = new String(new char[UtilsNetworking.REQUEST_COMPRESSION_MIN_BYTES]).replace('\0', 'b');
+        String small = repeated('b', UtilsNetworking.REQUEST_COMPRESSION_MIN_BYTES - 1);
+        String big = repeated('b', UtilsNetworking.REQUEST_COMPRESSION_MIN_BYTES);
+        String biggest = repeated('b', UtilsNetworking.REQUEST_COMPRESSION_MAX_BYTES);
 
         Assert.assertEquals(0, UtilsNetworking.gzipRequestBody(small, log).length);
         byte[] compressed = UtilsNetworking.gzipRequestBody(big, log);
         Assert.assertTrue(compressed.length > 0);
         Assert.assertTrue(compressed.length < big.length());
         Assert.assertEquals(big, gunzip(compressed));
+        Assert.assertEquals(biggest, gunzip(UtilsNetworking.gzipRequestBody(biggest, log)));
+        Assert.assertEquals(0, UtilsNetworking.gzipRequestBody(biggest + "b", log).length);
     }
 
     private CountlyConfig config(@NonNull String serverUrl) {
@@ -226,6 +342,19 @@ public class RequestCompressionTests {
         request.put("payload", payload);
         countly.requestQueue().addDirectRequest(request);
         countly.requestQueue().attemptToSendStoredRequests();
+    }
+
+    /** Sends a 2 KB request through the SDK's immediate request path and waits until its answer was handled. */
+    private static void sendImmediateRequest(@NonNull Countly countly, @NonNull String endpoint, @NonNull String marker) throws InterruptedException {
+        final CountDownLatch answered = new CountDownLatch(1);
+        String data = "app_key=" + TestUtils.commonAppKey + "&marker=" + marker + "&payload=" + BIG_VALUE;
+        ConnectionProcessor cp = countly.connectionQueue_.createConnectionProcessor();
+        new ImmediateRequestMaker().doWork(data, endpoint, cp, false, true, checkResponse -> answered.countDown(), countly.L);
+        Assert.assertTrue("no answer for " + marker, answered.await(30, TimeUnit.SECONDS));
+    }
+
+    private static String repeated(char c, int count) {
+        return new String(new char[count]).replace('\0', c);
     }
 
     private static String gunzip(@NonNull byte[] compressed) throws IOException {
@@ -282,16 +411,21 @@ public class RequestCompressionTests {
     /**
      * A local server that records every request. It answers the behavior settings request with "gzip": true when
      * it reads gzip and the request asked for it, and every other request with success, except the first compressed
-     * request while "refuseNextCompressed" is set, which gets 400.
+     * request while "refuseNextCompressed" is set, which gets 400, a request whose body has "pageAnswerMarker", which
+     * gets a page that is not JSON, and one whose body has "emptyAnswerMarker", which gets an empty answer.
      */
     private static class TestServer {
         final MockWebServer server = new MockWebServer();
         final List<Received> received = new CopyOnWriteArrayList<>();
         final String url;
+        volatile boolean readsGzip;
         volatile boolean refuseNextCompressed = false;
         volatile int answeredSettings = 0;
+        volatile String pageAnswerMarker = null;
+        volatile String emptyAnswerMarker = null;
 
-        TestServer(final boolean readsGzip) throws IOException {
+        TestServer(final boolean readsGzipAtStart) throws IOException {
+            readsGzip = readsGzipAtStart;
             server.setDispatcher(new Dispatcher() {
                 @NonNull @Override public MockResponse dispatch(@NonNull RecordedRequest request) {
                     Received r;
@@ -312,6 +446,13 @@ public class RequestCompressionTests {
                         refuseNextCompressed = false;
                         return new MockResponse().setResponseCode(400).setHeader("Content-Type", "application/json")
                             .setBody("{\"result\":\"Missing parameter \\\"app_key\\\" or \\\"device_id\\\"\"}");
+                    }
+                    if (pageAnswerMarker != null && r.body.contains(pageAnswerMarker)) {
+                        return new MockResponse().setResponseCode(200).setHeader("Content-Type", "text/html")
+                            .setBody("<html><body>blocked</body></html>");
+                    }
+                    if (emptyAnswerMarker != null && r.body.contains(emptyAnswerMarker)) {
+                        return new MockResponse().setResponseCode(200);
                     }
                     return new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json")
                         .setBody("{\"result\":\"Success\"}");
