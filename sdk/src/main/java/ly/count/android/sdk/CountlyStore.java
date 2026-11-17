@@ -67,6 +67,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String PREFERENCE_SERVER_CONFIG = "SERVER_CONFIG";
 
     private static final String PREFERENCE_HEALTH_CHECK_STATE = "HEALTH_CHECK";
+    private static final String PREFERENCE_ATTRIBUTION_STATE = "ATTRIBUTION_STATE";
     private static final String PREFERENCE_HEALTH_CHECK_AUTOMATIC_CRASHES = "HEALTH_CHECK_AUTOMATIC_CRASHES";
 
     private static final String CACHED_PUSH_ACTION_ID = "PUSH_ACTION_ID";
@@ -122,6 +123,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     String esRequestQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
     String esEventQueueCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
     String esHealthCheckCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
+    String esAttributionStateCache = null;//'null' is a special value that indicates that it hasn't read what is in persistent storage
 
     public PerformanceCounterCollector pcc;
 
@@ -381,6 +383,16 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
                     if (!esHealthCheckCache.equals(currentHCValue)) {
                         writePerformed = true;
                         spe.putString(PREFERENCE_HEALTH_CHECK_STATE, esHealthCheckCache);
+                    }
+                }
+
+                //written in the same commit as the request queue: the send-once markers must never outlive the
+                //attribution requests they stand for
+                if (esAttributionStateCache != null) {
+                    String currentASValue = preferences_.getString(PREFERENCE_ATTRIBUTION_STATE, "");
+                    if (!esAttributionStateCache.equals(currentASValue)) {
+                        writePerformed = true;
+                        spe.putString(PREFERENCE_ATTRIBUTION_STATE, esAttributionStateCache);
                     }
                 }
 
@@ -1029,6 +1041,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
         esDirtyFlag = false;
         esRequestQueueCache = null;
         esEventQueueCache = null;
+        esAttributionStateCache = null;
 
         //The generated-UUID cache lives in its own (namespaced) file, not in the main store. Without
         //wiping it too, a halt-then-init would silently re-adopt the pre-halt device id through
@@ -1213,5 +1226,26 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
 
     public int getMaxRequestQueueSize() {
         return maxRequestQueueSize;
+    }
+
+    //In explicit storage mode the state is cached and written with the request queue, like the queued attribution
+    //requests themselves: a process death before the write loses both, and the next launch sends them again.
+    public synchronized @NonNull String getAttributionState() {
+        if (explicitStorageModeEnabled) {
+            if (esAttributionStateCache == null) {
+                esAttributionStateCache = preferences_.getString(PREFERENCE_ATTRIBUTION_STATE, "");
+            }
+            return esAttributionStateCache;
+        }
+        return preferences_.getString(PREFERENCE_ATTRIBUTION_STATE, "");
+    }
+
+    public synchronized void setAttributionState(@NonNull String state) {
+        if (explicitStorageModeEnabled) {
+            esAttributionStateCache = state;
+            esDirtyFlag = true;
+        } else {
+            preferences_.edit().putString(PREFERENCE_ATTRIBUTION_STATE, state).apply();
+        }
     }
 }
