@@ -12,6 +12,7 @@ updates:
   # META-INF/com/android/build/gradle/aar-metadata.properties) rather than assuming.
   - package-ecosystem: gradle
     directory: "/"
+    target-branch: staging
     schedule:
       interval: weekly
       day: monday
