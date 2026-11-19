@@ -117,12 +117,12 @@ public class ScenarioEventIDTests {
         verifyRecordEventToEventQueueNotCalled(eqp);
 
         //view A
-        mCountly.views().recordView(vNames[0]);
+        mCountly.views().startAutoStoppedView(vNames[0]);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 1);
         clearInvocations(eqp);
 
         //view B
-        mCountly.views().recordView(vNames[1]);
+        mCountly.views().startAutoStoppedView(vNames[1]);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[0], null, "", null, 0, 2);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 1, 2);
         clearInvocations(eqp);
@@ -133,7 +133,7 @@ public class ScenarioEventIDTests {
         clearInvocations(eqp);
 
         //view C
-        mCountly.views().recordView(vNames[2]);
+        mCountly.views().startAutoStoppedView(vNames[2]);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[1], null, idV[0], null, 0, 2);
         verifyRecordEventToEventQueueIDs(eqp, ModuleViews.VIEW_EVENT_KEY, idV[2], null, idV[1], null, 1, 2);
         clearInvocations(eqp);

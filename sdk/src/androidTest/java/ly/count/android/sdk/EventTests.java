@@ -176,7 +176,7 @@ public class EventTests {
      */
     void fromJSON_CompareExpectedToParsed(@NonNull JSONObject jsonObj, @Nullable final Event expectedEvent) throws JSONException {
         //validate events as they are parsed
-        final Event parsedEvent = Event.fromJSON(jsonObj);
+        final Event parsedEvent = Event.fromJSON(jsonObj, new ModuleLog());
 
         if (!jsonObj.isNull(Event.KEY_KEY)) {
             assertEquals(expectedEvent.key, parsedEvent.key);
@@ -267,7 +267,7 @@ public class EventTests {
     @Test
     public void fromJSON_nullJSONObj() {
         try {
-            Event.fromJSON(null);
+            Event.fromJSON(null, new ModuleLog());
             fail("Expected NPE when calling Event.fromJSON with null");
         } catch (NullPointerException ignored) {
             // success
@@ -282,7 +282,7 @@ public class EventTests {
     @Test
     public void fromJSON_noKeyCausesJSONException() {
         final JSONObject jsonObj = new JSONObject();
-        assertNull(Event.fromJSON(jsonObj));
+        assertNull(Event.fromJSON(jsonObj, new ModuleLog()));
     }
 
     /**
@@ -294,7 +294,7 @@ public class EventTests {
     public void fromJSON_KeyNull() throws JSONException {
         final JSONObject jsonObj = new JSONObject();
         jsonObj.put(Event.KEY_KEY, JSONObject.NULL);
-        assertNull(Event.fromJSON(jsonObj));
+        assertNull(Event.fromJSON(jsonObj, new ModuleLog()));
     }
 
     /**
@@ -305,7 +305,7 @@ public class EventTests {
     @Test
     public void fromJSON_KeyEmpty() throws JSONException {
         final JSONObject jsonObj = CreateEventJsonObj("", null);
-        assertNull(Event.fromJSON(jsonObj));
+        assertNull(Event.fromJSON(jsonObj, new ModuleLog()));
     }
 
     /**
@@ -408,7 +408,7 @@ public class EventTests {
         final Event expected = new Event();
         expected.key = "eventKey";
         final JSONObject jsonObj = CreateEventJsonObj(expected.key, 1234);
-        assertNull(Event.fromJSON(jsonObj));
+        assertNull(Event.fromJSON(jsonObj, new ModuleLog()));
     }
 
     /**
@@ -465,7 +465,7 @@ public class EventTests {
     public void toJSON_nullSegmentation() throws JSONException {
         final Event event = new Event();
         event.key = "eventKey";
-        final JSONObject jsonObj = event.toJSON();
+        final JSONObject jsonObj = event.toJSON(new ModuleLog());
 
         assertNull(event.segmentation);
 
@@ -492,7 +492,7 @@ public class EventTests {
         final Event event = new Event();
         event.key = "eventKey";
         event.segmentation = new HashMap<>();
-        final JSONObject jsonObj = event.toJSON();
+        final JSONObject jsonObj = event.toJSON(new ModuleLog());
 
         assertEquals(6, jsonObj.length());
         assertEquals(event.key, jsonObj.getString(Event.KEY_KEY));
@@ -528,7 +528,7 @@ public class EventTests {
         event.segmentation.put("segkey1", 123);
         event.segmentation.put("segkey2", 544.43d);
         event.segmentation.put("segkey3", true);
-        final JSONObject jsonObj = event.toJSON();
+        final JSONObject jsonObj = event.toJSON(new ModuleLog());
         assertEquals(11, jsonObj.length());
         assertEquals(event.key, jsonObj.getString(Event.KEY_KEY));
         assertEquals(event.timestamp, jsonObj.getInt(Event.TIMESTAMP_KEY));
@@ -556,7 +556,7 @@ public class EventTests {
         final Event event = new Event();
         event.key = "eventKey";
         event.sum = Double.NaN;
-        final JSONObject jsonObj = event.toJSON();
+        final JSONObject jsonObj = event.toJSON(new ModuleLog());
 
         assertEquals(5, jsonObj.length());
         assertEquals(event.key, jsonObj.getString(Event.KEY_KEY));

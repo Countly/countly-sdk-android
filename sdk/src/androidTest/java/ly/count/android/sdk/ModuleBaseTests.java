@@ -19,7 +19,7 @@ public class ModuleBaseTests {
         countlyStore.clear();
 
         mCountly = new Countly();
-        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true)));
     }
 
     @After
@@ -29,7 +29,7 @@ public class ModuleBaseTests {
     //making sure all needed modules are added
     @Test
     public void checkup() {
-        Assert.assertEquals(17, mCountly.modules.size());
+        Assert.assertEquals(18, mCountly.modules.size());
     }
 
     //just making sure nothing throws exceptions

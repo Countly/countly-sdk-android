@@ -1,0 +1,4 @@
+# Local scratch produced by ad-hoc tooling run from this directory — never committed.
+# (Without this, `git add .github/` would sweep in ~100 MB of recordings and logs.)
+__pycache__/
+test_output/

@@ -143,4 +143,8 @@ public class MainActivity extends AppCompatActivity {
     public void onClickButtonSessions(View v) {
         startActivity(new Intent(this, ActivityExampleSessions.class));
     }
+
+    public void onClickButtonMultiInstance(View v) {
+        startActivity(new Intent(this, ActivityExampleMultiInstance.class));
+    }
 }

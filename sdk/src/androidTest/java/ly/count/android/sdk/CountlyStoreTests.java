@@ -257,7 +257,7 @@ public class CountlyStoreTests {
         event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60_000;
 
         //insert bad entry
-        final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::blah:::" + event2.toJSON().toString();
+        final String joinedEventsWithBadJSON = event1.toJSON(new ModuleLog()).toString() + ":::blah:::" + event2.toJSON(new ModuleLog()).toString();
         final SharedPreferences prefs = TestUtils.getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
@@ -281,7 +281,7 @@ public class CountlyStoreTests {
         event2.timestamp = UtilsTime.getCurrentInstant().timestampMs - 60_000;
 
         //insert null entry
-        final String joinedEventsWithBadJSON = event1.toJSON().toString() + ":::{\"key\":null}:::" + event2.toJSON().toString();
+        final String joinedEventsWithBadJSON = event1.toJSON(new ModuleLog()).toString() + ":::{\"key\":null}:::" + event2.toJSON(new ModuleLog()).toString();
         final SharedPreferences prefs = TestUtils.getContext().getSharedPreferences(countlyStoreName, Context.MODE_PRIVATE);
         prefs.edit().putString("EVENTS", joinedEventsWithBadJSON).commit();
 
@@ -777,7 +777,7 @@ public class CountlyStoreTests {
         final Event event2 = CreateEvent(eKeys[1]);
         store.addEvent(event2);
 
-        final String jsonToEncode = "[" + event1.toJSON().toString() + "," + event2.toJSON().toString() + "]";
+        final String jsonToEncode = "[" + event1.toJSON(new ModuleLog()).toString() + "," + event2.toJSON(new ModuleLog()).toString() + "]";
         final String expected = URLEncoder.encode(jsonToEncode, "UTF-8");
         assertEquals(expected, sp.getEventsForRequestAndEmptyEventQueue());
         assertEquals(0, sp.getEventQueueSize());

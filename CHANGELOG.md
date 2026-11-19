@@ -1,3 +1,126 @@
+## 26.8.0
+* !! Major breaking change !! New versions of the SDK, `sdk-native` and the symbol upload plugin are published at `https://maven.countly.com` instead of Maven Central.
+  Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
+  ```groovy
+  maven {
+    url = 'https://maven.countly.com'
+    content { includeGroupByRegex 'ly\\.count\\..*' }
+  }
+  ```
+  or, in `settings.gradle.kts`:
+  ```kotlin
+  maven {
+    url = uri("https://maven.countly.com")
+    content { includeGroupByRegex("ly\\.count\\..*") }
+  }
+  ```
+  Older versions stay on Maven Central. The files are signed with the same key (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
+  If you use the symbol upload plugin, also add the repository to `pluginManagement { repositories { } }` in `settings.gradle`, or to `buildscript { repositories { } }` when the plugin is on the buildscript classpath.
+* ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Both are 26.8.0 in this release.
+  Their own changes are in `sdk-native/CHANGELOG.md` and `upload-plugin/CHANGELOG.md`. Later, use the latest version of each instead of the SDK's version number.
+* ! Minor breaking change ! "halt()" now also erases the generated device ID.
+* ! Minor breaking change ! These `CountlyConfig` values are copied at initialization, so later changes to them are no longer picked up:
+  * the custom network request headers, use "requestQueue().addCustomNetworkRequestHeaders(Map)" to change them later
+  * the custom crash segmentation
+  * the parameter tampering salt
+* ! Minor breaking change ! Removed the unused `androidx.multidex:multidex` dependency. An app that uses it has to declare it itself.
+
+* Added multi-instance support:
+  * A named instance from "Countly.instance(name)" has its own storage, request queue and device ID. Manage instances with "Countly.getInstance(name)", "Countly.listInstances()" and "Countly.removeInstance(name)".
+  * "Countly.sharedInstance()" is unchanged. A named instance starts with empty storage, so do not move an existing integration onto one.
+  * Push notifications and native crash reporting stay with the default instance, and one content or feedback widget shows at a time. A named instance records unhandled crashes only when its own config enables them.
+* Added server requested SDK log gathering. When the server asks, the SDK uploads its own log lines, even with logging disabled:
+  * When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
+  * Gathered lines can contain whole requests and server replies.
+  * Until the SDK knows whether the server asks for them, it holds its log lines in memory.
+* Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
+* Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
+* Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content events and to the feedback widget events the SDK records. Keys these events reserve are dropped from it. (Experimental!)
+* Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
+* Added "changeServerUrl(String)" to the request queue interface to change the server URL after init. The new URL is kept in memory only, the next init uses the one in the config.
+* Added "changeAppKey(String)" to the request queue interface to change the app key after init. The new key is kept in memory only, the next init uses the one in the config.
+  * Requests already in the queue keep the old key: move them with "requestQueue().overwriteAppKeys()" or drop them with "requestQueue().eraseWrongAppKeyRequests()".
+* Improved internal logging: calls ignored because a value is missing or invalid are logged as warnings instead of errors, failed requests as debug lines instead of warnings or errors, and the segmentation passing through the internal limits as verbose lines instead of warnings.
+
+* Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.
+* Mitigated an issue where an app that stayed in the foreground refreshed its SDK behavior settings only every 4,000 hours instead of every 4 hours.
+* Mitigated an issue where "disableBackoffMechanism()" had no effect until SDK behavior settings arrived.
+* Mitigated a crash when a content or feedback widget was closed from a background thread, for example by a device ID change without merge or by removing consent.
+* Mitigated an issue where an auto-stopped view could stop being tracked when the app came back from the background.
+* Mitigated an issue where, with automatic view tracking, coming back to an activity that had not been stopped, for example when a translucent activity closed, did not record that activity's view again. The view of the activity that was left kept counting, and events recorded meanwhile were attributed to it.
+* Fixed an issue where a view ID stopped working after the app was backgrounded and foregrounded. The view was reopened under a new ID, so `stopViewWithID`, `pauseViewWithID`, `resumeViewWithID`, and `addSegmentationToViewWithID` no longer recognized the ID returned by `startView`, and the view stayed open.
+* Mitigated an issue where the app was treated as being in the background after moving from one activity to another. Crash reports were marked as happening in the background, and with visibility tracking, events were marked as recorded in the background.
+* Mitigated an issue where a setting removed from the SDK behavior settings in SDK Manager did not go back to the value set in `CountlyConfig`, or to the SDK default.
+* Mitigated an issue where old requests kept being dropped from a full request queue after the SDK behavior settings turned the request age limit off.
+* Mitigated push notification image issues that could show a notification late, or not at all:
+  * A notification waits at most 8 seconds for its images and is shown without the ones that have not arrived.
+  * Images over 5 MB are left out, and large ones are scaled down while decoding.
+  * Images on the Countly server use the SDK's certificate pinning and custom SSL socket factory.
+* Mitigated an issue where tapping a push notification action button left the notification visible, so a second tap recorded the action again.
+* Mitigated a crash when a push notification dialog's screen closed before its image loaded. The dialog now shows on the current screen.
+* Mitigated push token issues:
+  * The token is sent again when push consent is given again, also on API level 34+ targets and within a minute.
+  * The token is sent for the new user after a device ID change without merge.
+  * The token request is filed under the device ID that is current when it is queued.
+* Mitigated an issue where fatal crash reports were lost in explicit storage mode.
+* Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
+* Mitigated an issue where durations changed when the device clock was adjusted: sessions, views, timed events, custom and network APM traces, foreground and background time, and the running time in crash reports. Timestamps still follow the device clock.
+* Mitigated an issue where "requestQueue().flushQueues()" kept the recorded events that were not in a request yet, so they were still sent.
+* Mitigated health check issues:
+  * Warnings, errors and backoffs counted while the health check was on its way were lost when it was delivered.
+  * A health check that could not be sent counted its own failure as an SDK warning and error.
+  * The counts were lost when the app was killed in the foreground.
+  * The longest run of backoffs could be reported shorter than it was.
+  * The health check sent its metrics without the metrics consent.
+* Mitigated an issue where an event recorded with a negative duration kept that duration. The duration is now ignored.
+
+* Removed the following deprecated calls from "CountlyConfig":
+  * "setMaxSegmentationValues(int)", use "sdkInternalLimits.setMaxSegmentationValues(int)" instead
+  * "setMaxBreadcrumbCount(int)", use "sdkInternalLimits.setMaxBreadcrumbCount(int)" instead
+  * "enableCrashReporting()", use "crashes.enableCrashReporting()" instead
+  * "setRecordAllThreadsWithCrash()", use "crashes.enableRecordAllThreadsWithCrash()" instead
+  * "setCustomCrashSegment(Map)", use "crashes.setCustomCrashSegmentation(Map)" instead
+  * "setCrashFilterCallback(CrashFilterCallback)", use "crashes.setGlobalCrashFilterCallback(GlobalCrashFilterCallback)" instead
+  * "setViewTracking(boolean)", use "enableAutomaticViewTracking()" instead
+  * "setAutoTrackingUseShortName(boolean)", use "enableAutomaticViewShortNames()" instead
+  * "setAutomaticViewSegmentation(Map)", use "setGlobalViewSegmentation(Map)" instead
+  * "setAutoTrackingExceptions(Class[])", use "setAutomaticViewTrackingExclusions(Class[])" instead
+  * "setRemoteConfigAutomaticDownload(boolean, RemoteConfigCallback)", use "enableRemoteConfigAutomaticTriggers()" and "RemoteConfigRegisterGlobalCallback(RCDownloadCallback)" instead
+  * "setRecordAppStartTime(boolean)", use "apm.enableAppStartTimeTracking()" instead
+  * "setAppStartTimestampOverride(long)", use "apm.setAppStartTimestampOverride(long)" instead
+  * "enableManualAppLoadedTrigger()", use "apm.enableManualAppLoadedTrigger()" instead
+  * "enableManualForegroundBackgroundTriggerAPM()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking, which needs the "Application" in "CountlyConfig"
+  * "setEnableAttribution(boolean)", there is no replacement, it had no effect. Use "setDirectAttribution(String, String)" or "setIndirectAttribution(Map)" for attribution
+  * "checkForNativeCrashDumps(boolean)", there is no replacement, native crash dumps are always checked
+  * "enableServerConfiguration()", there is no replacement, it had no effect
+* Removed the following deprecated calls from the "RemoteConfig" interface:
+  * "update(RemoteConfigCallback)", use "downloadAllKeys(RCDownloadCallback)" instead
+  * "updateForKeysOnly(String[], RemoteConfigCallback)", use "downloadSpecificKeys(String[], RCDownloadCallback)" instead
+  * "updateExceptKeys(String[], RemoteConfigCallback)", use "downloadOmittingKeys(String[], RCDownloadCallback)" instead
+  * "getValueForKey(String)", use "getValue(String)" instead
+  * "getAllValues()", use "getValues()" instead
+  * "clearStoredValues()", use "clearAll()" instead
+* Removed the following deprecated calls from the "Views" interface:
+  * "recordView(String)", use "startAutoStoppedView(String)" instead
+  * "recordView(String, Map)", use "startAutoStoppedView(String, Map)" instead
+  * "isAutomaticViewTrackingEnabled()", there is no replacement
+* Removed the following deprecated calls from the "Apm" interface:
+  * "triggerForeground()" and "triggerBackground()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking, which needs the "Application" in "CountlyConfig"
+* Removed the following deprecated calls from the "Ratings" interface:
+  * "recordManualRating(String, int, String, String, boolean)", use "recordRatingWidgetWithID(String, int, String, String, boolean)" instead
+  * "showFeedbackPopup(String, String, Activity, FeedbackRatingCallback)", use "presentRatingWidgetWithID(String, String, Activity, FeedbackRatingCallback)" instead
+* Removed the deprecated function "presentFeedbackWidget(CountlyFeedbackWidget, Context, String, FeedbackCallback)" from the "Feedback" interface, use "presentFeedbackWidget(CountlyFeedbackWidget, Context, FeedbackCallback)" instead
+* Removed the following deprecated push calls:
+  * "CountlyPush.init(Application, CountlyMessagingMode)" and "CountlyPush.init(Application, CountlyMessagingMode, CountlyMessagingProvider)", use "CountlyPush.init(CountlyConfigPush)" instead, with "CountlyConfigPush.setProvider(CountlyMessagingProvider)" for the provider
+  * "CountlyConfigPush(Application, CountlyMessagingMode)", use "CountlyConfigPush(Application)" instead
+  * "CountlyPush.getLastMessagingMethod(Context)", there is no replacement, it always returned "0"
+* Removed the deprecated function "Countly.hasBeenCalledOnStart()", there is no replacement
+* Removed the deprecated function "Utils.API(int)", there is no replacement, compare against "Build.VERSION.SDK_INT" instead
+
+* Deprecated the "RemoteConfigCallback" interface, replaced with "RCDownloadCallback"
+* Deprecated the "CrashFilterCallback" interface, replaced with "GlobalCrashFilterCallback"
+* Deprecated the "Countly.CountlyMessagingMode" enum, as the messaging mode is no longer used
+
 ## 26.1.6
 * Added a new configuration option `enableClearStoredDeviceId()` that clears the stored device ID during init, so the SDK resolves a device ID from scratch instead of reusing the stored one.
 * Added a new configuration option `setMaxValueSizePicture(int)` that defines maximum length of profile picture url.

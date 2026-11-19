@@ -63,6 +63,16 @@ public class DeviceInfoTests {
         assertEquals("Android", regularDeviceInfo.mp.getOS());
     }
 
+    /**
+     * The running time sent with crash reports comes from the monotonic clock, which a change of the device clock
+     * does not move
+     */
+    @Test
+    public void testGetRunningTime_monotonicClock() {
+        long runningTime = Long.parseLong(regularDeviceInfo.mp.getRunningTime());
+        assertEquals(UtilsTime.monotonicTimeSeconds() - DeviceInfo.startTime, runningTime, 1);
+    }
+
     @Test
     public void testGetOSVersion() {
         assertEquals(android.os.Build.VERSION.RELEASE, regularDeviceInfo.mp.getOSVersion());
@@ -75,10 +85,11 @@ public class DeviceInfoTests {
 
     @Test
     public void testGetResolution() {
-        final DisplayMetrics metrics = new DisplayMetrics();
-        ((WindowManager) TestUtils.getContext().getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRealMetrics(metrics);
-        final String expected = metrics.widthPixels + "x" + metrics.heightPixels;
-        assertEquals(expected, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
+        //the SDK's own metrics leave the display cutout out from API 30, so getRealMetrics can differ
+        final DisplayMetrics metrics = UtilsDevice.getDisplayMetrics(TestUtils.getContext());
+        Assert.assertTrue(metrics.widthPixels > 0);
+        Assert.assertTrue(metrics.heightPixels > 0);
+        assertEquals(metrics.widthPixels + "x" + metrics.heightPixels, regularDeviceInfo.mp.getResolution(TestUtils.getContext()));
     }
 
     @Test

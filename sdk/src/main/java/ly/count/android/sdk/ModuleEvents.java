@@ -2,18 +2,41 @@ package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import ly.count.android.sdk.messaging.ModulePush;
 
 public class ModuleEvents extends ModuleBase implements EventProvider {
-    static final Map<String, Event> timedEvents = new HashMap<>();
+    // Per-instance timed-event store. Was 'static', which let a timed event started on one Countly
+    // instance be ended/cancelled/cleared by another; each instance now owns its own timed events.
+    final Map<String, Event> timedEvents = new HashMap<>();
 
     final static String ACTION_EVENT_KEY = "[CLY]_action";
     final static String VISIBILITY_KEY = "cly_v";
     final static String PREVIOUS_EVENT_NAME_KEY = "cly_pen";
     final static String PREVIOUS_VIEW_NAME_KEY = "cly_pvn";
     final static String CURRENT_VIEW_NAME_KEY = "cly_cvn";
+    final static String internalEventKeyPrefix = "[CLY]_";
+
+    /**
+     * The consents each internal event is recorded under, any one of them is enough. The consent checks of
+     * {@link #recordEventInternal} read it, and so does log gathering, so a line about an event follows the event.
+     */
+    static final Map<String, String[]> internalEventConsents;
+
+    static {
+        Map<String, String[]> consents = new HashMap<>();
+        consents.put(ModuleFeedback.NPS_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.feedback });
+        consents.put(ModuleFeedback.SURVEY_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.feedback });
+        //these events can be reported from a lot of sources, therefore multiple consents could apply
+        consents.put(ModuleFeedback.RATING_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.starRating, Countly.CountlyFeatureNames.feedback });
+        consents.put(ModuleViews.VIEW_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.views });
+        consents.put(ModuleViews.ORIENTATION_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.users });
+        consents.put(ModulePush.PUSH_EVENT_ACTION, new String[] { Countly.CountlyFeatureNames.push });
+        consents.put(ACTION_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.scrolls });
+        internalEventConsents = Collections.unmodifiableMap(consents);
+    }
 
     //interface for SDK users
     final Events eventsInterface;
@@ -72,7 +95,44 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
      * @param instant
      * @param eventIdOverride
      */
-    public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, final double dur, UtilsTime.Instant instant, final String eventIdOverride) {
+    /**
+     * Every event flush goes through here. The request queue module is reached through _cly and teardown
+     * nulls that field, so a flush on a dying instance skips - leaving the event in the queue for the next
+     * init to pick up - instead of throwing. Snapshotted on each call rather than once per event, because the
+     * field can go null between a check and a use.
+     */
+    private void sendEventsIfNeededWhenPossible(boolean sendEvents) {
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(sendEvents);
+        } else {
+            L.w("[ModuleEvents] sendEventsIfNeededWhenPossible, the request queue module is gone, leaving the events queued");
+        }
+    }
+
+    private void sendEventsIfNeededWhenPossible(boolean sendEvents, boolean triggerRefreshContentZone) {
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(sendEvents, triggerRefreshContentZone);
+        } else {
+            L.w("[ModuleEvents] sendEventsIfNeededWhenPossible, the request queue module is gone, leaving the events queued");
+        }
+    }
+
+    /**
+     * @param key the key of an internal event, one of {@link #internalEventConsents}
+     * @return true when any consent the event is recorded under is given
+     */
+    private boolean internalEventConsentGiven(@NonNull final String key) {
+        for (String feature : internalEventConsents.get(key)) {
+            if (consentProvider.getConsent(feature)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void recordEventInternal(@Nullable final String key, @Nullable Map<String, Object> segmentation, int count, final double sum, double dur, UtilsTime.Instant instant, final String eventIdOverride) {
         //assert key != null;
         assert count >= 1;
         assert _cly.isInitialized();
@@ -84,15 +144,23 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
         L.v("[ModuleEvents] calling 'recordEventInternal'");
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] recordEventInternal, Valid Countly event key is required. Event will be ignored.");
+            L.w("[ModuleEvents] recordEventInternal, Valid Countly event key is required. Event will be ignored.");
+            healthTracker.recordLogCode("w701", "events");
             return;
         }
         if (count < 1) {
-            L.e("[ModuleEvents] recordEventInternal, event count should be greater than zero. Key:[" + key + "] count:[" + count + "]");
+            L.w("[ModuleEvents] recordEventInternal, event count should be greater than zero. Key:[" + key + "] count:[" + count + "]");
+            healthTracker.recordLogCode("w750", "events");
             count = 1;
         }
+        if (dur < 0) {
+            L.w("[ModuleEvents] recordEventInternal, event duration can not be negative, it is ignored. Key:[" + key + "] dur:[" + dur + "]");
+            healthTracker.recordLogCode("w750", "events");
+            dur = 0;
+        }
 
-        L.d("[ModuleEvents] recordEventInternal, key:[" + key + "] eventIdOverride:[" + eventIdOverride + "] segmentation:[" + segmentation + "] count:[" + count + "] sum:[" + sum + "] dur:[" + dur + "] instant:[" + instant + "]");
+        //the segmentation is logged once the filters and consent have decided what is recorded, see recordEventToEventQueue
+        L.d("[ModuleEvents] recordEventInternal, key:[" + key + "] eventIdOverride:[" + eventIdOverride + "] segmentation entries:[" + (segmentation == null ? 0 : segmentation.size()) + "] count:[" + count + "] sum:[" + sum + "] dur:[" + dur + "] instant:[" + instant + "]");
 
         if (segmentation != null) {
             UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
@@ -126,10 +194,17 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         String pen = null;
         String cvn = null;
 
+        //Sibling modules are reached through _cly and teardown nulls those fields. Read once into a local -
+        //reading the field twice could return null after the check - and skip only the step that needs the
+        //missing module: the event itself is still recorded to the event queue.
+        ModuleViews viewsModule = _cly.moduleViews;
+
         if (key.equals(ModuleViews.VIEW_EVENT_KEY)) {
             pvid = viewIdProvider.getPreviousViewId();
             if (viewNameRecordingEnabled) {
-                pvn = _cly.moduleViews.previousViewName;
+                if (viewsModule != null) {
+                    pvn = viewsModule.previousViewName;
+                }
                 if (pvn == null) {
                     pvn = "";
                 }
@@ -138,7 +213,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             cvid = viewIdProvider.getCurrentViewId();
             if (viewNameRecordingEnabled) {
                 pen = previousEventName;
-                cvn = _cly.moduleViews.currentViewName;
+                if (viewsModule != null) {
+                    cvn = viewsModule.currentViewName;
+                }
                 if (pen == null) {
                     pen = "";
                 }
@@ -153,7 +230,12 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         }
 
         //before each event is recorded, check if user profile data needs to be saved
-        _cly.moduleUserProfile.saveInternal();
+        ModuleUserProfile userProfileModule = _cly.moduleUserProfile;
+        if (userProfileModule != null) {
+            userProfileModule.saveInternal();
+        } else {
+            L.w("[ModuleEvents] recordEventInternal, the user profile module is gone, not saving pending profile changes");
+        }
 
         if (visibilityTracking) {
             if (segmentation == null) {
@@ -177,19 +259,19 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         switch (key) {
             case ModuleFeedback.NPS_EVENT_KEY:
             case ModuleFeedback.SURVEY_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                    sendEventsIfNeededWhenPossible(true);
                 }
                 break;
-            case ModuleFeedback.RATING_EVENT_KEY: //these events can be reported from a lot of sources, therefore multiple consents could apply
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.starRating) || consentProvider.getConsent(Countly.CountlyFeatureNames.feedback)) {
+            case ModuleFeedback.RATING_EVENT_KEY:
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.views)) {
+                if (internalEventConsentGiven(key)) {
 
                     if (segmentation == null) {
                         segmentation = new HashMap<>();
@@ -204,28 +286,28 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     boolean triggerRefreshContentZone = viewName != null && configProvider.getJourneyTriggerViews().contains(viewName);
 
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(triggerRefreshContentZone, triggerRefreshContentZone);
+                    sendEventsIfNeededWhenPossible(triggerRefreshContentZone, triggerRefreshContentZone);
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.users)) {
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.push)) {
+                if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+                    sendEventsIfNeededWhenPossible(true);
                 }
                 break;
             case ACTION_EVENT_KEY:
-                if (consentProvider.getConsent(Countly.CountlyFeatureNames.clicks) || consentProvider.getConsent(Countly.CountlyFeatureNames.scrolls)) {
+                if (internalEventConsentGiven(key)) {
                     if (segmentation != null) {
                         UtilsInternalLimits.removeUnsupportedDataTypes(segmentation, L);
                     }
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(false);
+                    sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             default:
@@ -253,9 +335,9 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     // apply journey trigger events here
                     boolean triggerRefreshContentZone = configProvider.getJourneyTriggerEvents().contains(key);
 
-                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
+                    String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
 
-                    UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.config_.sdkInternalLimits, L, "[ModuleEvents] recordEventInternal");
+                    UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.sdkInternalLimits_, L, "[ModuleEvents] recordEventInternal");
 
                     if (viewNameRecordingEnabled) {
                         segmentation.put(CURRENT_VIEW_NAME_KEY, cvn);
@@ -265,7 +347,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     previousEventName = keyTruncated;
-                    _cly.moduleRequestQueue.sendEventsIfNeeded(triggerRefreshContentZone, triggerRefreshContentZone);
+                    sendEventsIfNeededWhenPossible(triggerRefreshContentZone, triggerRefreshContentZone);
                 }
                 break;
         }
@@ -277,15 +359,20 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
 
     boolean startEventInternal(final String key) {
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] Can't start event with a null or empty key");
+            L.w("[ModuleEvents] Can't start event with a null or empty key");
+            healthTracker.recordLogCode("w700", "events");
             return false;
         }
         if (timedEvents.containsKey(key)) {
+            L.w("[ModuleEvents] startEventInternal, a timed event with this key is already running, the call is ignored. Key:[" + key + "]");
+            healthTracker.recordLogCode("w722", "events");
             return false;
         }
         L.d("[ModuleEvents] Starting event: [" + key + "]");
         UtilsTime.Instant instant = UtilsTime.getCurrentInstant();
-        timedEvents.put(key, new Event(key, instant.timestampMs, instant.hour, instant.dow));
+        Event timedEvent = new Event(key, instant.timestampMs, instant.hour, instant.dow);
+        timedEvent.monotonicStartMs = UtilsTime.monotonicTimeMs();
+        timedEvents.put(key, timedEvent);
         return true;
     }
 
@@ -293,7 +380,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         L.d("[ModuleEvents] Ending event: [" + key + "]");
 
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] Can't end event with a null or empty key");
+            L.w("[ModuleEvents] Can't end event with a null or empty key");
+            healthTracker.recordLogCode("w700", "events");
             return false;
         }
 
@@ -305,31 +393,40 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
             }
 
             if (count < 1) {
-                L.e("[ModuleEvents] endEventInternal, event count should be greater than zero, key [" + key + "], dur:[" + count + "]. Count will be reset to '1'.");
+                L.w("[ModuleEvents] endEventInternal, event count should be greater than zero, key [" + key + "], dur:[" + count + "]. Count will be reset to '1'.");
+                healthTracker.recordLogCode("w750", "events");
                 count = 1;
             }
             L.d("[ModuleEvents] Ending event: [" + key + "]");
 
-            long currentTimestamp = UtilsTime.currentTimestampMs();
-            double duration = (currentTimestamp - event.timestamp) / 1000.0;
+            double duration = (UtilsTime.monotonicTimeMs() - event.monotonicStartMs) / 1000.0;
             UtilsTime.Instant instant = new UtilsTime.Instant(event.timestamp, event.hour, event.dow);
 
             eventProvider.recordEventInternal(key, segmentation, count, sum, duration, instant, null);
             return true;
         } else {
+            L.w("[ModuleEvents] endEventInternal, no timed event with this key is running, the call is ignored. Key:[" + key + "]");
+            healthTracker.recordLogCode("w720", "events");
             return false;
         }
     }
 
     boolean cancelEventInternal(final String key) {
         if (key == null || key.length() == 0) {
-            L.e("[ModuleEvents] Can't cancel event with a null or empty key");
+            L.w("[ModuleEvents] Can't cancel event with a null or empty key");
+            healthTracker.recordLogCode("w700", "events");
             return false;
         }
 
         Event event = timedEvents.remove(key);
 
-        return event != null;
+        if (event == null) {
+            L.w("[ModuleEvents] cancelEventInternal, no timed event with this key is running, the call is ignored. Key:[" + key + "]");
+            healthTracker.recordLogCode("w721", "events");
+            return false;
+        }
+
+        return true;
     }
 
     @Override
@@ -373,9 +470,11 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public void recordPastEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur, long timestamp) {
             synchronized (_cly) {
                 L.i("[Events] Calling recordPastEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "record");
 
                 if (timestamp <= 0) {
-                    L.e("Provided timestamp has to be greater that zero. Replacing that timestamp with the current time");
+                    L.w("[Events] recordPastEvent, provided timestamp has to be greater that zero. Replacing that timestamp with the current time");
+                    healthTracker.recordLogCode("w750", "events");
                     timestamp = UtilsTime.currentTimestampMs();
                 }
 
@@ -393,6 +492,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public boolean startEvent(@NonNull final String key) {
             synchronized (_cly) {
                 L.i("[Events] Calling startEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "start");
 
                 return startEventInternal(key);
             }
@@ -422,6 +522,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public boolean endEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum) {
             synchronized (_cly) {
                 L.i("[Events] Calling endEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "end");
 
                 return endEventInternal(key, segmentation, count, sum);
             }
@@ -435,6 +536,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public boolean cancelEvent(@NonNull final String key) {
             synchronized (_cly) {
                 L.i("[Events] Calling cancelEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "cancel");
 
                 return cancelEventInternal(key);
             }
@@ -527,9 +629,10 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         public void recordEvent(@NonNull final String key, @Nullable final Map<String, Object> segmentation, final int count, final double sum, final double dur) {
             synchronized (_cly) {
                 L.i("[Events] Calling recordEvent: [" + key + "]");
+                healthTracker.recordUsage("events", "record");
 
                 if (segmentation != null) {
-                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[Events] recordEvent,", L);
+                    UtilsInternalLimits.truncateSegmentationValues(segmentation, _cly.sdkInternalLimits_.maxSegmentationValues, "[Events] recordEvent,", L);
                 }
 
                 eventProvider.recordEventInternal(key, segmentation, count, sum, dur, null, null);

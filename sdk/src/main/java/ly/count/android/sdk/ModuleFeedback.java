@@ -13,6 +13,7 @@ import android.webkit.WebSettings;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,8 +43,16 @@ public class ModuleFeedback extends ModuleBase {
     ImmediateRequestGenerator iRGenerator;
 
     Feedback feedbackInterface = null;
-    private Activity currentActivity;
+    //Weak, like CountlyActivityHolder: the clearing path (onActivityDestroyed) only runs when the
+    //instance was initialised with an Application class - an instance without one (seeded through
+    //onInitialActivitySeeded) would otherwise pin the seeding Activity for as long as this instance
+    //lives, with the process-lifetime instance registry as the GC root.
+    private WeakReference<Activity> currentActivity;
     ContentOverlayView feedbackOverlay;
+
+    private @Nullable Activity getCurrentActivity() {
+        return currentActivity != null ? currentActivity.get() : null;
+    }
 
     ModuleFeedback(Countly cly, CountlyConfig config) {
         super(cly, config);
@@ -58,7 +67,7 @@ public class ModuleFeedback extends ModuleBase {
     @Override
     void onInitialActivitySeeded(@NonNull Activity activity) {
         L.d("[ModuleFeedback] onInitialActivitySeeded, activity: [" + activity.getClass().getSimpleName() + "]");
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
     }
 
     @Override
@@ -67,7 +76,7 @@ public class ModuleFeedback extends ModuleBase {
             return;
         }
 
-        currentActivity = activity;
+        currentActivity = new WeakReference<>(activity);
 
         // Move existing feedback overlay to the new activity
         if (feedbackOverlay != null && !activity.isFinishing() && !activity.isDestroyed()) {
@@ -91,7 +100,7 @@ public class ModuleFeedback extends ModuleBase {
     void onActivityDestroyed(@NonNull Activity activity) {
         // Identity check guards against clearing a newer activity when the destroy callback
         // for an older activity arrives after onActivityStarted of the next one (rotation race).
-        if (currentActivity == activity) {
+        if (getCurrentActivity() == activity) {
             currentActivity = null;
         }
         // The overlay itself is intentionally kept alive across activity transitions.
@@ -117,7 +126,8 @@ public class ModuleFeedback extends ModuleBase {
         L.d("[ModuleFeedback] calling 'getAvailableFeedbackWidgetsInternal', callback set:[" + (devCallback != null) + "]");
 
         if (devCallback == null) {
-            L.e("[ModuleFeedback] available feedback widget list can't be retrieved without a callback");
+            L.w("[ModuleFeedback] available feedback widget list can't be retrieved without a callback");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -147,15 +157,19 @@ public class ModuleFeedback extends ModuleBase {
 
                 L.d("[ModuleFeedback] Retrieved request: [" + checkResponse.toString() + "]");
 
-                List<CountlyFeedbackWidget> feedbackEntries = parseFeedbackList(checkResponse);
+                List<CountlyFeedbackWidget> feedbackEntries = parseFeedbackList(checkResponse, L);
 
                 devCallback.onFinished(feedbackEntries, null);
             }
         }, L);
     }
 
-    static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse) {
-        Countly.sharedInstance().L.d("[ModuleFeedback] calling 'parseFeedbackList'");
+    /**
+     * @param L logger of the instance that requested this widget list, so widget ids, types and tags are
+     * reported to that instance's log listener rather than the default instance's
+     */
+    static List<CountlyFeedbackWidget> parseFeedbackList(JSONObject requestResponse, @NonNull ModuleLog L) {
+        L.d("[ModuleFeedback] calling 'parseFeedbackList'");
 
         List<CountlyFeedbackWidget> parsedRes = new ArrayList<>();
         try {
@@ -163,7 +177,7 @@ public class ModuleFeedback extends ModuleBase {
                 JSONArray jArray = requestResponse.optJSONArray("result");
 
                 if (jArray == null) {
-                    Countly.sharedInstance().L.w("[ModuleFeedback] parseFeedbackList, response does not have a valid 'result' entry. No widgets retrieved.");
+                    L.w("[ModuleFeedback] parseFeedbackList, response does not have a valid 'result' entry. No widgets retrieved.");
                     return parsedRes;
                 }
 
@@ -179,7 +193,7 @@ public class ModuleFeedback extends ModuleBase {
 
                         JSONArray jTagArr = jObj.optJSONArray("tg");
                         if (jTagArr == null) {
-                            Countly.sharedInstance().L.w("[ModuleFeedback] parseFeedbackList, no tags received");
+                            L.w("[ModuleFeedback] parseFeedbackList, no tags received");
                         } else {
                             for (int in = 0; in < jTagArr.length(); in++) {
                                 valTagsArr.add(jTagArr.getString(in));
@@ -187,12 +201,12 @@ public class ModuleFeedback extends ModuleBase {
                         }
 
                         if (valId.isEmpty()) {
-                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
+                            L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget id, dropping");
                             continue;
                         }
 
                         if (valType.isEmpty()) {
-                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget type, dropping");
+                            L.e("[ModuleFeedback] parseFeedbackList, retrieved invalid entry with null or empty widget type, dropping");
                             continue;
                         }
 
@@ -204,7 +218,7 @@ public class ModuleFeedback extends ModuleBase {
                         } else if (valType.equals("rating")) {
                             plannedType = FeedbackWidgetType.rating;
                         } else {
-                            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
+                            L.e("[ModuleFeedback] parseFeedbackList, retrieved unknown widget type, dropping");
                             continue;
                         }
 
@@ -217,20 +231,21 @@ public class ModuleFeedback extends ModuleBase {
 
                         parsedRes.add(se);
                     } catch (Exception ex) {
-                        Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, failed to parse json, [" + ex.toString() + "]");
+                        L.e("[ModuleFeedback] parseFeedbackList, failed to parse json, [" + ex.toString() + "]");
                     }
                 }
             }
         } catch (Exception ex) {
-            Countly.sharedInstance().L.e("[ModuleFeedback] parseFeedbackList, Encountered exception while parsing feedback list, [" + ex.toString() + "]");
+            L.e("[ModuleFeedback] parseFeedbackList, Encountered exception while parsing feedback list, [" + ex.toString() + "]");
         }
 
         return parsedRes;
     }
 
-    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final String closeButtonText, @Nullable final FeedbackCallback devCallback) {
+    void presentFeedbackWidgetInternal(@Nullable final CountlyFeedbackWidget widgetInfo, @Nullable final Context context, @Nullable final FeedbackCallback devCallback) {
         if (widgetInfo == null) {
-            L.e("[ModuleFeedback] Can't present widget with null widget info");
+            L.w("[ModuleFeedback] Can't present widget with null widget info");
+            healthTracker.recordLogCode("w700");
 
             if (devCallback != null) {
                 devCallback.onFinished("Can't present widget with null widget info");
@@ -241,7 +256,8 @@ public class ModuleFeedback extends ModuleBase {
         L.d("[ModuleFeedback] presentFeedbackWidgetInternal, callback set:[" + (devCallback != null) + ", widget id:[" + widgetInfo.widgetId + "], widget type:[" + widgetInfo.type + "]");
 
         if (context == null) {
-            L.e("[ModuleFeedback] Can't show feedback, provided context is null");
+            L.w("[ModuleFeedback] Can't show feedback, provided context is null");
+            healthTracker.recordLogCode("w700");
             if (devCallback != null) {
                 devCallback.onFinished("Can't show feedback, provided context is null");
             }
@@ -299,9 +315,9 @@ public class ModuleFeedback extends ModuleBase {
         widgetListUrl.append("&app_key=");
         widgetListUrl.append(UtilsNetworking.urlEncodeString(baseInfoProvider.getAppKey()));
         widgetListUrl.append("&sdk_version=");
-        widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING);
+        widgetListUrl.append(_cly.COUNTLY_SDK_VERSION_STRING);
         widgetListUrl.append("&sdk_name=");
-        widgetListUrl.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
+        widgetListUrl.append(_cly.COUNTLY_SDK_NAME);
         widgetListUrl.append("&platform=android");
 
         // TODO: this will be the base for the custom segmentation users can send while presenting a widget
@@ -343,7 +359,7 @@ public class ModuleFeedback extends ModuleBase {
                         L.d("[ModuleFeedback] Calling on main thread");
 
                         try {
-                            showFeedbackWidget(context, widgetInfo, closeButtonText, devCallback, preparedWidgetUrl);
+                            showFeedbackWidget(context, widgetInfo, devCallback, preparedWidgetUrl);
 
                             if (devCallback != null) {
                                 devCallback.onFinished(null);
@@ -360,7 +376,7 @@ public class ModuleFeedback extends ModuleBase {
         }
     }
 
-    private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, String closeButtonText, FeedbackCallback devCallback, String url) {
+    private void showFeedbackWidget(Context context, CountlyFeedbackWidget widgetInfo, FeedbackCallback devCallback, String url) {
         if (!_cly.config_.webViewEnabled) {
             L.w("[ModuleFeedback] showFeedbackWidget, WebView is disabled via configuration, skipping");
             return;
@@ -371,17 +387,13 @@ public class ModuleFeedback extends ModuleBase {
         webView.clearHistory();
         webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
         Utils.applyWebViewSecurityDefaults(webView.getSettings());
-        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes);
+        ModuleRatings.FeedbackDialogWebViewClient webViewClient = new ModuleRatings.FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes, L);
         webView.setWebViewClient(webViewClient);
         webView.loadUrl(url);
         webView.requestFocus();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context).setView(webView).setCancelable(false);
-        String usedCloseButtonText = closeButtonText;
-        if (closeButtonText == null || closeButtonText.isEmpty()) {
-            usedCloseButtonText = "Close";
-        }
-        builder.setNeutralButton(usedCloseButtonText, new DialogInterface.OnClickListener() {
+        builder.setNeutralButton("Close", new DialogInterface.OnClickListener() {
             @Override public void onClick(DialogInterface dialogInterface, int i) {
                 L.d("[ModuleFeedback] Cancel button clicked for the feedback widget");
                 reportFeedbackWidgetCancelButton(widgetInfo);
@@ -404,10 +416,11 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         Activity activity = null;
+        Activity heldActivity = getCurrentActivity();
         if (context instanceof Activity && !((Activity) context).isFinishing()) {
             activity = (Activity) context;
-        } else if (currentActivity != null && !currentActivity.isFinishing()) {
-            activity = currentActivity;
+        } else if (heldActivity != null && !heldActivity.isFinishing()) {
+            activity = heldActivity;
         }
 
         if (activity == null) {
@@ -419,7 +432,8 @@ public class ModuleFeedback extends ModuleBase {
         }
 
         // Do not show feedback widget if content overlay is currently showing
-        if (_cly.moduleContent != null && _cly.moduleContent.contentOverlay != null) {
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null && contentModule.contentOverlay != null) {
             L.w("[ModuleFeedback] showFeedbackWidget_newActivity, content overlay is currently showing, skipping feedback widget");
             if (devCallback != null) {
                 devCallback.onFinished("Content overlay is currently showing");
@@ -496,6 +510,17 @@ public class ModuleFeedback extends ModuleBase {
             };
         }
 
+        // Only one content or feedback overlay may be presented at a time across the whole process,
+        // including other SDK instances (the overlay is bound to the single foreground Activity).
+        if (ContentOverlayView.isOtherOverlayPresented(feedbackOverlay)) {
+            L.w("[ModuleFeedback] a content or feedback overlay is already being shown (possibly by another instance), skipping this widget");
+            //every other skip in this method reports back, so a caller awaiting the callback is not left hanging
+            if (devCallback != null) {
+                devCallback.onFinished("A content or feedback overlay is already being shown");
+            }
+            return;
+        }
+
         // Clean up any existing feedback overlay
         if (feedbackOverlay != null) {
             feedbackOverlay.destroy();
@@ -504,6 +529,7 @@ public class ModuleFeedback extends ModuleBase {
 
         final Activity hostActivity = activity;
         feedbackOverlay = new ContentOverlayView(
+            _cly,
             hostActivity,
             pConfig,
             lConfig,
@@ -538,7 +564,7 @@ public class ModuleFeedback extends ModuleBase {
                 key = NPS_EVENT_KEY;
             }
 
-            eventProvider.recordEventInternal(key, segm, 1, 0, 0, null, null);
+            eventProvider.recordEventInternal(key, ModuleContent.withGlobalContentSegmentation(_cly, segm), 1, 0, 0, null, null);
         }
     }
 
@@ -552,12 +578,14 @@ public class ModuleFeedback extends ModuleBase {
         L.d("[ModuleFeedback] calling 'getFeedbackWidgetDataInternal', callback set:[" + (devCallback != null) + "]");
 
         if (devCallback == null) {
-            L.e("[ModuleFeedback] Feedback widget data can't be retrieved without a callback");
+            L.w("[ModuleFeedback] Feedback widget data can't be retrieved without a callback");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (widgetInfo == null) {
-            L.e("[ModuleFeedback] Feedback widget data if provided widget is 'null'");
+            L.w("[ModuleFeedback] Feedback widget data if provided widget is 'null'");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -593,9 +621,9 @@ public class ModuleFeedback extends ModuleBase {
         requestData.append(UtilsNetworking.urlEncodeString(widgetInfo.widgetId));
         requestData.append("&shown=1");
         requestData.append("&sdk_version=");
-        requestData.append(Countly.sharedInstance().COUNTLY_SDK_VERSION_STRING);
+        requestData.append(_cly.COUNTLY_SDK_VERSION_STRING);
         requestData.append("&sdk_name=");
-        requestData.append(Countly.sharedInstance().COUNTLY_SDK_NAME);
+        requestData.append(_cly.COUNTLY_SDK_NAME);
         requestData.append("&platform=android");
         requestData.append("&app_version=");
         requestData.append(cachedAppVersion);
@@ -630,7 +658,8 @@ public class ModuleFeedback extends ModuleBase {
      */
     void reportFeedbackWidgetManuallyInternal(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable JSONObject widgetData, @Nullable Map<String, Object> widgetResult) {
         if (widgetInfo == null) {
-            L.e("[ModuleFeedback] Can't report feedback widget data manually with 'null' widget info");
+            L.w("[ModuleFeedback] Can't report feedback widget data manually with 'null' widget info");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -655,18 +684,21 @@ public class ModuleFeedback extends ModuleBase {
                 Map.Entry<String, Object> entry = iter.next();
                 if (entry.getKey() == null) {
                     L.w("[ModuleFeedback] provided feedback widget result contains a 'null' key, it will be removed, value[" + entry.getValue() + "]");
+                    healthTracker.recordLogCode("w700");
                     iter.remove();
                 } else if (entry.getKey().isEmpty()) {
                     L.w("[ModuleFeedback] provided feedback widget result contains an empty string key, it will be removed, value[" + entry.getValue() + "]");
+                    healthTracker.recordLogCode("w700");
                     iter.remove();
                 } else if (entry.getValue() == null) {
                     L.w("[ModuleFeedback] provided feedback widget result contains a 'null' value, it will be removed, key[" + entry.getKey() + "]");
+                    healthTracker.recordLogCode("w700");
                     iter.remove();
                 }
 
                 if (entry.getValue() instanceof String) {
                     // TODO, if applicable think about applying key and segmentation count limit for the widget result
-                    String truncatedValue = UtilsInternalLimits.truncateValueSize(entry.getValue().toString(), _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleFeedback] reportFeedbackWidgetManuallyInternal");
+                    String truncatedValue = UtilsInternalLimits.truncateValueSize(entry.getValue().toString(), _cly.sdkInternalLimits_.maxValueSize, L, "[ModuleFeedback] reportFeedbackWidgetManuallyInternal");
                     if (!truncatedValue.equals(entry.getValue())) {
                         entry.setValue(truncatedValue);
                     }
@@ -676,21 +708,24 @@ public class ModuleFeedback extends ModuleBase {
             if (widgetInfo.type == FeedbackWidgetType.nps) {
                 //in case a nps widget was completed
                 if (!widgetResult.containsKey("rating")) {
-                    L.e("Provided NPS widget result does not have a 'rating' field, result can't be reported");
+                    L.w("Provided NPS widget result does not have a 'rating' field, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating data type
                 Object ratingValue = widgetResult.get("rating");
                 if (!(ratingValue instanceof Integer)) {
-                    L.e("Provided NPS widget 'rating' field is not an integer, result can't be reported");
+                    L.w("Provided NPS widget 'rating' field is not an integer, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating value range
                 int ratingValI = (int) ratingValue;
                 if (ratingValI < 0 || ratingValI > 10) {
-                    L.e("Provided NPS widget 'rating' value is out of bounds of the required value '[0;10]', it is probably an error");
+                    L.w("Provided NPS widget 'rating' value is out of bounds of the required value '[0;10]', it is probably an error");
+                    healthTracker.recordLogCode("w700");
                 }
 
                 if (!widgetResult.containsKey("comment")) {
@@ -701,21 +736,24 @@ public class ModuleFeedback extends ModuleBase {
             } else if (widgetInfo.type == FeedbackWidgetType.rating) {
                 //in case a rating widget was completed
                 if (!widgetResult.containsKey("rating")) {
-                    L.e("Provided Rating widget result does not have a 'rating' field, result can't be reported");
+                    L.w("Provided Rating widget result does not have a 'rating' field, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating data type
                 Object ratingValue = widgetResult.get("rating");
                 if (!(ratingValue instanceof Integer)) {
-                    L.e("Provided Rating widget 'rating' field is not an integer, result can't be reported");
+                    L.w("Provided Rating widget 'rating' field is not an integer, result can't be reported");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
                 //check rating value range
                 int ratingValI = (int) ratingValue;
                 if (ratingValI < 1 || ratingValI > 5) {
-                    L.e("Provided Rating widget 'rating' value is out of bounds of the required value '[1;5]', it is probably an error");
+                    L.w("Provided Rating widget 'rating' value is out of bounds of the required value '[1;5]', it is probably an error");
+                    healthTracker.recordLogCode("w700");
                 }
             }
         }
@@ -790,7 +828,7 @@ public class ModuleFeedback extends ModuleBase {
             segm.putAll(widgetResult);
         }
 
-        eventProvider.recordEventInternal(usedEventKey, segm, 1, 0, 0, null, null);
+        eventProvider.recordEventInternal(usedEventKey, ModuleContent.withGlobalContentSegmentation(_cly, segm), 1, 0, 0, null, null);
     }
 
     /**
@@ -836,11 +874,12 @@ public class ModuleFeedback extends ModuleBase {
                 }
 
                 if (selectedWidget == null) {
-                    L.e("[ModuleFeedback] presentFeedbackWidgetNameIDorTag, No feedback widget found with the provided nameIDorTag or type");
+                    L.w("[ModuleFeedback] presentFeedbackWidgetNameIDorTag, No feedback widget found with the provided nameIDorTag or type");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
-                presentFeedbackWidgetInternal(selectedWidget, context, null, devCallback);
+                presentFeedbackWidgetInternal(selectedWidget, context, devCallback);
             }
         });
     }
@@ -888,23 +927,6 @@ public class ModuleFeedback extends ModuleBase {
         /**
          * Present a chosen feedback widget
          *
-         * @param widgetInfo
-         * @param context
-         * @param closeButtonText if this is null, no "close" button will be shown
-         * @param devCallback
-         * @deprecated use {@link #presentFeedbackWidget(CountlyFeedbackWidget, Context, FeedbackCallback)} instead
-         */
-        public void presentFeedbackWidget(@Nullable CountlyFeedbackWidget widgetInfo, @Nullable Context context, @Nullable String closeButtonText, @Nullable FeedbackCallback devCallback) {
-            synchronized (_cly) {
-                L.i("[Feedback] Trying to present feedback widget");
-
-                presentFeedbackWidgetInternal(widgetInfo, context, closeButtonText, devCallback);
-            }
-        }
-
-        /**
-         * Present a chosen feedback widget
-         *
          * @param widgetInfo the widget to present
          * @param context the context to use for displaying the feedback widget
          * @param devCallback callback to be called when the feedback widget is closed
@@ -913,7 +935,7 @@ public class ModuleFeedback extends ModuleBase {
             synchronized (_cly) {
                 L.i("[Feedback] Trying to present feedback widget");
 
-                presentFeedbackWidgetInternal(widgetInfo, context, null, devCallback);
+                presentFeedbackWidgetInternal(widgetInfo, context, devCallback);
             }
         }
 

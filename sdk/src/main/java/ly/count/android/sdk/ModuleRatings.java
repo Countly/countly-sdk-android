@@ -54,12 +54,14 @@ public class ModuleRatings extends ModuleBase {
         }
 
         if (widgetId == null) {
-            L.e("[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
+            L.w("[ModuleRatings] recordManualRatingInternal, provided widget ID is null, returning");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (widgetId.isEmpty()) {
-            L.e("[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
+            L.w("[ModuleRatings] recordManualRatingInternal, provided widget ID is empty, returning");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -75,8 +77,8 @@ public class ModuleRatings extends ModuleBase {
             L.d("[ModuleRatings] recordManualRatingInternal, given rating too high, defaulting to 5");
         }
 
-        String truncatedEmail = UtilsInternalLimits.truncateValueSize(email, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
-        String truncatedComment = UtilsInternalLimits.truncateValueSize(comment, _cly.config_.sdkInternalLimits.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+        String truncatedEmail = UtilsInternalLimits.truncateValueSize(email, _cly.sdkInternalLimits_.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
+        String truncatedComment = UtilsInternalLimits.truncateValueSize(comment, _cly.sdkInternalLimits_.maxValueSize, L, "[ModuleRatings] recordManualRatingInternal");
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("platform", "android");
@@ -102,7 +104,7 @@ public class ModuleRatings extends ModuleBase {
      * @param srp
      */
     private void saveStarRatingPreferences(final StarRatingPreferences srp) {
-        storageProvider.setStarRatingPreferences(srp.toJSON().toString());
+        storageProvider.setStarRatingPreferences(srp.toJSON(L).toString());
     }
 
     /**
@@ -114,7 +116,7 @@ public class ModuleRatings extends ModuleBase {
      * @param starRatingTextDismiss provided dismiss text
      */
     void setStarRatingInitConfig(final int limit, final String starRatingTextTitle, final String starRatingTextMessage, final String starRatingTextDismiss) {
-        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
 
         if (limit >= 0) {
             srp.sessionLimit = limit;
@@ -141,13 +143,13 @@ public class ModuleRatings extends ModuleBase {
      * @param shouldShow
      */
     void setShowDialogAutomatically(final boolean shouldShow) {
-        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
         srp.automaticRatingShouldBeShown = shouldShow;
         saveStarRatingPreferences(srp);
     }
 
     boolean getIfStarRatingShouldBeShownAutomatically() {
-        StarRatingPreferences srp = loadStarRatingPreferences(_cly.countlyStore);
+        StarRatingPreferences srp = loadStarRatingPreferences(_cly.countlyStore, L);
         return srp.automaticRatingShouldBeShown;
     }
 
@@ -159,7 +161,7 @@ public class ModuleRatings extends ModuleBase {
      * @param disableAsking if set true, will not show star rating for every new app version
      */
     void setStarRatingDisableAskingForEachAppVersion(final boolean disableAsking) {
-        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
         srp.disabledAutomaticForNewVersions = disableAsking;
         saveStarRatingPreferences(srp);
     }
@@ -171,7 +173,7 @@ public class ModuleRatings extends ModuleBase {
      * @param starRatingCallback
      */
     void registerAppSession(final Context context, final StarRatingCallback starRatingCallback) {
-        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
 
         String currentAppVersion = deviceInfo.mp.getAppVersion(context);
 
@@ -194,8 +196,8 @@ public class ModuleRatings extends ModuleBase {
     /**
      * Returns the session limit set for automatic star rating
      */
-    static int getAutomaticStarRatingSessionLimitInternal(final StorageProvider sp) {
-        StarRatingPreferences srp = loadStarRatingPreferences(sp);
+    static int getAutomaticStarRatingSessionLimitInternal(final StorageProvider sp, @NonNull ModuleLog L) {
+        StarRatingPreferences srp = loadStarRatingPreferences(sp, L);
         return srp.sessionLimit;
     }
 
@@ -205,7 +207,7 @@ public class ModuleRatings extends ModuleBase {
      * @return
      */
     int getCurrentVersionsSessionCountInternal(final StorageProvider sp) {
-        StarRatingPreferences srp = loadStarRatingPreferences(sp);
+        StarRatingPreferences srp = loadStarRatingPreferences(sp, L);
         return srp.sessionAmount;
     }
 
@@ -213,7 +215,7 @@ public class ModuleRatings extends ModuleBase {
      * Set the automatic star rating session count back to 0
      */
     void clearAutomaticStarRatingSessionCountInternal() {
-        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
         srp.sessionAmount = 0;
         saveStarRatingPreferences(srp);
     }
@@ -224,7 +226,7 @@ public class ModuleRatings extends ModuleBase {
      * @param isCancellable
      */
     void setIfRatingDialogIsCancellableInternal(final boolean isCancellable) {
-        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
         srp.isDialogCancellable = isCancellable;
         saveStarRatingPreferences(srp);
     }
@@ -262,7 +264,7 @@ public class ModuleRatings extends ModuleBase {
          *
          * @return
          */
-        JSONObject toJSON() {
+        JSONObject toJSON(@NonNull ModuleLog L) {
             final JSONObject json = new JSONObject();
 
             try {
@@ -278,7 +280,7 @@ public class ModuleRatings extends ModuleBase {
                 json.put(KEY_DIALOG_TEXT_MESSAGE, dialogTextMessage);
                 json.put(KEY_DIALOG_TEXT_DISMISS, dialogTextDismiss);
             } catch (JSONException e) {
-                Countly.sharedInstance().L.w("Got exception converting an StarRatingPreferences to JSON", e);
+                L.w("Got exception converting an StarRatingPreferences to JSON", e);
             }
 
             return json;
@@ -290,7 +292,7 @@ public class ModuleRatings extends ModuleBase {
          * @param json
          * @return
          */
-        static StarRatingPreferences fromJSON(final JSONObject json) {
+        static StarRatingPreferences fromJSON(final JSONObject json, @NonNull ModuleLog L) {
 
             StarRatingPreferences srp = new StarRatingPreferences();
 
@@ -317,7 +319,7 @@ public class ModuleRatings extends ModuleBase {
                         srp.dialogTextDismiss = json.getString(KEY_DIALOG_TEXT_DISMISS);
                     }
                 } catch (JSONException e) {
-                    Countly.sharedInstance().L.w("Got exception converting JSON to a StarRatingPreferences", e);
+                    L.w("Got exception converting JSON to a StarRatingPreferences", e);
                 }
             }
 
@@ -332,7 +334,7 @@ public class ModuleRatings extends ModuleBase {
      * @param callback
      */
     void showStarRatingInternal(final Context context, final StarRatingCallback callback) {
-        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+        StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
         showStarRatingCustom(context, srp.dialogTextTitle, srp.dialogTextMessage, srp.dialogTextDismiss, srp.isDialogCancellable, callback);
     }
 
@@ -342,7 +344,7 @@ public class ModuleRatings extends ModuleBase {
      *
      * @return
      */
-    static StarRatingPreferences loadStarRatingPreferences(final StorageProvider sp) {
+    static StarRatingPreferences loadStarRatingPreferences(final StorageProvider sp, @NonNull ModuleLog L) {
         String srpString = sp.getStarRatingPreferences();
         StarRatingPreferences srp;
 
@@ -350,7 +352,7 @@ public class ModuleRatings extends ModuleBase {
             JSONObject srJSON;
             try {
                 srJSON = new JSONObject(srpString);
-                srp = StarRatingPreferences.fromJSON(srJSON);
+                srp = StarRatingPreferences.fromJSON(srJSON, L);
             } catch (JSONException e) {
                 e.printStackTrace();
                 srp = new StarRatingPreferences();
@@ -373,7 +375,8 @@ public class ModuleRatings extends ModuleBase {
      */
     void showStarRatingCustom(@NonNull final Context context, final String title, final String message, final String cancelText, final boolean isCancellable, @Nullable final StarRatingCallback callback) {
         if (!(context instanceof Activity)) {
-            L.e("[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
+            L.w("[ModuleRatings] Can't show star rating dialog, the provided context is not based off a activity");
+            healthTracker.recordLogCode("w700");
 
             return;
         }
@@ -439,7 +442,8 @@ public class ModuleRatings extends ModuleBase {
             if (devCallback != null) {
                 devCallback.callback("Countly widgetId cannot be null or empty");
             }
-            L.e("[ModuleRatings] Countly widgetId cannot be null or empty");
+            L.w("[ModuleRatings] Countly widgetId cannot be null or empty");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -447,7 +451,8 @@ public class ModuleRatings extends ModuleBase {
             if (devCallback != null) {
                 devCallback.callback("When showing feedback popup, Activity can't be null");
             }
-            L.e("[ModuleRatings] When showing feedback popup, Activity can't be null");
+            L.w("[ModuleRatings] When showing feedback popup, Activity can't be null");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -540,7 +545,7 @@ public class ModuleRatings extends ModuleBase {
                                 webView.getSettings().setCacheMode(WebSettings.LOAD_NO_CACHE);
                                 webView.getSettings().setJavaScriptEnabled(true);
                                 Utils.applyWebViewSecurityDefaults(webView.getSettings());
-                                webView.setWebViewClient(new FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes));
+                                webView.setWebViewClient(new FeedbackDialogWebViewClient(_cly.config_.content.allowedIntentSchemes, L));
                                 webView.loadUrl(ratingWidgetUrl);
 
                                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);
@@ -591,12 +596,13 @@ public class ModuleRatings extends ModuleBase {
         // null -> default denylist; non-empty -> allow-list mode (sourced from config.content).
         private final Set<String> allowedSchemes;
 
-        FeedbackDialogWebViewClient() {
-            this(null);
-        }
+        // Logger of the instance that opened this dialog. Blocked-scheme decisions are security
+        // relevant, so they must reach that instance's log listener, not the default instance's.
+        @NonNull private final ModuleLog L;
 
-        FeedbackDialogWebViewClient(Set<String> allowedSchemes) {
+        FeedbackDialogWebViewClient(Set<String> allowedSchemes, @NonNull ModuleLog L) {
             this.allowedSchemes = allowedSchemes;
+            this.L = L;
         }
 
         @Override
@@ -616,7 +622,7 @@ public class ModuleRatings extends ModuleBase {
                 // are not dispatched to ACTION_VIEW from server content, honoring any configured
                 // allow-list the same way the content overlay does.
                 if (!Utils.isExternalSchemeAllowed(link.getScheme(), allowedSchemes)) {
-                    Countly.sharedInstance().L.w("[FeedbackDialogWebViewClient] Blocked link with disallowed scheme: [" + link.getScheme() + "]");
+                    L.w("[FeedbackDialogWebViewClient] Blocked link with disallowed scheme: [" + link.getScheme() + "]");
                     return true;
                 }
                 Intent intent = new Intent(Intent.ACTION_VIEW, link);
@@ -642,7 +648,7 @@ public class ModuleRatings extends ModuleBase {
         private WebResourceResponse interceptScheme(Uri uri) {
             String scheme = uri == null ? null : uri.getScheme();
             if (!Utils.isWebContentSchemeAllowed(scheme, allowedSchemes)) {
-                Countly.sharedInstance().L.v("[FeedbackDialogWebViewClient] Blocked sub-resource with disallowed scheme: [" + uri + "]");
+                L.v("[FeedbackDialogWebViewClient] Blocked sub-resource with disallowed scheme: [" + uri + "]");
                 return Utils.blankWebResourceResponse();
             }
             return null;
@@ -652,7 +658,7 @@ public class ModuleRatings extends ModuleBase {
     @Override
     void callbackOnActivityResumed(Activity activity) {
         if (showStarRatingDialogOnFirstActivity) {
-            StarRatingPreferences srp = loadStarRatingPreferences(storageProvider);
+            StarRatingPreferences srp = loadStarRatingPreferences(storageProvider, L);
             srp.isShownForCurrentVersion = true;
             srp.automaticHasBeenShown = true;
 
@@ -685,21 +691,6 @@ public class ModuleRatings extends ModuleBase {
          * @param email email of the user
          * @param comment comment set by the user
          * @param userCanBeContacted set true if the user wants you to contact him
-         * @deprecated use 'recordRatingWidgetWithID' in place of this call
-         */
-        public void recordManualRating(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
-            L.i("[Ratings] Calling recordManualRating");
-            recordRatingWidgetWithID(widgetId, rating, email, comment, userCanBeContacted);
-        }
-
-        /**
-         * Record user rating widget manually without showing any message dialog.
-         *
-         * @param widgetId widget ID to which this rating will be tied. You get it from the dashboard
-         * @param rating value from 1 to 5 that will be set as the rating value
-         * @param email email of the user
-         * @param comment comment set by the user
-         * @param userCanBeContacted set true if the user wants you to contact him
          */
         public void recordRatingWidgetWithID(String widgetId, int rating, String email, String comment, boolean userCanBeContacted) {
             synchronized (_cly) {
@@ -711,17 +702,6 @@ public class ModuleRatings extends ModuleBase {
 
                 recordManualRatingInternal(widgetId, rating, email, comment, userCanBeContacted);
             }
-        }
-
-        /**
-         * Show the rating dialog to the user
-         *
-         * @param widgetId ID that identifies this dialog
-         * @deprecated use 'presentRatingWidgetWithID' in place of this call
-         */
-        public void showFeedbackPopup(final String widgetId, final String closeButtonText, final Activity activity, final FeedbackRatingCallback callback) {
-            L.i("[Ratings] Calling showFeedbackPopup");
-            presentRatingWidgetWithID(widgetId, closeButtonText, activity, callback);
         }
 
         /**
@@ -786,7 +766,7 @@ public class ModuleRatings extends ModuleBase {
          */
         public int getAutomaticStarRatingSessionLimit() {
             synchronized (_cly) {
-                int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.countlyStore);
+                int sessionLimit = ModuleRatings.getAutomaticStarRatingSessionLimitInternal(_cly.countlyStore, L);
 
                 L.i("[Ratings] Getting automatic star rating session limit: [" + sessionLimit + "]");
 

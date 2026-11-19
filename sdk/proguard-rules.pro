@@ -1,3 +1,5 @@
+# Rules for integrators live in consumer-rules.pro (shipped inside the AAR). This file applies only to
+# this module's own minification, which is off.
 # Add project specific ProGuard rules here.
 # By default, the flags in this file are appended to flags specified
 # in /projects/android-sdk/tools/proguard/proguard-android.txt

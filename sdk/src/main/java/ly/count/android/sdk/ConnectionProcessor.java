@@ -36,6 +36,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
 import org.json.JSONException;
@@ -70,6 +71,12 @@ public class ConnectionProcessor implements Runnable {
 
     public PerformanceCounterCollector pcc;
 
+    /** Set when this processor has to stop, see {@link ConnectionQueue#claimStorage(String)}; checked before each request. */
+    AtomicBoolean stopRequested;
+
+    /** Set by the queue that builds this processor, so that each request goes to the server URL in use when it is sent. */
+    BaseInfoProvider baseInfoProvider;
+
     private enum RequestResult {
         OK,         // success
         RETRY       // retry MAX_RETRIES_BEFORE_SLEEP before switching to SLEEP
@@ -101,20 +108,20 @@ public class ConnectionProcessor implements Runnable {
         boolean usingHttpPost = requestData.contains("&crash=") || requestData.length() >= 2048 || requestInfoProvider_.isHttpPostForced() || hasPicturePath;
 
         long approximateDateSize = 0L;
-        String urlStr = serverURL_ + urlEndpoint;
+        String urlStr = getServerURL() + urlEndpoint;
 
         if (usingHttpPost) {
             // for binary images, checksum will be calculated without url encoded value of the requestData
             // because they sent as form-data and server calculates it that way
             if (!hasPicturePath) {
-                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+                String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt(), L);
                 requestData += "&checksum256=" + checksum;
                 L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
                 approximateDateSize += requestData.length(); // add request data to the estimated data size
             }
         } else {
             urlStr += "?" + requestData;
-            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt());
+            String checksum = UtilsNetworking.sha256Hash(requestData + requestInfoProvider_.getRequestSalt(), L);
             urlStr += "&checksum256=" + checksum;
             L.v("[ConnectionProcessor] The following checksum was added:[" + checksum + "]");
         }
@@ -131,11 +138,7 @@ public class ConnectionProcessor implements Runnable {
         }
 
         final URLConnection urlConnection = url.openConnection();
-        // Apply the resolved SSL socket factory (a custom/FIPS factory or the pinning factory) to
-        // every HTTPS connection. A plain HTTP connection is left untouched.
-        if (sslSocketFactory_ != null && urlConnection instanceof HttpsURLConnection) {
-            ((HttpsURLConnection) urlConnection).setSSLSocketFactory(sslSocketFactory_);
-        }
+        applySslSocketFactory(urlConnection);
         conn = (HttpURLConnection) urlConnection;
 
         if (pcc != null) {
@@ -150,17 +153,7 @@ public class ConnectionProcessor implements Runnable {
         conn.setDoInput(true);
         conn.setRequestMethod("GET");
 
-        if (requestHeaderCustomValues_ != null) {
-            //if there are custom header values, add them
-            L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
-            for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
-                String key = entry.getKey();
-                String value = entry.getValue();
-                if (key != null && value != null && !key.isEmpty()) {
-                    conn.addRequestProperty(key, value);
-                }
-            }
-        }
+        addCustomRequestHeaders(conn);
 
         L.v("[ConnectionProcessor] Has picturePath [" + hasPicturePath + "]");
 
@@ -188,7 +181,7 @@ public class ConnectionProcessor implements Runnable {
             }
 
             approximateDateSize += 4 + boundary.length(); // 4 is the length of the static parts of the entry
-            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt()), boundary);
+            approximateDateSize += addTextMultipart(writer, "checksum256", UtilsNetworking.sha256Hash(UtilsNetworking.urlDecodeString(requestData) + requestInfoProvider_.getRequestSalt(), L), boundary);
 
             // End of multipart/form-data.
             writer.append("--").append(boundary).append("--").append(CRLF).flush();
@@ -249,10 +242,7 @@ public class ConnectionProcessor implements Runnable {
 
         long tOpen = pcc != null ? UtilsTime.getNanoTime() : 0;
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-
-        if (sslSocketFactory_ != null && conn instanceof HttpsURLConnection) {
-            ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory_);
-        }
+        applySslSocketFactory(conn);
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_01_OpenURLConnection", UtilsTime.getNanoTime() - tOpen);
@@ -267,14 +257,7 @@ public class ConnectionProcessor implements Runnable {
         conn.setDoOutput(false);
         conn.setInstanceFollowRedirects(true);
 
-        if (requestHeaderCustomValues_ != null) {
-            L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
-            for (Map.Entry<String, String> e : requestHeaderCustomValues_.entrySet()) {
-                if (e.getKey() != null && e.getValue() != null && !e.getKey().isEmpty()) {
-                    conn.addRequestProperty(e.getKey(), e.getValue());
-                }
-            }
-        }
+        addCustomRequestHeaders(conn);
 
         if (pcc != null) {
             pcc.TrackCounterTimeNs("ConnectionProcessorUrlConnectionForPreflightRequest_02_ConfigureConnection", UtilsTime.getNanoTime() - tOpen);
@@ -376,6 +359,7 @@ public class ConnectionProcessor implements Runnable {
     private void processRequestQueue() {
         long wholeQueueStart = UtilsTime.getNanoTime();
         while (true) {
+            L.setOwnTransportWork(false);
             long pccTsStartWholeQueue = 0L;
             long pccTsStartOnlyInternet = 0L;
             long pccTsStartTempIdCheck = 0L;
@@ -385,6 +369,11 @@ public class ConnectionProcessor implements Runnable {
             long pccTsStartRemainingRequests = 0L;
             long pccTsReadingStream;
             long pccTsStartHandlingResponse;
+
+            if (stopRequested != null && stopRequested.get()) {
+                L.d("[ConnectionProcessor] run, asked to stop, leaving the remaining requests to the queue that took over");
+                break;
+            }
 
             if (!configProvider_.getNetworkingEnabled()) {
                 L.w("[ConnectionProcessor] run, Networking config is disabled, request queue skipped");
@@ -422,6 +411,9 @@ public class ConnectionProcessor implements Runnable {
             // get first request in a separate variable to modify and keep the original intact
             final String originalRequest = storedRequests[0];
             String requestData = originalRequest;//todo rework to another param approach
+
+            //lines logged while sending a log batch are not gathered, or every tick would upload a batch about the last one
+            L.setOwnTransportWork(originalRequest.contains("&" + ModuleLog.transportMarker));
 
             if (pcc != null) {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_01_GetRequest", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
@@ -546,11 +538,11 @@ public class ConnectionProcessor implements Runnable {
                         }
 
                         responseCode = httpConn.getResponseCode();
-                        responseString = Utils.inputStreamToString(connInputStream);
+                        responseString = Utils.inputStreamToString(connInputStream, L);
                     }
 
                     long readingStreamTime = UtilsTime.getNanoTime() - pccTsReadingStream;
-                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + requestData + ", url: " + serverURL_ + ", Reading stream took:[" + readingStreamTime / 1000000.0d + "] ms");
+                    L.d("[Connection Processor] code:[" + responseCode + "], response:[" + responseString + "], response size:[" + responseString.length() + " B], request: " + requestData + ", url: " + getServerURL() + ", Reading stream took:[" + readingStreamTime / 1000000.0d + "] ms");
 
                     if (pcc != null) {
                         pcc.TrackCounterTimeNs("ConnectionProcessorRun_13_ReadingStream", readingStreamTime);
@@ -570,7 +562,7 @@ public class ConnectionProcessor implements Runnable {
                             } catch (JSONException ex) {
                                 //failed to parse, so not a valid json
                                 jsonObject = null;
-                                L.e("[ConnectionProcessor] Failed to parse response [" + responseString + "].");
+                                L.d("[ConnectionProcessor] Failed to parse response [" + responseString + "].");
                             }
 
                             if (jsonObject == null) {
@@ -593,7 +585,7 @@ public class ConnectionProcessor implements Runnable {
                         L.d("[ConnectionProcessor] Encountered redirect, will retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode == 400 || responseCode == 404) {
-                        L.w("[ConnectionProcessor] Bad request, will still retry");
+                        L.d("[ConnectionProcessor] Bad request, will still retry");
                         rRes = RequestResult.RETRY;
                     } else if (responseCode > 400) {
                         //server down, try again later
@@ -667,7 +659,8 @@ public class ConnectionProcessor implements Runnable {
             } else {
                 //device is identified as a app crawler and nothing is sent to the server
                 if (isRequestOld) {
-                    L.i("[ConnectionProcessor] request is too old, removing request " + originalRequest);
+                    L.w("[ConnectionProcessor] request is too old, removing request " + originalRequest);
+                    healthTracker.recordLogCode("w330");
                 } else {
                     L.i("[ConnectionProcessor] Device identified as an app crawler, removing request " + originalRequest);
                 }
@@ -687,6 +680,7 @@ public class ConnectionProcessor implements Runnable {
                 pcc.TrackCounterTimeNs("ConnectionProcessorRun_10_NetworkWholeQueue", UtilsTime.getNanoTime() - pccTsStartWholeQueue);
             }
         }
+        L.setOwnTransportWork(false);
         long wholeQueueTime = UtilsTime.getNanoTime() - wholeQueueStart;
         L.v("[ConnectionProcessor] run, TIMING Whole queue took:[" + wholeQueueTime / 1000000.0d + "] ms");
     }
@@ -727,7 +721,52 @@ public class ConnectionProcessor implements Runnable {
     }
 
     String getServerURL() {
-        return serverURL_;
+        BaseInfoProvider provider = baseInfoProvider;
+        return provider == null ? serverURL_ : provider.getServerURL();
+    }
+
+    /** Bare GET for a connection test probe: this instance's SSL factory and headers, no cache, redirects not followed. */
+    synchronized @NonNull HttpURLConnection urlConnectionForProbe(@NonNull String url, int timeoutMs) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        applySslSocketFactory(conn);
+
+        conn.setRequestMethod("GET");
+        conn.setInstanceFollowRedirects(false);
+        conn.setUseCaches(false);
+        conn.setConnectTimeout(timeoutMs);
+        conn.setReadTimeout(timeoutMs);
+        conn.setDoInput(true);
+        conn.setDoOutput(false);
+
+        addCustomRequestHeaders(conn);
+
+        return conn;
+    }
+
+    /**
+     * Routes an HTTPS connection through this instance's SSL socket factory, the custom (FIPS) or the pinning one,
+     * when it has one. A plain HTTP connection is left untouched.
+     */
+    private void applySslSocketFactory(@NonNull URLConnection connection) {
+        if (sslSocketFactory_ != null && connection instanceof HttpsURLConnection) {
+            ((HttpsURLConnection) connection).setSSLSocketFactory(sslSocketFactory_);
+        }
+    }
+
+    /** Adds the custom request headers the developer configured, skipping entries without a name or a value. */
+    private void addCustomRequestHeaders(@NonNull URLConnection connection) {
+        if (requestHeaderCustomValues_ == null) {
+            return;
+        }
+
+        L.v("[ConnectionProcessor] Adding [" + requestHeaderCustomValues_.size() + "] custom header fields");
+        for (Map.Entry<String, String> entry : requestHeaderCustomValues_.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            if (key != null && value != null && !key.isEmpty()) {
+                connection.addRequestProperty(key, value);
+            }
+        }
     }
 
     // for unit testing

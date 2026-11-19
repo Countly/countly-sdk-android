@@ -1,0 +1,12 @@
+// Public API of :sdk-native: the public and protected classes and members of its release AAR, as javap prints them.
+// Classes in a package named internal are left out. ./gradlew :sdk-native:apiDump writes this file, and
+// ./gradlew check fails when the AAR no longer matches it. A change here needs a line in sdk-native/CHANGELOG.md that tells
+// integrators what changed.
+
+public class ly.count.android.sdknative.CountlyNative {
+  public ly.count.android.sdknative.CountlyNative();
+  public static boolean initNative(android.content.Context);
+  public static native java.lang.String getBreakpadChecksum();
+  public static native java.lang.String getBreakpadVersion();
+  public static void crash();
+}

@@ -1,5 +1,6 @@
 package ly.count.android.sdk;
 
+import android.os.SystemClock;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -60,6 +61,26 @@ public class UtilsTime {
 
     public static synchronized long getNanoTime() {
         return System.nanoTime();
+    }
+
+    /**
+     * Milliseconds since boot, including deep sleep, on a clock that a change of the device clock
+     * does not move. Only the difference between two values is meaningful, so durations are measured
+     * with it while timestamps stay on {@link #currentTimestampMs()}.
+     *
+     * @return monotonic time in milliseconds
+     */
+    static long monotonicTimeMs() {
+        return SystemClock.elapsedRealtime();
+    }
+
+    /**
+     * Whole seconds of {@link #monotonicTimeMs()}, for durations reported in seconds.
+     *
+     * @return monotonic time in seconds
+     */
+    static long monotonicTimeSeconds() {
+        return monotonicTimeMs() / 1000L;
     }
 
     /**

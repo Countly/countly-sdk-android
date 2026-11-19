@@ -81,10 +81,12 @@ public class CountlyStoreExplicitModeTests {
 
         validateRQArrays(new String[] {}, new String[] {}, store, emStore);
 
+        //a synchronous add is a fatal crash report and the process ends right after, so it reaches storage at once
         emStore.addRequest("abc", true);
-        emStore.addRequest("123", false);
+        validateRQArrays(new String[] { "abc" }, new String[] { "abc" }, store, emStore);
 
-        validateRQArrays(new String[] {}, new String[] { "abc", "123" }, store, emStore);
+        emStore.addRequest("123", false);
+        validateRQArrays(new String[] { "abc" }, new String[] { "abc", "123" }, store, emStore);
 
         esWriteCacheToStorageValidateWrite(emStore, true);
         esWriteCacheToStorageValidateWrite(emStore, false);//this should perform no write

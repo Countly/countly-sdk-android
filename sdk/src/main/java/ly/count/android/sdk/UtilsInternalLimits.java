@@ -37,7 +37,7 @@ public class UtilsInternalLimits {
      * @return truncated key
      */
     protected static String truncateKeyLength(@Nullable String key, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
-        return truncateString(key, limit, L, tag + ": [UtilsSdkInternalLimits] truncateKeyLength");
+        return truncateString(key, limit, L, tag + ": [UtilsSdkInternalLimits] truncateKeyLength", "w201");
     }
 
     /**
@@ -59,21 +59,31 @@ public class UtilsInternalLimits {
      * @return truncated key
      */
     protected static String truncateValueSize(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
-        return truncateString(value, limit, L, tag + ": [UtilsSdkInternalLimits] truncateValueSize");
+        return truncateString(value, limit, L, tag + ": [UtilsSdkInternalLimits] truncateValueSize", "w202");
     }
 
-    private static String truncateString(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag) {
+    /**
+     * Cuts a string to the limit with a warning, and records the given health check log code when it was cut.
+     *
+     * @param value the string to cut
+     * @param limit the maximum length
+     * @param L logger
+     * @param tag tag to use in logs
+     * @param logCode the log code of the cut, or null to record none
+     * @return the string, cut to the limit when it was longer
+     */
+    private static String truncateString(@Nullable String value, final int limit, @NonNull ModuleLog L, @NonNull String tag, @Nullable String logCode) {
         assert limit >= 1;
         assert tag != null;
         assert L != null;
 
         if (value == null) {
-            L.w(tag + ", value is null, returning");
+            L.d(tag + ", value is null, returning");
             return value;
         }
 
         if (value.isEmpty()) {
-            L.w(tag + ", value is empty, returning");
+            L.d(tag + ", value is empty, returning");
             return value;
         }
 
@@ -82,6 +92,9 @@ public class UtilsInternalLimits {
         if (value.length() > limit) {
             String truncatedValue = value.substring(0, limit);
             L.w(tag + ", Value length exceeds limit of " + limit + " characters. Truncating value to " + limit + " characters. Truncated to " + truncatedValue);
+            if (logCode != null) {
+                L.trackLogCode(logCode);
+            }
             return truncatedValue;
         }
         return value;
@@ -102,18 +115,18 @@ public class UtilsInternalLimits {
         assert tag != null;
 
         if (map == null) {
-            L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
+            L.d(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is null, returning");
             return;
         }
 
         if (map.isEmpty()) {
-            L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
+            L.d(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map is empty, returning");
             return;
         }
 
         assert map != null;
 
-        L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map:[" + map + "]");
+        L.v(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, map:[" + map + "]");
         // Replacing keys in a map is not safe, so we create a new map and put them after
         Map<String, T> gonnaReplace = new ConcurrentHashMap<>();
         List<String> gonnaRemove = new ArrayList<>();
@@ -141,7 +154,7 @@ public class UtilsInternalLimits {
         assert L != null;
         assert tag != null;
 
-        L.w(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, segmentation:[" + segmentation + "]");
+        L.v(tag + ": [UtilsSdkInternalLimits] truncateMapKeys, segmentation:[" + segmentation + "]");
         // Replacing keys in a map is not safe, so we create a new map and put them after
         Iterator<Map.Entry<String, Object>> iterator = segmentation.entrySet().iterator();
         Map<String, Object> gonnaReplace = new ConcurrentHashMap<>();
@@ -152,6 +165,8 @@ public class UtilsInternalLimits {
             Object value = entry.getValue();
 
             if (!isSupportedDataType(value)) {
+                L.w(tag + ": [UtilsSdkInternalLimits] truncateSegmentationKeysValues, removing the value of an unsupported type, key:[" + entry.getKey() + "] type:[" + (value == null ? "null" : value.getClass().getSimpleName()) + "]");
+                L.trackLogCode("w206");
                 iterator.remove();
                 continue;
             }
@@ -188,7 +203,7 @@ public class UtilsInternalLimits {
         assert segmentation != null;
 
         if (segmentation.isEmpty()) {
-            L.w(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is empty, returning");
+            L.d(tag + ": [UtilsSdkInternalLimits] applySdkInternalLimitsToSegmentation, map is empty, returning");
             return;
         }
 
@@ -213,7 +228,7 @@ public class UtilsInternalLimits {
         assert tag != null;
 
         if (breadcrumbs.isEmpty()) {
-            L.w(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, breadcrumbs is empty, returning");
+            L.d(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, breadcrumbs is empty, returning");
             return;
         }
 
@@ -221,7 +236,7 @@ public class UtilsInternalLimits {
         while (iterator.hasNext()) {
             if (breadcrumbs.size() > limitsConfig.maxBreadcrumbCount) {
                 String breadcrumb = iterator.next();
-                L.w(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, breadcrumb:[" + breadcrumb + "]");
+                L.d(tag + ": [UtilsSdkInternalLimits] applyInternalLimitsToBreadcrumbs, the breadcrumb buffer is full, dropping the oldest breadcrumb:[" + breadcrumb + "]");
                 iterator.remove();
             } else {
                 break;
@@ -251,6 +266,10 @@ public class UtilsInternalLimits {
         assert maxCount >= 1;
         assert L != null;
         assert messagePrefix != null;
+
+        if (segmentation.size() > maxCount) {
+            L.trackLogCode("w203");
+        }
 
         Iterator<Map.Entry<String, T>> iterator = segmentation.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -282,6 +301,7 @@ public class UtilsInternalLimits {
         for (String rKey : reservedKeys) {
             if (segmentation.containsKey(rKey)) {
                 L.w(messagePrefix + " provided segmentation contains protected key [" + rKey + "]");
+                L.trackLogCode("w700");
                 segmentation.remove(rKey);
             }
         }
@@ -307,6 +327,7 @@ public class UtilsInternalLimits {
             if (key == null || key.isEmpty() || !(isSupportedDataType(value))) {
                 //found unsupported data type or null key or value, removing
                 it.remove();
+                L.trackLogCode(key == null || key.isEmpty() ? "w700" : "w206");
                 removedKeys.append("key:[").append(key).append("] value:[").append(value).append("] type:[").append(value == null ? "null" : value.getClass().getSimpleName()).append("] ,");
             } else if (value instanceof List) {
                 List<?> list = (List<?>) value;
@@ -316,6 +337,7 @@ public class UtilsInternalLimits {
                     Object element = list.get(i);
                     if (!isSupportedDataTypeBasic(element)) {
                         removedKeys.append("from_list").append(list).append("index:[").append(i).append("] value:[").append(element).append("] type:[").append(element == null ? "null" : element.getClass().getSimpleName()).append("] ,");
+                        L.trackLogCode("w206");
                         list.remove(i);
                         i--;
                         a--;
@@ -329,6 +351,7 @@ public class UtilsInternalLimits {
                     Object element = jsonArray.opt(i);
                     if (!isSupportedDataTypeBasic(element)) {
                         removedKeys.append("from_list").append(jsonArray).append("index:[").append(i).append("] value:[").append(element).append("] type:[").append(element == null ? "null" : element.getClass().getSimpleName()).append("] ,");
+                        L.trackLogCode("w206");
                         jsonArray.remove(i);
                         i--;
                         a--;
@@ -363,14 +386,20 @@ public class UtilsInternalLimits {
         assert L != null;
 
         StringBuilder sb = new StringBuilder(stackTrace.length());
+        boolean anyLineCut = false;
 
         String[] stackTraceLines = stackTrace.split("\n");
         for (int i = 0; i < stackTraceLines.length; i++) {
-            String truncatedLine = UtilsInternalLimits.truncateString(stackTraceLines[i], maxStackTraceLineLength, L, tag);
+            String truncatedLine = UtilsInternalLimits.truncateString(stackTraceLines[i], maxStackTraceLineLength, L, tag, null);
             if (i != 0) {
                 sb.append('\n');
             }
             sb.append(truncatedLine);
+            anyLineCut |= truncatedLine.length() != stackTraceLines[i].length();
+        }
+
+        if (anyLineCut) {
+            L.trackLogCode("w205");
         }
 
         return sb.toString();

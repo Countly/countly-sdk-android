@@ -1,0 +1,108 @@
+[
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "begin_session": "1",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "hour": "<masked>",
+      "metrics": {
+        "_app_version": "<masked>",
+        "_carrier": "<masked>",
+        "_density": "<masked>",
+        "_device": "<masked>",
+        "_device_type": "<masked>",
+        "_has_hinge": "<masked>",
+        "_locale": "<masked>",
+        "_manufacturer": "<masked>",
+        "_os": "<masked>",
+        "_os_version": "<masked>",
+        "_resolution": "<masked>",
+        "_store": "<masked>"
+      },
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "events": [
+        {
+          "count": 1,
+          "dow": "<masked>",
+          "hour": "<masked>",
+          "id": "<masked>",
+          "key": "[CLY]_view",
+          "pvid": "<masked>",
+          "segmentation": {
+            "name": "Home",
+            "segment": "Android",
+            "source": "scenario",
+            "start": "1",
+            "visit": "1"
+          },
+          "sum": 0,
+          "timestamp": "<masked>"
+        },
+        {
+          "count": 1,
+          "dow": "<masked>",
+          "hour": "<masked>",
+          "id": "<masked>",
+          "key": "[CLY]_view",
+          "pvid": "<masked>",
+          "segmentation": {
+            "name": "Home",
+            "segment": "Android"
+          },
+          "sum": 0,
+          "timestamp": "<masked>"
+        },
+        {
+          "count": 1,
+          "dow": "<masked>",
+          "hour": "<masked>",
+          "id": "<masked>",
+          "key": "[CLY]_view",
+          "pvid": "<masked>",
+          "segmentation": {
+            "name": "Settings",
+            "segment": "Android",
+            "visit": "1"
+          },
+          "sum": 0,
+          "timestamp": "<masked>"
+        }
+      ],
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  },
+  {
+    "path": "/i",
+    "params": {
+      "app_key": "parity-app-key",
+      "av": "<masked>",
+      "device_id": "parity-device-001",
+      "dow": "<masked>",
+      "end_session": "1",
+      "hour": "<masked>",
+      "sdk_name": "java-native-android",
+      "sdk_version": "<masked>",
+      "timestamp": "<masked>",
+      "tz": "<masked>"
+    }
+  }
+]

@@ -26,11 +26,11 @@ import org.junit.runner.notification.RunListener;
  *       last Activity; it is cleared so a prior test's Activity does not seed a later init.</li>
  * </ul>
  *
- * <p>The reset runs on the main thread: {@code halt()} clears each instance's module list, and the
- * SDK's Activity lifecycle callbacks ({@code onStartInternal}/{@code onStopInternal}) iterate that
- * same list on the main thread. Doing the reset off-thread races an in-flight Activity teardown and
- * throws {@link java.util.ConcurrentModificationException}, crashing the whole instrumentation run;
- * {@code runOnMainSync} serializes the reset with those callbacks.
+ * <p>The reset runs on the main thread. {@code halt()} nulls each instance's module fields, and
+ * {@code CountlyLifecycleDispatcher} delivers Activity lifecycle callbacks - which read those fields and
+ * cross-reference each other through the Countly instance - on the main thread. {@code runOnMainSync}
+ * serializes the reset against an in-flight callback; doing it off-thread races one and can NPE out of
+ * {@code Activity.onStop}, which crashes the whole instrumentation run.
  *
  * <p>Wired in by {@code InstrumentationTestRunner}, so no per-test-class change is required.
  */

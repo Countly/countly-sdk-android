@@ -1,5 +1,7 @@
 package ly.count.android.sdk;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Build;
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ApplicationProvider;
@@ -25,12 +27,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.internal.util.collections.Sets;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(AndroidJUnit4.class)
 public class ModuleCrashTests {
@@ -44,7 +53,7 @@ public class ModuleCrashTests {
         TestUtils.getCountlyStore().clear();
 
         mCountly = new Countly();
-        config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config = TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true));
         mCountly.init(config);
 
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(mCountly, mock(RequestQueueProvider.class));
@@ -55,71 +64,9 @@ public class ModuleCrashTests {
     }
 
     @Test
-    public void setCrashFilters() {
-        CrashFilterCallback callback = new CrashFilterCallback() {
-            @Override
-            public boolean filterCrash(String crash) {
-                if (crash.contains("Secret")) {
-                    return true;
-                }
-                return false;
-            }
-        };
-
-        Countly countly = new Countly();
-        CountlyConfig cConfig = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        cConfig.setCrashFilterCallback(callback);
-
-        countly.init(cConfig);
-
-        Assert.assertEquals(callback, countly.moduleCrash.crashFilterCallback);
-    }
-
-    @Test
-    public void crashFilterTest() {
-        Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
-        cConfig.setCrashFilterCallback(new CrashFilterCallback() {
-            @Override
-            public boolean filterCrash(String crash) {
-                if (crash.contains("Secret")) {
-                    return true;
-                }
-                return false;
-            }
-        });
-
-        countly.init(cConfig);
-        RequestQueueProvider requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
-
-        Exception exception = new Exception("Secret message");
-
-        countly.crashes().recordHandledException(exception);
-
-        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(Boolean.class));
-
-        Throwable throwable = new Throwable("Secret message");
-
-        countly.crashes().recordUnhandledException(throwable);
-
-        verify(requestQueueProvider, never()).sendCrashReport(any(String.class), any(Boolean.class));
-
-        exception = new Exception("Reasonable message");
-
-        countly.crashes().recordHandledException(exception);
-
-        ArgumentCaptor<String> arg = ArgumentCaptor.forClass(String.class);
-        verify(requestQueueProvider).sendCrashReport(arg.capture(), any(Boolean.class));
-
-        //todo improve this
-        Assert.assertTrue(arg.getValue().contains("java.lang.Exception: Reasonable message\\n" +
-            "\\tat ly.count.android.sdk.ModuleCrashTests.crashFilterTest(ModuleCrashTests.java:"));
-    }
-
-    @Test
     public void provideCustomCrashSegment_DuringInit() {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = TestUtils.withCrashReporting((new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true));
         int[] arr = { 1, 2, 3, 4, 5 };
 
         Map<String, Object> segm = new HashMap<>();
@@ -132,7 +79,7 @@ public class ModuleCrashTests {
         segm.put("41", new Object());
         segm.put("42", arr);
 
-        cConfig.setCustomCrashSegment(segm);
+        cConfig.crashes.setCustomCrashSegmentation(segm);
 
         countly.init(cConfig);
 
@@ -151,14 +98,14 @@ public class ModuleCrashTests {
     @Test
     public void provideCustomCrashSegment_DuringInitAndCall() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = (new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = TestUtils.withCrashReporting((new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly")).setDeviceId("1234").setLoggingEnabled(true));
 
         Map<String, Object> segm = new HashMap<>();
         segm.put("aa", "dd");
         segm.put("aa1", "dda");
         segm.put("1", 1234);
 
-        cConfig.setCustomCrashSegment(segm);
+        cConfig.crashes.setCustomCrashSegmentation(segm);
 
         countly.init(cConfig);
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
@@ -318,29 +265,6 @@ public class ModuleCrashTests {
             segm = TestUtils.map("e", "5", "f", "6");
         }
         validateCrash(extractStackTrace(exception), "", false, false, segm, 0, new ConcurrentHashMap<>(), new ArrayList<>());
-    }
-
-    /**
-     * "recordHandledException" with crash filter
-     * Validate that first call to the "recordHandledException" is filtered out by the crash filter
-     * Validate that second call to the "recordHandledException" is not filtered out by the crash filter
-     * Validate second call creates a request in the queue and validate all crash data
-     */
-    @Test
-    public void recordHandledException_crashFilter() throws JSONException {
-        CountlyConfig cConfig = TestUtils.createBaseConfig();
-        cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> crash.contains("Secret"));
-        Countly countly = new Countly().init(cConfig);
-
-        Exception exception = new Exception("Secret message");
-
-        countly.crashes().recordHandledException(exception);
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-
-        exception = new Exception("Some message");
-        countly.crashes().recordHandledException(exception);
-        validateCrash(extractStackTrace(exception), "", false, false, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     /**
@@ -680,41 +604,6 @@ public class ModuleCrashTests {
     }
 
     /**
-     * Two crash filter is registered, deprecated and global, because deprecated is registered, global crash filter will not work
-     * First crash filter is set to filter out crashes that contain "secret" in the stack trace
-     * Global crash filter is set to filter out crashes that contain "secret" in the crash segmentation
-     * Validate that first call to the "recordHandledException" and "recordUnhandledException" is filtered out by the crash filter
-     * Validate that second call to the "recordHandledException" and "recordUnhandledException" is not filtered out by the global crash filter
-     * because we have registered the deprecated crash filter first
-     *
-     * @throws JSONException if JSON parsing fails
-     */
-    @Test
-    public void recordException_crashFilter_globalCrashFilter() throws JSONException {
-        CountlyConfig cConfig = TestUtils.createBaseConfig();
-        cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> crash.contains("secret"));
-        cConfig.crashes.setGlobalCrashFilterCallback(crash -> crash.getCrashSegmentation().containsKey("secret"));
-
-        Countly countly = new Countly().init(cConfig);
-
-        Exception exception = new Exception("secret");
-        countly.crashes().recordHandledException(exception);
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-
-        countly.crashes().recordUnhandledException(exception);
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-
-        exception = new Exception("Some message");
-        countly.crashes().recordHandledException(exception, TestUtils.map("secret", "secret"));
-        validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
-
-        TestUtils.getCountlyStore().clear();
-        countly.crashes().recordUnhandledException(exception, TestUtils.map("secret", "secret"));
-        validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map("secret", "secret"), 0, new ConcurrentHashMap<>(), new ArrayList<>());
-    }
-
-    /**
      * validate that adding breadcrumbs that exceeds max breadcrumb count greater than one should clip,
      * oldest breadcrumbs and keep the latest ones that is limited by the max breadcrumb count
      *
@@ -826,40 +715,6 @@ public class ModuleCrashTests {
 
         Assert.assertEquals(1, TestUtils.getCurrentRQ().length);
         validateCrash(extractNativeCrash(longDump), "", true, true, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
-    }
-
-    /**
-     * Validate that deprecated crash filter, filters out all native crash dumps
-     * Validate RQ is empty after initialization of the SDK
-     */
-    @Test
-    public void recordException_crashFilter_nativeCrash_eliminateAll() {
-        createNativeDumFiles();
-        CountlyConfig cConfig = TestUtils.createBaseConfig();
-        cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> true);
-
-        new Countly().init(cConfig);
-        Assert.assertEquals(0, TestUtils.getCurrentRQ().length);
-    }
-
-    /**
-     * Validate that deprecated crash filter, filters out only the crash that contains "secret" in the stack trace
-     * Validate that 2 native crash dumps are sent when the crash filter set to be eliminated
-     */
-    @Test
-    public void recordException_crashFilter_nativeCrash() throws JSONException {
-        createNativeDumFiles();
-        CountlyConfig cConfig = TestUtils.createBaseConfig();
-        cConfig.metricProviderOverride = mmp;
-        cConfig.setCrashFilterCallback(crash -> crash.contains(extractNativeCrash("secret")));
-
-        new Countly().init(cConfig);
-
-        Assert.assertEquals(2, TestUtils.getCurrentRQ().length);
-
-        validateCrash(extractNativeCrash("dump1"), "", true, true, 2, 0, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
-        validateCrash(extractNativeCrash("dump2"), "", true, true, 2, 1, new ConcurrentHashMap<>(), 0, new ConcurrentHashMap<>(), new ArrayList<>());
     }
 
     private void createNativeDumFiles() {
@@ -1070,7 +925,7 @@ public class ModuleCrashTests {
         segm.put("abr_log_id", "87abdb687astdna8s7dynas897ndaysnd");
         segm.put("arf_log_ver", 1_675_987);
 
-        cConfig.setCustomCrashSegment(segm);
+        cConfig.crashes.setCustomCrashSegmentation(segm);
 
         countly.init(cConfig);
         requestQueueProvider = TestUtils.setRequestQueueProviderToMock(countly, mock(RequestQueueProvider.class));
@@ -1114,10 +969,10 @@ public class ModuleCrashTests {
     @Test
     public void internalLimits_provideCustomCrashSegment_recordUnhandledException() throws JSONException {
         Countly countly = new Countly();
-        CountlyConfig cConfig = new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        CountlyConfig cConfig = TestUtils.withCrashReporting(new CountlyConfig(ApplicationProvider.getApplicationContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true));
         cConfig.metricProviderOverride = mmp;
         cConfig.sdkInternalLimits.setMaxKeyLength(5);
-        cConfig.setCustomCrashSegment(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
+        cConfig.crashes.setCustomCrashSegmentation(TestUtils.map("test_out_truncation", "1234", "test_mine", 1234, "below_zero", true));
 
         countly.init(cConfig);
 
@@ -1601,5 +1456,162 @@ public class ModuleCrashTests {
         countly.crashes().recordHandledException(exception, segmentation);
 
         validateCrash(extractStackTrace(exception), "", false, false, TestUtils.map(), 0, new HashMap<>(), new ArrayList<>());
+    }
+
+    /**
+     * Issue #130, a fatal crash has to be handed to the storage layer before the SDK hands control back
+     * to the previously registered uncaught exception handler. Otherwise the process can die before the
+     * crash is stored and the crash is lost. Nothing leaves the device during these tests, and not
+     * because the server is unreachable: "ConnectionQueue.tick" returns early on
+     * "!Countly.sharedInstance().isInitialized()", and these tests drive detached "new Countly()"
+     * instances, so the shared instance is never initialised and the network is never touched at all.
+     * <p>
+     * This test pins the ORDERING only. Reading the request queue back cannot tell "commit" from
+     * "apply", because the in memory map of the process wide "SharedPreferencesImpl" is updated
+     * synchronously by both. The three issue #130 tests are therefore complementary:
+     * <ul>
+     * <li>this one pins the ordering, the crash is queued before the previous handler is invoked</li>
+     * <li>"fatalCrash_isWrittenToStorageInSyncMode" pins the sync write flag at the "ConnectionQueue" to
+     * "StorageProvider" boundary</li>
+     * <li>"fatalCrash_requestQueueWriteUsesCommitNotApply" pins the "SharedPreferences.Editor.commit"
+     * call that this flag has to turn into</li>
+     * </ul>
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void fatalCrash_isPersistedBeforeDelegatingToPreviousHandler() throws JSONException {
+        Thread.UncaughtExceptionHandler originalHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        try {
+            boolean[] previousHandlerCalled = { false };
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+                previousHandlerCalled[0] = true;
+                //by the time the previous handler runs, the crash has to be in persistent storage already
+                TestUtils.assertRQSize(1);
+            });
+
+            CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+            countlyConfig.metricProviderOverride = mmp;
+            new Countly().init(countlyConfig);
+
+            Thread.UncaughtExceptionHandler sdkHandler = Thread.getDefaultUncaughtExceptionHandler();
+            Assert.assertNotNull(sdkHandler);
+
+            Exception exception = new Exception("Fatal message");
+            sdkHandler.uncaughtException(Thread.currentThread(), exception);
+
+            //the SDK must not swallow the crash
+            Assert.assertTrue(previousHandlerCalled[0]);
+            validateCrash(extractStackTrace(exception), "", true, false, TestUtils.map(), 0, new HashMap<>(), new ArrayList<>());
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalHandler);
+        }
+    }
+
+    /**
+     * Issue #130, the request queue write for a fatal crash has to be requested in sync mode, so that
+     * "CountlyStore" uses "SharedPreferences.commit" instead of "apply". Handled exceptions do not need
+     * that guarantee and are written in async mode.
+     */
+    @Test
+    public void fatalCrash_isWrittenToStorageInSyncMode() {
+        Thread.UncaughtExceptionHandler originalHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        try {
+            //terminate the handler chain here so the test process is not brought down
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            });
+
+            CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+            countlyConfig.metricProviderOverride = mmp;
+            Countly countly = new Countly().init(countlyConfig);
+
+            StorageProvider storageSpy = spy(TestUtils.getCountlyStore());
+            countly.connectionQueue_.setStorageProvider(storageSpy);
+
+            Thread.UncaughtExceptionHandler sdkHandler = Thread.getDefaultUncaughtExceptionHandler();
+            Assert.assertNotNull(sdkHandler);
+
+            sdkHandler.uncaughtException(Thread.currentThread(), new Exception("Fatal message"));
+            verify(storageSpy).addRequest(anyString(), eq(true));
+
+            countly.crashes().recordHandledException(new Exception("Handled message"));
+            verify(storageSpy).addRequest(anyString(), eq(false));
+
+            TestUtils.assertRQSize(2);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalHandler);
+        }
+    }
+
+    /**
+     * Issue #130, the sync write flag has to end up as a real "SharedPreferences.Editor.commit" call.
+     * "commit" writes to disk on the calling thread, "apply" only updates the in memory map and hands
+     * the disk write to a background thread, so a crashing process can die before an "apply" lands and
+     * the crash is lost. Flipping "CountlyStore.storageWriteRequestQueue" to always call "apply" is
+     * exactly the regression of issue #130.
+     * <p>
+     * This cannot be asserted through the persisted request queue, a read back is identical under
+     * "commit" and "apply" because the in memory map of the process wide "SharedPreferencesImpl" is
+     * updated synchronously by both. The "Editor" itself has to be observed, so "CountlyStore" is built
+     * over a mocked "Context" and mocked "SharedPreferences" here.
+     */
+    @Test
+    public void fatalCrash_requestQueueWriteUsesCommitNotApply() {
+        SharedPreferences.Editor editor = mock(SharedPreferences.Editor.class);
+        when(editor.putString(anyString(), anyString())).thenReturn(editor);
+
+        SharedPreferences preferences = mock(SharedPreferences.class);
+        when(preferences.edit()).thenReturn(editor);
+        when(preferences.getString(anyString(), anyString())).thenReturn("");
+
+        Context mockContext = mock(Context.class);
+        when(mockContext.getSharedPreferences(anyString(), anyInt())).thenReturn(preferences);
+
+        CountlyStore store = new CountlyStore(mockContext, mock(ModuleLog.class));
+
+        //a fatal crash is written in sync mode, which has to become "commit"
+        store.addRequest("crash=fatal", true);
+        verify(editor).commit();
+        verify(editor, never()).apply();
+
+        //a handled exception does not need that guarantee and stays on "apply"
+        store.addRequest("crash=handled", false);
+        verify(editor).apply();
+        verify(editor).commit();//still only the single "commit" from the fatal crash
+    }
+
+    /**
+     * The health check count of automatically detected crashes is added before the fatal crash is queued. The count is
+     * only applied in memory, so the synchronous write of the crash request is what stores it, and reporting the crash
+     * costs a single write.
+     */
+    @Test
+    public void fatalCrash_automaticCrashCountIsAddedBeforeTheSyncWriteOfTheReport() {
+        Thread.UncaughtExceptionHandler originalHandler = Thread.getDefaultUncaughtExceptionHandler();
+
+        try {
+            //terminate the handler chain here so the test process is not brought down
+            Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            });
+
+            CountlyConfig countlyConfig = TestUtils.createBaseConfig();
+            countlyConfig.metricProviderOverride = mmp;
+            Countly countly = new Countly().init(countlyConfig);
+
+            StorageProvider storageSpy = spy(TestUtils.getCountlyStore());
+            countly.connectionQueue_.setStorageProvider(storageSpy);
+            countly.moduleCrash.storageProvider = storageSpy;
+
+            Thread.getDefaultUncaughtExceptionHandler().uncaughtException(Thread.currentThread(), new Exception("Fatal message"));
+
+            InOrder order = inOrder(storageSpy);
+            order.verify(storageSpy).incrementAutomaticCrashCount();
+            order.verify(storageSpy).addRequest(anyString(), eq(true));
+            Assert.assertEquals(1, TestUtils.getCountlyStore().takeAutomaticCrashCount());
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(originalHandler);
+        }
     }
 }

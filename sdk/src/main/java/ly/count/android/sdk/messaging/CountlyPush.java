@@ -13,17 +13,23 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.TrafficStats;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
+import android.os.SystemClock;
 import android.view.Gravity;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -35,16 +41,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import ly.count.android.sdk.Countly;
 import ly.count.android.sdk.CountlyStore;
 import ly.count.android.sdk.ModuleLog;
 import ly.count.android.sdk.Utils;
+import ly.count.android.sdk.UtilsNetworking;
 
 /**
  * Just a public holder class for Messaging-related display logic, listeners, managers, etc.
@@ -80,8 +92,48 @@ public class CountlyPush {
     static int MEDIA_DOWNLOAD_ATTEMPTS = 3;
 
     /**
-     * Tag the rich push media download socket is attributed to in network usage statistics, the
-     * same value as the core SDK's UtilsNetworking.SOCKET_TAG, which is not visible from this package.
+     * Longest a notification waits for its large icon and media together, in milliseconds. What has not arrived by
+     * then is left out, so a slow network delays a notification by this much at most.
+     */
+    static int MEDIA_TOTAL_BUDGET_MS = 8_000;
+
+    /**
+     * Largest image, in bytes, a notification downloads. A larger one is left out rather than decoded.
+     */
+    static int MEDIA_MAX_BYTES = 5 * 1024 * 1024;
+
+    /**
+     * Longest side, in pixels, a notification image is decoded at; a larger image is sampled down while decoding.
+     */
+    static final int MEDIA_MAX_DIMENSION = 1024;
+
+    //the token the app handed over last, kept so that giving push consent later can send it without asking the provider
+    private static volatile String lastToken = null;
+    private static volatile Countly.CountlyMessagingProvider lastTokenProvider = null;
+
+    //arrival order, and the newest arrival per collapse key, so a late older message never replaces a newer one
+    private static final AtomicLong arrivalSequence = new AtomicLong();
+    private static final Map<String, Long> newestArrivalPerCollapseKey = new ConcurrentHashMap<>();
+
+    /**
+     * Largest width or height, in pixels, a notification large icon is kept at
+     */
+    static final int LARGE_ICON_MAX_SIZE = 256;
+
+    /**
+     * Prefix of the notification tag used for messages that carry a collapse key
+     */
+    static final String COLLAPSE_TAG_PREFIX = "ly.count.android.sdk.CountlyPush.collapse.";
+
+    /**
+     * Notification ID used together with the collapse tag, the tag alone tells collapsed notifications apart
+     */
+    static final int COLLAPSE_NOTIFICATION_ID = 0;
+
+    /**
+     * Tag the rich push media and large icon download sockets are attributed to in network usage
+     * statistics, the same value as the core SDK's UtilsNetworking.SOCKET_TAG, which is not visible
+     * from this package.
      */
     private static final int MEDIA_DOWNLOAD_SOCKET_TAG = 0x434C59;
 
@@ -147,6 +199,28 @@ public class CountlyPush {
          * @return message media URL or {@code null} if no media specified
          */
         URL media();
+
+        /**
+         * Large icon shown next to the notification text. Either an http(s) URL of an image, or the
+         * name of a drawable or mipmap resource in the app. A resource that is only ever referenced by
+         * this name is invisible to resource shrinking, so keep it with a {@code tools:keep} entry in
+         * {@code res/raw/keep.xml}.
+         *
+         * @return large icon string or {@code null} if no large icon specified
+         */
+        default String largeIcon() {
+            return null;
+        }
+
+        /**
+         * Collapse key of this message. A notification whose message has the same collapse key as a
+         * notification already shown replaces it instead of being shown next to it.
+         *
+         * @return collapse key string or {@code null} if no collapse key specified
+         */
+        default String collapseKey() {
+            return null;
+        }
 
         /**
          * List of buttons to display along this message if any
@@ -249,9 +323,14 @@ public class CountlyPush {
         @Override
         public void onReceive(Context context, Intent broadcast) {
             if (countlyConfigPush.provider != null && getPushConsent(context)) {
-                String token = getToken(context, countlyConfigPush.provider, Countly.sharedInstance().L);
+                String token = lastToken;
+                Countly.CountlyMessagingProvider provider = lastTokenProvider;
+                if (token == null || provider == null) {
+                    provider = countlyConfigPush.provider;
+                    token = getToken(context, provider, Countly.sharedInstance().L);
+                }
                 if (token != null && !"".equals(token)) {
-                    onTokenRefresh(token, countlyConfigPush.provider);
+                    onTokenRefresh(token, provider);
                 }
             }
         }
@@ -449,24 +528,118 @@ public class CountlyPush {
             }
         }
 
-        if (msg.media() != null) {
-            loadImage(context, msg, new BitmapCallback() {
-                @Override
-                public void call(Bitmap bitmap) {
-                    if (bitmap != null) {
-                        builder.setStyle(new Notification.BigPictureStyle()
-                            .bigPicture(bitmap)
-                            .setBigContentTitle(msg.title())
-                            .setSummaryText(msg.message()));
-                    }
-                    manager.notify(msg.id().hashCode(), builder.build());
+        final long arrival = recordArrival(msg);
+        final long deadline = SystemClock.elapsedRealtime() + MEDIA_TOTAL_BUDGET_MS;
+        final AtomicBoolean posted = new AtomicBoolean(false);
+        final Handler mainHandler = new Handler(context.getMainLooper());
+
+        //images that have not arrived within the budget are left out, the notification is not held back any longer
+        final Runnable postWithWhatArrived = new Runnable() {
+            @Override public void run() {
+                if (posted.compareAndSet(false, true)) {
+                    Countly.sharedInstance().L.w("[CountlyPush, displayNotification] Images did not arrive within [" + MEDIA_TOTAL_BUDGET_MS + "] ms, posting the notification without them");
+                    postNotification(manager, msg, arrival, builder.build());
                 }
-            }, 1);
-        } else {
-            manager.notify(msg.id().hashCode(), builder.build());
-        }
+            }
+        };
+        mainHandler.postDelayed(postWithWhatArrived, MEDIA_TOTAL_BUDGET_MS);
+
+        loadLargeIcon(context, msg.largeIcon(), deadline, new BitmapCallback() {
+            @Override
+            public void call(final Bitmap largeIcon) {
+                if (posted.get()) {
+                    return;
+                }
+                if (largeIcon != null) {
+                    builder.setLargeIcon(largeIcon);
+                }
+
+                if (msg.media() != null) {
+                    loadImage(context, msg, deadline, new BitmapCallback() {
+                        @Override
+                        public void call(Bitmap bitmap) {
+                            if (posted.get()) {
+                                return;
+                            }
+                            if (bitmap != null) {
+                                Notification.BigPictureStyle style = new Notification.BigPictureStyle()
+                                    .bigPicture(bitmap)
+                                    .setBigContentTitle(msg.title())
+                                    .setSummaryText(msg.message());
+                                if (largeIcon != null) {
+                                    style.bigLargeIcon((Bitmap) null);
+                                }
+                                builder.setStyle(style);
+                            }
+                            if (posted.compareAndSet(false, true)) {
+                                mainHandler.removeCallbacks(postWithWhatArrived);
+                                postNotification(manager, msg, arrival, builder.build());
+                            }
+                        }
+                    });
+                } else if (posted.compareAndSet(false, true)) {
+                    mainHandler.removeCallbacks(postWithWhatArrived);
+                    postNotification(manager, msg, arrival, builder.build());
+                }
+            }
+        });
 
         return Boolean.TRUE;
+    }
+
+    /**
+     * Numbers a message in arrival order and remembers it as the newest message of its collapse key.
+     *
+     * @param msg the message that arrived
+     * @return its place in the arrival order
+     */
+    private static long recordArrival(@NonNull Message msg) {
+        long arrival = arrivalSequence.incrementAndGet();
+        String collapseKey = msg.collapseKey();
+        if (collapseKey != null) {
+            newestArrivalPerCollapseKey.put(collapseKey, arrival);
+        }
+        return arrival;
+    }
+
+    /**
+     * Posts the notification of a message. A message with a collapse key is posted under a tag
+     * derived from that key, so a later message with the same key replaces it. Any other message
+     * keeps a notification of its own, identified by its message ID.
+     *
+     * @param manager notification manager to post with
+     * @param msg message the notification was built from
+     * @param arrival place of the message in the arrival order, see {@link #recordArrival(Message)}
+     * @param notification notification to post
+     */
+    private static void postNotification(@NonNull NotificationManager manager, @NonNull Message msg, long arrival, @NonNull Notification notification) {
+        String collapseKey = msg.collapseKey();
+        if (collapseKey != null) {
+            Long newestArrival = newestArrivalPerCollapseKey.get(collapseKey);
+            if (newestArrival != null && newestArrival > arrival) {
+                Countly.sharedInstance().L.d("[CountlyPush, postNotification] A newer message with collapse key [" + collapseKey + "] arrived meanwhile, not posting this older one");
+                return;
+            }
+            Countly.sharedInstance().L.d("[CountlyPush, postNotification] Posting notification under collapse key [" + collapseKey + "]");
+            manager.notify(COLLAPSE_TAG_PREFIX + collapseKey, COLLAPSE_NOTIFICATION_ID, notification);
+        } else {
+            manager.notify(msg.id().hashCode(), notification);
+        }
+    }
+
+    /**
+     * Removes the notification of a message, addressed the way {@link #postNotification} posted it.
+     *
+     * @param manager notification manager to cancel with
+     * @param msg message whose notification to remove
+     */
+    static void cancelNotification(@NonNull NotificationManager manager, @NonNull Message msg) {
+        String collapseKey = msg.collapseKey();
+        if (collapseKey != null) {
+            manager.cancel(COLLAPSE_TAG_PREFIX + collapseKey, COLLAPSE_NOTIFICATION_ID);
+        } else if (msg.id() != null) {
+            manager.cancel(msg.id().hashCode());
+        }
     }
 
     // package-private (not private) so the config -> intent-extra wiring is unit-testable.
@@ -535,9 +708,21 @@ public class CountlyPush {
             Countly.sharedInstance().L.w("[CountlyPush, displayDialog] Push init has not been completed. Some things might not function.");
         }
 
-        loadImage(activity, msg, new BitmapCallback() {
+        loadImage(activity, msg, SystemClock.elapsedRealtime() + MEDIA_TOTAL_BUDGET_MS, new BitmapCallback() {
             @Override
             public void call(Bitmap bitmap) {
+                if (activity.isFinishing() || activity.isDestroyed()) {
+                    //the user moved on while the image loaded: the message goes to the activity in front now, if any
+                    Activity current = CountlyPush.activity;
+                    if (current != null && current != activity && !current.isFinishing() && !current.isDestroyed()) {
+                        Countly.sharedInstance().L.d("[CountlyPush, displayDialog] The activity is gone by the time the dialog is ready, showing it on the current one");
+                        displayDialog(current, msg);
+                        return;
+                    }
+                    Countly.sharedInstance().L.w("[CountlyPush, displayDialog] The activity is gone by the time the dialog is ready, not showing it");
+                    return;
+                }
+
                 AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 
                 if (msg != null && msg.media() != null) {
@@ -638,12 +823,17 @@ public class CountlyPush {
                         }
                     });
                 } else {
-                    throw new IllegalStateException("Countly Message with UNKNOWN type in ProxyActivity");
+                    Countly.sharedInstance().L.w("[CountlyPush, displayDialog] The message has neither media, a link nor a body, not showing a dialog");
+                    return;
                 }
 
-                builder.create().show();
+                try {
+                    builder.create().show();
+                } catch (WindowManager.BadTokenException ex) {
+                    Countly.sharedInstance().L.w("[CountlyPush, displayDialog] The activity's window is gone, the dialog is not shown", ex);
+                }
             }
-        }, 1);
+        });
         return Boolean.TRUE;
     }
 
@@ -715,6 +905,11 @@ public class CountlyPush {
      * @param provider which provider the token belongs to
      */
     public static void onTokenRefresh(String token, Countly.CountlyMessagingProvider provider) {
+        if (token != null && !token.isEmpty() && provider != null) {
+            lastToken = token;
+            lastTokenProvider = provider;
+        }
+
         if (!initFinished) {
             Countly.sharedInstance().L.i("[CountlyPush, onTokenRefresh] CountlyPush is not initialized, ignoring call");
             return;
@@ -741,33 +936,6 @@ public class CountlyPush {
     static final String HUAWEI_MESSAGING_CLASS = "com.huawei.hms.push.HmsMessageService";
     static final String HUAWEI_CONFIG_CLASS = "com.huawei.agconnect.config.AGConnectServicesConfig";
     static final String HUAWEI_INSTANCEID_CLASS = "com.huawei.hms.aaid.HmsInstanceId";
-
-    /**
-     * Initialize Countly messaging functionality
-     *
-     * @param application application instance
-     * @param mode whether to mark push token as test or as production one
-     * @throws IllegalStateException
-     * @deprecated use 'CountlyConfigPush' object to init Countly Push: 'init(CountlyConfigPush countlyConfigPush)'.
-     */
-    public static void init(@Nullable final Application application, @Nullable Countly.CountlyMessagingMode mode) throws IllegalStateException {
-        init(application, mode, null);
-    }
-
-    /**
-     * Initialize Countly messaging functionality
-     *
-     * @param application application instance
-     * @param mode whether to mark push token as test or as production one
-     * @param preferredProvider prefer specified push provider, {@code null} means use FCM first, then fallback to Huawei
-     * @throws IllegalStateException
-     * @deprecated use 'CountlyConfigPush' object to init Countly Push: 'init(CountlyConfigPush countlyConfigPush)'.
-     */
-    public static void init(@Nullable final Application application, @Nullable Countly.CountlyMessagingMode mode, @Nullable Countly.CountlyMessagingProvider preferredProvider) throws IllegalStateException {
-        CountlyConfigPush countlyConfigPush = new CountlyConfigPush(application)
-            .setProvider(preferredProvider);
-        init(countlyConfigPush);
-    }
 
     /**
      * Initialize Countly messaging functionality
@@ -804,12 +972,15 @@ public class CountlyPush {
         // print error in case preferred push provider is not available
         if (countlyConfigPush.provider == Countly.CountlyMessagingProvider.FCM && !UtilsMessaging.reflectiveClassExists(FIREBASE_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             Countly.sharedInstance().L.e("Countly push didn't initialize. No FirebaseMessaging class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.trackLogCode("e130");
             return;
         } else if (countlyConfigPush.provider == Countly.CountlyMessagingProvider.HMS && !UtilsMessaging.reflectiveClassExists(HUAWEI_MESSAGING_CLASS, Countly.sharedInstance().L)) {
             Countly.sharedInstance().L.e("Countly push didn't initialize. No HmsMessageService class in the class path. Please either add it to your gradle config or don't use CountlyPush.");
+            Countly.sharedInstance().L.trackLogCode("e130");
             return;
         } else if (countlyConfigPush.provider == null) {
             Countly.sharedInstance().L.e("Countly push didn't initialize. Neither FirebaseMessaging, nor HmsMessageService class in the class path. Please either add Firebase / Huawei dependencies or don't use CountlyPush.");
+            Countly.sharedInstance().L.trackLogCode("e130");
             return;
         }
 
@@ -907,18 +1078,6 @@ public class CountlyPush {
         }
     }
 
-    /**
-     * Returns which messaging mode was used in the previous init
-     * -1 - no data / no init has happened
-     * 0 - test mode
-     * 1 - production mode
-     *
-     * @deprecated this call will always return "0". It should not be used anymore. There is no need for it
-     */
-    public static int getLastMessagingMethod(Context context) {
-        return 0;
-    }
-
     public static void setNotificationAccentColor(int alpha, int red, int green, int blue) {
         alpha = Math.min(255, Math.max(0, alpha));
         red = Math.min(255, Math.max(0, red));
@@ -958,63 +1117,259 @@ public class CountlyPush {
         void call(Bitmap bitmap);
     }
 
-    private static void loadImage(@NonNull final Context context, @NonNull final Message msg, @NonNull final BitmapCallback callback, final int attempt) {
+    /**
+     * Scales a large icon down so its longer side is at most {@link #LARGE_ICON_MAX_SIZE}, keeping
+     * the aspect ratio. The system shows large icons at around 64dp, and Android versions before 9
+     * pass the bitmap to the notification service at full size, where an oversized one can exceed
+     * the binder transaction limit and fail to be shown.
+     *
+     * @param bitmap icon to scale
+     * @return the scaled bitmap, or the given one if it already fits
+     */
+    static Bitmap scaleLargeIcon(@NonNull Bitmap bitmap) {
+        int longer = Math.max(bitmap.getWidth(), bitmap.getHeight());
+        if (longer <= LARGE_ICON_MAX_SIZE) {
+            return bitmap;
+        }
+        float ratio = (float) LARGE_ICON_MAX_SIZE / longer;
+        int width = Math.max(1, Math.round(bitmap.getWidth() * ratio));
+        int height = Math.max(1, Math.round(bitmap.getHeight() * ratio));
+        return Bitmap.createScaledBitmap(bitmap, width, height, true);
+    }
+
+    /**
+     * Downloads the media of a message in the background and hands the decoded bitmap to the
+     * callback on the main thread. The callback receives {@code null} when the message has no media
+     * or it could not be downloaded.
+     *
+     * @param context context whose main thread the callback runs on
+     * @param msg message whose media to download
+     * @param deadline {@link SystemClock#elapsedRealtime()} after which the download is given up
+     * @param callback receives the bitmap
+     */
+    private static void loadImage(@NonNull final Context context, @NonNull final Message msg, final long deadline, @NonNull final BitmapCallback callback) {
         Utils.runInBackground(new Runnable() {
             @Override public void run() {
-                final Bitmap[] bitmap = { null };
-
-                if (msg.media() != null) {
-                    HttpURLConnection connection = null;
-                    InputStream input = null;
-                    int previousSocketTag = TrafficStats.getThreadStatsTag();
-                    TrafficStats.setThreadStatsTag(MEDIA_DOWNLOAD_SOCKET_TAG);
-                    try {
-                        connection = (HttpURLConnection) msg.media().openConnection();
-                        connection.setDoInput(true);
-                        connection.setConnectTimeout(MEDIA_DOWNLOAD_TIMEOUT);
-                        connection.setReadTimeout(MEDIA_DOWNLOAD_TIMEOUT);
-                        connection.connect();
-                        input = connection.getInputStream();
-                        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-                        byte[] buf = new byte[16384];
-                        int read;
-                        while ((read = input.read(buf, 0, buf.length)) != -1) {
-                            bytes.write(buf, 0, read);
-                        }
-                        bytes.flush();
-
-                        byte[] data = bytes.toByteArray();
-                        bitmap[0] = BitmapFactory.decodeByteArray(data, 0, data.length);
-                    } catch (Exception e) {
-                        Countly.sharedInstance().L.e("[CountlyPush] loadImage, Cannot download message media ", e);
-                        if (attempt < MEDIA_DOWNLOAD_ATTEMPTS) {
-                            loadImage(context, msg, callback, attempt + 1);
-                            return;
-                        }
-                    } finally {
-                        if (input != null) {
-                            try {
-                                input.close();
-                            } catch (IOException ignored) {
-                            }
-                        }
-                        if (connection != null) {
-                            try {
-                                connection.disconnect();
-                            } catch (Throwable ignored) {
-                            }
-                        }
-                        TrafficStats.setThreadStatsTag(previousSocketTag);
-                    }
-                }
-
+                final Bitmap bitmap = msg.media() == null ? null : downloadBitmap(msg.media(), "message media", deadline, MEDIA_MAX_DIMENSION);
                 new Handler(context.getMainLooper()).post(new Runnable() {
                     @Override
                     public void run() {
-                        callback.call(bitmap[0]);
+                        callback.call(bitmap);
                     }
                 });
             }
         });
+    }
+
+    /**
+     * Resolves the large icon of a message and hands it to the callback. An http(s) URL is
+     * downloaded in the background and the callback runs on the main thread; any other value is
+     * looked up as a drawable or mipmap resource of the app and the callback runs right away, as it
+     * does when there is no large icon. The callback receives {@code null} when the icon cannot be
+     * resolved, so the notification is still shown without it.
+     *
+     * @param context context to resolve resources in and whose main thread the callback runs on
+     * @param largeIcon large icon value of the message, may be {@code null}
+     * @param deadline {@link SystemClock#elapsedRealtime()} after which a download is given up
+     * @param callback receives the icon, scaled with {@link #scaleLargeIcon(Bitmap)}
+     */
+    private static void loadLargeIcon(@NonNull final Context context, @Nullable final String largeIcon, final long deadline, @NonNull final BitmapCallback callback) {
+        if (largeIcon == null) {
+            callback.call(null);
+            return;
+        }
+
+        String lowerCase = largeIcon.toLowerCase(Locale.ROOT);
+        if (!lowerCase.startsWith("http://") && !lowerCase.startsWith("https://")) {
+            Bitmap bitmap = largeIconFromResource(context, largeIcon);
+            callback.call(bitmap == null ? null : scaleLargeIcon(bitmap));
+            return;
+        }
+
+        final URL url;
+        try {
+            url = new URL(largeIcon);
+        } catch (MalformedURLException e) {
+            Countly.sharedInstance().L.w("[CountlyPush] loadLargeIcon, Bad large icon URL [" + largeIcon + "], ignoring");
+            callback.call(null);
+            return;
+        }
+
+        Utils.runInBackground(new Runnable() {
+            @Override public void run() {
+                Bitmap downloaded = downloadBitmap(url, "large icon", deadline, LARGE_ICON_MAX_SIZE);
+                final Bitmap bitmap = downloaded == null ? null : scaleLargeIcon(downloaded);
+                new Handler(context.getMainLooper()).post(new Runnable() {
+                    @Override
+                    public void run() {
+                        callback.call(bitmap);
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Looks up a large icon given as the name of a drawable or mipmap resource of the app. Vector
+     * and other non-bitmap drawables are drawn into a bitmap at their intrinsic size.
+     *
+     * @param context context of the app that owns the resource
+     * @param name resource name, without the type prefix
+     * @return the icon bitmap, or {@code null} if no such resource exists or it cannot be drawn
+     */
+    private static Bitmap largeIconFromResource(@NonNull Context context, @NonNull String name) {
+        try {
+            Resources resources = context.getResources();
+            int id = resources.getIdentifier(name, "drawable", context.getPackageName());
+            if (id == 0) {
+                id = resources.getIdentifier(name, "mipmap", context.getPackageName());
+            }
+            if (id == 0) {
+                Countly.sharedInstance().L.w("[CountlyPush] largeIconFromResource, No drawable or mipmap resource named [" + name + "], showing the notification without a large icon");
+                return null;
+            }
+
+            Drawable drawable = resources.getDrawable(id, context.getTheme());
+            if (drawable instanceof BitmapDrawable && ((BitmapDrawable) drawable).getBitmap() != null) {
+                return ((BitmapDrawable) drawable).getBitmap();
+            }
+
+            int width = drawable.getIntrinsicWidth() > 0 ? drawable.getIntrinsicWidth() : LARGE_ICON_MAX_SIZE;
+            int height = drawable.getIntrinsicHeight() > 0 ? drawable.getIntrinsicHeight() : LARGE_ICON_MAX_SIZE;
+            Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(bitmap);
+            drawable.setBounds(0, 0, width, height);
+            drawable.draw(canvas);
+            return bitmap;
+        } catch (Throwable t) {
+            Countly.sharedInstance().L.w("[CountlyPush] largeIconFromResource, Cannot load large icon resource [" + name + "], showing the notification without a large icon", t);
+            return null;
+        }
+    }
+
+    /**
+     * Downloads and decodes an image, retrying up to {@link #MEDIA_DOWNLOAD_ATTEMPTS} times while the deadline allows.
+     * Must be called off the main thread. An image over {@link #MEDIA_MAX_BYTES} is left out, and a large one is
+     * sampled down while decoding, so neither can run the app out of memory.
+     *
+     * @param url image URL
+     * @param what what the image is, for logging
+     * @param deadline {@link SystemClock#elapsedRealtime()} after which no further attempt starts
+     * @param maxDimension longest side, in pixels, the image is decoded at
+     * @return the decoded bitmap, or {@code null} if it could not be downloaded or decoded
+     */
+    private static Bitmap downloadBitmap(@NonNull URL url, @NonNull String what, long deadline, int maxDimension) {
+        for (int attempt = 1; attempt <= MEDIA_DOWNLOAD_ATTEMPTS; attempt++) {
+            long remaining = Math.min(MEDIA_DOWNLOAD_TIMEOUT, deadline - SystemClock.elapsedRealtime());
+            if (remaining <= 0) {
+                Countly.sharedInstance().L.w("[CountlyPush] downloadBitmap, no time left to download " + what + ", leaving it out");
+                return null;
+            }
+
+            HttpURLConnection connection = null;
+            InputStream input = null;
+            int previousSocketTag = TrafficStats.getThreadStatsTag();
+            TrafficStats.setThreadStatsTag(MEDIA_DOWNLOAD_SOCKET_TAG);
+            try {
+                connection = (HttpURLConnection) UtilsNetworking.openResourceConnection(url);
+                connection.setDoInput(true);
+                connection.setConnectTimeout((int) remaining);
+                connection.setReadTimeout((int) remaining);
+                connection.connect();
+                input = connection.getInputStream();
+
+                byte[] data = readAtMost(input, MEDIA_MAX_BYTES);
+                if (data == null) {
+                    Countly.sharedInstance().L.w("[CountlyPush] downloadBitmap, " + what + " is larger than [" + MEDIA_MAX_BYTES + "] bytes, leaving it out");
+                    return null;
+                }
+                return decodeSampled(data, maxDimension);
+            } catch (OutOfMemoryError e) {
+                Countly.sharedInstance().L.w("[CountlyPush] downloadBitmap, not enough memory to decode " + what + ", leaving it out", e);
+                return null;
+            } catch (Exception e) {
+                Countly.sharedInstance().L.e("[CountlyPush] downloadBitmap, Cannot download " + what + ", attempt [" + attempt + "]", e);
+            } finally {
+                if (input != null) {
+                    try {
+                        input.close();
+                    } catch (IOException ignored) {
+                    }
+                }
+                if (connection != null) {
+                    try {
+                        connection.disconnect();
+                    } catch (Throwable ignored) {
+                    }
+                }
+                TrafficStats.setThreadStatsTag(previousSocketTag);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Reads a stream to its end.
+     *
+     * @param input the stream
+     * @param maxBytes the most bytes to accept
+     * @return the bytes, or {@code null} once the stream holds more than {@code maxBytes}
+     * @throws IOException when reading fails
+     */
+    @Nullable private static byte[] readAtMost(@NonNull InputStream input, int maxBytes) throws IOException {
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        byte[] buf = new byte[16384];
+        int read;
+        while ((read = input.read(buf, 0, buf.length)) != -1) {
+            bytes.write(buf, 0, read);
+            if (bytes.size() > maxBytes) {
+                return null;
+            }
+        }
+        return bytes.toByteArray();
+    }
+
+    /**
+     * Decodes an image with its longer side at most {@code maxDimension}. It is sampled down by the largest power of two
+     * that keeps the longer side at least {@code maxDimension}, so no detail below the target is lost, and the rest is
+     * scaled down exactly.
+     *
+     * @param data the encoded image
+     * @param maxDimension longest side, in pixels, to decode at
+     * @return the bitmap, or {@code null} when the data is not a decodable image
+     */
+    @Nullable static Bitmap decodeSampled(@NonNull byte[] data, int maxDimension) {
+        BitmapFactory.Options bounds = new BitmapFactory.Options();
+        bounds.inJustDecodeBounds = true;
+        BitmapFactory.decodeByteArray(data, 0, data.length, bounds);
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            return null;
+        }
+
+        int longer = Math.max(bounds.outWidth, bounds.outHeight);
+        int sampleSize = 1;
+        while (longer / (sampleSize * 2) >= maxDimension) {
+            sampleSize *= 2;
+        }
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = sampleSize;
+        Bitmap decoded = BitmapFactory.decodeByteArray(data, 0, data.length, options);
+        if (decoded == null) {
+            return null;
+        }
+
+        int decodedLonger = Math.max(decoded.getWidth(), decoded.getHeight());
+        if (decodedLonger <= maxDimension) {
+            return decoded;
+        }
+        float scale = (float) maxDimension / decodedLonger;
+        int width = Math.max(1, Math.round(decoded.getWidth() * scale));
+        int height = Math.max(1, Math.round(decoded.getHeight() * scale));
+        Bitmap scaled = Bitmap.createScaledBitmap(decoded, width, height, true);
+        if (scaled != decoded) {
+            decoded.recycle();
+        }
+        return scaled;
     }
 }

@@ -44,7 +44,7 @@ public class TestUtils {
     public final static String commonAppKey = "appkey";
     public final static String commonDeviceId = "1234";
     public final static String SDK_NAME = "java-native-android";
-    public final static String SDK_VERSION = "26.1.6";
+    public final static String SDK_VERSION = "26.8.0";
     public static final int MAX_THREAD_COUNT_PER_STACK_TRACE = 50;
 
     public static class Activity2 extends Activity {
@@ -137,21 +137,26 @@ public class TestUtils {
     }
 
     public static CountlyConfig createBaseConfig(String deviceId) {
-        CountlyConfig cc = new CountlyConfig(getApplication(), commonAppKey, commonURL)
+        return withCrashReporting(new CountlyConfig(getApplication(), commonAppKey, commonURL)
             .setDeviceId(deviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
-
-        return cc;
+            .setLoggingEnabled(true));
     }
 
     public static CountlyConfig createBaseConfig(Context context) {
-        CountlyConfig cc = new CountlyConfig(context, commonAppKey, commonURL)
+        return withCrashReporting(new CountlyConfig(context, commonAppKey, commonURL)
             .setDeviceId(commonDeviceId)
-            .setLoggingEnabled(true)
-            .enableCrashReporting();
+            .setLoggingEnabled(true));
+    }
 
-        return cc;
+    /**
+     * Enables unhandled crash reporting on a config, so that a config can still be built in one expression.
+     *
+     * @param config the config to enable it on
+     * @return the same config
+     */
+    public static CountlyConfig withCrashReporting(CountlyConfig config) {
+        config.crashes.enableCrashReporting();
+        return config;
     }
 
     public static String[] createStringArray(int count) {
@@ -375,11 +380,11 @@ public class TestUtils {
     }
 
     /**
-     * Waits until the current wall-clock second has enough room left that a test cannot accidentally cross a
-     * second boundary while it runs.
+     * Waits until the current second of {@link UtilsTime#monotonicTimeMs()} has enough room left that a test
+     * cannot accidentally cross a second boundary while it runs.
      * <p>
-     * The SDK measures durations with {@link UtilsTime#currentTimestampSeconds()}, which truncates
-     * ({@code System.currentTimeMillis() / 1000}). A view started at x.999 and stopped at x+1.001 therefore
+     * The SDK measures view durations with {@link UtilsTime#monotonicTimeSeconds()}, which truncates
+     * ({@code monotonicTimeMs() / 1000}). A view started at x.999 and stopped at x+1.001 therefore
      * reports one whole second for two milliseconds of work, and a test that sleeps 1000ms starting from
      * x.900 reports two. Both are pure boundary luck, not slowness, and they are why the ModuleViews duration
      * tests failed intermittently - one of them carrying the comment "duration comes off sometimes".
@@ -389,7 +394,7 @@ public class TestUtils {
      * for the tests that call it.
      */
     public static void alignToSecondBoundary() {
-        long remainderMs = System.currentTimeMillis() % 1000L;
+        long remainderMs = UtilsTime.monotonicTimeMs() % 1000L;
         //500ms of headroom: enough for a "no duration" test to start and stop a view, and enough that a
         //sleep(1000) plus its overshoot still lands inside the next second
         if (remainderMs <= 500L) {
@@ -464,8 +469,8 @@ public class TestUtils {
 
         Assert.assertTrue(cDuration >= 0);
         if (duration != null) {
-            //Exact, deliberately. Durations come from UtilsTime.currentTimestampSeconds(), which truncates
-            //(System.currentTimeMillis() / 1000), so a view spanning a second boundary reports a whole second
+            //Exact, deliberately. View durations come from UtilsTime.monotonicTimeSeconds(), which truncates
+            //(monotonicTimeMs() / 1000), so a view spanning a second boundary reports a whole second
             //for microseconds of work. That is handled by starting these tests inside a fresh second - see
             //alignToSecondBoundary - rather than by loosening this assertion: "this view recorded no duration"
             //is exactly the kind of thing these tests exist to catch.
@@ -529,6 +534,17 @@ public class TestUtils {
     }
 
     /**
+     * A CountlyStore bound to a specific instance's storage namespace, for verifying that named
+     * instances persist their queues/device-id/config to isolated files.
+     */
+    protected static CountlyStore getCountlyStore(Countly countly) {
+        // A real (silent) ModuleLog rather than a mock: this store is only read for verification and
+        // never has its interactions verified, and a real logger keeps the helper usable on Android
+        // runtimes where the Mockito/ByteBuddy mock maker cannot inject classes.
+        return new CountlyStore(getContext(), new ModuleLog(), false, countly.storageNamespace_);
+    }
+
+    /**
      * Get current request queue from target folder
      *
      * @return array of request params
@@ -544,8 +560,21 @@ public class TestUtils {
      * @return array of request params
      */
     protected static @NonNull Map<String, String>[] getCurrentRQ(String filter) {
+        return getCurrentRQ(filter, getCountlyStore());
+    }
+
+    /**
+     * Get the request queue of a specific instance, read from that instance's namespaced storage.
+     *
+     * @return array of request params
+     */
+    protected static @NonNull Map<String, String>[] getCurrentRQ(Countly countly) {
+        return getCurrentRQ("", getCountlyStore(countly));
+    }
+
+    protected static @NonNull Map<String, String>[] getCurrentRQ(String filter, CountlyStore store) {
         //get all request files from target folder
-        String[] requests = getCountlyStore().getRequests();
+        String[] requests = store.getRequests();
         //create array of request params
         Map<String, String>[] resultMapArray = new ConcurrentHashMap[requests.length];
 

@@ -11,6 +11,8 @@ import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -46,12 +48,64 @@ class ContentOverlayView extends FrameLayout {
     TransparentActivityConfig configPortrait;
     TransparentActivityConfig configLandscape;
     int currentOrientation;
+    // Owning Countly instance. Content/feedback events recorded from the overlay and its request
+    // flushes must go to the instance that opened the overlay, not to Countly.sharedInstance()
+    // (which would route every instance's content events into the default instance's queue).
+    @NonNull private final Countly cly;
     private ContentCallback contentCallback;
     private final Set<String> allowedLinkSchemes;
     private final ContentUrlHandler contentUrlHandler;
     private Runnable onCloseRunnable;
     private Runnable onWidgetCancelRunnable;
     private boolean isClosed = false;
+
+    // Process-global presentation guard. The content and feedback modules are per-instance, but the
+    // overlay is bound to the single foreground Activity, so at most ONE content/feedback overlay may
+    // be presented at a time across ALL instances. Claimed in attachToActivity, released in
+    // close()/destroy() - never on background detach (the overlay is still the active presentation
+    // while backgrounded).
+    private static ContentOverlayView presentedOverlay;
+
+    /**
+     * @return true if any content or feedback overlay is currently presented, on any instance.
+     */
+    static boolean isOverlayPresented() {
+        return presentedOverlay != null && !presentedOverlay.isClosed;
+    }
+
+    /**
+     * @return true if an overlay OTHER than {@code self} is currently presented. This lets an
+     * instance refresh or replace its own overlay while still being blocked from stacking on top of a
+     * different instance's (or the other module's) overlay.
+     */
+    static boolean isOtherOverlayPresented(ContentOverlayView self) {
+        return presentedOverlay != null && presentedOverlay != self && !presentedOverlay.isClosed;
+    }
+
+    private void releasePresentationGuard() {
+        if (presentedOverlay == this) {
+            presentedOverlay = null;
+        }
+    }
+
+    /**
+     * The guard is claimed in {@link #attachToActivity(Activity)} before the window attach, so that a
+     * second overlay can not slip in mid-attach. If the attach then fails there is no presentation to
+     * protect, and holding the guard would block every later content and feedback overlay in the
+     * process for good - so hand it back on every failure path.
+     */
+    private void abandonFailedAttach(@NonNull String reason) {
+        // A refresh of an already-attached overlay can also fail. The overlay is still a live window in
+        // that case, so it IS the active presentation: keep the guard, and above all do not touch
+        // isAddedToWindow, or removeFromWindow() would later skip the real window and orphan it.
+        if (isAddedToWindow) {
+            Log.w(Countly.TAG, "[ContentOverlayView] attach step failed (" + reason + ") while still attached, keeping the presentation guard");
+            return;
+        }
+
+        releasePresentationGuard();
+        Log.w(Countly.TAG, "[ContentOverlayView] attach failed (" + reason + "), released the presentation guard");
+    }
     private Activity currentHostActivity;
     private WindowManager windowManager;
     private boolean isAddedToWindow = false;
@@ -81,7 +135,8 @@ class ContentOverlayView extends FrameLayout {
         return activity.getApplicationContext();
     }
 
-    @SuppressLint("SetJavaScriptEnabled") ContentOverlayView(@NonNull Activity activity,
+    @SuppressLint("SetJavaScriptEnabled") ContentOverlayView(@NonNull Countly cly,
+        @NonNull Activity activity,
         @NonNull TransparentActivityConfig portrait,
         @NonNull TransparentActivityConfig landscape,
         int orientation,
@@ -95,6 +150,7 @@ class ContentOverlayView extends FrameLayout {
         // resolveOverlayContext above.
         super(resolveOverlayContext(activity));
 
+        this.cly = cly;
         this.configPortrait = portrait;
         this.configLandscape = landscape;
         this.currentOrientation = orientation;
@@ -229,6 +285,12 @@ class ContentOverlayView extends FrameLayout {
                 // The overlay is reattached via ModuleContent.onActivityStarted, which calls attachToActivity()
                 // and re-sets currentHostActivity for the next host.
                 overlay.currentHostActivity = null;
+
+                // without activity starts nothing reattaches the overlay, and it would hold the one-at-a-time guard for good
+                if (!overlay.cly.applicationClassProvided && !overlay.cly.calledAtLeastOnceOnStart) {
+                    Log.d(Countly.TAG, "[ContentOverlayView] onActivityDestroyed, the owning instance can not reattach the overlay, closing it");
+                    overlay.close(new HashMap<>());
+                }
             }
         }
     }
@@ -431,6 +493,31 @@ class ContentOverlayView extends FrameLayout {
             return;
         }
 
+        // The guard is the single definition of "at most one content or feedback overlay at a time".
+        // Enforce it here too, not only at the two module call sites: the modules re-attach their cached
+        // overlay when the app returns to the foreground without re-checking, so an overlay that was
+        // never shown (or whose earlier attach failed) could otherwise steal the presentation from the
+        // overlay that is actually on screen. Self-aware, so refreshing the presenting overlay is fine.
+        if (isOtherOverlayPresented(this)) {
+            Log.w(Countly.TAG, "[ContentOverlayView] attachToActivity, another content or feedback overlay is already presented, skipping");
+            return;
+        }
+
+        // Claim the process-global presentation guard: from here this overlay is the active
+        // presentation (idempotent across background/foreground reattaches).
+        presentedOverlay = this;
+
+        // Anything thrown while measuring or attaching would otherwise strand the guard, blocking every
+        // later content and feedback overlay in the process. Release and rethrow so behaviour is unchanged.
+        try {
+            attachToActivityInternal(activity);
+        } catch (RuntimeException | Error t) {
+            abandonFailedAttach("unexpected " + t.getClass().getSimpleName() + " during attach");
+            throw t;
+        }
+    }
+
+    private void attachToActivityInternal(@NonNull Activity activity) {
         // Check if we're already attached to this activity
         if (currentHostActivity == activity && isAddedToWindow) {
             // Still check for orientation changes — WindowManager views don't get onConfigurationChanged
@@ -474,6 +561,8 @@ class ContentOverlayView extends FrameLayout {
         WindowManager wm = (WindowManager) activity.getSystemService(Context.WINDOW_SERVICE);
         if (wm == null) {
             Log.w(Countly.TAG, "[ContentOverlayView] addToWindow, WindowManager is null, skipping");
+            isAddedToWindow = false;
+            abandonFailedAttach("no WindowManager");
             return;
         }
 
@@ -490,7 +579,12 @@ class ContentOverlayView extends FrameLayout {
             Log.w(Countly.TAG, "[ContentOverlayView] addToWindow, token not ready, retrying on next frame");
             View decor = activity.getWindow().getDecorView();
             decor.post(() -> {
-                if (isClosed || activity.isFinishing() || isAddedToWindow) {
+                if (isClosed || isAddedToWindow) {
+                    //close()/destroy() already released the guard, or another attach won the race
+                    return;
+                }
+                if (activity.isFinishing()) {
+                    abandonFailedAttach("host activity finished before the retry");
                     return;
                 }
                 try {
@@ -501,11 +595,13 @@ class ContentOverlayView extends FrameLayout {
                 } catch (Exception e2) {
                     Log.e(Countly.TAG, "[ContentOverlayView] addToWindow, retry also failed", e2);
                     isAddedToWindow = false;
+                    abandonFailedAttach("retry threw " + e2.getClass().getSimpleName());
                 }
             });
         } catch (Exception e) {
             Log.e(Countly.TAG, "[ContentOverlayView] addToWindow, failed to add view", e);
             isAddedToWindow = false;
+            abandonFailedAttach("addView threw " + e.getClass().getSimpleName());
         }
     }
 
@@ -604,7 +700,7 @@ class ContentOverlayView extends FrameLayout {
             // Clamp dimensions on the copy so content doesn't exceed the safe area.
             // This must be done here (not on the original configs) because SafeAreaCalculator
             // can return stale WindowMetrics during orientation transitions.
-            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, Countly.sharedInstance().L);
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(context, cly.L);
             boolean isLandscape = currentOrientation == Configuration.ORIENTATION_LANDSCAPE;
             int safeWidth = isLandscape ? safeArea.landscapeWidth : safeArea.portraitWidth;
             int safeHeight = isLandscape ? safeArea.landscapeHeight : safeArea.portraitHeight;
@@ -692,7 +788,7 @@ class ContentOverlayView extends FrameLayout {
         int widthPx, heightPx;
 
         if (currentConfig.useSafeArea) {
-            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, Countly.sharedInstance().L);
+            SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, cly.L);
             if (currentOrientation == Configuration.ORIENTATION_LANDSCAPE) {
                 widthPx = safeArea.landscapeWidth;
                 heightPx = safeArea.landscapeHeight;
@@ -780,6 +876,14 @@ class ContentOverlayView extends FrameLayout {
 
     private void eventAction(Map<String, Object> query) {
         Log.i(Countly.TAG, "[ContentOverlayView] eventAction, event action detected");
+        //a teardown on another thread stops the instance before the overlay's destroy reaches the main thread
+        ModuleEvents.Events events = cly.events();
+        ModuleRequestQueue.RequestQueue requestQueue = cly.requestQueue();
+        if (events == null || requestQueue == null) {
+            Log.w(Countly.TAG, "[ContentOverlayView] eventAction, the instance was stopped, ignoring the action");
+            return;
+        }
+
         // splitQuery only stores "event" as a JSONArray when its JSON validates; a malformed payload
         // from web content falls back to a raw String, so guard the cast (as resizeMeAction guards
         // resize_me) to keep a ClassCastException from propagating out of shouldOverrideUrlLoading.
@@ -813,13 +917,13 @@ class ContentOverlayView extends FrameLayout {
                         segmentation.put(key, value);
                     }
 
-                    Countly.sharedInstance().events().recordEvent(eventJson.get("key").toString(), segmentation);
+                    events.recordEvent(eventJson.get("key").toString(), ModuleContent.withGlobalContentSegmentation(cly, segmentation));
                 } catch (JSONException e) {
                     Log.e(Countly.TAG, "[ContentOverlayView] eventAction, Failed to parse event JSON", e);
                 }
             }
 
-            Countly.sharedInstance().requestQueue().attemptToSendStoredRequests();
+            requestQueue.attemptToSendStoredRequests();
         }
     }
 
@@ -1057,7 +1161,7 @@ class ContentOverlayView extends FrameLayout {
     }
 
     private void recalculateSafeAreaOffsets(@NonNull Activity activity) {
-        SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, Countly.sharedInstance().L);
+        SafeAreaDimensions safeArea = SafeAreaCalculator.calculateSafeAreaDimensions(activity, cly.L);
 
         // Update offsets with correct values from Activity context
         configPortrait.topOffset = safeArea.portraitTopOffset;
@@ -1179,6 +1283,7 @@ class ContentOverlayView extends FrameLayout {
             return;
         }
         isClosed = true;
+        releasePresentationGuard();
 
         Log.d(Countly.TAG, "[ContentOverlayView] close, closing content overlay");
 
@@ -1200,11 +1305,22 @@ class ContentOverlayView extends FrameLayout {
         }
     }
 
+    /**
+     * Tears the overlay down. The WebView and the window may only be touched on the main thread, so a call from
+     * any other thread, such as an instance being stopped from background code, is moved there.
+     */
     void destroy() {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            Log.d(Countly.TAG, "[ContentOverlayView] destroy, called off the main thread, moving it to the main thread");
+            new Handler(Looper.getMainLooper()).post(this::destroy);
+            return;
+        }
+
         Log.d(Countly.TAG, "[ContentOverlayView] destroy, destroying content overlay");
 
         exitImmersiveMode();
         isClosed = true;
+        releasePresentationGuard();
 
         unregisterOrientationCallback();
         unregisterActivityLifecycleCallback();

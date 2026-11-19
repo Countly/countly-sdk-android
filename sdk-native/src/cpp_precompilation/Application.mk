@@ -1,8 +1,9 @@
 APP_STL := c++_shared
 # Pinned instead of "all": what "all" expands to has grown over the years and now adds riscv64,
-# which the vendored linux_syscall_support.h has no syscalls for. These are the ABIs we ship.
+# which we neither ship nor test. These are the ABIs we ship.
 APP_ABI := armeabi-v7a arm64-v8a x86 x86_64
-APP_CXXFLAGS := -std=c++11 -D__STDC_LIMIT_MACROS
+# Breakpad requires C++20 (AX_CXX_COMPILE_STDCXX(20) in its configure.ac).
+APP_CXXFLAGS := -std=c++20 -D__STDC_LIMIT_MACROS
 # android-12 predates the module's own minSdk of 21 and is below the floor NDK r28 accepts.
 APP_PLATFORM := android-21
 

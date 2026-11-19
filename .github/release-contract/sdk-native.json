@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "coordinates": "ly.count.android:sdk-native",
+  "pomDependencies": [],
+  "moduleVariantAttributes": { "org.gradle.jvm.version": null },
+  "aarMetadata": { "minCompileSdk": "21", "minCompileSdkExtension": "0", "minAndroidGradlePluginVersion": "1.0.0", "coreLibraryDesugaringEnabled": "false" },
+  "maxClassFileMajor": 52,
+  "nativeLibraries": { "abis": ["arm64-v8a", "armeabi", "armeabi-v7a", "x86", "x86_64"], "loadAlignment64": 16384 }
+}

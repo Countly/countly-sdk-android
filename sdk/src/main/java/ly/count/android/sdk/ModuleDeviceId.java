@@ -65,7 +65,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
 
         storageProvider.setDeviceID(null);
         storageProvider.setDeviceIDType(null);
-        _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().remove(PREF_KEY).apply();
+        _cly.context_.getSharedPreferences(CountlyStore.namespacedName(PREFS_NAME, _cly.storageNamespace_), Context.MODE_PRIVATE).edit().remove(PREF_KEY).apply();
     }
 
     void replaceTempIDWithRealIDinRQ(@NonNull String targetDeviceId) {
@@ -94,30 +94,51 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             throw new IllegalStateException("init must be called before exitTemporaryIdMode");
         }
 
+        //Sibling modules come through _cly and teardown nulls those fields. Each is read once into a local -
+        //reading the field twice could return null after the check - and a module that is already gone only
+        //costs its own follow-up step. Exiting temporary mode itself still happens, because the stored ID is
+        //what the developer asked to change.
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        ModuleRemoteConfig remoteConfigModule = _cly.moduleRemoteConfig;
+        ModuleHealthCheck healthCheckModule = _cly.moduleHealthCheck;
+
         //start by changing stored ID
         deviceIdInstance.changeToCustomId(deviceId);
 
         // trigger fetching if the temp id given on init
-        _cly.moduleConfiguration.fetchConfigFromServer(_cly.config_);
+        if (configurationModule != null) {
+            configurationModule.fetchConfigFromServer(_cly.config_);
+        } else {
+            L.w("[ModuleDeviceId] exitTemporaryIdMode, the configuration module is gone, not re-fetching the server config");
+        }
 
         // Resume the content zone now that a real device ID is set again. The config re-fetch above
         // only notifies modules when a value changes, so an unchanged (still enabled) content-zone
         // value would otherwise leave the zone torn down after exiting temporary mode. This runs only
         // here (not on a generic device ID change), so a plain changeWithoutMerge does not re-arm it.
-        if (_cly.moduleContent != null) {
-            _cly.moduleContent.resumeContentZoneAfterTemporaryIdExit();
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null) {
+            contentModule.resumeContentZoneAfterTemporaryIdExit();
         }
 
         //update stored request for ID change to use this new ID
         replaceTempIDWithRealIDinRQ(deviceId);
 
         //update remote config_ values if automatic update is enabled
-        _cly.moduleRemoteConfig.RCAutomaticDownloadTrigger(false);
+        if (remoteConfigModule != null) {
+            remoteConfigModule.RCAutomaticDownloadTrigger(false);
+        } else {
+            L.w("[ModuleDeviceId] exitTemporaryIdMode, the remote config module is gone, not triggering a download");
+        }
 
         _cly.requestQueue().attemptToSendStoredRequests();
 
         // trigger sending if the temp id given on init
-        _cly.moduleHealthCheck.sendHealthCheck();
+        if (healthCheckModule != null) {
+            healthCheckModule.sendHealthCheck();
+        } else {
+            L.w("[ModuleDeviceId] exitTemporaryIdMode, the health check module is gone, not sending a health check");
+        }
     }
 
     /**
@@ -151,22 +172,55 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         // we are either making a simple ID change or entering temporary mode
         // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
+        //Every sibling module is read once into a local - reading a field twice could return null after the
+        //check - and each step is skipped on its own. The device ID change itself still goes through, because
+        //that is what the developer asked for; only the follow-up work a missing module owned is dropped.
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        ModuleUserProfile userProfileModule = _cly.moduleUserProfile;
+        ModuleRemoteConfig remoteConfigModule = _cly.moduleRemoteConfig;
+        ModuleSessions sessionsModule = _cly.moduleSessions;
+        ModuleConsent consentModule = _cly.moduleConsent;
+        ModuleRatings ratingsModule = _cly.moduleRatings;
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+
         //force flush events so that they are associated correctly
-        _cly.moduleRequestQueue.sendEventsIfNeeded(true);
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(true);
+        } else {
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMerge, the request queue module is gone, not flushing events");
+        }
 
         //send user profile data because we are flushing the event queue
-        _cly.moduleUserProfile.saveInternal();
+        if (userProfileModule != null) {
+            userProfileModule.saveInternal();
+        } else {
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMerge, the user profile module is gone, not saving pending profile changes");
+        }
 
         //update remote config_ values after id change if automatic update is enabled
-        _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
+        if (remoteConfigModule != null) {
+            remoteConfigModule.clearAndDownloadAfterIdChange();
+        } else {
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMerge, the remote config module is gone, not clearing remote config");
+        }
 
-        if (_cly.moduleSessions.automaticSessionTrackingEnabled()) {
+        if (sessionsModule != null && sessionsModule.automaticSessionTrackingEnabled()) {
             //if automatic session tracking is active, end the current session
-            _cly.moduleSessions.endSessionInternal(); // this will check consent
+            sessionsModule.endSessionInternal(); // this will check consent
+        }
+
+        if (configurationModule != null) {
+            configurationModule.stopLogGatheringForDeviceIdChange();
+        } else {
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMerge, the configuration module is gone, not stopping log gathering");
         }
 
         //remove all consent
-        _cly.moduleConsent.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
+        if (consentModule != null) {
+            consentModule.removeConsentAllInternal(ModuleConsent.ConsentChangeSource.DeviceIDChangedNotMerged);
+        } else {
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMerge, the consent module is gone, not removing consent");
+        }
 
         if (deviceId.equals(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId)) {
             // entering temp ID mode
@@ -177,7 +231,11 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
         }
 
         //clear automated star rating session values because now we have a new user
-        _cly.moduleRatings.clearAutomaticStarRatingSessionCountInternal();
+        if (ratingsModule != null) {
+            ratingsModule.clearAutomaticStarRatingSessionCountInternal();
+        } else {
+            L.w("[ModuleDeviceId] changeDeviceIdWithoutMerge, the ratings module is gone, not clearing the star rating session count");
+        }
         _cly.notifyDeviceIdChange(true);
     }
 
@@ -189,7 +247,8 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
      */
     void changeDeviceIdWithMergeInternal(@NonNull String deviceId) {
         if (deviceId.isEmpty()) {
-            L.e("changeDeviceIdWithMergeInternal, provided device ID can't be empty string");
+            L.w("[ModuleDeviceId] changeDeviceIdWithMergeInternal, provided device ID can't be empty string");
+            healthTracker.recordLogCode("w601");
             return;
         }
 
@@ -221,7 +280,12 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             // in both cases we act the same as the temporary ID requests will be updated with the final ID later
 
             //update remote config_ values after id change if automatic update is enabled
-            _cly.moduleRemoteConfig.clearAndDownloadAfterIdChange();
+            ModuleRemoteConfig remoteConfigModule = _cly.moduleRemoteConfig;
+            if (remoteConfigModule != null) {
+                remoteConfigModule.clearAndDownloadAfterIdChange();
+            } else {
+                L.w("[ModuleDeviceId] changeDeviceIdWithMerge, the remote config module is gone, not clearing remote config");
+            }
             requestQueueProvider.changeDeviceId(deviceId, deviceIdInstance.getCurrentId());
             deviceIdInstance.changeToCustomId(deviceId);
             _cly.notifyDeviceIdChange(false);
@@ -231,6 +295,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
     private void setIDInternal(String newDeviceID) {
         if (Utils.isNullOrEmpty(newDeviceID)) {
             L.w("[ModuleDeviceId] setID, Empty id passed to setID method");
+            healthTracker.recordLogCode("w601");
             return;
         }
 
@@ -281,12 +346,15 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
     @Override @NonNull public String getUUID() {
         String retrievedID;
 
-        SharedPreferences mPreferences = _cly.context_.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        // Namespace the legacy OpenUDID file the same way as the main store, so two instances do
+        // not share (and regenerate over) one another's generated UUID. Default instance keeps the
+        // legacy "openudid_prefs" file.
+        SharedPreferences mPreferences = _cly.context_.getSharedPreferences(CountlyStore.namespacedName(PREFS_NAME, _cly.storageNamespace_), Context.MODE_PRIVATE);
         //Try to get the stored UUID from local preferences
         retrievedID = mPreferences.getString(PREF_KEY, null);
         if (retrievedID == null) //Not found if temp storage
         {
-            Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, Generating UUID");
+            L.d("[ModuleDeviceId] getUUID, Generating UUID");
             retrievedID = UUID.randomUUID().toString();
 
             final SharedPreferences.Editor e = mPreferences.edit();
@@ -294,7 +362,7 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             e.apply();
         }
 
-        Countly.sharedInstance().L.d("[ModuleDeviceId] getUUID, retrievedID:[" + retrievedID + "]");
+        L.d("[ModuleDeviceId] getUUID, retrievedID:[" + retrievedID + "]");
 
         return retrievedID;
     }
@@ -322,8 +390,13 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithoutMerge'");
 
+                if (!isLiveHandle("changeWithoutMerge")) {
+                    return;
+                }
+
                 if (deviceId == null) {
-                    L.e("[DeviceId] changeDeviceIdWithoutMerge, provided device ID value was 'null'. Request will be ignored");
+                    L.w("[DeviceId] changeDeviceIdWithoutMerge, provided device ID value was 'null'. Request will be ignored");
+                    healthTracker.recordLogCode("w601");
                     return;
                 }
 
@@ -341,8 +414,13 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'changeDeviceIdWithMerge'");
 
+                if (!isLiveHandle("changeWithMerge")) {
+                    return;
+                }
+
                 if (deviceId == null) {
-                    L.e("[DeviceId] changeDeviceIdWithMerge, provided device ID value was 'null'. Request will be ignored");
+                    L.w("[DeviceId] changeDeviceIdWithMerge, provided device ID value was 'null'. Request will be ignored");
+                    healthTracker.recordLogCode("w601");
                     return;
                 }
 
@@ -373,6 +451,10 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.d("[DeviceId] Calling 'setID'");
 
+                if (!isLiveHandle("setID")) {
+                    return;
+                }
+
                 setIDInternal(newDeviceID);
             }
         }
@@ -397,8 +479,27 @@ public class ModuleDeviceId extends ModuleBase implements OpenUDIDProvider, Devi
             synchronized (_cly) {
                 L.i("[DeviceId] Calling 'enableTemporaryIdMode'");
 
+                if (!isLiveHandle("enableTemporaryIdMode")) {
+                    return;
+                }
+
                 changeDeviceIdWithoutMergeInternal(ly.count.android.sdk.DeviceId.temporaryCountlyDeviceId);
             }
+        }
+
+        /**
+         * A handle kept from before its instance was stopped or halted reaches a module that is torn down: it could
+         * still write a new ID into the store while the request that announces it is dropped. Such a call is refused.
+         *
+         * @param call the public call being checked, for the log
+         * @return true when this handle's module still serves a running instance
+         */
+        private boolean isLiveHandle(@NonNull String call) {
+            if (_cly.moduleDeviceId != ModuleDeviceId.this) {
+                L.e("[DeviceId] " + call + ", this handle belongs to an instance that was stopped or halted since, the call is ignored. Use the instance's deviceId() again.");
+                return false;
+            }
+            return true;
         }
     }
 }

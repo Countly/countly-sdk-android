@@ -15,6 +15,7 @@ public class ModuleAPM extends ModuleBase {
 
     Apm apmInterface = null;
 
+    //trace starts are on UtilsTime.monotonicTimeMs(); a trace is sent with its end timestamp minus its duration as start, so all three agree
     Map<String, Long> codeTraces;
 
     Map<String, Long> networkTraces;
@@ -22,15 +23,13 @@ public class ModuleAPM extends ModuleBase {
     //used to determine app start time
     boolean hasFirstOnResumeHappened = false;
 
-    long lastScreenSwitchTime = -1;// timestamp of when the app last changed from foreground to background
+    long lastScreenSwitchTime = -1;// UtilsTime.monotonicTimeMs() of when the app last changed from foreground to background
 
     int activitiesOpen;
 
     boolean useManualAppLoadedTrigger;
     long appStartTimestamp;
-    boolean manualForegroundBackgroundTriggers;
     boolean trackForegroundBackground;
-    boolean manualOverrideInForeground = false;//app starts in background
 
     boolean appStartRecorded = false;
 
@@ -58,11 +57,6 @@ public class ModuleAPM extends ModuleBase {
             L.d("[ModuleAPM] Using manual app finished loading trigger for app start");
         }
 
-        manualForegroundBackgroundTriggers = config.apm.manualForegroundBackgroundTrigger;
-        if (manualForegroundBackgroundTriggers) {
-            L.d("[ModuleAPM] Using manual foreground/background triggers");
-        }
-
         trackForegroundBackground = config.apm.trackForegroundBackground;
         if (trackForegroundBackground) {
             L.d("[ModuleAPM] tracking foreground/background is enabled");
@@ -75,46 +69,48 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'startTraceInternal' with key:[" + traceKey + "]");
 
         if (traceKey == null || traceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
-        Long currentTimestamp = UtilsTime.currentTimestampMs();
-        codeTraces.put(traceKey, currentTimestamp);
+        codeTraces.put(traceKey, UtilsTime.monotonicTimeMs());
     }
 
     void endTraceInternal(@NonNull String traceKey, @NonNull Map<String, Integer> customMetrics) {
         //end time counting as fast as possible
-        Long currentTimestamp = UtilsTime.currentTimestampMs();
+        long endMonotonicMs = UtilsTime.monotonicTimeMs();
+        long currentTimestamp = UtilsTime.currentTimestampMs();
         assert traceKey != null && !traceKey.isEmpty();
         assert customMetrics != null;
 
         L.d("[ModuleAPM] Calling 'endTraceInternal' with key:[" + traceKey + "]");
 
         if (codeTraces.containsKey(traceKey)) {
-            Long startTimestamp = codeTraces.remove(traceKey);
+            Long startMonotonicMs = codeTraces.remove(traceKey);
 
-            if (startTimestamp == null) {
-                L.e("[ModuleAPM] endTraceInternal, retrieved 'startTimestamp' is null, dropping trace");
+            if (startMonotonicMs == null) {
+                L.e("[ModuleAPM] endTraceInternal, retrieved trace start is null, dropping trace");
             } else {
-                Long durationMs = currentTimestamp - startTimestamp;
+                long durationMs = endMonotonicMs - startMonotonicMs;
 
                 if (!customMetrics.isEmpty()) {
                     //custom metrics provided
                     //remove reserved keys
                     removeReservedInvalidKeys(customMetrics);
-                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
-                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.config_.sdkInternalLimits.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
+                    UtilsInternalLimits.truncateSegmentationKeys(customMetrics, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                    UtilsInternalLimits.truncateSegmentationValues(customMetrics, _cly.sdkInternalLimits_.maxSegmentationValues, "[ModuleAPM] endTraceInternal", L);
                 }
 
                 String metricString = customMetricsToString(customMetrics);
-                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
+                String truncatedTraceKey = UtilsInternalLimits.truncateKeyLength(traceKey, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] endTraceInternal");
                 String modifiedTraceKey = validateAndModifyTraceKey(truncatedTraceKey);
 
-                requestQueueProvider.sendAPMCustomTrace(modifiedTraceKey, durationMs, startTimestamp, currentTimestamp, metricString);
+                requestQueueProvider.sendAPMCustomTrace(modifiedTraceKey, durationMs, currentTimestamp - durationMs, currentTimestamp, metricString);
             }
         } else {
             L.w("[ModuleAPM] endTraceInternal, trying to end trace which was not started");
+            healthTracker.recordLogCode("w700");
         }
     }
 
@@ -122,12 +118,14 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'cancelTraceInternal' with key:[" + traceKey + "]");
 
         if (traceKey == null || traceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (!codeTraces.containsKey(traceKey)) {
             L.w("[ModuleAPM] no trace with key [" + traceKey + "] found");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
@@ -177,6 +175,7 @@ public class ModuleAPM extends ModuleBase {
             if (key == null || key.isEmpty() || value == null) {
                 it.remove();
                 L.w("[ModuleAPM] custom metrics can't contain null or empty key/value");
+                healthTracker.recordLogCode("w700");
                 continue;
             }
 
@@ -189,6 +188,7 @@ public class ModuleAPM extends ModuleBase {
                 //remove key longer than 32 characters
                 it.remove();
                 L.w("[ModuleAPM] custom metric key can't be longer than 32 characters, skipping entry, [" + key + "]");
+                healthTracker.recordLogCode("w700");
                 continue;
             }
 
@@ -227,18 +227,19 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'startNetworkRequestInternal' with key:[" + networkTraceKey + "]");
 
         if (networkTraceKey == null || networkTraceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (uniqueId == null || uniqueId.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid uniqueId");
+            L.w("[ModuleAPM] Provided a invalid uniqueId");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         String internalTraceKey = networkTraceKey + "|" + uniqueId;
-        Long currentTimestamp = UtilsTime.currentTimestampMs();
-        networkTraces.put(internalTraceKey, currentTimestamp);
+        networkTraces.put(internalTraceKey, UtilsTime.monotonicTimeMs());
     }
 
     /**
@@ -253,32 +254,37 @@ public class ModuleAPM extends ModuleBase {
      */
     void endNetworkRequestInternal(String networkTraceKey, String uniqueId, int responseCode, int requestPayloadSize, int responsePayloadSize) {
         //end time counting as fast as possible
+        long endMonotonicMs = UtilsTime.monotonicTimeMs();
         long currentTimestamp = UtilsTime.currentTimestampMs();
 
         L.d("[ModuleAPM] Calling 'endNetworkRequestInternal' with key:[" + networkTraceKey + "]");
 
         if (networkTraceKey == null || networkTraceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key");
+            L.w("[ModuleAPM] Provided a invalid trace key");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (uniqueId == null || uniqueId.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid uniqueId");
+            L.w("[ModuleAPM] Provided a invalid uniqueId");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         String internalTraceKey = networkTraceKey + "|" + uniqueId;
 
         if (networkTraces.containsKey(internalTraceKey)) {
-            Long startTimestamp = networkTraces.remove(internalTraceKey);
+            Long startMonotonicMs = networkTraces.remove(internalTraceKey);
 
-            if (startTimestamp == null) {
-                L.e("[ModuleAPM] endNetworkRequestInternal, retrieved 'startTimestamp' is null");
+            if (startMonotonicMs == null) {
+                L.e("[ModuleAPM] endNetworkRequestInternal, retrieved trace start is null");
             } else {
-                recordNetworkRequestInternal(networkTraceKey, responseCode, requestPayloadSize, responsePayloadSize, startTimestamp, currentTimestamp);
+                long durationMs = endMonotonicMs - startMonotonicMs;
+                recordNetworkRequestInternal(networkTraceKey, responseCode, requestPayloadSize, responsePayloadSize, currentTimestamp - durationMs, currentTimestamp);
             }
         } else {
             L.w("[ModuleAPM] endNetworkRequestInternal, trying to end trace which was not started");
+            healthTracker.recordLogCode("w700");
         }
     }
 
@@ -296,27 +302,32 @@ public class ModuleAPM extends ModuleBase {
         L.v("[ModuleAPM] Calling 'recordNetworkRequestInternal' with key:[" + networkTraceKey + "]");
 
         if (networkTraceKey == null || networkTraceKey.isEmpty()) {
-            L.e("[ModuleAPM] Provided a invalid trace key, aborting request");
+            L.w("[ModuleAPM] Provided a invalid trace key, aborting request");
+            healthTracker.recordLogCode("w700");
             return;
         }
 
         if (!(responseCode >= 100 && responseCode < 600)) {
-            L.e("[ModuleAPM] Invalid response code was provided, setting to '0'");
+            L.w("[ModuleAPM] Invalid response code was provided, setting to '0'");
+            healthTracker.recordLogCode("w700");
             responseCode = 0;
         }
 
         if (requestPayloadSize < 0) {
-            L.e("[ModuleAPM] Invalid request payload size was provided, setting to '0'");
+            L.w("[ModuleAPM] Invalid request payload size was provided, setting to '0'");
+            healthTracker.recordLogCode("w700");
             requestPayloadSize = 0;
         }
 
         if (responsePayloadSize < 0) {
-            L.e("[ModuleAPM] Invalid response payload size was provided, setting to '0'");
+            L.w("[ModuleAPM] Invalid response payload size was provided, setting to '0'");
+            healthTracker.recordLogCode("w700");
             responsePayloadSize = 0;
         }
 
         if (startTimestamp > endTimestamp) {
-            L.e("[ModuleAPM] End timestamp is smaller than start timestamp, switching values");
+            L.w("[ModuleAPM] End timestamp is smaller than start timestamp, switching values");
+            healthTracker.recordLogCode("w700");
 
             long tmp = startTimestamp;
             startTimestamp = endTimestamp;
@@ -324,7 +335,7 @@ public class ModuleAPM extends ModuleBase {
         }
 
         //validate trace key
-        networkTraceKey = UtilsInternalLimits.truncateKeyLength(networkTraceKey, _cly.config_.sdkInternalLimits.maxKeyLength, L, "[ModuleAPM] recordNetworkRequestInternal");
+        networkTraceKey = UtilsInternalLimits.truncateKeyLength(networkTraceKey, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleAPM] recordNetworkRequestInternal");
         networkTraceKey = validateAndModifyTraceKey(networkTraceKey);
 
         Long responseTimeMs = endTimestamp - startTimestamp;
@@ -374,48 +385,29 @@ public class ModuleAPM extends ModuleBase {
         L.d("[ModuleAPM] Calling 'doForegroundBackgroundCalculations', [" + goingToBackground + "] [" + goingToForeground + "]");
         if (goingToBackground || goingToForeground) {
 
-            long currentTimeMs = UtilsTime.currentTimestampMs();
+            long currentMonotonicMs = UtilsTime.monotonicTimeMs();
 
             if (lastScreenSwitchTime != -1) {
                 // if it was '-1' then it just started, todo might be a issue with halt where it is only reset on first screen change
-                long durationMs = currentTimeMs - lastScreenSwitchTime;
+                long durationMs = currentMonotonicMs - lastScreenSwitchTime;
+                long currentTimeMs = UtilsTime.currentTimestampMs();
 
                 if (goingToForeground) {
                     // coming from a background mode to the foreground
-                    requestQueueProvider.sendAPMScreenTime(false, durationMs, lastScreenSwitchTime, currentTimeMs);
+                    requestQueueProvider.sendAPMScreenTime(false, durationMs, currentTimeMs - durationMs, currentTimeMs);
                 } else if (goingToBackground) {
                     // going form the foreground to the background
-                    requestQueueProvider.sendAPMScreenTime(true, durationMs, lastScreenSwitchTime, currentTimeMs);
+                    requestQueueProvider.sendAPMScreenTime(true, durationMs, currentTimeMs - durationMs, currentTimeMs);
                 }
             } else {
                 L.d("[ModuleAPM] 'doForegroundBackgroundCalculations' last screen switch time was '-1', doing nothing");
             }
 
-            lastScreenSwitchTime = currentTimeMs;
+            lastScreenSwitchTime = currentMonotonicMs;
         } else {
             L.d("[ModuleAPM] Calling 'doForegroundBackgroundCalculations', just changing screens, ignoring request");
             // changing screens normally
         }
-    }
-
-    void goToForeground() {
-        L.d("[ModuleAPM] Calling 'goToForeground'");
-        if (manualOverrideInForeground) {
-            //if we already are in foreground, do nothing
-            return;
-        }
-        manualOverrideInForeground = true;
-        doForegroundBackgroundCalculations(false, true);
-    }
-
-    void goToBackground() {
-        L.d("[ModuleAPM] Calling 'goToBackground'");
-        if (!manualOverrideInForeground) {
-            //if we already are in background, do nothing
-            return;
-        }
-        manualOverrideInForeground = false;
-        doForegroundBackgroundCalculations(true, false);
     }
 
     @Override
@@ -440,7 +432,7 @@ public class ModuleAPM extends ModuleBase {
 
         long currentTimestamp = System.currentTimeMillis();
 
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen + 1);
         }
         activitiesOpen++;
@@ -462,7 +454,7 @@ public class ModuleAPM extends ModuleBase {
     void callbackOnActivityStopped(Activity activity) {
         L.d("[Apm] Calling 'callbackOnActivityStopped', [" + activitiesOpen + "] -> [" + (activitiesOpen - 1) + "]");
 
-        if (trackForegroundBackground & !manualForegroundBackgroundTriggers) {
+        if (trackForegroundBackground) {
             calculateAppRunningTimes(activitiesOpen, activitiesOpen - 1);
         }
         activitiesOpen--;
@@ -473,28 +465,29 @@ public class ModuleAPM extends ModuleBase {
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.apm)) {
             if (!newConsent) {
                 //in case APM consent is removed, clear custom and network traces
-                _cly.moduleAPM.clearNetworkTraces();
-                _cly.moduleAPM.cancelAllTracesInternal();
+                //called directly: _cly.moduleAPM is this very module, so the hop through _cly added nothing
+                //but a field that teardown nulls
+                clearNetworkTraces();
+                cancelAllTracesInternal();
             }
         }
     }
 
     @Override
     void initFinished(@NonNull CountlyConfig config) {
-        if (_cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (_cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Increasing the activity counter.");
 
             activitiesOpen++;
         }
 
-        // we only do this adjustment if we track it automatically
-        if (trackForegroundBackground && !manualForegroundBackgroundTriggers && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (trackForegroundBackground && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Starting to track foreground time");
 
             calculateAppRunningTimes(activitiesOpen - 1, activitiesOpen);
         }
 
-        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.config_.lifecycleObserver.LifeCycleAtleastStarted()) {
+        if (config.apm.trackAppStartTime && !config.apm.appLoadedManualTrigger && _cly.lifeCycleAtleastStarted()) {
             L.d("[ModuleAPM] SDK detects that the app is in the foreground. Recording automatic app start duration");
             long currentTimestamp = System.currentTimeMillis();
             recordAppStart(currentTimestamp);
@@ -525,7 +518,8 @@ public class ModuleAPM extends ModuleBase {
                 L.i("[Apm] Calling 'endTrace' with key:[" + traceKey + "]");
 
                 if (traceKey == null || traceKey.isEmpty()) {
-                    L.e("[Apm] Calling 'endTrace' with invalid traceKey");
+                    L.w("[Apm] Calling 'endTrace' with invalid traceKey");
+                    healthTracker.recordLogCode("w700");
                     return;
                 }
 
@@ -625,52 +619,6 @@ public class ModuleAPM extends ModuleBase {
                 }
 
                 recordAppStart(timestamp);
-            }
-        }
-
-        /**
-         * Manually trigger that the app has gone to the foreground
-         *
-         * @deprecated this call is deprecated and will be removed in the future
-         */
-        public void triggerForeground() {
-            synchronized (_cly) {
-                L.i("[Apm] Calling 'triggerForeground'");
-
-                if (!trackForegroundBackground) {
-                    L.w("[Apm] triggerForeground, tracking foreground is disabled");
-                    return;
-                }
-
-                if (!manualForegroundBackgroundTriggers) {
-                    L.w("[Apm] trying to use manual foreground triggers without enabling them");
-                    return;
-                }
-
-                goToForeground();
-            }
-        }
-
-        /**
-         * Manually trigger that the app has gone to the background
-         *
-         * @deprecated this call is deprecated and will be removed in the future
-         */
-        public void triggerBackground() {
-            synchronized (_cly) {
-                L.i("[Apm] Calling 'triggerBackground'");
-
-                if (!trackForegroundBackground) {
-                    L.w("[Apm] triggerBackground, tracking background is disabled");
-                    return;
-                }
-
-                if (!manualForegroundBackgroundTriggers) {
-                    L.w("[Apm] triggerBackground, trying to use manual background triggers without enabling them");
-                    return;
-                }
-
-                goToBackground();
             }
         }
     }

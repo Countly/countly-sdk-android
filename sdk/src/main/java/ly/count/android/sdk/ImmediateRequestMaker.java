@@ -24,6 +24,9 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
 
     InternalImmediateRequestCallback callback;
     ModuleLog L;
+    // Set by the owning instance's ImmediateRequestGenerator so the executor choice follows the
+    // instance that issued the request rather than Countly.sharedInstance().
+    boolean useSerialExecutor = false;
 
     @Override
     public void doWork(@NonNull String requestData, @Nullable String customEndpoint, @NonNull ConnectionProcessor cp, boolean requestShouldBeDelayed, boolean networkingIsEnabled, @NonNull InternalImmediateRequestCallback callback, @NonNull ModuleLog log) {
@@ -31,7 +34,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
         assert cp != null;
         assert log != null;
         assert callback != null;
-        if (Countly.sharedInstance().useSerialExecutorInternal) {
+        if (useSerialExecutor) {
             log.d("[ImmediateRequestMaker] Using serial executor");
             this.execute(requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log);
         } else {
@@ -60,7 +63,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
         L = (ModuleLog) params[6];
 
         if (!networkingIsEnabled) {
-            L.w("[ImmediateRequestMaker] ImmediateRequestMaker, Networking config is disabled, request cancelled. Endpoint[" + customEndpoint + "] request[" + requestData + "]");
+            L.d("[ImmediateRequestMaker] ImmediateRequestMaker, Networking config is disabled, request cancelled. Endpoint[" + customEndpoint + "] request[" + requestData + "]");
 
             return null;
         }
@@ -90,7 +93,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
             try {
                 connection = (HttpURLConnection) cp.urlConnectionForServerRequest(requestData, customEndpoint);
             } catch (IOException e) {
-                L.e("[ImmediateRequestMaker] IOException while preparing remote config update request :[" + e.toString() + "]");
+                L.d("[ImmediateRequestMaker] IOException while preparing the immediate request :[" + e.toString() + "]");
 
                 return null;
             }
@@ -112,7 +115,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
             }
 
             if (stream == null) {
-                L.e("[ImmediateRequestMaker] Encountered problem while making a immediate server request, received stream was null");
+                L.d("[ImmediateRequestMaker] Encountered problem while making a immediate server request, received stream was null");
                 return null;
             }
 
@@ -138,11 +141,11 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
                 }
                 return new JSONObject(receivedBuffer);
             } else {
-                L.e("[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + receivedBuffer + "]");
+                L.d("[ImmediateRequestMaker] Encountered problem while making a immediate server request, :[" + receivedBuffer + "]");
                 return null;
             }
         } catch (Exception e) {
-            L.e("[ImmediateRequestMaker] Received exception while making a immediate server request", e);
+            L.d("[ImmediateRequestMaker] Received exception while making a immediate server request, [" + e + "]");
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -152,7 +155,7 @@ class ImmediateRequestMaker extends AsyncTask<Object, Void, JSONObject> implemen
                     reader.close();
                 }
             } catch (IOException e) {
-                L.e("[ImmediateRequestMaker] ", e);
+                L.d("[ImmediateRequestMaker] Failed to close the response reader, [" + e + "]");
             }
             UtilsNetworking.restoreSocketTag(previousSocketTag);
         }

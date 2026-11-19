@@ -1,0 +1,10 @@
+# While this file exists Codacy ignores the "Ignored files" set in its UI, so every exclusion lives here.
+# Paths use Java glob syntax. Coverage is unaffected: the reports only contain production classes.
+exclude_paths:
+  - "sdk/src/androidTest/**"
+  - "sdk-native/src/test/**"
+  - "upload-plugin/src/test/**"
+  - "app/**"
+  - "app-kotlin/**"
+  - "app-native/**"
+  - "app-benchmark/**"

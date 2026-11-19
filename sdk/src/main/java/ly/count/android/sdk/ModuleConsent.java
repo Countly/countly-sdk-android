@@ -35,7 +35,8 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     public enum ConsentChangeSource {ChangeConsentCall, DeviceIDChangedNotMerged}
 
-    protected boolean requiresConsent = false;
+    //read from every logging thread by the log gathering, through getConsentSilently
+    protected volatile boolean requiresConsent = false;
 
     final Map<String, Boolean> featureConsentValues = new HashMap<>();
     private final Map<String, String[]> groupedFeatures = new HashMap<>();
@@ -45,7 +46,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         consentProvider = this;
         config.consentProvider = this;
         L.v("[ModuleConsent] constructor, Initialising");
-        L.i("[ModuleConsent] Is consent required? [" + config.shouldRequireConsent + "]");
+        //the value ModuleConfiguration resolved for THIS instance (developer config plus the stored server
+        //behaviour settings), not the shared config object, which the SDK no longer writes to
+        final boolean resolvedRequiresConsent = cly.moduleConfiguration.currentVRequiresConsent;
+        L.i("[ModuleConsent] Is consent required? [" + resolvedRequiresConsent + "]");
 
         //setup initial consent data structure
         //initialize all features to "false"
@@ -54,8 +58,8 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         //react to given consent during init
-        if (config.shouldRequireConsent) {
-            requiresConsent = config.shouldRequireConsent;
+        if (resolvedRequiresConsent) {
+            requiresConsent = resolvedRequiresConsent;
             if (config.enabledFeatureNames == null && !config.enableAllConsents) {
                 L.i("[ModuleConsent] constructor, Consent has been required but no consent was given during init");
             } else {
@@ -83,6 +87,12 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         return getConsentInternal(featureName);
     }
 
+    /** Reads the consent without logging, see {@link ConsentProvider#getConsentSilently(String)}. */
+    @Override
+    public boolean getConsentSilently(@NonNull final String featureName) {
+        return !requiresConsent || getConsentTrue(featureName);
+    }
+
     public boolean anyConsentGiven() {
         if (!requiresConsent) {
             //no consent required - all consent given
@@ -103,13 +113,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             return false;
         }
 
-        if (!requiresConsent) {
-            //return true silently
-            return true;
+        final boolean returnValue = getConsentSilently(featureName);
+        if (requiresConsent) {
+            L.v("[ModuleConsent] getConsentInternal, Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
         }
-
-        boolean returnValue = getConsentTrue(featureName);
-        L.v("[ModuleConsent] getConsentInternal, Returning consent for feature named: [" + featureName + "] [" + returnValue + "]");
         return returnValue;
     }
 
@@ -152,8 +159,17 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
      */
     void doPushConsentSpecialAction(final boolean consentValue) {
         L.d("[ModuleConsent] doPushConsentSpecialAction, consentValue: [" + consentValue + "]");
+        // Push is owned process-wide by the default instance. setConsentPush gates the store write; the
+        // broadcast is gated here because CountlyPush reacts to it by registering the DEFAULT's token.
         _cly.countlyStore.setConsentPush(consentValue);
-        _cly.context_.sendBroadcast(new Intent(Countly.CONSENT_BROADCAST));
+        if (!_cly.storageNamespace_.isEmpty()) {
+            L.d("[ModuleConsent] doPushConsentSpecialAction, named instance does not own push, skipping the process-global consent broadcast");
+            return;
+        }
+        //addressed to this app: an implicit broadcast never reaches the not exported receiver when the app targets API 34+
+        Intent consentIntent = new Intent(Countly.CONSENT_BROADCAST);
+        consentIntent.setPackage(_cly.context_.getPackageName());
+        _cly.context_.sendBroadcast(consentIntent);
     }
 
     /**
@@ -202,6 +218,19 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         return preparedConsent.toString();
     }
 
+    /**
+     * Sends the current consent state, as init does, while consent is required
+     */
+    void sendConsentStateInternal() {
+        if (!requiresConsent) {
+            return;
+        }
+
+        String formattedConsentState = formatConsentState(featureConsentValues);
+        L.d("[ModuleConsent] sendConsentStateInternal, Sending the current consent state: [" + formattedConsentState + "]");
+        requestQueueProvider.sendConsentChanges(formattedConsentState);
+    }
+
     void setConsentInternal(@Nullable final String[] featureNames, final boolean isConsentGiven, final ConsentChangeSource changeSource) {
         L.d("[ModuleConsent] setConsentInternal, featureNames: [" + Arrays.toString(featureNames) + "] to value: [" + isConsentGiven + "], changeSource: [" + changeSource + "]");
         if (!requiresConsent) {
@@ -211,6 +240,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
         if (featureNames == null) {
             L.w("[ModuleConsent] setConsentInternal, Calling setConsent with null featureNames!");
+            healthTracker.recordLogCode("w402");
             return;
         }
 
@@ -220,6 +250,7 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         for (String featureName : featureNames) {
             if (!isValidFeatureName(featureName)) {
                 L.w("[ModuleConsent] setConsentInternal, Given feature: [" + featureName + "] is not a valid name, ignoring it");
+                healthTracker.recordLogCode("w402");
                 continue;
             }
 
@@ -236,6 +267,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         }
 
         featureConsentValues.putAll(consentUpdateMap);
+
+        if (isConsentGiven && !consentThatWillChange.isEmpty()) {
+            L.releaseConsentedLogLines();
+        }
 
         for (ModuleBase module : _cly.modules) {
             module.onConsentChanged(consentThatWillChange, isConsentGiven, changeSource);
@@ -293,7 +328,14 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
 
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
-        requiresConsent = config.shouldRequireConsent;
+        //Reached on the main thread from the server-config response, so a teardown can have nulled
+        //moduleConfiguration in between; keep the current value rather than crashing on a dying instance.
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        if (configurationModule != null) {
+            requiresConsent = configurationModule.currentVRequiresConsent;
+        } else {
+            L.w("[ModuleConsent] onSdkConfigurationChanged, the configuration module is gone, keeping the current requiresConsent value");
+        }
     }
 
     @Override
@@ -301,6 +343,10 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         L.d("[ModuleConsent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.push)) {
             //handle push consent changes
+            if (!newConsent) {
+                //the server drops the token with the consent, so giving it again must send the token again
+                _cly.resetPushTokenDebounce();
+            }
             doPushConsentSpecialAction(newConsent);
         }
     }

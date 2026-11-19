@@ -50,6 +50,12 @@ abstract class ModuleBase {
      *
      * @param newConfig
      */
+    /*
+     * Every lifecycle hook in this class is delivered by iterating Countly's `modules` list, in the order init adds
+     * the modules. The list is copy on write, so a teardown on another thread can not break an iteration in
+     * progress, and the dispatch gate together with the quiesce in teardown keeps events away from a dying instance.
+     * A module that reaches a sibling through _cly must still read it into a local and check it for null.
+     */
     void onConfigurationChanged(Configuration newConfig) {
     }
 

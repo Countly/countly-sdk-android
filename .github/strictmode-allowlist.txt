@@ -23,7 +23,7 @@ THREAD DiskWriteViolation ModuleCrash.checkForNativeCrashDumps
 THREAD DiskReadViolation ModuleCrash.recordNativeException
 
 # Crash requests are committed synchronously so they survive the process dying right after.
-THREAD DiskWriteViolation CountlyStore.storageWriteRequestQueue tests=ModuleCrashTests,MigrationHelperTests
+THREAD DiskWriteViolation CountlyStore.storageWriteRequestQueue tests=ModuleCrashTests,MigrationHelperTests,MultiInstanceTests
 
 # Work the app asks for explicitly, on the thread it calls from.
 THREAD DiskWriteViolation CountlyStore.esWriteCacheToStorage tests=CountlyStoreExplicitModeTests

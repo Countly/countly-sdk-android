@@ -114,15 +114,15 @@ dependencies {
   //implementation 'ly.count.android:sdk-plugin:21.11.0'
 
   //required for FCM push
-  implementation 'com.google.firebase:firebase-messaging:24.0.0'
+  implementation 'com.google.firebase:firebase-messaging:24.1.2'
   //required for huawei push
-  implementation 'com.huawei.hms:push:6.3.0.304'
+  implementation 'com.huawei.hms:push:6.13.0.301'
 
-  implementation 'com.google.android.material:material:1.12.0'
-  implementation 'androidx.appcompat:appcompat:1.6.1'
-  implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-  implementation 'androidx.annotation:annotation:1.8.0'
-  implementation 'androidx.core:core-ktx:1.13.1'
+  implementation 'com.google.android.material:material:1.13.0'
+  implementation 'androidx.appcompat:appcompat:1.7.1'
+  implementation 'androidx.constraintlayout:constraintlayout:2.2.2'
+  implementation 'androidx.annotation:annotation:1.10.0'
+  implementation 'androidx.core:core-ktx:1.17.0'
 
   //required for the install referrer
   implementation 'com.android.installreferrer:installreferrer:2.2'

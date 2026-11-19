@@ -60,7 +60,7 @@ public class CountlyTests {
         mUninitedCountly = new Countly();
 
         mCountly = new Countly();
-        mCountly.init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        mCountly.init(TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true)));
     }
 
     @After
@@ -352,7 +352,7 @@ public class CountlyTests {
         assertEquals(1, mCountly.getActivityCount());
         final long prevSessionDurationStartTime = mCountly.getPrevSessionDurationStartTime();
         assertTrue(prevSessionDurationStartTime > 0);
-        assertTrue(prevSessionDurationStartTime <= System.currentTimeMillis());
+        assertTrue(prevSessionDurationStartTime <= UtilsTime.monotonicTimeMs());
         TestUtils.verifyBeginSessionValues(requestQueueProvider, false, null, null, null, null);
     }
 
@@ -557,19 +557,19 @@ public class CountlyTests {
 
     @Test
     public void testRoundedSecondsSinceLastSessionDurationUpdate() {
-        long prevSessionDurationStartTime = System.currentTimeMillis() - 1000;
+        long prevSessionDurationStartTime = UtilsTime.monotonicTimeMs() - 1000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(1, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
-        prevSessionDurationStartTime = System.currentTimeMillis() - 2000;
+        prevSessionDurationStartTime = UtilsTime.monotonicTimeMs() - 2000;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(2, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
-        prevSessionDurationStartTime = System.currentTimeMillis() - 1600;
+        prevSessionDurationStartTime = UtilsTime.monotonicTimeMs() - 1600;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(2, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
 
-        prevSessionDurationStartTime = System.currentTimeMillis() - 1200;
+        prevSessionDurationStartTime = UtilsTime.monotonicTimeMs() - 1200;
         mCountly.setPrevSessionDurationStartTime(prevSessionDurationStartTime);
         assertEquals(1, mCountly.moduleSessions.roundedSecondsSinceLastSessionDurationUpdate());
     }

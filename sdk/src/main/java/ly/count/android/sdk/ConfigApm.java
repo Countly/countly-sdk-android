@@ -10,10 +10,6 @@ public class ConfigApm {
      */
     protected boolean trackForegroundBackground = false;
     /**
-     * Whether to track the app foreground / background state manually
-     */
-    protected boolean manualForegroundBackgroundTrigger = false;
-    /**
      * Whether to track the app start time manually
      */
     protected boolean appLoadedManualTrigger = false;

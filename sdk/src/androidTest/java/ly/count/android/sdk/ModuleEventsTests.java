@@ -45,7 +45,7 @@ public class ModuleEventsTests {
         eventQueueProvider = mock(EventQueueProvider.class);
 
         mCountly = new Countly();
-        config = new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting();
+        config = TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true));
         config.eventQueueProvider = eventQueueProvider;
         mCountly.init(config);
     }
@@ -197,15 +197,15 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(eventQueueProvider, times(0)).recordEventToEventQueue(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), any(Long.class), any(Integer.class), any(Integer.class), any(String.class), any(String.class), any(String.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
-        Event startEvent = ModuleEvents.timedEvents.get(eventKey);
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
 
         Thread.sleep(1000);
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
 
         ArgumentCaptor<Long> arg1 = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Integer> arg2 = ArgumentCaptor.forClass(Integer.class);
@@ -231,9 +231,9 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
-        Event startEvent = ModuleEvents.timedEvents.get(eventKey);
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
 
         Thread.sleep(2000);
 
@@ -246,7 +246,7 @@ public class ModuleEventsTests {
 
         res = mCountly.events().endEvent(eventKey, segm, 6372, 5856.34d);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
 
         final Map<String, Object> segmVals = new HashMap<>();
         segmVals.put("aa", "dd");
@@ -269,6 +269,44 @@ public class ModuleEventsTests {
         Assert.assertEquals(2, captD, 0.1d);
     }
 
+    /**
+     * The device clock moving an hour forward between "startEvent" and "endEvent" does not change the duration
+     */
+    @Test
+    public void startEndEvent_deviceClockMovedForward() {
+        startEndEventDeviceClockChangedBase(3_600_000L);
+    }
+
+    /**
+     * The device clock moving an hour back between "startEvent" and "endEvent" does not change the duration
+     */
+    @Test
+    public void startEndEvent_deviceClockMovedBack() {
+        startEndEventDeviceClockChangedBase(-3_600_000L);
+    }
+
+    /**
+     * Ends a timed event right after moving its wall-clock start by "clockChangeMs" the other way, which is how a
+     * device clock change between start and end looks to the SDK. The duration must stay near zero, and the
+     * event must keep its wall-clock start as its timestamp.
+     */
+    void startEndEventDeviceClockChangedBase(long clockChangeMs) {
+        EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
+        Assert.assertTrue(mCountly.events().startEvent(eventKey));
+
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
+        startEvent.timestamp -= clockChangeMs;
+
+        Assert.assertTrue(mCountly.events().endEvent(eventKey));
+
+        ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
+        ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
+        verify(ep).recordEventInternal(eq(eventKey), isNull(Map.class), eq(1), eq(0.0d), argD.capture(), arg.capture(), isNull(String.class));
+
+        Assert.assertEquals(startEvent.timestamp, arg.getValue().timestampMs);
+        Assert.assertEquals(0, argD.getValue(), 0.1d);
+    }
+
     @Test
     public void startCancelEndEvent() {
         EventProvider ep = TestUtils.setEventProviderToMock(mCountly, mock(EventProvider.class));
@@ -276,18 +314,18 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
 
         res = mCountly.events().cancelEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
         // TODO: Check these 2 null event IDs
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertFalse(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
     }
 
@@ -298,12 +336,12 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), any(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
 
         res = mCountly.events().cancelEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
         // finished first start and cancel
@@ -312,15 +350,15 @@ public class ModuleEventsTests {
         Assert.assertTrue(res);
         verify(ep, times(0)).recordEventInternal(any(String.class), any(Map.class), any(Integer.class), any(Double.class), any(Double.class), isNull(UtilsTime.Instant.class), isNull(String.class));
 
-        Assert.assertEquals(1, ModuleEvents.timedEvents.size());
-        Assert.assertTrue(ModuleEvents.timedEvents.containsKey(eventKey));
-        Event startEvent = ModuleEvents.timedEvents.get(eventKey);
+        Assert.assertEquals(1, mCountly.moduleEvents.timedEvents.size());
+        Assert.assertTrue(mCountly.moduleEvents.timedEvents.containsKey(eventKey));
+        Event startEvent = mCountly.moduleEvents.timedEvents.get(eventKey);
 
         Thread.sleep(1000);
 
         res = mCountly.events().endEvent(eventKey);
         Assert.assertTrue(res);
-        Assert.assertEquals(0, ModuleEvents.timedEvents.size());
+        Assert.assertEquals(0, mCountly.moduleEvents.timedEvents.size());
 
         ArgumentCaptor<UtilsTime.Instant> arg = ArgumentCaptor.forClass(UtilsTime.Instant.class);
         ArgumentCaptor<Double> argD = ArgumentCaptor.forClass(Double.class);
@@ -374,7 +412,7 @@ public class ModuleEventsTests {
      */
     @Test
     public void eventsForceClearingEQIntoRQ() {
-        Countly countly = new Countly().init(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true).enableCrashReporting());
+        Countly countly = new Countly().init(TestUtils.withCrashReporting(new CountlyConfig(TestUtils.getContext(), "appkey", "http://test.count.ly").setDeviceId("1234").setLoggingEnabled(true)));
 
         Assert.assertEquals(0, countly.countlyStore.getEventQueueSize());
         Assert.assertEquals(0, countly.countlyStore.getRequests().length);
@@ -888,6 +926,52 @@ public class ModuleEventsTests {
     }
 
     /**
+     * "recordEvent" with visibility tracking enabled
+     * Validate that the app stays in the foreground while one activity opens another and the first one stops,
+     * and that it is in the background only once the last activity stops
+     *
+     * @throws JSONException if the JSON is not valid
+     */
+    @Test
+    public void recordEvent_visibilityTracking_activitySwitch() throws JSONException {
+        CountlyConfig config = TestUtils.createBaseConfig(TestUtils.getContext());
+        config.experimental.enableVisibilityTracking();
+        config.setEventQueueSizeToSend(1);
+        Countly countly = new Countly().init(config);
+
+        countly.onStart(Mockito.mock(Activity.class));
+        countly.onStart(Mockito.mock(TestUtils.Activity2.class));
+        countly.onStop();
+
+        countly.events().recordEvent("fg", TestUtils.map());
+        Assert.assertEquals(1, visibilityOfEventInRQ("fg"));
+
+        countly.onStop();
+
+        countly.events().recordEvent("bg", TestUtils.map());
+        Assert.assertEquals(0, visibilityOfEventInRQ("bg"));
+    }
+
+    /**
+     * The "cly_v" value of the first event with the given key in the request queue
+     */
+    private static int visibilityOfEventInRQ(String key) throws JSONException {
+        for (Map<String, String> request : TestUtils.getCurrentRQ()) {
+            if (request == null || !request.containsKey("events")) {
+                continue;
+            }
+            JSONArray events = new JSONArray(request.get("events"));
+            for (int i = 0; i < events.length(); i++) {
+                JSONObject event = events.getJSONObject(i);
+                if (key.equals(event.getString("key"))) {
+                    return event.getJSONObject("segmentation").getInt("cly_v");
+                }
+            }
+        }
+        throw new AssertionError("no event with key [" + key + "] in the request queue");
+    }
+
+    /**
      * "recordEvent" with visibility tracking disabled
      * Validate that visibility tracking events are not recorded
      * And validate that the "cly_v" value is not set
@@ -997,6 +1081,60 @@ public class ModuleEventsTests {
 
     protected static void validateEventInRQ(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx, int rqCount) throws JSONException {
         validateEventInRQ(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, 0, 1);
+    }
+
+    /**
+     * Validates an event in a request by LOOKING IT UP BY KEY instead of by position in the events array.
+     * <p>
+     * Prefer this over the positional overload whenever a test only cares that an event was batched into a
+     * request, which is almost always. The position of an event inside a batch depends on when the event
+     * queue happened to be flushed relative to the session/timer machinery, so asserting an index makes a
+     * test fail intermittently for a reason that has nothing to do with what it is testing. When the event is
+     * genuinely absent this dumps the whole events array, so the failure says what the request actually
+     * carried rather than just naming the key that did not match.
+     */
+    protected static void validateEventInRQByKey(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventCount)
+        throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        if (rqCount > -1) {
+            Assert.assertEquals(rqCount, RQ.length);
+        }
+        TestUtils.validateRequiredParams(RQ[idx], deviceId);
+        if (!RQ[idx].containsKey("events")) {
+            Assert.fail("Not an event request idx:[" + idx + "], request:[" + RQ[idx] + "]");
+        }
+        JSONArray events = new JSONArray(RQ[idx].get("events"));
+        Assert.assertEquals("event count in request idx:[" + idx + "], events:[" + events + "]", eventCount, events.length());
+
+        JSONObject match = null;
+        for (int a = 0; a < events.length(); a++) {
+            if (eventName.equals(events.getJSONObject(a).optString("key"))) {
+                match = events.getJSONObject(a);
+                break;
+            }
+        }
+        Assert.assertNotNull("event [" + eventName + "] is not in the request. The request carried:[" + events + "]", match);
+        validateEvent(match, eventName, expectedSegmentation, count, sum, duration, id, pvid, cvid, peid);
+    }
+
+    /**
+     * The 'dur' value of the single event in request [idx].
+     * <p>
+     * For tests whose expected duration comes from a {@code Thread.sleep}: the SDK reports view durations in
+     * WHOLE SECONDS, so a 1000 ms sleep plus any scheduling delay measures 1 or 2 depending on which side of a
+     * second boundary the clock lands on. Asserting an exact value makes such a test fail on a loaded machine
+     * for a reason unrelated to what it covers, so read the measured duration, bound-check it, and pass it into
+     * the normal validation - every other assertion stays exact.
+     */
+    protected static double readSingleEventDuration(int idx) throws JSONException {
+        Map<String, String>[] RQ = TestUtils.getCurrentRQ();
+        Assert.assertTrue("no request at index [" + idx + "], the queue holds [" + RQ.length + "]", idx < RQ.length);
+        JSONArray events = new JSONArray(RQ[idx].get("events"));
+        return events.getJSONObject(0).optDouble("dur", 0.0d);
+    }
+
+    protected static void validateEventInRQByKey(String eventName, Map<String, Object> expectedSegmentation, int count, double sum, double duration, int idx, int rqCount, int eventCount) throws JSONException {
+        validateEventInRQByKey(TestUtils.commonDeviceId, eventName, expectedSegmentation, count, sum, duration, "_CLY_", "_CLY_", "_CLY_", "_CLY_", idx, rqCount, eventCount);
     }
 
     protected static void validateEventInRQ(String deviceId, String eventName, Map<String, Object> expectedSegmentation, int count, Double sum, Double duration, String id, String pvid, String cvid, String peid, int idx, int rqCount, int eventIdx, int eventCount)
