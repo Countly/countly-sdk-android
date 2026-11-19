@@ -198,6 +198,9 @@ jobs:
           packages: platform-tools
       - name: Submit resolved dependency graph to GitHub
         uses: gradle/actions/dependency-submission@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          # The default 'enhanced' cache is proprietary and runs under Gradle's Terms of Use; 'basic' is the MIT one.
+          cache-provider: basic
         env:
           # Submit only the classpaths we actually declare — the same closed list the OSV
           # report uses. Without this the graph also carries AGP's tooling configurations
