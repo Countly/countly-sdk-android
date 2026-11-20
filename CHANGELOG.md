@@ -1,3 +1,6 @@
+## Next Release
+* Added "enableRequestCompression()" to the init config. Request bodies between 1 KB and 1 MB are then sent gzip-compressed, once the server's SDK behavior settings answer says it reads them.
+
 ## 26.8.0
 * !! Major breaking change !! New versions of the SDK, `sdk-native` and the symbol upload plugin are published at `https://maven.countly.com` instead of Maven Central.
   Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
