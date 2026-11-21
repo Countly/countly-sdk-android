@@ -20,7 +20,6 @@ import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
@@ -115,6 +114,17 @@ class ContentOverlayView extends FrameLayout {
     private boolean isImmersiveModeActive = false;
     private ComponentCallbacks orientationCallback;
     private Application.ActivityLifecycleCallbacks activityLifecycleCallbacks;
+
+    /** The host window's decor view while the overlay is in that window, see followHostLayout. */
+    private View hostDecorView;
+
+    /** Checks the host's orientation on every layout pass of the host window, see followHostLayout. */
+    private final View.OnLayoutChangeListener hostLayoutListener = (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+        Activity host = currentHostActivity;
+        if (host != null) {
+            syncOrientationWithHost(host, "host layout");
+        }
+    };
 
     // Returns a Context suitable for constructing the overlay's Views without retaining
     // a strong Java reference to the constructing Activity:
@@ -340,15 +350,13 @@ class ContentOverlayView extends FrameLayout {
                 }
                 return;
             }
-            if (overlay.isClosed || overlay.currentOrientation == newConfig.orientation) {
+            if (overlay.isClosed) {
                 return;
             }
-            Log.d(Countly.TAG, "[ContentOverlayView] onConfigurationChanged, orientation changed from [" + overlay.currentOrientation + "] to [" + newConfig.orientation + "]");
-            overlay.currentOrientation = newConfig.orientation;
 
             Activity activity = overlay.currentHostActivity;
             if (activity != null && !activity.isFinishing()) {
-                overlay.handleOrientationChange(activity);
+                overlay.syncOrientationWithHost(activity, "configuration change");
             }
         }
 
@@ -521,11 +529,7 @@ class ContentOverlayView extends FrameLayout {
         // Check if we're already attached to this activity
         if (currentHostActivity == activity && isAddedToWindow) {
             // Still check for orientation changes — WindowManager views don't get onConfigurationChanged
-            int currentOr = activity.getResources().getConfiguration().orientation;
-            if (currentOrientation != currentOr) {
-                currentOrientation = currentOr;
-                handleOrientationChange(activity);
-            }
+            syncOrientationWithHost(activity, "reattach");
             if (isImmersiveModeActive) {
                 applyImmersiveFlags(activity);
             }
@@ -617,6 +621,8 @@ class ContentOverlayView extends FrameLayout {
         if (orientationChanged) {
             notifyWebViewOfResize(activity);
         }
+
+        followHostLayout(activity);
     }
 
     private void enableTouchInteraction() {
@@ -635,6 +641,7 @@ class ContentOverlayView extends FrameLayout {
     }
 
     private void removeFromWindow() {
+        stopFollowingHostLayout();
         if (isAddedToWindow && windowManager != null) {
             // Expedite any pending scrollbar-fade Runnables: scrolling inside the WebView
             // schedules a ScrollabilityCache fade Runnable on the main MessageQueue. If
@@ -723,56 +730,61 @@ class ContentOverlayView extends FrameLayout {
         return result;
     }
 
-    private void handleOrientationChange(@NonNull Activity activity) {
-        if (isClosed || !isAddedToWindow || windowManager == null) {
+    /**
+     * Follows the layout passes of the host window while the overlay is in that window, so the overlay is
+     * laid out again once the host has been laid out for a new orientation, whether the application's
+     * configuration callback comes before or after that pass.
+     * @param activity the host activity
+     */
+    private void followHostLayout(@NonNull Activity activity) {
+        stopFollowingHostLayout();
+        Window window = activity.getWindow();
+        if (window == null) {
             return;
         }
+        hostDecorView = window.getDecorView();
+        hostDecorView.addOnLayoutChangeListener(hostLayoutListener);
+    }
 
-        // Wait for the decor view's layout pass to complete before reading display metrics.
-        // A simple post() is not enough — on some API levels, display metrics are still stale
-        // one frame after onConfigurationChanged. OnGlobalLayoutListener fires after the
-        // system has finished the layout pass, guaranteeing metrics reflect the new orientation.
-        View decor = activity.getWindow() != null ? activity.getWindow().getDecorView() : null;
-        if (decor != null) {
-            decor.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    decor.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                    applyOrientationUpdate(activity);
-                }
-            });
-        } else {
-            applyOrientationUpdate(activity);
+    /** Stops following the layout passes of the host window and lets go of its decor view. */
+    private void stopFollowingHostLayout() {
+        if (hostDecorView != null) {
+            hostDecorView.removeOnLayoutChangeListener(hostLayoutListener);
+            hostDecorView = null;
         }
     }
 
-    private void applyOrientationUpdate(@NonNull Activity activity) {
+    /**
+     * Lays the overlay out for its host's orientation when that is not the one it is laid out for. The
+     * host's own configuration decides, not the one the application's configuration callback carries: the
+     * host has its new configuration by the time its window is laid out for it, while the callback can
+     * come before or after that.
+     * @param activity the host activity
+     * @param trigger what asked for the check, for the log
+     */
+    private void syncOrientationWithHost(@NonNull Activity activity, @NonNull String trigger) {
         if (isClosed || !isAddedToWindow || windowManager == null || activity.isFinishing()) {
             return;
         }
 
-        // Re-read actual orientation from activity instead of relying on cached value.
-        // ComponentCallbacks registered with Application context can deliver stale orientation
-        // during rapid rotations when activities handle configChanges="orientation|screenSize".
-        int actualOrientation = activity.getResources().getConfiguration().orientation;
-        if (actualOrientation != Configuration.ORIENTATION_UNDEFINED) {
-            currentOrientation = actualOrientation;
+        int hostOrientation = activity.getResources().getConfiguration().orientation;
+        if (hostOrientation == Configuration.ORIENTATION_UNDEFINED || hostOrientation == currentOrientation) {
+            return;
         }
+        Log.d(Countly.TAG, "[ContentOverlayView] syncOrientationWithHost, " + trigger + ", orientation changed from [" + currentOrientation + "] to [" + hostOrientation + "]");
+        currentOrientation = hostOrientation;
 
         TransparentActivityConfig currentConfig = getCurrentConfig();
-
         if (currentConfig.useSafeArea) {
             recalculateSafeAreaOffsets(activity);
             currentConfig = getCurrentConfig();
         }
-
         currentConfig = setupConfig(activity, currentConfig);
-        WindowManager.LayoutParams wmParams = createWindowParams(activity, currentConfig);
 
         try {
-            windowManager.updateViewLayout(this, wmParams);
+            windowManager.updateViewLayout(this, createWindowParams(activity, currentConfig));
         } catch (Exception e) {
-            Log.w(Countly.TAG, "[ContentOverlayView] applyOrientationUpdate, failed to update layout", e);
+            Log.w(Countly.TAG, "[ContentOverlayView] syncOrientationWithHost, failed to update layout", e);
         }
 
         notifyWebViewOfResize(activity);

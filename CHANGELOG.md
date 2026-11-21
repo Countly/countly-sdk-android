@@ -1,3 +1,6 @@
+## XX.XX.XX
+* Mitigated an issue where content and feedback widgets could keep the previous orientation's size after the device was rotated, leaving part of them off screen, when the activity showing them handles orientation changes itself.
+
 ## 26.8.0
 * !! Major breaking change !! New versions of the SDK, `sdk-native` and the symbol upload plugin are published at `https://maven.countly.com` instead of Maven Central.
   Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
