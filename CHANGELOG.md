@@ -1,4 +1,6 @@
-## XX.XX.XX
+## Next Release
+* Added "enableRequestCompression()" to the init config. Request bodies between 1 KB and 1 MB are then sent gzip-compressed, once the server's SDK behavior settings answer says it reads them.
+
 * Mitigated an issue where content and feedback widgets could keep the previous orientation's size after the device was rotated, leaving part of them off screen, when the activity showing them handles orientation changes itself.
 
 ## 26.8.0
