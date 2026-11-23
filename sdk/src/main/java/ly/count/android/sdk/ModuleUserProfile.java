@@ -3,8 +3,10 @@ package ly.count.android.sdk;
 import androidx.annotation.NonNull;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -423,8 +425,61 @@ public class ModuleUserProfile extends ModuleBase {
             requestQueueModule.sendEventsIfNeeded(true);
         }
 
+        List<String> sentProperties = sentPropertyNames();
         requestQueueProvider.sendUserData(cachedUserData);
         clearInternal();
+
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null && !sentProperties.isEmpty()) {
+            contentModule.onContentTrigger(ContentTriggers.Trigger.userProperties(sentProperties));
+        }
+    }
+
+    /**
+     * The user properties the pending user details request sends, as content triggers name them: a user detail
+     * ("email"), or "custom." and the key of a custom property
+     *
+     * @return the property names
+     */
+    @NonNull List<String> sentPropertyNames() {
+        List<String> names = new ArrayList<>();
+        if (name != null) {
+            names.add(NAME_KEY);
+        }
+        if (username != null) {
+            names.add(USERNAME_KEY);
+        }
+        if (email != null) {
+            names.add(EMAIL_KEY);
+        }
+        if (org != null) {
+            names.add(ORG_KEY);
+        }
+        if (phone != null) {
+            names.add(PHONE_KEY);
+        }
+        if (picture != null || picturePath != null) {
+            names.add(PICTURE_KEY);
+        }
+        if (gender != null) {
+            names.add(GENDER_KEY);
+        }
+        if (byear != 0) {
+            names.add(BYEAR_KEY);
+        }
+        if (custom != null) {
+            for (String key : custom.keySet()) {
+                names.add(CUSTOM_KEY + "." + key);
+            }
+        }
+        if (customMods != null) {
+            for (String key : customMods.keySet()) {
+                if (custom == null || !custom.containsKey(key)) {
+                    names.add(CUSTOM_KEY + "." + key);
+                }
+            }
+        }
+        return names;
     }
 
     void clearInternal() {

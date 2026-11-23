@@ -10,6 +10,7 @@ import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,12 +27,26 @@ public class ModuleContent extends ModuleBase {
     CountlyTimer countlyTimer;
     private boolean shouldFetchContents = false;
     private boolean isCurrentlyInContentZone = false;
-    private boolean isCurrentlyRetrying = false;
     private int zoneTimerInterval;
     private final boolean webViewEnabled;
     private final ContentCallback globalContentCallback;
     private int waitForDelay = 0;
     int CONTENT_START_DELAY_MS = 4000; // 4 seconds
+
+    static final int TRIGGER_QUEUE_CHECK_MS = 500;
+    static final int TRIGGER_QUEUE_CHECKS = 5;
+    static final int TRIGGER_CONTENT_RETRY_MS = 1000;
+    static final int TRIGGER_CONTENT_REQUESTS = 3;
+    static final int TRIGGER_EARLY_LIMIT = 50;
+    private final Handler triggerHandler = new Handler(Looper.getMainLooper());
+    private volatile boolean contentZoneWanted = false;
+    private volatile boolean contentZoneExited = false;
+    private volatile boolean triggersHalted = false;
+    private boolean triggerRoundRunning = false;
+    private boolean triggerRoundPending = false;
+    private int contentTriggerChain = 0;
+    private volatile boolean behaviorSettingsSettled = false;
+    private final List<ContentTriggers.Trigger> earlyTriggers = new ArrayList<>();
 
     //Weak, like CountlyActivityHolder: the clearing path (onActivityDestroyed) only runs when the
     //instance was initialised with an Application class - an instance without one (seeded through
@@ -130,25 +145,23 @@ public class ModuleContent extends ModuleBase {
         return merged;
     }
 
+    /**
+     * Applies a changed zone timer interval to a running content zone. The "ecz" setting decides only the entry at
+     * init, so a later change of it neither enters nor exits the content zone.
+     */
     @Override
     void onSdkConfigurationChanged(@NonNull CountlyConfig config) {
         //Reached on the main thread from the server-config response, so a teardown can have nulled
         //moduleConfiguration in between; keep the current value rather than crashing on a dying instance.
         ModuleConfiguration configurationModule = _cly.moduleConfiguration;
-        if (configurationModule != null) {
-            zoneTimerInterval = configurationModule.currentVZoneTimerInterval;
-        } else {
-            //only the interval refresh is skipped - the content zone work below does not need that module,
-            //so keeping the current interval is better than dropping the whole configuration change
+        if (configurationModule == null) {
             L.w("[ModuleContent] onSdkConfigurationChanged, the configuration module is gone, keeping the current zone timer interval");
+            return;
         }
-        if (!configProvider.getContentZoneEnabled()) {
-            exitContentZoneInternal();
-        } else {
-            if (!shouldFetchContents) {
-                exitContentZoneInternal();
-            }
-            waitForDelay = 0;
+        int previousInterval = zoneTimerInterval;
+        zoneTimerInterval = configurationModule.currentVZoneTimerInterval;
+        if (zoneTimerInterval != previousInterval && shouldFetchContents && !isCurrentlyInContentZone) {
+            L.d("[ModuleContent] onSdkConfigurationChanged, the zone timer interval changed to [" + zoneTimerInterval + "] seconds, restarting the zone timer");
             enterContentZoneInternal(null, 0, null);
         }
     }
@@ -232,6 +245,9 @@ public class ModuleContent extends ModuleBase {
         iRGenerator.CreateImmediateRequestMaker().doWork(requestData, "/o/sdk/content", cp, false, networkingIsEnabled, checkResponse -> {
             L.d("[ModuleContent] fetchContentsInternal, processing fetched contents, received response is :[" + checkResponse + "]");
             if (checkResponse == null) {
+                if (callbackOnFailure != null) {
+                    callbackOnFailure.run();
+                }
                 return;
             }
 
@@ -242,13 +258,15 @@ public class ModuleContent extends ModuleBase {
                     Map<Integer, TransparentActivityConfig> placementCoordinates = parseContent(checkResponse, displayMetrics);
                     if (placementCoordinates.isEmpty()) {
                         L.d("[ModuleContent] fetchContentsInternal, placement coordinates are empty, skipping");
+                        if (callbackOnFailure != null) {
+                            callbackOnFailure.run();
+                        }
                         return;
                     }
 
                     new Handler(Looper.getMainLooper()).post(() -> {
                         shouldFetchContents = false; // disable fetching contents until the next time, this will disable the timer fetching
                         isCurrentlyInContentZone = true;
-                        isCurrentlyRetrying = false;
 
                         Activity heldActivity = getCurrentActivity();
                         if (heldActivity != null && !heldActivity.isFinishing()) {
@@ -295,6 +313,8 @@ public class ModuleContent extends ModuleBase {
         }
 
         shouldFetchContents = true;
+        contentZoneWanted = true;
+        contentZoneExited = false;
 
         String[] validCategories;
 
@@ -331,53 +351,6 @@ public class ModuleContent extends ModuleBase {
                 }
             }, L);
         }
-    }
-
-    private void enterContentZoneWithRetriesInternal() {
-        if (isCurrentlyRetrying) {
-            L.w("[ModuleContent] enterContentZoneWithRetriesInternal, already retrying, skipping");
-            return;
-        }
-        isCurrentlyRetrying = true;
-        Handler handler = new Handler(Looper.getMainLooper());
-        int maxRetries = 3;
-        int delayMillis = 1000;
-
-        Runnable retryRunnable = new Runnable() {
-            int attempt = 0;
-
-            @Override
-            public void run() {
-                if (isCurrentlyInContentZone) {
-                    isCurrentlyRetrying = false; // Reset flag on success
-                    return;
-                }
-
-                if (countlyTimer != null) { // for tests
-                    countlyTimer.stopTimer(L);
-                }
-
-                final Runnable self = this; // Capture reference to outer Runnable
-
-                enterContentZoneInternal(null, 0, new Runnable() {
-                    @Override public void run() {
-                        if (isCurrentlyInContentZone) {
-                            isCurrentlyRetrying = false; // Reset flag on success
-                            return;
-                        }
-                        attempt++;
-                        if (attempt < maxRetries) {
-                            handler.postDelayed(self, delayMillis);
-                        } else {
-                            L.w("[ModuleContent] enterContentZoneWithRetriesInternal, " + maxRetries + " attempted");
-                            isCurrentlyRetrying = false;
-                        }
-                    }
-                });
-            }
-        };
-
-        handler.post(retryRunnable);
     }
 
     private void showContentOverlay(@NonNull Activity activity, @NonNull Map<Integer, TransparentActivityConfig> placementCoordinates) {
@@ -570,6 +543,8 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void halt() {
+        triggersHalted = true;
+        triggerHandler.removeCallbacksAndMessages(null);
         contentInterface = null;
         countlyTimer.stopTimer(L);
         countlyTimer = null;
@@ -585,6 +560,9 @@ public class ModuleContent extends ModuleBase {
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleContent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
+            if (contentZoneWanted) {
+                contentZoneExited = true;
+            }
             exitContentZoneInternal();
         }
     }
@@ -593,6 +571,9 @@ public class ModuleContent extends ModuleBase {
     void deviceIdChanged(boolean withoutMerge) {
         L.d("[ModuleContent] deviceIdChanged, withoutMerge: [" + withoutMerge + "]");
         if (withoutMerge) {
+            if (contentZoneWanted) {
+                contentZoneExited = true;
+            }
             exitContentZoneInternal();
         }
     }
@@ -619,6 +600,7 @@ public class ModuleContent extends ModuleBase {
 
     private void exitContentZoneInternal() {
         shouldFetchContents = false;
+        contentZoneWanted = false;
         countlyTimer.stopTimer(L);
         waitForDelay = 0;
         if (contentOverlay != null) {
@@ -655,7 +637,7 @@ public class ModuleContent extends ModuleBase {
         fetchContentsInternal(new String[] {}, null, contentId);
     }
 
-    void refreshContentZoneInternal(boolean callRQFlush) {
+    void refreshContentZoneInternal() {
         if (!configProvider.getRefreshContentZoneEnabled()) {
             return;
         }
@@ -669,18 +651,248 @@ public class ModuleContent extends ModuleBase {
             exitContentZoneInternal();
         }
 
-        if (callRQFlush) {
-            requestQueueProvider.registerInternalGlobalRequestCallbackAction(new Runnable() {
-                @Override public void run() {
-                    enterContentZoneInternal(null, 0, null);
-                }
-            });
-            ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
-            if (requestQueueModule != null) {
-                requestQueueModule.attemptToSendStoredRequestsInternal();
+        requestQueueProvider.registerInternalGlobalRequestCallbackAction(new Runnable() {
+            @Override public void run() {
+                enterContentZoneInternal(null, 0, null);
             }
-        } else {
-            enterContentZoneWithRetriesInternal();
+        });
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.attemptToSendStoredRequestsInternal();
+        }
+    }
+
+    /**
+     * Called by the module that recorded something that can be a content trigger. Runs the check on the main thread,
+     * where all content trigger state is kept.
+     *
+     * @param trigger what was recorded
+     */
+    void onContentTrigger(@NonNull final ContentTriggers.Trigger trigger) {
+        if (triggersHalted) {
+            return;
+        }
+        if (behaviorSettingsSettled && ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted, configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger) == null) {
+            return;
+        }
+        triggerHandler.post(() -> handleContentTrigger(trigger));
+    }
+
+    /**
+     * Called when the behavior settings answer of this run arrived, or when none will arrive. What was recorded before
+     * it and the settings in use did not list is checked again against the answer, so that content for a first
+     * session, which begins before the answer, is still asked for.
+     *
+     * @param answered true when an answer arrived and was applied
+     */
+    void onBehaviorSettingsSettled(final boolean answered) {
+        if (triggersHalted) {
+            return;
+        }
+        triggerHandler.post(() -> settleEarlyTriggers(answered));
+    }
+
+    /**
+     * Decides whether what was recorded starts a content trigger round: it must be a content trigger, content must be
+     * possible to show, and the same trigger must be outside its gap. A trigger during a running round only makes one
+     * more round follow it.
+     *
+     * @param trigger what was recorded
+     */
+    private void handleContentTrigger(@NonNull ContentTriggers.Trigger trigger) {
+        if (triggersHalted || !webViewEnabled) {
+            return;
+        }
+
+        ContentTriggers.Match match = ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted, configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger);
+        if (match == null) {
+            rememberEarlyTrigger(trigger);
+            return;
+        }
+
+        if (contentZoneExited || !consentProvider.getConsent(Countly.CountlyFeatureNames.content) || deviceIdProvider.isTemporaryIdEnabled()) {
+            L.d("[ModuleContent] handleContentTrigger, [" + trigger + "] is a content trigger, but content can not be shown now, so it is not asked for");
+            return;
+        }
+
+        String gaps = ContentTriggers.claimGap(match, storageProvider.getContentTriggerGaps(), UtilsTime.currentTimestampMs());
+        if (gaps == null) {
+            L.d("[ModuleContent] handleContentTrigger, [" + trigger + "] started a round less than [" + (match.gapMs / 1000) + "] seconds ago");
+            return;
+        }
+        storageProvider.setContentTriggerGaps(gaps);
+
+        if (triggerRoundRunning) {
+            L.d("[ModuleContent] handleContentTrigger, [" + trigger + "] matched while a round is running, one more round follows it");
+            triggerRoundPending = true;
+            return;
+        }
+
+        L.d("[ModuleContent] handleContentTrigger, [" + trigger + "] matched, sending the queued requests and asking for content");
+        startTriggerRound();
+    }
+
+    /**
+     * Keeps what was recorded before the behavior settings answer of this run arrived, when the settings in use did not
+     * list it
+     *
+     * @param trigger what was recorded
+     */
+    private void rememberEarlyTrigger(@NonNull ContentTriggers.Trigger trigger) {
+        if (behaviorSettingsSettled || earlyTriggers.size() >= TRIGGER_EARLY_LIMIT) {
+            return;
+        }
+        for (ContentTriggers.Trigger early : earlyTriggers) {
+            if (early.sameAs(trigger)) {
+                return;
+            }
+        }
+        earlyTriggers.add(trigger);
+    }
+
+    /**
+     * Ends the wait for the behavior settings answer of this run. When the answer arrived, on a first start (no settings
+     * were stored at init) its "ecz" decides the content zone entry, and the first remembered trigger it lists starts a
+     * round.
+     *
+     * @param answered true when an answer arrived and was applied
+     */
+    private void settleEarlyTriggers(boolean answered) {
+        List<ContentTriggers.Trigger> early = new ArrayList<>(earlyTriggers);
+        earlyTriggers.clear();
+        if (behaviorSettingsSettled) {
+            return;
+        }
+        behaviorSettingsSettled = true;
+        if (!answered) {
+            return;
+        }
+
+        ModuleConfiguration configurationModule = _cly.moduleConfiguration;
+        if (configurationModule != null && !configurationModule.behaviorSettingsStoredAtInit && configProvider.getContentZoneEnabled() && !contentZoneWanted && !contentZoneExited) {
+            L.d("[ModuleContent] settleEarlyTriggers, no behavior settings were stored at init, and the first answer has 'ecz' on, entering the content zone");
+            enterContentZoneInternal(null, 0, null);
+        }
+
+        for (ContentTriggers.Trigger trigger : early) {
+            if (ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted, configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger) != null) {
+                L.d("[ModuleContent] settleEarlyTriggers, [" + trigger + "] was recorded before the behavior settings arrived");
+                handleContentTrigger(trigger);
+                return;
+            }
+        }
+    }
+
+    /**
+     * Starts a content trigger round: moves the held events into the request queue, sends the queue, and asks for
+     * content once the requests queued until now are sent
+     */
+    private void startTriggerRound() {
+        if (triggersHalted) {
+            return;
+        }
+        triggerRoundRunning = true;
+        triggerRoundPending = false;
+
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.sendEventsIfNeeded(true);
+        }
+
+        String[] queued = storageProvider.getRequests();
+        if (queued.length == 0) {
+            requestTriggeredContent(++contentTriggerChain, 1);
+            endTriggerRound();
+            return;
+        }
+
+        final String lastQueued = queued[queued.length - 1];
+        final int remaining = queued.length;
+        if (requestQueueModule != null) {
+            requestQueueModule.attemptToSendStoredRequestsInternal();
+        }
+        triggerHandler.postDelayed(() -> waitForTriggerQueue(lastQueued, remaining, 0), TRIGGER_QUEUE_CHECK_MS);
+    }
+
+    /**
+     * Checks every TRIGGER_QUEUE_CHECK_MS whether the requests queued when the round started are sent. The round asks
+     * for content once they are. When no request of them is sent for TRIGGER_QUEUE_CHECKS checks in a row (a request
+     * on its way, the backoff mechanism or the failed request cool-down holds them back), or offline mode starts, the
+     * round ends without asking for content, and the content zone timer picks the content up.
+     *
+     * @param lastQueued the last request queued when the round started
+     * @param previousRemaining how many requests up to it were queued at the previous check
+     * @param checksWithoutProgress checks in a row at which no request of them was sent
+     */
+    private void waitForTriggerQueue(@NonNull final String lastQueued, final int previousRemaining, final int checksWithoutProgress) {
+        if (triggersHalted) {
+            return;
+        }
+        if (deviceIdProvider.isTemporaryIdEnabled()) {
+            L.d("[ModuleContent] waitForTriggerQueue, offline mode started, the round ends without a content request");
+            endTriggerRound();
+            return;
+        }
+
+        final int remaining = Arrays.asList(storageProvider.getRequests()).lastIndexOf(lastQueued) + 1;
+        if (remaining == 0) {
+            requestTriggeredContent(++contentTriggerChain, 1);
+            endTriggerRound();
+            return;
+        }
+
+        final int withoutProgress = remaining < previousRemaining ? 0 : checksWithoutProgress + 1;
+        if (withoutProgress >= TRIGGER_QUEUE_CHECKS) {
+            L.d("[ModuleContent] waitForTriggerQueue, the queued requests could not be sent in time, the round ends without a content request");
+            endTriggerRound();
+            return;
+        }
+
+        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
+        if (requestQueueModule != null) {
+            requestQueueModule.attemptToSendStoredRequestsInternal();
+        }
+        triggerHandler.postDelayed(() -> waitForTriggerQueue(lastQueued, remaining, withoutProgress), TRIGGER_QUEUE_CHECK_MS);
+    }
+
+    /**
+     * Sends the content request of a round. When it displays nothing, it is sent again TRIGGER_CONTENT_RETRY_MS later,
+     * up to TRIGGER_CONTENT_REQUESTS requests, because the server may still be processing what triggered it. A newer
+     * round's content request stops the remaining ones of an older round.
+     *
+     * @param chain the round's number, compared with the newest one
+     * @param attempt the number of this content request in the round, from 1
+     */
+    private void requestTriggeredContent(final int chain, final int attempt) {
+        if (triggersHalted || chain != contentTriggerChain) {
+            return;
+        }
+        if (isCurrentlyInContentZone) {
+            L.d("[ModuleContent] requestTriggeredContent, content is already displayed, no content request is sent");
+            return;
+        }
+        boolean zoneNeeded = configProvider.getContentTriggers() != null;
+        if (contentZoneExited || (zoneNeeded && !contentZoneWanted) || !webViewEnabled || !consentProvider.getConsent(Countly.CountlyFeatureNames.content) || deviceIdProvider.isTemporaryIdEnabled()) {
+            L.d("[ModuleContent] requestTriggeredContent, content can not be shown now, no content request is sent");
+            return;
+        }
+
+        L.d("[ModuleContent] requestTriggeredContent, sending content request [" + attempt + "] of [" + TRIGGER_CONTENT_REQUESTS + "]");
+        fetchContentsInternal(new String[] {}, () -> {
+            if (attempt < TRIGGER_CONTENT_REQUESTS && !triggersHalted) {
+                triggerHandler.postDelayed(() -> requestTriggeredContent(chain, attempt + 1), TRIGGER_CONTENT_RETRY_MS);
+            }
+        }, null);
+    }
+
+    /**
+     * Ends the queue part of a round, and starts the round a trigger during it asked for
+     */
+    private void endTriggerRound() {
+        triggerRoundRunning = false;
+        if (triggerRoundPending && !triggersHalted) {
+            triggerRoundPending = false;
+            triggerHandler.post(this::startTriggerRound);
         }
     }
 
@@ -711,6 +923,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
+            contentZoneExited = true;
             exitContentZoneInternal();
         }
 
@@ -742,7 +955,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            refreshContentZoneInternal(true);
+            refreshContentZoneInternal();
         }
 
         /**

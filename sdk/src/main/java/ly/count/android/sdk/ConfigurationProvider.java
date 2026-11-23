@@ -59,6 +59,12 @@ interface ConfigurationProvider {
 
     Set<String> getJourneyTriggerViews();
 
+    /**
+     * @return the content triggers ("jt") of the behavior settings in use, null when they have none or when
+     * disableAutoContentTriggers is set
+     */
+    @Nullable ContentTriggers getContentTriggers();
+
     // REQUEST COMPRESSION
 
     /**

@@ -281,6 +281,11 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
             String formattedConsentState = formatConsentState(featureConsentValues);
             L.v("[ModuleConsent] setConsentInternal, Sending consent changes: [" + formattedConsentState + "]");
             requestQueueProvider.sendConsentChanges(formattedConsentState);
+
+            ModuleContent contentModule = _cly.moduleContent;
+            if (contentModule != null) {
+                contentModule.onContentTrigger(ContentTriggers.Trigger.of(ContentTriggers.KEY_CONSENT));
+            }
         }
     }
 
