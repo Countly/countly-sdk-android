@@ -78,7 +78,7 @@ public class ModuleRemoteConfigTests {
             config.immediateRequestGenerator = new ImmediateRequestGenerator() {
                 @Override public ImmediateRequestI CreateImmediateRequestMaker() {
                     return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
-                        if (!requestData.endsWith("method=sc")) { // this is server config, disabling it for this test
+                        if (!requestData.contains("method=sc")) { // this is server config, disabling it for this test
                             triggerCounter[0]++;
                         }
                     };
@@ -86,7 +86,7 @@ public class ModuleRemoteConfigTests {
 
                 @Override public ImmediateRequestI CreatePreflightRequestMaker() {
                     return (requestData, customEndpoint, cp, requestShouldBeDelayed, networkingIsEnabled, callback, log) -> {
-                        if (!requestData.endsWith("method=sc")) { // this is server config, disabling it for this test
+                        if (!requestData.contains("method=sc")) { // this is server config, disabling it for this test
                             triggerCounter[0]++;
                         }
                     };

@@ -165,6 +165,21 @@ final class ContentTriggers {
                 && (properties == null ? other.properties == null : properties.equals(other.properties));
         }
 
+        /**
+         * @return true for a view event
+         */
+        boolean isView() {
+            return ModuleViews.VIEW_EVENT_KEY.equals(key);
+        }
+
+        /**
+         * @return what a gap key of a view event ends with: nothing for the event recorded when the view starts, and
+         * a suffix for the one recorded when it ends, so that each has its own gap
+         */
+        @NonNull String gapKeySuffix() {
+            return isView() && viewEnd ? GAP_KEY_VIEW_END_SUFFIX : "";
+        }
+
         @NonNull @Override public String toString() {
             return key + (viewName != null ? " [" + viewName + (viewEnd ? ", end" : ", start") + "]" : "") + (properties != null ? " " + properties : "");
         }
@@ -199,44 +214,74 @@ final class ContentTriggers {
     @Nullable
     static Match match(@Nullable ContentTriggers contentTriggers, boolean zoneWanted, @NonNull Set<String> journeyTriggerEvents, @NonNull Set<String> journeyTriggerViews,
         @NonNull Trigger trigger) {
-        boolean isView = ModuleViews.VIEW_EVENT_KEY.equals(trigger.key);
-        String viewSuffix = isView && trigger.viewEnd ? GAP_KEY_VIEW_END_SUFFIX : "";
-
         if (contentTriggers != null) {
-            if (!zoneWanted) {
-                return null;
-            }
-            if (isView && trigger.viewName != null && contentTriggers.views.contains(trigger.viewName)) {
-                return new Match(Collections.singletonList(GAP_KEY_VIEW_PREFIX + trigger.viewName + viewSuffix), GAP_SPECIFIC_MS);
-            }
-            if (KEY_USER_PROPERTIES.equals(trigger.key) && trigger.properties != null) {
-                List<String> gapKeys = new ArrayList<>();
-                for (String property : trigger.properties) {
-                    if (contentTriggers.properties.contains(property)) {
-                        gapKeys.add(GAP_KEY_PROPERTY_PREFIX + property);
-                    }
-                }
-                if (!gapKeys.isEmpty()) {
-                    return new Match(gapKeys, GAP_SPECIFIC_MS);
-                }
-            }
-            if (!contentTriggers.keys.contains(trigger.key)) {
-                return null;
-            }
-            boolean nonSpecific = isView || KEY_USER_PROPERTIES.equals(trigger.key) || KEY_CRASH.equals(trigger.key);
-            return new Match(Collections.singletonList(trigger.key + viewSuffix), nonSpecific ? GAP_NON_SPECIFIC_MS : GAP_SPECIFIC_MS);
+            return zoneWanted ? contentTriggers.matchLists(trigger) : null;
         }
+        return matchJourneyTriggers(journeyTriggerEvents, journeyTriggerViews, trigger);
+    }
 
-        if (isView) {
-            if (trigger.viewName != null && journeyTriggerViews.contains(trigger.viewName)) {
-                return new Match(Collections.singletonList(GAP_KEY_VIEW_PREFIX + trigger.viewName + viewSuffix), GAP_SPECIFIC_MS);
-            }
+    /**
+     * The match against these content triggers: a listed view name, then listed user properties, then a listed key
+     *
+     * @param trigger what was recorded
+     * @return the match, or null when none of the lists has it
+     */
+    @Nullable
+    private Match matchLists(@NonNull Trigger trigger) {
+        if (trigger.isView() && trigger.viewName != null && views.contains(trigger.viewName)) {
+            return viewMatch(trigger);
+        }
+        List<String> propertyGapKeys = listedPropertyGapKeys(trigger);
+        if (!propertyGapKeys.isEmpty()) {
+            return new Match(propertyGapKeys, GAP_SPECIFIC_MS);
+        }
+        if (!keys.contains(trigger.key)) {
             return null;
         }
-        if (trigger.customEvent && journeyTriggerEvents.contains(trigger.key)) {
-            return new Match(Collections.singletonList(trigger.key), GAP_SPECIFIC_MS);
+        boolean nonSpecific = trigger.isView() || KEY_USER_PROPERTIES.equals(trigger.key) || KEY_CRASH.equals(trigger.key);
+        return new Match(Collections.singletonList(trigger.key + trigger.gapKeySuffix()), nonSpecific ? GAP_NON_SPECIFIC_MS : GAP_SPECIFIC_MS);
+    }
+
+    /**
+     * @param trigger what was recorded
+     * @return the gap keys of the sent user properties that the "p" list has, empty for any other trigger
+     */
+    @NonNull
+    private List<String> listedPropertyGapKeys(@NonNull Trigger trigger) {
+        List<String> gapKeys = new ArrayList<>();
+        if (KEY_USER_PROPERTIES.equals(trigger.key) && trigger.properties != null) {
+            for (String property : trigger.properties) {
+                if (properties.contains(property)) {
+                    gapKeys.add(GAP_KEY_PROPERTY_PREFIX + property);
+                }
+            }
         }
-        return null;
+        return gapKeys;
+    }
+
+    /**
+     * The match against the deprecated journey trigger events and views: custom events, and both events of a view
+     *
+     * @param journeyTriggerEvents the journey trigger events ("jte")
+     * @param journeyTriggerViews the journey trigger views ("jtv")
+     * @param trigger what was recorded
+     * @return the match, or null when it is not a journey trigger
+     */
+    @Nullable
+    private static Match matchJourneyTriggers(@NonNull Set<String> journeyTriggerEvents, @NonNull Set<String> journeyTriggerViews, @NonNull Trigger trigger) {
+        if (trigger.isView()) {
+            return trigger.viewName != null && journeyTriggerViews.contains(trigger.viewName) ? viewMatch(trigger) : null;
+        }
+        return trigger.customEvent && journeyTriggerEvents.contains(trigger.key) ? new Match(Collections.singletonList(trigger.key), GAP_SPECIFIC_MS) : null;
+    }
+
+    /**
+     * @param trigger a view event with a listed name
+     * @return the match of that view event, with a gap of its own for the start and for the end of the view
+     */
+    @NonNull
+    private static Match viewMatch(@NonNull Trigger trigger) {
+        return new Match(Collections.singletonList(GAP_KEY_VIEW_PREFIX + trigger.viewName + trigger.gapKeySuffix()), GAP_SPECIFIC_MS);
     }
 
     /**

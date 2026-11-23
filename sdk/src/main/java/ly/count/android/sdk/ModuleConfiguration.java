@@ -133,7 +133,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     FilterList<Map<String, Set<String>>> currentVEventSegmentationFilterList = new FilterList<>(new ConcurrentHashMap<>(), false);
     Set<String> currentVJourneyTriggerEvents = new HashSet<>();
     Set<String> currentVJourneyTriggerViews = new HashSet<>();
-    @Nullable volatile ContentTriggers currentVContentTriggers = null;
+    final AtomicReference<ContentTriggers> currentVContentTriggers = new AtomicReference<>(null);
 
     // Settings the SBS layers resolve that used to be written back onto the CountlyConfig. Per instance, so
     // a config shared between instances can not carry one instance's resolved settings into another.
@@ -373,7 +373,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             updateLogGatheringDirective(serverResponse);
         }
 
-        currentVContentTriggers = autoContentTriggersDisabled || latestRetrievedConfigurationFull == null ? null : ContentTriggers.parse(latestRetrievedConfigurationFull.opt(keyRContentTriggers), L);
+        currentVContentTriggers.set(autoContentTriggersDisabled || latestRetrievedConfigurationFull == null ? null : ContentTriggers.parse(latestRetrievedConfigurationFull.opt(keyRContentTriggers), L));
 
         if (latestRetrievedConfiguration == null) {
             return;
@@ -920,13 +920,9 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         }
 
         lastServerConfigFetchTimestamp = UtilsTime.currentTimestampMs();
-        String requestData = requestQueueProvider.prepareServerConfigRequest();
-        if (requestCompressionEnabled) {
-            requestData += requestKeyGzip;
-        }
-        if (!autoContentTriggersDisabled) {
-            requestData += requestKeyContentTriggers;
-        }
+        String requestData = requestQueueProvider.prepareServerConfigRequest()
+            + (requestCompressionEnabled ? requestKeyGzip : "")
+            + (autoContentTriggersDisabled ? "" : requestKeyContentTriggers);
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final long fetchStartNs = System.nanoTime();
         final String requestedForDeviceId = deviceIdProvider.getDeviceId();
@@ -1177,7 +1173,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     }
 
     @Override @Nullable public ContentTriggers getContentTriggers() {
-        return currentVContentTriggers;
+        return currentVContentTriggers.get();
     }
 
     /**

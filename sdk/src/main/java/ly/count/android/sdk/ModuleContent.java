@@ -19,6 +19,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.json.JSONObject;
 
 public class ModuleContent extends ModuleBase {
@@ -39,13 +40,13 @@ public class ModuleContent extends ModuleBase {
     static final int TRIGGER_CONTENT_REQUESTS = 3;
     static final int TRIGGER_EARLY_LIMIT = 50;
     private final Handler triggerHandler = new Handler(Looper.getMainLooper());
-    private volatile boolean contentZoneWanted = false;
-    private volatile boolean contentZoneExited = false;
-    private volatile boolean triggersHalted = false;
+    private final AtomicBoolean contentZoneWanted = new AtomicBoolean(false);
+    private final AtomicBoolean contentZoneExited = new AtomicBoolean(false);
+    private final AtomicBoolean triggersHalted = new AtomicBoolean(false);
     private boolean triggerRoundRunning = false;
     private boolean triggerRoundPending = false;
     private int contentTriggerChain = 0;
-    private volatile boolean behaviorSettingsSettled = false;
+    private final AtomicBoolean behaviorSettingsSettled = new AtomicBoolean(false);
     private final List<ContentTriggers.Trigger> earlyTriggers = new ArrayList<>();
 
     //Weak, like CountlyActivityHolder: the clearing path (onActivityDestroyed) only runs when the
@@ -313,8 +314,8 @@ public class ModuleContent extends ModuleBase {
         }
 
         shouldFetchContents = true;
-        contentZoneWanted = true;
-        contentZoneExited = false;
+        contentZoneWanted.set(true);
+        contentZoneExited.set(false);
 
         String[] validCategories;
 
@@ -543,7 +544,7 @@ public class ModuleContent extends ModuleBase {
 
     @Override
     void halt() {
-        triggersHalted = true;
+        triggersHalted.set(true);
         triggerHandler.removeCallbacksAndMessages(null);
         contentInterface = null;
         countlyTimer.stopTimer(L);
@@ -560,8 +561,8 @@ public class ModuleContent extends ModuleBase {
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         L.d("[ModuleContent] onConsentChanged, consentChangeDelta: [" + consentChangeDelta + "], newConsent: [" + newConsent + "], changeSource: [" + changeSource + "]");
         if (consentChangeDelta.contains(Countly.CountlyFeatureNames.content) && !newConsent) {
-            if (contentZoneWanted) {
-                contentZoneExited = true;
+            if (contentZoneWanted.get()) {
+                contentZoneExited.set(true);
             }
             exitContentZoneInternal();
         }
@@ -571,8 +572,8 @@ public class ModuleContent extends ModuleBase {
     void deviceIdChanged(boolean withoutMerge) {
         L.d("[ModuleContent] deviceIdChanged, withoutMerge: [" + withoutMerge + "]");
         if (withoutMerge) {
-            if (contentZoneWanted) {
-                contentZoneExited = true;
+            if (contentZoneWanted.get()) {
+                contentZoneExited.set(true);
             }
             exitContentZoneInternal();
         }
@@ -600,7 +601,7 @@ public class ModuleContent extends ModuleBase {
 
     private void exitContentZoneInternal() {
         shouldFetchContents = false;
-        contentZoneWanted = false;
+        contentZoneWanted.set(false);
         countlyTimer.stopTimer(L);
         waitForDelay = 0;
         if (contentOverlay != null) {
@@ -669,10 +670,10 @@ public class ModuleContent extends ModuleBase {
      * @param trigger what was recorded
      */
     void onContentTrigger(@NonNull final ContentTriggers.Trigger trigger) {
-        if (triggersHalted) {
+        if (triggersHalted.get()) {
             return;
         }
-        if (behaviorSettingsSettled && ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted, configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger) == null) {
+        if (behaviorSettingsSettled.get() && ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted.get(), configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger) == null) {
             return;
         }
         triggerHandler.post(() -> handleContentTrigger(trigger));
@@ -686,7 +687,7 @@ public class ModuleContent extends ModuleBase {
      * @param answered true when an answer arrived and was applied
      */
     void onBehaviorSettingsSettled(final boolean answered) {
-        if (triggersHalted) {
+        if (triggersHalted.get()) {
             return;
         }
         triggerHandler.post(() -> settleEarlyTriggers(answered));
@@ -700,17 +701,17 @@ public class ModuleContent extends ModuleBase {
      * @param trigger what was recorded
      */
     private void handleContentTrigger(@NonNull ContentTriggers.Trigger trigger) {
-        if (triggersHalted || !webViewEnabled) {
+        if (triggersHalted.get() || !webViewEnabled) {
             return;
         }
 
-        ContentTriggers.Match match = ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted, configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger);
+        ContentTriggers.Match match = ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted.get(), configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger);
         if (match == null) {
             rememberEarlyTrigger(trigger);
             return;
         }
 
-        if (contentZoneExited || !consentProvider.getConsent(Countly.CountlyFeatureNames.content) || deviceIdProvider.isTemporaryIdEnabled()) {
+        if (contentZoneExited.get() || !consentProvider.getConsent(Countly.CountlyFeatureNames.content) || deviceIdProvider.isTemporaryIdEnabled()) {
             L.d("[ModuleContent] handleContentTrigger, [" + trigger + "] is a content trigger, but content can not be shown now, so it is not asked for");
             return;
         }
@@ -739,7 +740,7 @@ public class ModuleContent extends ModuleBase {
      * @param trigger what was recorded
      */
     private void rememberEarlyTrigger(@NonNull ContentTriggers.Trigger trigger) {
-        if (behaviorSettingsSettled || earlyTriggers.size() >= TRIGGER_EARLY_LIMIT) {
+        if (behaviorSettingsSettled.get() || earlyTriggers.size() >= TRIGGER_EARLY_LIMIT) {
             return;
         }
         for (ContentTriggers.Trigger early : earlyTriggers) {
@@ -758,24 +759,23 @@ public class ModuleContent extends ModuleBase {
      * @param answered true when an answer arrived and was applied
      */
     private void settleEarlyTriggers(boolean answered) {
+        boolean firstAnswer = answered && !behaviorSettingsSettled.get();
+        behaviorSettingsSettled.set(true);
+        if (!firstAnswer) {
+            earlyTriggers.clear();
+            return;
+        }
         List<ContentTriggers.Trigger> early = new ArrayList<>(earlyTriggers);
         earlyTriggers.clear();
-        if (behaviorSettingsSettled) {
-            return;
-        }
-        behaviorSettingsSettled = true;
-        if (!answered) {
-            return;
-        }
 
         ModuleConfiguration configurationModule = _cly.moduleConfiguration;
-        if (configurationModule != null && !configurationModule.behaviorSettingsStoredAtInit && configProvider.getContentZoneEnabled() && !contentZoneWanted && !contentZoneExited) {
+        if (configurationModule != null && !configurationModule.behaviorSettingsStoredAtInit && configProvider.getContentZoneEnabled() && !contentZoneWanted.get() && !contentZoneExited.get()) {
             L.d("[ModuleContent] settleEarlyTriggers, no behavior settings were stored at init, and the first answer has 'ecz' on, entering the content zone");
             enterContentZoneInternal(null, 0, null);
         }
 
         for (ContentTriggers.Trigger trigger : early) {
-            if (ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted, configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger) != null) {
+            if (ContentTriggers.match(configProvider.getContentTriggers(), contentZoneWanted.get(), configProvider.getJourneyTriggerEvents(), configProvider.getJourneyTriggerViews(), trigger) != null) {
                 L.d("[ModuleContent] settleEarlyTriggers, [" + trigger + "] was recorded before the behavior settings arrived");
                 handleContentTrigger(trigger);
                 return;
@@ -788,7 +788,7 @@ public class ModuleContent extends ModuleBase {
      * content once the requests queued until now are sent
      */
     private void startTriggerRound() {
-        if (triggersHalted) {
+        if (triggersHalted.get()) {
             return;
         }
         triggerRoundRunning = true;
@@ -825,7 +825,7 @@ public class ModuleContent extends ModuleBase {
      * @param checksWithoutProgress checks in a row at which no request of them was sent
      */
     private void waitForTriggerQueue(@NonNull final String lastQueued, final int previousRemaining, final int checksWithoutProgress) {
-        if (triggersHalted) {
+        if (triggersHalted.get()) {
             return;
         }
         if (deviceIdProvider.isTemporaryIdEnabled()) {
@@ -864,7 +864,7 @@ public class ModuleContent extends ModuleBase {
      * @param attempt the number of this content request in the round, from 1
      */
     private void requestTriggeredContent(final int chain, final int attempt) {
-        if (triggersHalted || chain != contentTriggerChain) {
+        if (triggersHalted.get() || chain != contentTriggerChain) {
             return;
         }
         if (isCurrentlyInContentZone) {
@@ -872,14 +872,14 @@ public class ModuleContent extends ModuleBase {
             return;
         }
         boolean zoneNeeded = configProvider.getContentTriggers() != null;
-        if (contentZoneExited || (zoneNeeded && !contentZoneWanted) || !webViewEnabled || !consentProvider.getConsent(Countly.CountlyFeatureNames.content) || deviceIdProvider.isTemporaryIdEnabled()) {
+        if (contentZoneExited.get() || (zoneNeeded && !contentZoneWanted.get()) || !webViewEnabled || !consentProvider.getConsent(Countly.CountlyFeatureNames.content) || deviceIdProvider.isTemporaryIdEnabled()) {
             L.d("[ModuleContent] requestTriggeredContent, content can not be shown now, no content request is sent");
             return;
         }
 
         L.d("[ModuleContent] requestTriggeredContent, sending content request [" + attempt + "] of [" + TRIGGER_CONTENT_REQUESTS + "]");
         fetchContentsInternal(new String[] {}, () -> {
-            if (attempt < TRIGGER_CONTENT_REQUESTS && !triggersHalted) {
+            if (attempt < TRIGGER_CONTENT_REQUESTS && !triggersHalted.get()) {
                 triggerHandler.postDelayed(() -> requestTriggeredContent(chain, attempt + 1), TRIGGER_CONTENT_RETRY_MS);
             }
         }, null);
@@ -890,7 +890,7 @@ public class ModuleContent extends ModuleBase {
      */
     private void endTriggerRound() {
         triggerRoundRunning = false;
-        if (triggerRoundPending && !triggersHalted) {
+        if (triggerRoundPending && !triggersHalted.get()) {
             triggerRoundPending = false;
             triggerHandler.post(this::startTriggerRound);
         }
@@ -923,7 +923,7 @@ public class ModuleContent extends ModuleBase {
                 return;
             }
 
-            contentZoneExited = true;
+            contentZoneExited.set(true);
             exitContentZoneInternal();
         }
 

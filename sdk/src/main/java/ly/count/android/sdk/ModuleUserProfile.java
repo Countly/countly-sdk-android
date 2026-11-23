@@ -1,13 +1,16 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -443,43 +446,41 @@ public class ModuleUserProfile extends ModuleBase {
      */
     @NonNull List<String> sentPropertyNames() {
         List<String> names = new ArrayList<>();
-        if (name != null) {
-            names.add(NAME_KEY);
-        }
-        if (username != null) {
-            names.add(USERNAME_KEY);
-        }
-        if (email != null) {
-            names.add(EMAIL_KEY);
-        }
-        if (org != null) {
-            names.add(ORG_KEY);
-        }
-        if (phone != null) {
-            names.add(PHONE_KEY);
-        }
-        if (picture != null || picturePath != null) {
-            names.add(PICTURE_KEY);
-        }
-        if (gender != null) {
-            names.add(GENDER_KEY);
-        }
+        addIfSet(names, NAME_KEY, name);
+        addIfSet(names, USERNAME_KEY, username);
+        addIfSet(names, EMAIL_KEY, email);
+        addIfSet(names, ORG_KEY, org);
+        addIfSet(names, PHONE_KEY, phone);
+        addIfSet(names, PICTURE_KEY, picture != null ? picture : picturePath);
+        addIfSet(names, GENDER_KEY, gender);
         if (byear != 0) {
             names.add(BYEAR_KEY);
         }
+
+        Set<String> customKeys = new LinkedHashSet<>();
         if (custom != null) {
-            for (String key : custom.keySet()) {
-                names.add(CUSTOM_KEY + "." + key);
-            }
+            customKeys.addAll(custom.keySet());
         }
         if (customMods != null) {
-            for (String key : customMods.keySet()) {
-                if (custom == null || !custom.containsKey(key)) {
-                    names.add(CUSTOM_KEY + "." + key);
-                }
-            }
+            customKeys.addAll(customMods.keySet());
+        }
+        for (String key : customKeys) {
+            names.add(CUSTOM_KEY + "." + key);
         }
         return names;
+    }
+
+    /**
+     * Adds a property name when the pending request sends that property
+     *
+     * @param names the names so far
+     * @param propertyName the property name
+     * @param value its pending value, null when the request does not send it
+     */
+    private static void addIfSet(@NonNull List<String> names, @NonNull String propertyName, @Nullable Object value) {
+        if (value != null) {
+            names.add(propertyName);
+        }
     }
 
     void clearInternal() {
