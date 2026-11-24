@@ -86,7 +86,7 @@ jobs:
       - name: Publish Test Results to PR
         id: test-results
         # the composite linux variant runs from the pinned source; the root action pulls a mutable Docker tag
-        uses: EnricoMi/publish-unit-test-result-action/linux@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action/linux@da5b7be67623cd59bbbd1a0ce4f022050a55605f # v2.26.0
         if: always()
         with:
           check_name: "Unit Test Results :rocket:"
