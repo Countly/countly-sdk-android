@@ -180,6 +180,10 @@ public class ConnectionProcessorTests {
             @Override public Set<String> getJourneyTriggerViews() {
                 return Collections.emptySet();
             }
+
+            @Override public ContentTriggers getContentTriggers() {
+                return null;
+            }
         };
 
         Countly.sharedInstance().setLoggingEnabled(true);

@@ -62,6 +62,18 @@ interface StorageProvider {
 
     boolean anythingSetInStorage();
 
+    /**
+     * Stores when each content trigger last started a round, so that its gap holds after a restart
+     *
+     * @param gaps a JSON object of gap key to milliseconds
+     */
+    void setContentTriggerGaps(@NonNull String gaps);
+
+    /**
+     * @return the times content triggers last started a round, a JSON object of gap key to milliseconds, "" when none
+     */
+    @NonNull String getContentTriggerGaps();
+
     @NonNull String getHealthCheckCounterState();
 
     void setHealthCheckCounterState(String counterState);

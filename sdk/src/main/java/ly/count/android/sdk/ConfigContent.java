@@ -10,6 +10,7 @@ public class ConfigContent {
     ContentCallback globalContentCallback = null;
     Set<String> allowedIntentSchemes = new HashSet<>();
     ContentUrlHandler contentUrlHandler = null;
+    boolean autoContentTriggersDisabled = false;
 
     /**
      * Set the interval for the automatic content update calls
@@ -68,6 +69,21 @@ public class ConfigContent {
      */
     public synchronized ConfigContent setContentUrlHandler(ContentUrlHandler contentUrlHandler) {
         this.contentUrlHandler = contentUrlHandler;
+        return this;
+    }
+
+    /**
+     * Stops the SDK from asking the server for the content triggers of the app's journeys and campaigns, and from
+     * following them. By default, when the app records something that starts a journey or a campaign with content,
+     * the SDK sends what it holds and asks for that content right away, instead of waiting for the content zone timer.
+     * With this call, content comes only through the content zone timer and the app's own calls, and the deprecated
+     * journey trigger events and views of the SDK behavior settings apply instead.
+     *
+     * @return config content to chain calls
+     * @apiNote This is an EXPERIMENTAL feature, and it can have breaking changes
+     */
+    public synchronized ConfigContent disableAutoContentTriggers() {
+        this.autoContentTriggersDisabled = true;
         return this;
     }
 }

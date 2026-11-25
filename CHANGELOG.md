@@ -3,6 +3,16 @@
 
 * Mitigated an issue where content and feedback widgets could keep the previous orientation's size after the device was rotated, leaving part of them off screen, when the activity showing them handles orientation changes itself.
 
+* Added content triggers. When the app records something that starts a journey or a campaign with content, the SDK sends the queued requests and asks for that content right away, instead of waiting for the content zone timer.
+  A trigger is an event, the start or end of a view, a new session, a user property, a handled exception or a consent change. The server lists these triggers in its SDK behavior settings answer, and they apply while the content zone is entered.
+  Call "disableAutoContentTriggers()" on the content config to turn them off.
+
+* ! Minor breaking change ! The journey trigger events and views of the SDK behavior settings now ask for content directly, the same way as content triggers.
+  The "refresh content zone" setting no longer blocks them, they no longer enter the content zone or start its timer, and the same trigger asks again only after 10 seconds. The SDK ignores them when the server sends content triggers.
+
+* ! Minor breaking change ! The "enter content zone" setting of the SDK behavior settings now only decides whether the SDK enters the content zone at init: with the settings stored at init, with the first settings answer on a first start, or when offline mode ends.
+  A later change of the setting takes effect at the next start, and turning it off no longer exits a content zone that the app entered.
+
 ## 26.8.0
 * !! Major breaking change !! New versions of the SDK, `sdk-native` and the symbol upload plugin are published at `https://maven.countly.com` instead of Maven Central.
   Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
