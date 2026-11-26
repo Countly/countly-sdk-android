@@ -46,6 +46,7 @@ public class ly.count.android.sdk.ConfigApm {
 
 public class ly.count.android.sdk.ConfigContent {
   public ly.count.android.sdk.ConfigContent();
+  public synchronized ly.count.android.sdk.ConfigContent disableAutoContentTriggers();
   public synchronized ly.count.android.sdk.ConfigContent setAllowedIntentSchemes(java.util.List<java.lang.String>);
   public synchronized ly.count.android.sdk.ConfigContent setContentUrlHandler(ly.count.android.sdk.ContentUrlHandler);
   public synchronized ly.count.android.sdk.ConfigContent setGlobalContentCallback(ly.count.android.sdk.ContentCallback);
@@ -292,6 +293,7 @@ public class ly.count.android.sdk.CountlyConfig {
   public synchronized ly.count.android.sdk.CountlyConfig enableRecommendedSecuritySettings();
   public synchronized ly.count.android.sdk.CountlyConfig enableRemoteConfigAutomaticTriggers();
   public synchronized ly.count.android.sdk.CountlyConfig enableRemoteConfigValueCaching();
+  public synchronized ly.count.android.sdk.CountlyConfig enableRequestCompression();
   public synchronized ly.count.android.sdk.CountlyConfig enableTemporaryDeviceIdMode();
   public synchronized ly.count.android.sdk.CountlyConfig enrollABOnRCDownload();
   public synchronized ly.count.android.sdk.CountlyConfig giveAllConsents();
@@ -356,6 +358,7 @@ public class ly.count.android.sdk.CountlyStore implements ly.count.android.sdk.S
   public boolean anythingSetInStorage();
   public int getDataSchemaVersion();
   public int getMaxRequestQueueSize();
+  public java.lang.String getContentTriggerGaps();
   public java.lang.String getDeviceID();
   public java.lang.String getDeviceIDType();
   public java.lang.String getHealthCheckCounterState();
@@ -395,6 +398,7 @@ public class ly.count.android.sdk.CountlyStore implements ly.count.android.sdk.S
   public synchronized void setStarRatingPreferences(java.lang.String);
   public void recordEventToEventQueue(java.lang.String, java.util.Map<java.lang.String, java.lang.Object>, int, double, double, long, int, int, java.lang.String, java.lang.String, java.lang.String, java.lang.String);
   public void setConfigurationProvider(ly.count.android.sdk.ConfigurationProvider);
+  public void setContentTriggerGaps(java.lang.String);
   public void setDataSchemaVersion(int);
   public void setDeviceID(java.lang.String);
   public void setDeviceIDType(java.lang.String);
@@ -791,7 +795,6 @@ public class ly.count.android.sdk.ModuleRemoteConfig$RemoteConfig {
 
 public class ly.count.android.sdk.ModuleRequestQueue extends ly.count.android.sdk.ModuleBase implements ly.count.android.sdk.BaseInfoProvider {
   protected void sendEventsIfNeeded(boolean);
-  protected void sendEventsIfNeeded(boolean, boolean);
   public java.lang.String getAppKey();
   public java.lang.String getServerURL();
   public synchronized void addDirectRequestInternal(java.util.Map<java.lang.String, java.lang.String>);

@@ -65,6 +65,7 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     private static final String PREFERENCE_KEY_ID_ID = "ly.count.android.api.DeviceId.id";
     private static final String PREFERENCE_KEY_ID_TYPE = "ly.count.android.api.DeviceId.type";
     private static final String PREFERENCE_SERVER_CONFIG = "SERVER_CONFIG";
+    private static final String PREFERENCE_CONTENT_TRIGGER_GAPS = "CONTENT_TRIGGER_GAPS";
 
     private static final String PREFERENCE_HEALTH_CHECK_STATE = "HEALTH_CHECK";
     private static final String PREFERENCE_ATTRIBUTION_STATE = "ATTRIBUTION_STATE";
@@ -423,6 +424,16 @@ public class CountlyStore implements StorageProvider, EventQueueProvider {
     @Override
     public String getServerConfig() {
         return preferences_.getString(PREFERENCE_SERVER_CONFIG, null);
+    }
+
+    @Override
+    public void setContentTriggerGaps(@NonNull String gaps) {
+        preferences_.edit().putString(PREFERENCE_CONTENT_TRIGGER_GAPS, gaps).apply();
+    }
+
+    @Override
+    public @NonNull String getContentTriggerGaps() {
+        return preferences_.getString(PREFERENCE_CONTENT_TRIGGER_GAPS, "");
     }
 
     /**

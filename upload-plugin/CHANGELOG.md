@@ -1,4 +1,4 @@
-## 0.0.1
+## 26.8.0
 * !! Major breaking change !! New plugin versions are published at `https://maven.countly.com` instead of Maven Central. Add the repository to `pluginManagement { repositories { } }` in `settings.gradle`, or to `buildscript { repositories { } }` when the plugin is on the buildscript classpath. Older versions stay on Maven Central.
 * ! Minor breaking change ! The plugin now has its own version number and is released only when it changes. Use its latest version instead of the SDK's version number.
 * ! Minor breaking change ! "uploadJavaSymbols" now fails the build when the mapping file is missing or the upload is rejected, as the native symbol upload already does, instead of only logging it.

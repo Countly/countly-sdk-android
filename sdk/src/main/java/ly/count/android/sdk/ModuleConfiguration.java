@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -72,9 +74,13 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     final static String keyRJourneyTriggerViews = "jtv";
     final static String keyRLogGathering = "lg"; //top level key, a sibling of 'c', not a member of it
     final static String keyRConnectionTest = "ct"; //top level key, a sibling of 'c', read from a live response and never stored
+    final static String keyRGzip = "gzip"; //top level key, a sibling of 'c', read from a live response and never stored
+    final static String requestKeyGzip = "&gzip=1";
+    final static String keyRContentTriggers = "jt"; //top level key, a sibling of 'c', the same for every user of the app, so stored with it
+    final static String requestKeyContentTriggers = "&jt=1";
 
     //top level keys of the response that this SDK supports. Anything else that arrives next to them is ignored
-    final static Set<String> supportedTopLevelKeys = new HashSet<>(Arrays.asList(keyRVersion, keyRTimestamp, keyRConfig, keyRLogGathering));
+    final static Set<String> supportedTopLevelKeys = new HashSet<>(Arrays.asList(keyRVersion, keyRTimestamp, keyRConfig, keyRLogGathering, keyRContentTriggers));
 
     //keys inside the 'lg' log gathering directive
     final static String keyLGEnabled = "e";
@@ -127,6 +133,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     FilterList<Map<String, Set<String>>> currentVEventSegmentationFilterList = new FilterList<>(new ConcurrentHashMap<>(), false);
     Set<String> currentVJourneyTriggerEvents = new HashSet<>();
     Set<String> currentVJourneyTriggerViews = new HashSet<>();
+    final AtomicReference<ContentTriggers> currentVContentTriggers = new AtomicReference<>(null);
 
     // Settings the SBS layers resolve that used to be written back onto the CountlyConfig. Per instance, so
     // a config shared between instances can not carry one instance's resolved settings into another.
@@ -165,6 +172,13 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
     long lastServerConfigFetchTimestamp = -1;
     private final boolean serverConfigRequestsDisabled;
 
+    // REQUEST COMPRESSION
+    private final boolean requestCompressionEnabled;
+    private final boolean autoContentTriggersDisabled;
+    boolean behaviorSettingsStoredAtInit = false;
+    final AtomicReference<String> gzipAcceptingServerUrl = new AtomicReference<>(null);
+    final AtomicBoolean requestCompressionBlocked = new AtomicBoolean(false);
+
     ModuleConfiguration(@NonNull Countly cly, @NonNull CountlyConfig config) {
         super(cly, config);
         L.v("[ModuleConfiguration] Initialising");
@@ -179,6 +193,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         serverConfigUpdateTimer = new CountlyTimer();
         serverConfigUpdateInterval = currentServerConfigUpdateInterval;
         serverConfigRequestsDisabled = config.sdkBehaviorSettingsRequestsDisabled;
+        requestCompressionEnabled = config.requestCompressionEnabled;
+        autoContentTriggersDisabled = config.content.autoContentTriggersDisabled;
 
         config.countlyStore.setConfigurationProvider(this);
 
@@ -205,6 +221,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
         //load the previously saved configuration
         loadConfigFromStorage(config.sdkBehaviorSettings);
+        behaviorSettingsStoredAtInit = latestRetrievedConfigurationFull != null;
 
         //update the config variables according to the new state. No server response yet, so log gathering is only
         //decided here when requests are disabled and no response can ever come
@@ -218,6 +235,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         if (!serverConfigRequestsDisabled) {
             fetchConfigFromServer(config);
             startServerConfigUpdateTimer();
+        } else {
+            notifyBehaviorSettingsSettled(false);
         }
     }
 
@@ -353,6 +372,8 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         if (decidesLogGathering) {
             updateLogGatheringDirective(serverResponse);
         }
+
+        currentVContentTriggers.set(autoContentTriggersDisabled || latestRetrievedConfigurationFull == null ? null : ContentTriggers.parse(latestRetrievedConfigurationFull.opt(keyRContentTriggers), L));
 
         if (latestRetrievedConfiguration == null) {
             return;
@@ -819,7 +840,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             }
         }
 
-        // Only the supported top level keys are kept: version, timestamp and the log gathering directive. Everything
+        // Only the supported top level keys are kept: version, timestamp, the log gathering directive and the content triggers. Everything
         // else that sits next to them is left behind on purpose, and a key the new config does not carry is not kept
         // from the previous one, so an old gather id is never used against a directive that no longer exists.
         JSONObject replacementFull = new JSONObject();
@@ -894,11 +915,14 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             //temporary id mode enabled, abort
             L.d("[ModuleConfiguration] fetchConfigFromServer, fetch config from the server is aborted, temporary device ID mode is set");
             decideLogGatheringOffIfUndecided("temporary device ID mode, no server response this run");
+            notifyBehaviorSettingsSettled(false);
             return;
         }
 
         lastServerConfigFetchTimestamp = UtilsTime.currentTimestampMs();
-        String requestData = requestQueueProvider.prepareServerConfigRequest();
+        String requestData = requestQueueProvider.prepareServerConfigRequest()
+            + (requestCompressionEnabled ? requestKeyGzip : "")
+            + (autoContentTriggersDisabled ? "" : requestKeyContentTriggers);
         ConnectionProcessor cp = requestQueueProvider.createConnectionProcessor();
         final long fetchStartNs = System.nanoTime();
         final String requestedForDeviceId = deviceIdProvider.getDeviceId();
@@ -912,6 +936,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             if (checkResponse == null) {
                 L.d("[ModuleConfiguration] Not possible to retrieve configuration data. Probably due to lack of connection to the server");
                 decideLogGatheringOffIfUndecided("server config fetch failed");
+                notifyBehaviorSettingsSettled(false);
                 return;
             }
 
@@ -925,6 +950,14 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
             //read only here, from a live response, and stripped before the config is cached
             long fetchLatencyMs = (System.nanoTime() - fetchStartNs) / 1_000_000L;
             boolean connectionTestArmed = extractConnectionTestFlag(checkResponse);
+            boolean gzipAccepted = extractGzipFlag(checkResponse);
+            if (requestCompressionEnabled) {
+                gzipAcceptingServerUrl.set(gzipAccepted ? requestedFromServerUrl : null);
+                if (gzipAccepted && requestCompressionBlocked.compareAndSet(true, false)) {
+                    L.i("[ModuleConfiguration] fetchConfigFromServer, a behavior settings answer says that the server reads compressed bodies, requests are compressed again");
+                }
+                L.d("[ModuleConfiguration] fetchConfigFromServer, the server " + (gzipAccepted ? "reads" : "does not say it reads") + " compressed request bodies");
+            }
 
             //a gather is armed for the device the request was made for, not for whoever the device ID is by now
             final boolean sameDevice = Objects.equals(requestedForDeviceId, deviceIdProvider.getDeviceId());
@@ -934,6 +967,7 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
             saveAndStoreDownloadedConfig(checkResponse);
             updateConfigVariables(config, checkResponse, sameDevice);
+            notifyBehaviorSettingsSettled(latestRetrievedConfigurationFull != null);
 
             //the report goes under the fetch-time ID, so after a merge, which folds that user away, the test does not run
             if (connectionTestArmed && connectionTestMergesSoFar() == mergesAtRequest) {
@@ -947,6 +981,21 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
                 fetchConfigFromServer(config);
             }
         }, L);
+    }
+
+    /**
+     * Reads and removes the 'gzip' flag from a live response, so it is never cached: only a server answer that
+     * carries true says the server reads compressed request bodies
+     *
+     * @param serverConfigResponse the SDK behavior settings answer
+     * @return true only when the answer had "gzip": true
+     */
+    static boolean extractGzipFlag(@Nullable JSONObject serverConfigResponse) {
+        if (serverConfigResponse == null || !serverConfigResponse.has(keyRGzip)) {
+            return false;
+        }
+
+        return Boolean.TRUE.equals(serverConfigResponse.remove(keyRGzip));
     }
 
     /** Reads and removes the 'ct' flag from a live response, so it is never cached and can never re-arm from storage. */
@@ -1064,6 +1113,17 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
         return currentVBackoffMechanism;
     }
 
+    @Override public boolean getRequestCompressionEnabled() {
+        String acceptingUrl = gzipAcceptingServerUrl.get();
+        return requestCompressionEnabled && !requestCompressionBlocked.get() && acceptingUrl != null && acceptingUrl.equals(_cly.baseInfoProvider.getServerURL());
+    }
+
+    @Override public void blockRequestCompression() {
+        if (requestCompressionBlocked.compareAndSet(false, true)) {
+            L.i("[ModuleConfiguration] blockRequestCompression, a compressed request was refused, requests are sent uncompressed until a behavior settings answer says that the server reads compressed bodies, or the SDK starts again");
+        }
+    }
+
     @Override public int getBOMAcceptedTimeoutSeconds() {
         return currentVBOMAcceptedTimeoutSeconds;
     }
@@ -1110,6 +1170,23 @@ class ModuleConfiguration extends ModuleBase implements ConfigurationProvider {
 
     @Override public Set<String> getJourneyTriggerViews() {
         return currentVJourneyTriggerViews;
+    }
+
+    @Override @Nullable public ContentTriggers getContentTriggers() {
+        return currentVContentTriggers.get();
+    }
+
+    /**
+     * Tells the content module that the behavior settings answer of this run arrived, or that none will arrive, so
+     * that what was recorded before it can still start a content trigger round
+     *
+     * @param answered true when an answer arrived and was applied
+     */
+    private void notifyBehaviorSettingsSettled(boolean answered) {
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null) {
+            contentModule.onBehaviorSettingsSettled(answered);
+        }
     }
 
     @Override @NonNull public LogGatheringState getLogGatheringState() {

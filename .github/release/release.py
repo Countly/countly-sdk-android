@@ -5,6 +5,7 @@ import argparse
 import datetime
 import json
 import os
+import secrets
 import shutil
 import subprocess
 import sys
@@ -29,6 +30,8 @@ REPO_ROOT = HERE.parents[1]
 PUBLIC_KEY = HERE / "countly-sdk-signing.asc"
 RELEASE_KEY_FINGERPRINT = "FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C"
 TARGETS = ["production", "test"]
+# Slack caps a message text block at 3000 characters; the rest is room for the Slack workflow's own text.
+SLACK_NOTES_LIMIT = 2800
 
 
 def summary(lines):
@@ -42,12 +45,16 @@ def summary(lines):
 
 
 def outputs(values):
-    """Writes step outputs when running in GitHub Actions."""
+    """Writes step outputs when running in GitHub Actions; a value with line breaks is written between random delimiters."""
     path = os.environ.get("GITHUB_OUTPUT")
     if path:
         with open(path, "a", encoding="utf-8") as handle:
             for key, value in values.items():
-                handle.write(f"{key}={value}\n")
+                if "\n" in value:
+                    delimiter = f"EOF_{secrets.token_hex(16)}"
+                    handle.write(f"{key}<<{delimiter}\n{value}\n{delimiter}\n")
+                else:
+                    handle.write(f"{key}={value}\n")
 
 
 def finish(problems, title):
@@ -128,6 +135,18 @@ def cmd_check_sources(args):
     """Version numbers and changelog headings must match the tag."""
     config, plan = read_plan(args.plan)
     finish(sources.check_version_sources(REPO_ROOT, plan, config), "Version numbers")
+
+
+def cmd_notes(args):
+    """Writes the tag's changelog section as the notes step output for Discord, and a copy clipped to fit Slack as slack_notes."""
+    config, plan = read_plan(args.plan)
+    notes = sources.changelog_section(REPO_ROOT, plan, config)
+    if notes is None:
+        print(f"::warning::no changelog section for {plan.tag}, the announcement sends the GitHub release text")
+        return
+    print(notes)
+    url = f"https://github.com/{config['repository']}/blob/{plan.tag}/{sources.tag_changelog(plan, config)['file']}"
+    outputs({"notes": notes, "slack_notes": sources.clip_notes(notes, SLACK_NOTES_LIMIT, f"...\nFull changelog: {url}")})
 
 
 def cmd_check_absent(args):
@@ -333,6 +352,10 @@ def main(argv=None):
     command = commands.add_parser("check-sources")
     command.add_argument("--plan", required=True)
     command.set_defaults(func=cmd_check_sources)
+
+    command = commands.add_parser("notes")
+    command.add_argument("--plan", required=True)
+    command.set_defaults(func=cmd_notes)
 
     command = commands.add_parser("check-absent")
     command.add_argument("--plan", required=True)

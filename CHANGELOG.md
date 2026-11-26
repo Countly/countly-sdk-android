@@ -1,32 +1,4 @@
 ## XX.XX.XX
-* !! Major breaking change !! New SDK versions are published at `https://maven.countly.com` instead of Maven Central. Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
-  ```groovy
-  maven {
-    url = 'https://maven.countly.com'
-    content { includeGroupByRegex 'ly\\.count\\..*' }
-  }
-  ```
-  or, in `settings.gradle.kts`:
-  ```kotlin
-  maven {
-    url = uri("https://maven.countly.com")
-    content { includeGroupByRegex("ly\\.count\\..*") }
-  }
-  ```
-  Older versions stay on Maven Central. The files are signed with the same key (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
-* ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Use the latest version of each instead of the SDK's version number.
-* ! Minor breaking change ! "halt()" now also erases the generated device ID, so the next initialization starts as a new user.
-* ! Minor breaking change ! The custom network request headers in `CountlyConfig` are copied at initialization, so later changes to that map are no longer picked up. Use "requestQueue().addCustomNetworkRequestHeaders(Map)" to change them later.
-* ! Minor breaking change ! Removed the unused `androidx.multidex:multidex` dependency. An app that uses it has to declare it itself.
-
-* Added multi-instance support:
-  * A named instance from "Countly.instance(name)" has its own storage, request queue and device ID. Manage instances with "Countly.getInstance(name)", "Countly.listInstances()" and "Countly.removeInstance(name)".
-  * "Countly.sharedInstance()" is unchanged. A named instance starts with empty storage, so do not move an existing integration onto one.
-  * Push notifications and native crash reporting stay with the default instance, and one content or feedback widget shows at a time. A named instance records unhandled crashes only when its own config enables them.
-* Added server requested SDK log gathering. When the server asks, the SDK uploads its own log lines, even with logging disabled. When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
-* Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
-* Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
-* Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content and feedback widget events. Keys these events reserve are dropped from it.
 * Added new attribution signals, sent once each as a raw value the server parses (Countly server with the redesigned attribution). All need the `attribution` consent:
   * The Google Play Install Referrer is read on first launch and sent as is. This needs the optional `com.android.installreferrer:installreferrer` dependency in the app; without it nothing is read. Plain UTM referrers (Google Ads, partners) and Countly link click IDs are both attributed.
   * Links that open the app are captured from the launch intent of the activity and sent when they are Countly smart links (`/at/...`) or carry `utm_*`, `cly_clk`, `countly_cid` or `countly_cuid`. Use "attribution().recordDeepLink(Uri)" for other links and for links delivered to `onNewIntent`.
@@ -52,9 +24,57 @@
   * It records the `[CLY]_ad_revenue` event with the amount as its sum. The network, placement, format, currency and precision set on "AdRevenueDetails" are its segments, each optional. It needs the `events` consent.
   * Send the amount in the currency the app records purchases in, the SDK converts nothing. For AdMob, divide the micros by 1,000,000.
 * For RevenueCat subscription revenue in Attribution, set the RevenueCat app user id to the Countly device id, "Countly.sharedInstance().deviceId().getID()". After a device ID change, log in to RevenueCat with the new one.
+
+## 26.8.1
+* Added content triggers. While the content zone is entered, an event, view, session, user property, handled exception or consent change that starts a journey or campaign with content now requests that content immediately. Turn them off with "disableAutoContentTriggers()" on the content config.
+* Added "enableRequestCompression()" to the init config for sending requests gzip-compressed to servers that support it.
+* Improved journey triggers set in SDK behavior settings. Their events and views now request content immediately, the same way as content triggers.
+
+* Mitigated an issue where the "enter content zone" SDK behavior setting could exit a content zone the app entered. The setting now applies only when the SDK starts.
+* Mitigated an issue where content and feedback widgets could keep their previous size after a rotation, leaving part of them off screen.
+
+## 26.8.0
+* !! Major breaking change !! New versions of the SDK, `sdk-native` and the symbol upload plugin are published at `https://maven.countly.com` instead of Maven Central.
+  Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):
+  ```groovy
+  maven {
+    url = 'https://maven.countly.com'
+    content { includeGroupByRegex 'ly\\.count\\..*' }
+  }
+  ```
+  or, in `settings.gradle.kts`:
+  ```kotlin
+  maven {
+    url = uri("https://maven.countly.com")
+    content { includeGroupByRegex("ly\\.count\\..*") }
+  }
+  ```
+  Older versions stay on Maven Central. The files are signed with the same key (`FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C`).
+  If you use the symbol upload plugin, also add the repository to `pluginManagement { repositories { } }` in `settings.gradle`, or to `buildscript { repositories { } }` when the plugin is on the buildscript classpath.
+* ! Minor breaking change ! `sdk-native` and the symbol upload plugin now have their own version numbers and are released only when they change. Both are 26.8.0 in this release.
+  Their own changes are in `sdk-native/CHANGELOG.md` and `upload-plugin/CHANGELOG.md`. Later, use the latest version of each instead of the SDK's version number.
+* ! Minor breaking change ! "halt()" now also erases the generated device ID.
+* ! Minor breaking change ! These `CountlyConfig` values are copied at initialization, so later changes to them are no longer picked up:
+  * the custom network request headers, use "requestQueue().addCustomNetworkRequestHeaders(Map)" to change them later
+  * the custom crash segmentation
+  * the parameter tampering salt
+* ! Minor breaking change ! Removed the unused `androidx.multidex:multidex` dependency. An app that uses it has to declare it itself.
+
+* Added multi-instance support:
+  * A named instance from "Countly.instance(name)" has its own storage, request queue and device ID. Manage instances with "Countly.getInstance(name)", "Countly.listInstances()" and "Countly.removeInstance(name)".
+  * "Countly.sharedInstance()" is unchanged. A named instance starts with empty storage, so do not move an existing integration onto one.
+  * Push notifications and native crash reporting stay with the default instance, and one content or feedback widget shows at a time. A named instance records unhandled crashes only when its own config enables them.
+* Added server requested SDK log gathering. When the server asks, the SDK uploads its own log lines, even with logging disabled:
+  * When consent is required, each line waits for its feature's consent, or for both `events` and `users` when it belongs to no single feature.
+  * Gathered lines can contain whole requests and server replies.
+  * Until the SDK knows whether the server asks for them, it holds its log lines in memory.
+* Added the SDK connection test. When the server asks, the SDK checks that it can reach every endpoint it uses and reports the results. The report needs no consent and, like every request, carries the device ID.
+* Added push notification large icons and collapse keys, available through "CountlyPush.Message.largeIcon()" and "CountlyPush.Message.collapseKey()". A large icon given only by resource name needs a `tools:keep` entry to survive resource shrinking.
+* Added "contents().setGlobalContentSegmentation(Map)" for adding segmentation to content events and to the feedback widget events the SDK records. Keys these events reserve are dropped from it. (Experimental!)
 * Added SDK method usage and log codes to the health check. While consent is required, the calls of a feature are counted only with that feature's consent.
-* Added "changeServerUrl(String)" to the request queue interface to change the server URL after init.
-* Added "changeAppKey(String)" to the request queue interface to change the app key after init.
+* Added "changeServerUrl(String)" to the request queue interface to change the server URL after init. The new URL is kept in memory only, the next init uses the one in the config.
+* Added "changeAppKey(String)" to the request queue interface to change the app key after init. The new key is kept in memory only, the next init uses the one in the config.
+  * Requests already in the queue keep the old key: move them with "requestQueue().overwriteAppKeys()" or drop them with "requestQueue().eraseWrongAppKeyRequests()".
 * Improved internal logging: calls ignored because a value is missing or invalid are logged as warnings instead of errors, failed requests as debug lines instead of warnings or errors, and the segmentation passing through the internal limits as verbose lines instead of warnings.
 
 * Mitigated an issue where SDK behavior settings were ignored when the server reply carried unknown fields, as every server from 26.01.8 on does.
@@ -79,14 +99,14 @@
   * The token request is filed under the device ID that is current when it is queued.
 * Mitigated an issue where fatal crash reports were lost in explicit storage mode.
 * Mitigated an issue where a remote config download that finished after "halt()" stored the previous user's values.
-* Mitigated an issue where durations changed when the device clock was adjusted: sessions, views, timed events, APM traces, foreground and background time, and the running time in crash reports. Timestamps still follow the device clock.
+* Mitigated an issue where durations changed when the device clock was adjusted: sessions, views, timed events, custom and network APM traces, foreground and background time, and the running time in crash reports. Timestamps still follow the device clock.
 * Mitigated an issue where "requestQueue().flushQueues()" kept the recorded events that were not in a request yet, so they were still sent.
 * Mitigated health check issues:
   * Warnings, errors and backoffs counted while the health check was on its way were lost when it was delivered.
   * A health check that could not be sent counted its own failure as an SDK warning and error.
   * The counts were lost when the app was killed in the foreground.
   * The longest run of backoffs could be reported shorter than it was.
-  * The app version was sent without the metrics consent.
+  * The health check sent its metrics without the metrics consent.
 * Mitigated an issue where an event recorded with a negative duration kept that duration. The duration is now ignored.
 
 * Removed the following deprecated calls from "CountlyConfig":
@@ -104,7 +124,7 @@
   * "setRecordAppStartTime(boolean)", use "apm.enableAppStartTimeTracking()" instead
   * "setAppStartTimestampOverride(long)", use "apm.setAppStartTimestampOverride(long)" instead
   * "enableManualAppLoadedTrigger()", use "apm.enableManualAppLoadedTrigger()" instead
-  * "enableManualForegroundBackgroundTriggerAPM()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking
+  * "enableManualForegroundBackgroundTriggerAPM()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking, which needs the "Application" in "CountlyConfig"
   * "setEnableAttribution(boolean)", there is no replacement, it had no effect. Use "setDirectAttribution(String, String)" or "setIndirectAttribution(Map)" for attribution
   * "checkForNativeCrashDumps(boolean)", there is no replacement, native crash dumps are always checked
   * "enableServerConfiguration()", there is no replacement, it had no effect
@@ -120,7 +140,7 @@
   * "recordView(String, Map)", use "startAutoStoppedView(String, Map)" instead
   * "isAutomaticViewTrackingEnabled()", there is no replacement
 * Removed the following deprecated calls from the "Apm" interface:
-  * "triggerForeground()" and "triggerBackground()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking
+  * "triggerForeground()" and "triggerBackground()", there is no replacement, use "apm.enableForegroundBackgroundTracking()" for automatic tracking, which needs the "Application" in "CountlyConfig"
 * Removed the following deprecated calls from the "Ratings" interface:
   * "recordManualRating(String, int, String, String, boolean)", use "recordRatingWidgetWithID(String, int, String, String, boolean)" instead
   * "showFeedbackPopup(String, String, Activity, FeedbackRatingCallback)", use "presentRatingWidgetWithID(String, String, Activity, FeedbackRatingCallback)" instead

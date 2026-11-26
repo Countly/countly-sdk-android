@@ -416,6 +416,10 @@ public class ModuleCrash extends ModuleBase {
             L.d("[ModuleCrash] Crash filter found a match, exception will be ignored, [" + exceptionString.substring(0, Math.min(exceptionString.length(), 60)) + "]");
         } else {
             sendCrashReportToQueue(crashData, false);
+            ModuleContent contentModule = _cly.moduleContent;
+            if (contentModule != null) {
+                contentModule.onContentTrigger(ContentTriggers.Trigger.of(ContentTriggers.KEY_CRASH));
+            }
         }
         return _cly;
     }

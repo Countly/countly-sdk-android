@@ -111,12 +111,15 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         }
     }
 
-    private void sendEventsIfNeededWhenPossible(boolean sendEvents, boolean triggerRefreshContentZone) {
-        ModuleRequestQueue requestQueueModule = _cly.moduleRequestQueue;
-        if (requestQueueModule != null) {
-            requestQueueModule.sendEventsIfNeeded(sendEvents, triggerRefreshContentZone);
-        } else {
-            L.w("[ModuleEvents] sendEventsIfNeededWhenPossible, the request queue module is gone, leaving the events queued");
+    /**
+     * Tells the content module about a recorded event that can be a content trigger
+     *
+     * @param trigger the recorded event
+     */
+    private void notifyContentTrigger(@NonNull ContentTriggers.Trigger trigger) {
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null) {
+            contentModule.onContentTrigger(trigger);
         }
     }
 
@@ -263,12 +266,14 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                 if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(true);
+                    notifyContentTrigger(ContentTriggers.Trigger.event(key, false));
                 }
                 break;
             case ModuleFeedback.RATING_EVENT_KEY:
                 if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(false);
+                    notifyContentTrigger(ContentTriggers.Trigger.event(key, false));
                 }
                 break;
             case ModuleViews.VIEW_EVENT_KEY:
@@ -282,24 +287,30 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                         segmentation.put(PREVIOUS_VIEW_NAME_KEY, pvn);
                     }
 
-                    // apply journey trigger views here, mirroring the journey trigger events behavior
-                    Object viewName = segmentation.get("name");
-                    boolean triggerRefreshContentZone = viewName != null && configProvider.getJourneyTriggerViews().contains(viewName);
-
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
-                    sendEventsIfNeededWhenPossible(triggerRefreshContentZone, triggerRefreshContentZone);
+                    sendEventsIfNeededWhenPossible(false);
+
+                    String viewName = viewsModule != null ? viewsModule.viewNameFor(eventId) : null;
+                    if (viewName == null && segmentation.get("name") instanceof String) {
+                        viewName = (String) segmentation.get("name");
+                    }
+                    if (viewName != null) {
+                        notifyContentTrigger(ContentTriggers.Trigger.view(viewName, !segmentation.containsKey("visit")));
+                    }
                 }
                 break;
             case ModuleViews.ORIENTATION_EVENT_KEY:
                 if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(false);
+                    notifyContentTrigger(ContentTriggers.Trigger.event(key, false));
                 }
                 break;
             case ModulePush.PUSH_EVENT_ACTION:
                 if (internalEventConsentGiven(key)) {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(true);
+                    notifyContentTrigger(ContentTriggers.Trigger.event(key, false));
                 }
                 break;
             case ModuleAttribution.AD_REVENUE_EVENT_KEY:
@@ -315,6 +326,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     }
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(false);
+                    notifyContentTrigger(ContentTriggers.Trigger.event(key, false));
                 }
                 break;
             default:
@@ -339,9 +351,6 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     // then apply specific event segmentation listing filters if any
                     UtilsListingFilters.applyEventSegmentationFilter(key, segmentation, configProvider, L);
 
-                    // apply journey trigger events here
-                    boolean triggerRefreshContentZone = configProvider.getJourneyTriggerEvents().contains(key);
-
                     String keyTruncated = UtilsInternalLimits.truncateKeyLength(key, _cly.sdkInternalLimits_.maxKeyLength, L, "[ModuleEvents] recordEventInternal");
 
                     UtilsInternalLimits.applySdkInternalLimitsToSegmentation(segmentation, _cly.sdkInternalLimits_, L, "[ModuleEvents] recordEventInternal");
@@ -354,7 +363,8 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     eventQueueProvider.recordEventToEventQueue(keyTruncated, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, previousEventId);
                     previousEventId = eventId;
                     previousEventName = keyTruncated;
-                    sendEventsIfNeededWhenPossible(triggerRefreshContentZone, triggerRefreshContentZone);
+                    sendEventsIfNeededWhenPossible(false);
+                    notifyContentTrigger(ContentTriggers.Trigger.event(key, !key.startsWith("[CLY]_")));
                 }
                 break;
         }

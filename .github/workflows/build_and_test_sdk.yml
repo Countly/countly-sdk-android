@@ -35,18 +35,18 @@ jobs:
         run: docker pull ${{ env.EMULATOR_REPO }}
     
       - name: Checkout SDK code
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       - name: Setup Java
-        uses: actions/setup-java@e9fbacdec3bb3b6036605a3e6f7995d66773a8c6 # v3.14.2
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           java-version: ${{ env.JAVA_V }}
           distribution: ${{ env.JAVA_DIST }}
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           # The action's default is "tools platform-tools", but Google has removed the
           # obsolete "tools" package from the SDK repository, so the default now fails.
@@ -86,7 +86,7 @@ jobs:
       - name: Publish Test Results to PR
         id: test-results
         # the composite linux variant runs from the pinned source; the root action pulls a mutable Docker tag
-        uses: EnricoMi/publish-unit-test-result-action/linux@d0a4676d0e0b938bc201470d88276b7c74c712b3 # v2.24.0
+        uses: EnricoMi/publish-unit-test-result-action/linux@da5b7be67623cd59bbbd1a0ce4f022050a55605f # v2.26.0
         if: always()
         with:
           check_name: "Unit Test Results :rocket:"

@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 
 from plan import plan_for_tag
+from release import SLACK_NOTES_LIMIT
 from tests.support import android_config
 
 RELEASE = Path(__file__).resolve().parents[1] / "release.py"
@@ -16,6 +17,24 @@ def run_cli(*args, output=""):
     """Runs release.py like the workflow does; GitHub's step output file is written only when `output` names one."""
     env = dict(os.environ, GITHUB_OUTPUT=output, GITHUB_STEP_SUMMARY="")
     return subprocess.run([sys.executable, str(RELEASE), *args], capture_output=True, text=True, env=env)
+
+
+def read_outputs(text):
+    """Parses a GitHub step output file, where a multiline value sits between `key<<DELIMITER` and `DELIMITER` lines."""
+    values = {}
+    lines = iter(text.splitlines())
+    for line in lines:
+        key, separator, value = line.partition("<<")
+        if not separator:
+            key, _, values[key] = line.partition("=")
+            continue
+        body = []
+        for body_line in lines:
+            if body_line == value:
+                break
+            body.append(body_line)
+        values[key] = "\n".join(body)
+    return values
 
 
 class ReleaseCliTest(unittest.TestCase):
@@ -56,6 +75,22 @@ class ReleaseCliTest(unittest.TestCase):
             with self.subTest(tag=tag, prerelease=prerelease):
                 result = run_cli("plan", "--tag", tag, "--target", "production", "--prerelease", prerelease, "--out", str(self.folder / "plan.json"))
                 self.assertEqual(result.returncode, code, result.stdout)
+
+    def test_notes_are_one_multiline_output_with_the_latest_changelog_section(self):
+        changelog = (RELEASE.parents[2] / "CHANGELOG.md").read_text(encoding="utf-8")
+        tag = next(line[3:].strip() for line in changelog.splitlines() if line.startswith("## "))
+        plan = self.folder / "plan.json"
+        self.assertEqual(run_cli("plan", "--tag", tag, "--target", "test", "--out", str(plan)).returncode, 0)
+        output = self.folder / "output"
+        output.write_bytes(b"")
+        result = run_cli("notes", "--plan", str(plan), output=str(output))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        values = read_outputs(output.read_text(encoding="utf-8"))
+        self.assertEqual(sorted(values), ["notes", "slack_notes"])
+        self.assertTrue(values["notes"].startswith("* "), values["notes"])
+        self.assertFalse([line for line in values["notes"].splitlines() if line.startswith("## ")])
+        self.assertLessEqual(len(values["slack_notes"]), SLACK_NOTES_LIMIT)
+        self.assertTrue(values["slack_notes"] == values["notes"] or values["slack_notes"].endswith(f"/blob/{tag}/CHANGELOG.md"))
 
     def test_production_refuses_a_dry_run_version(self):
         cases = [("0.0.3", "production", 1), ("native-0.0.1", "production", 1), ("plugin-0.1.0", "production", 1), ("0.0.3", "test", 0), ("26.2.0", "production", 0)]

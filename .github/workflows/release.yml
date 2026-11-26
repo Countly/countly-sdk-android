@@ -34,6 +34,8 @@ jobs:
       check_tasks: ${{ steps.plan.outputs.check_tasks }}
       publish_tasks: ${{ steps.plan.outputs.publish_tasks }}
       published_modules: ${{ steps.plan.outputs.published_modules }}
+      notes: ${{ steps.notes.outputs.notes }}
+      slack_notes: ${{ steps.notes.outputs.slack_notes }}
     steps:
       - name: Only tags can be released
         if: github.ref_type != 'tag'
@@ -60,6 +62,9 @@ jobs:
         run: python3 .github/release/release.py check-branch --plan plan.json --commit "$GITHUB_SHA"
       - name: Version numbers match the tag
         run: python3 .github/release/release.py check-sources --plan plan.json
+      - name: Release notes from the changelog
+        id: notes
+        run: python3 .github/release/release.py notes --plan plan.json
       - name: The version is not published yet
         run: python3 .github/release/release.py check-absent --plan plan.json --target "$TARGET" --nocache "${{ github.run_id }}"
       - name: Required checks passed on the tag commit
@@ -69,7 +74,7 @@ jobs:
         run: |
           gh api "repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA/check-runs?per_page=100" > check-runs.json
           python3 .github/release/release.py check-required --check-runs check-runs.json
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: plan
           path: plan.json
@@ -89,7 +94,7 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: plan
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: corretto
           java-version: '17'
@@ -135,7 +140,7 @@ jobs:
         run: |
           ./gradlew -q --no-daemon --no-configuration-cache --init-script .github/scripts/dependency-report.init.gradle "-DpublishedModules=${{ needs.plan.outputs.published_modules }}" printResolvedDependencies > resolved-dependencies.txt
           python3 .github/scripts/osv_scan.py < resolved-dependencies.txt
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: staged-release
           path: |
@@ -172,7 +177,7 @@ jobs:
           mkdir -m 700 "$GNUPGHOME"
           printf '%s\n' "$SIGNING_KEY" | gpg --batch --import
           python3 .github/release/release.py sign --staging build/release-staging --target "$TARGET" --public-key-out signing-public-key.asc
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: signing-public-key
           path: signing-public-key.asc
@@ -220,7 +225,7 @@ jobs:
 
   announce:
     name: Announce
-    needs: verify
+    needs: [plan, verify]
     if: github.event_name == 'release' && !github.event.release.prerelease
     runs-on: ubuntu-24.04
     permissions: {}
@@ -233,13 +238,13 @@ jobs:
               "repository": "${{ github.repository }}",
               "tag_name": "${{ github.event.release.tag_name }}",
               "actor": "${{ github.actor }}",
-              "body": ${{ toJSON(github.event.release.body) }},
+              "body": ${{ toJSON(needs.plan.outputs.slack_notes || github.event.release.body) }},
               "html_url": "${{ github.event.release.html_url }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_RELEASE }}
       - name: Discord
-        uses: sarisia/actions-status-discord@9904e3130b8905d5b973df25623f17672dcb3466 # v1.13.0
+        uses: sarisia/actions-status-discord@eb045afee445dc055c18d3d90bd0f244fd062708 # v1.16.0
         with:
           webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
           nodetail: true
@@ -247,4 +252,4 @@ jobs:
           description: |
             Release URL: ${{ github.event.release.html_url }}
             Click [here](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.event.release.tag_name }}/${{ startsWith(github.event.release.tag_name, 'native-') && 'sdk-native/CHANGELOG.md' || startsWith(github.event.release.tag_name, 'plugin-') && 'upload-plugin/CHANGELOG.md' || 'CHANGELOG.md' }}) to view the change log.
-            `${{ github.event.release.body }}`
+            `${{ needs.plan.outputs.notes || github.event.release.body }}`

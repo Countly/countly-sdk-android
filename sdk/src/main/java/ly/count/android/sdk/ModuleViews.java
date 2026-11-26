@@ -311,6 +311,18 @@ public class ModuleViews extends ModuleBase implements ViewIdProvider {
         return currentViewData.viewID;
     }
 
+    /**
+     * @param viewId the ID of a running view
+     * @return the view's name as the app passed it, before the internal limits cut it, or null for an unknown view
+     */
+    @Nullable String viewNameFor(@Nullable String viewId) {
+        if (viewId == null) {
+            return null;
+        }
+        ViewData viewData = viewDataMap.get(viewId);
+        return viewData != null ? viewData.viewName : null;
+    }
+
     void stopViewWithNameInternal(@Nullable String viewName, @Nullable Map<String, Object> customViewSegmentation) {
         if (viewName == null || viewName.isEmpty()) {
             L.w("[ModuleViews] stopViewWithNameInternal, Trying to record view with null or empty view name, ignoring request");

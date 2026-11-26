@@ -390,6 +390,17 @@ class ServerConfigBuilder {
         return this;
     }
 
+    /**
+     * Adds the content triggers ("jt") next to 'c'
+     *
+     * @param contentTriggers the "jt" object, for example {"e": ["purchase"]}
+     * @return the builder
+     */
+    ServerConfigBuilder contentTriggers(JSONObject contentTriggers) {
+        topLevelKeys.put(ModuleConfiguration.keyRContentTriggers, contentTriggers);
+        return this;
+    }
+
     String build() throws JSONException {
         return buildJson().toString();
     }

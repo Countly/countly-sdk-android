@@ -95,6 +95,11 @@ public class ModuleSessions extends ModuleBase {
             requestQueueProvider.beginSession(false, null, null, null, null, preparedMetrics);
         }
 
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null) {
+            contentModule.onContentTrigger(ContentTriggers.Trigger.of(ContentTriggers.KEY_SESSION));
+        }
+
         if (views != null && views.trackOrientationChanges) {
             views.updateOrientation(_cly.context_.getResources().getConfiguration().orientation, true);
         }
