@@ -1,3 +1,11 @@
+## 26.8.1
+* Added content triggers. While the content zone is entered, an event, view, session, user property, handled exception or consent change that starts a journey or campaign with content now requests that content immediately. Turn them off with "disableAutoContentTriggers()" on the content config.
+* Added "enableRequestCompression()" to the init config for sending requests gzip-compressed to servers that support it.
+* Improved journey triggers set in SDK behavior settings. Their events and views now request content immediately, the same way as content triggers.
+
+* Mitigated an issue where the "enter content zone" SDK behavior setting could exit a content zone the app entered. The setting now applies only when the SDK starts.
+* Mitigated an issue where content and feedback widgets could keep their previous size after a rotation, leaving part of them off screen.
+
 ## 26.8.0
 * !! Major breaking change !! New versions of the SDK, `sdk-native` and the symbol upload plugin are published at `https://maven.countly.com` instead of Maven Central.
   Add the repository once, next to `google()` and `mavenCentral()` in `dependencyResolutionManagement` of `settings.gradle` (or in `allprojects` of the root `build.gradle` in older projects):

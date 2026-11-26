@@ -1,12 +1,16 @@
 package ly.count.android.sdk;
 
 import android.app.Activity;
+import android.content.ComponentCallbacks;
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.view.Gravity;
 import android.graphics.PixelFormat;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -22,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Assert;
@@ -1488,6 +1493,204 @@ public class ContentOverlayViewTests {
                 Assert.fail("Failed to verify: " + e);
             }
         });
+    }
+
+    // ===================== Rotation =====================
+
+    /** How long the host window must go without a layout pass to count as settled. */
+    private static final long HOST_QUIET_MS = 1_000;
+
+    /**
+     * A host that handles orientation changes itself, as the demo app's activities do, so rotating the
+     * device keeps the activity and the overlay window and only lays the activity out again.
+     * Declared in sdk/src/androidTest/AndroidManifest.xml.
+     */
+    public static class RotatingTestActivity extends Activity {
+    }
+
+    /**
+     * The overlay follows its host into landscape and back when the application's configuration callback
+     * arrives only after the host window has been laid out in the new orientation. The callback is held
+     * back and delivered once the host has settled, so no later layout pass of the host comes after it.
+     */
+    @Test
+    public void rotation_callbackAfterHostRelayout_overlayFollowsHost() throws Exception {
+        try (ActivityScenario<RotatingTestActivity> rotating = ActivityScenario.launch(RotatingTestActivity.class)) {
+            Activity host = hostOf(rotating);
+            turnHost(host, false);
+            attachOverlay(host);
+            Assert.assertEquals("the overlay size before rotating", "300x500", overlayWindowSize());
+            ComponentCallbacks callback = holdBackConfigurationCallback();
+
+            turnHost(host, true);
+            deliverHostConfiguration(callback, host);
+            Assert.assertTrue("the overlay size in landscape is " + overlayWindowSize(), waitForOverlaySize("500x300"));
+
+            turnHost(host, false);
+            deliverHostConfiguration(callback, host);
+            Assert.assertTrue("the overlay size back in portrait is " + overlayWindowSize(), waitForOverlaySize("300x500"));
+        }
+    }
+
+    /**
+     * The overlay stays in portrait while its host does, and then follows the host into landscape, when the
+     * application's configuration callback announces landscape before the host has it and an unrelated
+     * layout pass of the host comes in between.
+     */
+    @Test
+    public void rotation_callbackBeforeHostRelayout_overlayFollowsHost() throws Exception {
+        try (ActivityScenario<RotatingTestActivity> rotating = ActivityScenario.launch(RotatingTestActivity.class)) {
+            Activity host = hostOf(rotating);
+            turnHost(host, false);
+            attachOverlay(host);
+            ComponentCallbacks callback = holdBackConfigurationCallback();
+
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+                Configuration landscape = new Configuration(host.getResources().getConfiguration());
+                landscape.orientation = Configuration.ORIENTATION_LANDSCAPE;
+                callback.onConfigurationChanged(landscape);
+                host.getWindow().getDecorView().requestLayout();
+            });
+            awaitHostSettled(host, Configuration.ORIENTATION_PORTRAIT);
+            Assert.assertEquals("the overlay size while the host is still in portrait", "300x500", overlayWindowSize());
+
+            turnHost(host, true);
+            Assert.assertTrue("the overlay size in landscape is " + overlayWindowSize(), waitForOverlaySize("500x300"));
+        }
+    }
+
+    /**
+     * Has the host ask for an orientation, which turns the display for it, and waits until the host has
+     * settled in that orientation.
+     * @param host the host activity
+     * @param landscape true for landscape, false for portrait
+     */
+    private static void turnHost(Activity host, boolean landscape) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> host.setRequestedOrientation(
+            landscape ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
+        awaitHostSettled(host, landscape ? Configuration.ORIENTATION_LANDSCAPE : Configuration.ORIENTATION_PORTRAIT);
+    }
+
+    /**
+     * The activity of a scenario.
+     * @param rotating the scenario
+     * @return its activity
+     */
+    private static Activity hostOf(ActivityScenario<RotatingTestActivity> rotating) {
+        AtomicReference<Activity> host = new AtomicReference<>();
+        rotating.onActivity(host::set);
+        return host.get();
+    }
+
+    /**
+     * Shows a new overlay over an activity.
+     * @param host the activity
+     */
+    private void attachOverlay(Activity host) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            overlay = createOverlay(host);
+            overlay.attachToActivity(host);
+        });
+    }
+
+    /**
+     * Unregisters the overlay's application configuration callback, so the test decides when the overlay
+     * hears of a configuration change.
+     * @return the callback, to deliver configurations to
+     */
+    private ComponentCallbacks holdBackConfigurationCallback() throws Exception {
+        ComponentCallbacks callback = (ComponentCallbacks) getField("orientationCallback");
+        Assert.assertNotNull("the overlay registered no configuration callback", callback);
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(
+            () -> overlay.getContext().getApplicationContext().unregisterComponentCallbacks(callback));
+        return callback;
+    }
+
+    /**
+     * Delivers the host's current configuration to a held back configuration callback.
+     * @param callback the callback
+     * @param host the host activity
+     */
+    private static void deliverHostConfiguration(ComponentCallbacks callback, Activity host) {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(
+            () -> callback.onConfigurationChanged(new Configuration(host.getResources().getConfiguration())));
+    }
+
+    /**
+     * Waits until the host has an orientation, its window is laid out for it, and no layout pass has come
+     * for a while, so nothing lays the host out again afterwards unless the test asks for it.
+     * @param host the host activity
+     * @param orientation the Configuration orientation to wait for
+     */
+    private static void awaitHostSettled(Activity host, int orientation) {
+        View decor = host.getWindow().getDecorView();
+        AtomicLong lastLayout = new AtomicLong(SystemClock.uptimeMillis());
+        ViewTreeObserver.OnGlobalLayoutListener layouts = () -> lastLayout.set(SystemClock.uptimeMillis());
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> decor.getViewTreeObserver().addOnGlobalLayoutListener(layouts));
+        try {
+            boolean landscape = orientation == Configuration.ORIENTATION_LANDSCAPE;
+            boolean settled = waitOnMain(20_000, () -> host.getResources().getConfiguration().orientation == orientation
+                && (decor.getWidth() > decor.getHeight()) == landscape
+                && !decor.isLayoutRequested()
+                && SystemClock.uptimeMillis() - lastLayout.get() >= HOST_QUIET_MS);
+            AtomicReference<String> state = new AtomicReference<>();
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> state.set("orientation " + host.getResources().getConfiguration().orientation
+                + ", window " + decor.getWidth() + "x" + decor.getHeight() + ", layout requested " + decor.isLayoutRequested()
+                + ", last layout " + (SystemClock.uptimeMillis() - lastLayout.get()) + " ms ago"));
+            Assert.assertTrue("the host did not settle in orientation " + orientation + ": " + state.get(), settled);
+        } finally {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> decor.getViewTreeObserver().removeOnGlobalLayoutListener(layouts));
+        }
+    }
+
+    /**
+     * The overlay window's size as WindowManager last laid it out.
+     * @return the width and height in pixels, as "WxH"
+     */
+    private String overlayWindowSize() {
+        AtomicReference<String> size = new AtomicReference<>();
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> {
+            WindowManager.LayoutParams params = (WindowManager.LayoutParams) overlay.getLayoutParams();
+            size.set(params.width + "x" + params.height);
+        });
+        return size.get();
+    }
+
+    /**
+     * Waits until the overlay window has a size.
+     * @param size the width and height in pixels, as "WxH"
+     * @return true when the window had that size within three seconds
+     */
+    private boolean waitForOverlaySize(String size) {
+        return waitOnMain(3_000, () -> {
+            WindowManager.LayoutParams params = (WindowManager.LayoutParams) overlay.getLayoutParams();
+            return size.equals(params.width + "x" + params.height);
+        });
+    }
+
+    /** A condition checked on the main thread. */
+    @FunctionalInterface
+    interface MainCondition {
+        boolean holds();
+    }
+
+    /**
+     * Checks a condition on the main thread every 100 ms until it holds.
+     * @param timeoutMs how long to keep checking
+     * @param condition the condition
+     * @return true when it held within the time
+     */
+    private static boolean waitOnMain(long timeoutMs, MainCondition condition) {
+        long end = SystemClock.uptimeMillis() + timeoutMs;
+        AtomicBoolean held = new AtomicBoolean(false);
+        while (SystemClock.uptimeMillis() < end) {
+            InstrumentationRegistry.getInstrumentation().runOnMainSync(() -> held.set(condition.holds()));
+            if (held.get()) {
+                return true;
+            }
+            SystemClock.sleep(100);
+        }
+        return false;
     }
 
     // ===================== Edge Cases =====================

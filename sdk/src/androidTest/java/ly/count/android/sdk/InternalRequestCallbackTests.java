@@ -989,6 +989,10 @@ public class InternalRequestCallbackTests {
             @Override public Set<String> getJourneyTriggerViews() {
                 return Collections.emptySet();
             }
+
+            @Override public ContentTriggers getContentTriggers() {
+                return null;
+            }
         };
     }
 

@@ -1,11 +1,16 @@
 package ly.count.android.sdk;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -423,8 +428,59 @@ public class ModuleUserProfile extends ModuleBase {
             requestQueueModule.sendEventsIfNeeded(true);
         }
 
+        List<String> sentProperties = sentPropertyNames();
         requestQueueProvider.sendUserData(cachedUserData);
         clearInternal();
+
+        ModuleContent contentModule = _cly.moduleContent;
+        if (contentModule != null && !sentProperties.isEmpty()) {
+            contentModule.onContentTrigger(ContentTriggers.Trigger.userProperties(sentProperties));
+        }
+    }
+
+    /**
+     * The user properties the pending user details request sends, as content triggers name them: a user detail
+     * ("email"), or "custom." and the key of a custom property
+     *
+     * @return the property names
+     */
+    @NonNull List<String> sentPropertyNames() {
+        List<String> names = new ArrayList<>();
+        addIfSet(names, NAME_KEY, name);
+        addIfSet(names, USERNAME_KEY, username);
+        addIfSet(names, EMAIL_KEY, email);
+        addIfSet(names, ORG_KEY, org);
+        addIfSet(names, PHONE_KEY, phone);
+        addIfSet(names, PICTURE_KEY, picture != null ? picture : picturePath);
+        addIfSet(names, GENDER_KEY, gender);
+        if (byear != 0) {
+            names.add(BYEAR_KEY);
+        }
+
+        Set<String> customKeys = new LinkedHashSet<>();
+        if (custom != null) {
+            customKeys.addAll(custom.keySet());
+        }
+        if (customMods != null) {
+            customKeys.addAll(customMods.keySet());
+        }
+        for (String key : customKeys) {
+            names.add(CUSTOM_KEY + "." + key);
+        }
+        return names;
+    }
+
+    /**
+     * Adds a property name when the pending request sends that property
+     *
+     * @param names the names so far
+     * @param propertyName the property name
+     * @param value its pending value, null when the request does not send it
+     */
+    private static void addIfSet(@NonNull List<String> names, @NonNull String propertyName, @Nullable Object value) {
+        if (value != null) {
+            names.add(propertyName);
+        }
     }
 
     void clearInternal() {

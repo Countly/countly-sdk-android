@@ -30,7 +30,7 @@ jobs:
           java-version: 17
 
       - name: Set up the Android SDK
-        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3.2.2
+        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
         with:
           # The default also installs "tools", which Google removed from the SDK repository.
           packages: platform-tools
