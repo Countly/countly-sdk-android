@@ -5,6 +5,7 @@ import argparse
 import datetime
 import json
 import os
+import secrets
 import shutil
 import subprocess
 import sys
@@ -42,12 +43,16 @@ def summary(lines):
 
 
 def outputs(values):
-    """Writes step outputs when running in GitHub Actions."""
+    """Writes step outputs when running in GitHub Actions; a value with line breaks is written between random delimiters."""
     path = os.environ.get("GITHUB_OUTPUT")
     if path:
         with open(path, "a", encoding="utf-8") as handle:
             for key, value in values.items():
-                handle.write(f"{key}={value}\n")
+                if "\n" in value:
+                    delimiter = f"EOF_{secrets.token_hex(16)}"
+                    handle.write(f"{key}<<{delimiter}\n{value}\n{delimiter}\n")
+                else:
+                    handle.write(f"{key}={value}\n")
 
 
 def finish(problems, title):
@@ -128,6 +133,17 @@ def cmd_check_sources(args):
     """Version numbers and changelog headings must match the tag."""
     config, plan = read_plan(args.plan)
     finish(sources.check_version_sources(REPO_ROOT, plan, config), "Version numbers")
+
+
+def cmd_notes(args):
+    """Writes the tag's changelog section as the notes step output, which the release announcement sends."""
+    config, plan = read_plan(args.plan)
+    notes = sources.changelog_section(REPO_ROOT, plan, config)
+    if notes is None:
+        print(f"::warning::no changelog section for {plan.tag}, the announcement sends the GitHub release text")
+        return
+    print(notes)
+    outputs({"notes": notes})
 
 
 def cmd_check_absent(args):
@@ -333,6 +349,10 @@ def main(argv=None):
     command = commands.add_parser("check-sources")
     command.add_argument("--plan", required=True)
     command.set_defaults(func=cmd_check_sources)
+
+    command = commands.add_parser("notes")
+    command.add_argument("--plan", required=True)
+    command.set_defaults(func=cmd_notes)
 
     command = commands.add_parser("check-absent")
     command.add_argument("--plan", required=True)

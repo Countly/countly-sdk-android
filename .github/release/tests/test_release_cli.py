@@ -57,6 +57,21 @@ class ReleaseCliTest(unittest.TestCase):
                 result = run_cli("plan", "--tag", tag, "--target", "production", "--prerelease", prerelease, "--out", str(self.folder / "plan.json"))
                 self.assertEqual(result.returncode, code, result.stdout)
 
+    def test_notes_are_one_multiline_output_with_the_latest_changelog_section(self):
+        changelog = (RELEASE.parents[2] / "CHANGELOG.md").read_text(encoding="utf-8")
+        tag = next(line[3:].strip() for line in changelog.splitlines() if line.startswith("## "))
+        plan = self.folder / "plan.json"
+        self.assertEqual(run_cli("plan", "--tag", tag, "--target", "test", "--out", str(plan)).returncode, 0)
+        output = self.folder / "output"
+        output.write_bytes(b"")
+        result = run_cli("notes", "--plan", str(plan), output=str(output))
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        lines = output.read_text(encoding="utf-8").splitlines()
+        self.assertRegex(lines[0], r"^notes<<EOF_[0-9a-f]{32}$")
+        self.assertEqual(lines[-1], lines[0][len("notes<<"):])
+        self.assertTrue(lines[1].startswith("* "), lines[1])
+        self.assertFalse([line for line in lines[1:-1] if line.startswith("## ")])
+
     def test_production_refuses_a_dry_run_version(self):
         cases = [("0.0.3", "production", 1), ("native-0.0.1", "production", 1), ("plugin-0.1.0", "production", 1), ("0.0.3", "test", 0), ("26.2.0", "production", 0)]
         for tag, target, code in cases:
