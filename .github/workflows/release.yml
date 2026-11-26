@@ -34,6 +34,8 @@ jobs:
       check_tasks: ${{ steps.plan.outputs.check_tasks }}
       publish_tasks: ${{ steps.plan.outputs.publish_tasks }}
       published_modules: ${{ steps.plan.outputs.published_modules }}
+      notes: ${{ steps.notes.outputs.notes }}
+      slack_notes: ${{ steps.notes.outputs.slack_notes }}
     steps:
       - name: Only tags can be released
         if: github.ref_type != 'tag'
@@ -60,6 +62,9 @@ jobs:
         run: python3 .github/release/release.py check-branch --plan plan.json --commit "$GITHUB_SHA"
       - name: Version numbers match the tag
         run: python3 .github/release/release.py check-sources --plan plan.json
+      - name: Release notes from the changelog
+        id: notes
+        run: python3 .github/release/release.py notes --plan plan.json
       - name: The version is not published yet
         run: python3 .github/release/release.py check-absent --plan plan.json --target "$TARGET" --nocache "${{ github.run_id }}"
       - name: Required checks passed on the tag commit
@@ -220,7 +225,7 @@ jobs:
 
   announce:
     name: Announce
-    needs: verify
+    needs: [plan, verify]
     if: github.event_name == 'release' && !github.event.release.prerelease
     runs-on: ubuntu-24.04
     permissions: {}
@@ -233,7 +238,7 @@ jobs:
               "repository": "${{ github.repository }}",
               "tag_name": "${{ github.event.release.tag_name }}",
               "actor": "${{ github.actor }}",
-              "body": ${{ toJSON(github.event.release.body) }},
+              "body": ${{ toJSON(needs.plan.outputs.slack_notes || github.event.release.body) }},
               "html_url": "${{ github.event.release.html_url }}"
             }
         env:
@@ -247,4 +252,4 @@ jobs:
           description: |
             Release URL: ${{ github.event.release.html_url }}
             Click [here](${{ github.server_url }}/${{ github.repository }}/blob/${{ github.event.release.tag_name }}/${{ startsWith(github.event.release.tag_name, 'native-') && 'sdk-native/CHANGELOG.md' || startsWith(github.event.release.tag_name, 'plugin-') && 'upload-plugin/CHANGELOG.md' || 'CHANGELOG.md' }}) to view the change log.
-            `${{ github.event.release.body }}`
+            `${{ needs.plan.outputs.notes || github.event.release.body }}`
