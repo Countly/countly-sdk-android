@@ -30,6 +30,8 @@ REPO_ROOT = HERE.parents[1]
 PUBLIC_KEY = HERE / "countly-sdk-signing.asc"
 RELEASE_KEY_FINGERPRINT = "FC8DB0DE234A273BA45E562FB8C83A079A5BBD0C"
 TARGETS = ["production", "test"]
+# Slack caps a message text block at 3000 characters; the rest is room for the Slack workflow's own text.
+SLACK_NOTES_LIMIT = 2800
 
 
 def summary(lines):
@@ -136,14 +138,15 @@ def cmd_check_sources(args):
 
 
 def cmd_notes(args):
-    """Writes the tag's changelog section as the notes step output, which the release announcement sends."""
+    """Writes the tag's changelog section as the notes step output for Discord, and a copy clipped to fit Slack as slack_notes."""
     config, plan = read_plan(args.plan)
     notes = sources.changelog_section(REPO_ROOT, plan, config)
     if notes is None:
         print(f"::warning::no changelog section for {plan.tag}, the announcement sends the GitHub release text")
         return
     print(notes)
-    outputs({"notes": notes})
+    url = f"https://github.com/{config['repository']}/blob/{plan.tag}/{sources.tag_changelog(plan, config)['file']}"
+    outputs({"notes": notes, "slack_notes": sources.clip_notes(notes, SLACK_NOTES_LIMIT, f"...\nFull changelog: {url}")})
 
 
 def cmd_check_absent(args):

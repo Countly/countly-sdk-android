@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 
 from plan import plan_for_tag
-from sources import changelog_section, check_version_sources
+from sources import changelog_section, check_version_sources, clip_notes
 from tests.support import android_config
 
 COUNTLY_JAVA = 'public class Countly {\n    private final String DEFAULT_COUNTLY_SDK_VERSION_STRING = "{version}";\n}\n'
@@ -79,6 +79,20 @@ class SourcesTest(unittest.TestCase):
     def test_empty_section_is_none(self):
         self.write("CHANGELOG.md", "## 26.2.0\n\n## 26.1.0\n* Fixed b.\n")
         self.assertIsNone(self.section("26.2.0"))
+
+    def test_notes_that_fit_are_not_clipped(self):
+        notes = "* Added a.\n\n* Fixed b."
+        self.assertEqual(clip_notes(notes, len(notes), "...\nmore"), notes)
+
+    def test_clipped_notes_keep_whole_lines_and_end_with_the_tail(self):
+        notes = "* Added a.\n* Added b.\n\n* Fixed c.\n* Fixed d."
+        clipped = clip_notes(notes, 30, "...\nmore")
+        self.assertEqual(clipped, "* Added a.\n* Added b.\n...\nmore")
+        self.assertLessEqual(len(clipped), 30)
+
+    def test_clipping_drops_the_blank_line_before_the_tail(self):
+        notes = "* Added a.\n\n* Fixed c.\n* Fixed d."
+        self.assertEqual(clip_notes(notes, 25, "...\nmore"), "* Added a.\n...\nmore")
 
 
 if __name__ == "__main__":

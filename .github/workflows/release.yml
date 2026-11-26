@@ -35,6 +35,7 @@ jobs:
       publish_tasks: ${{ steps.plan.outputs.publish_tasks }}
       published_modules: ${{ steps.plan.outputs.published_modules }}
       notes: ${{ steps.notes.outputs.notes }}
+      slack_notes: ${{ steps.notes.outputs.slack_notes }}
     steps:
       - name: Only tags can be released
         if: github.ref_type != 'tag'
@@ -237,7 +238,7 @@ jobs:
               "repository": "${{ github.repository }}",
               "tag_name": "${{ github.event.release.tag_name }}",
               "actor": "${{ github.actor }}",
-              "body": ${{ toJSON(needs.plan.outputs.notes || github.event.release.body) }},
+              "body": ${{ toJSON(needs.plan.outputs.slack_notes || github.event.release.body) }},
               "html_url": "${{ github.event.release.html_url }}"
             }
         env:
