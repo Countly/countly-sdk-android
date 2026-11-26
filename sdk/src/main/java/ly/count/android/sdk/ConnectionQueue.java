@@ -521,10 +521,11 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
-    public void sendAttributionSignal(@NonNull String type, @NonNull String value) {
+    @Override
+    public boolean sendAttributionSignal(@NonNull String type, @NonNull String value) {
         if (type.isEmpty() || value.isEmpty()) {
             L.w("[Connection Queue] sendAttributionSignal, attribution not sent, type or value is empty");
-            return;
+            return false;
         }
 
         JSONObject signal = new JSONObject();
@@ -533,26 +534,32 @@ class ConnectionQueue implements RequestQueueProvider {
             signal.put("value", value);
         } catch (JSONException e) {
             L.e("[Connection Queue] sendAttributionSignal, could not build the signal: " + e);
-            return;
+            return false;
         }
-        sendAttributionSignals(signal.toString());
+        return sendAttributionSignals(signal.toString());
     }
 
     @Override
-    public void sendAttributionSignals(@NonNull String signalsJson) {
+    public boolean sendAttributionSignals(@NonNull String signalsJson) {
         if (!checkInternalState()) {
-            return;
+            return false;
         }
         L.d("[Connection Queue] sendAttributionSignals, signals:[" + signalsJson + "]");
 
         if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
             L.d("[Connection Queue] request ignored, 'attribution' consent not given");
-            return;
+            return false;
         }
 
         if (signalsJson.isEmpty()) {
             L.w("[Connection Queue] sendAttributionSignals, attribution not sent, no signal");
-            return;
+            return false;
+        }
+
+        if (!configProvider.getTrackingEnabled()) {
+            //the store would drop it anyway: tell the caller, so it keeps the signal for a later launch
+            L.d("[Connection Queue] sendAttributionSignals, tracking is disabled, request not queued");
+            return false;
         }
 
         String data = prepareCommonRequestData() + "&attribution=" + UtilsNetworking.urlEncodeString(signalsJson);
@@ -564,6 +571,7 @@ class ConnectionQueue implements RequestQueueProvider {
         addRequestToQueue(data, false, null);
 
         tick();
+        return true;
     }
 
     public void sendDirectAttributionLegacy(@NonNull String campaignID, @Nullable String userID) {

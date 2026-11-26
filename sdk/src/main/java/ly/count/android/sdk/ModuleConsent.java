@@ -218,14 +218,14 @@ public class ModuleConsent extends ModuleBase implements ConsentProvider {
         return preparedConsent.toString();
     }
 
-    /**
-     * Sends the current consent state, as init does, while consent is required
-     */
     @Override
     public boolean consentRequired() {
         return requiresConsent;
     }
 
+    /**
+     * Sends the current consent state, as init does, while consent is required
+     */
     void sendConsentStateInternal() {
         if (!requiresConsent) {
             return;

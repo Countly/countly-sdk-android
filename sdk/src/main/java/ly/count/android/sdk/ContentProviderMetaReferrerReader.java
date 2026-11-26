@@ -50,7 +50,7 @@ class ContentProviderMetaReferrerReader extends MetaReferrerReader {
         final AtomicReference<Result> answer = new AtomicReference<>();
         final Thread query = new Thread(() -> {
             try {
-                answer.set(readNow(appContext, facebookAppId));
+                readNow(appContext, facebookAppId, answer);
             } catch (Exception e) {
                 L.w("[ContentProviderMetaReferrerReader] read, reading failed: " + e);
             }
@@ -65,8 +65,9 @@ class ContentProviderMetaReferrerReader extends MetaReferrerReader {
                 Thread.currentThread().interrupt();
             }
             if (query.isAlive()) {
-                //a provider that hangs: the Play referrer is not held back by it
-                L.w("[ContentProviderMetaReferrerReader] read, no answer in " + timeoutMs + " ms, going on without it");
+                //a provider that hangs: the Play referrer is not held back by it, and what the providers before it
+                //answered is used
+                L.w("[ContentProviderMetaReferrerReader] read, not every provider answered in " + timeoutMs + " ms, going on with what was read");
             }
             callback.onResult(answer.get());
         }, "Countly-MetaReferrer");
@@ -78,14 +79,22 @@ class ContentProviderMetaReferrerReader extends MetaReferrerReader {
      * Asks every provider, on the calling thread
      */
     @Nullable Result readNow(@NonNull Context context, @NonNull String facebookAppId) {
-        Result best = null;
+        return readNow(context, facebookAppId, new AtomicReference<>());
+    }
+
+    /**
+     * Asks every provider, on the calling thread, keeping the best answer so far in {@code best} after each
+     * provider, so a reader that gives up on a provider that hangs still has what the others answered
+     */
+    @Nullable Result readNow(@NonNull Context context, @NonNull String facebookAppId, @NonNull AtomicReference<Result> best) {
         for (String[] provider : providers) {
             Result result = readProvider(context, provider[0], provider[1], facebookAppId);
-            if (result != null && (best == null || result.actualTimestamp > best.actualTimestamp)) {
-                best = result;
+            Result current = best.get();
+            if (result != null && (current == null || result.actualTimestamp > current.actualTimestamp)) {
+                best.set(result);
             }
         }
-        return best;
+        return best.get();
     }
 
     @Nullable Result readProvider(@NonNull Context context, @NonNull String authority, @NonNull String expectedPackage, @NonNull String facebookAppId) {

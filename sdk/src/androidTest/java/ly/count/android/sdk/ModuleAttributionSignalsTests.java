@@ -88,6 +88,16 @@ public class ModuleAttributionSignalsTests {
         return signals;
     }
 
+    /**
+     * A mocked request queue that queues every signal, as the real one does with consent and tracking on
+     */
+    static RequestQueueProvider acceptingQueue() {
+        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        when(rqp.sendAttributionSignal(anyString(), anyString())).thenReturn(true);
+        when(rqp.sendAttributionSignals(anyString())).thenReturn(true);
+        return rqp;
+    }
+
     Activity activityWith(Intent intent) {
         Activity activity = mock(Activity.class);
         when(activity.getIntent()).thenReturn(intent);
@@ -131,7 +141,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void referrer_deferredDeepLinkCallback() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         launch(new Countly().init(config(rqp, reader)));
 
@@ -148,7 +158,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void referrer_utmOnly_noneCallback() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         reader.referrer = "utm_source=google-play&utm_medium=organic";
         launch(new Countly().init(config(rqp, reader)));
@@ -167,7 +177,7 @@ public class ModuleAttributionSignalsTests {
     public void referrer_libraryAbsent() {
         Assert.assertFalse(new PlayInstallReferrerReader().isAvailable());
 
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         Countly countly = launch(new Countly().init(config(rqp, null)));
 
         Assert.assertTrue(countly.moduleAttribution.installReferrerReader instanceof PlayInstallReferrerReader);
@@ -185,7 +195,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void referrer_notSupported() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         reader.status = InstallReferrerReader.STATUS_NOT_SUPPORTED;
         launch(new Countly().init(config(rqp, reader)));
@@ -203,7 +213,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void referrer_retryThenGiveUp() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         reader.status = InstallReferrerReader.STATUS_RETRY;
 
@@ -227,7 +237,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void referrer_retryThenSuccess() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         reader.status = InstallReferrerReader.STATUS_RETRY;
         new Countly().init(config(rqp, reader));
@@ -268,7 +278,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void deepLink_openedWithDl() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         reader.referrer = "";
         Countly countly = new Countly().init(config(rqp, reader));
@@ -306,7 +316,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void deepLink_manualSendsAnyLink() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         Countly countly = new Countly().init(config(rqp, new FakeReader()));
 
         countly.attribution().recordDeepLink(Uri.parse("myapp://settings/profile"));
@@ -324,7 +334,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void deepLink_launchIntentCapturedOnce() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         String url = "https://links.example.com/at/spring24/checkout?cly_clk=zz9";
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
@@ -351,7 +361,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void deepLink_launchIntentFiltering() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         reader.referrer = "";
         Countly countly = new Countly().init(config(rqp, reader));
@@ -432,7 +442,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void firstLaunch_waitsForLaunchIntent_opened() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         Countly countly = new Countly().init(config(rqp, null));
         Assert.assertEquals(0, callbacks.size());
 
@@ -451,7 +461,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void firstLaunch_waitsForLaunchIntent_deferred() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         Countly countly = new Countly().init(config(rqp, new FakeReader()));
         verify(rqp, times(1)).sendAttributionSignal("referrer", RAW_REFERRER);
         Assert.assertEquals(0, callbacks.size());
@@ -466,7 +476,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void firstLaunch_deferredThenLaunchLink_onlyOpened() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         Countly countly = new Countly().init(config(rqp, new FakeReader()));
 
         String url = "https://links.example.com/at/spring24/sale";
@@ -481,7 +491,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void firstLaunch_pendingAcrossProcesses() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         new Countly().init(config(rqp, reader));
         Assert.assertEquals(0, callbacks.size());
@@ -495,6 +505,93 @@ public class ModuleAttributionSignalsTests {
 
         launch(new Countly().init(config(rqp, reader)));
         Assert.assertEquals(1, callbacks.size());
+    }
+
+    /**
+     * A link opens the app on first launch while the store says "try later": OPENED answers the first launch,
+     * and that is stored, so the referrer read in a later process reports no DEFERRED.
+     */
+    @Test
+    public void firstLaunch_openedLinkAnswersItAcrossProcesses() {
+        RequestQueueProvider rqp = acceptingQueue();
+        FakeReader reader = new FakeReader();
+        reader.status = InstallReferrerReader.STATUS_RETRY;
+        Countly first = new Countly().init(config(rqp, reader));
+        String url = "https://links.example.com/at/spring24/checkout?cly_clk=zz9";
+        first.dispatchActivityResumed(activityWith(new Intent(Intent.ACTION_VIEW, Uri.parse(url))));
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("OPENED|/checkout|" + url, callbacks.get(0));
+
+        //the next process reads the referrer: it is sent, the first launch is not answered again
+        reader.status = InstallReferrerReader.STATUS_OK;
+        launch(new Countly().init(config(rqp, reader)));
+        Assert.assertEquals(2, reader.reads);
+        verify(rqp, times(1)).sendAttributionSignal("referrer", RAW_REFERRER);
+        Assert.assertEquals(1, callbacks.size());
+    }
+
+    /**
+     * The first launch result waits for the attribution consent: removed after the referrer was read, nothing is
+     * reported when the launch activity resumes; given again, DEFERRED is reported once, although the referrer was
+     * already sent and is not read again.
+     */
+    @Test
+    public void firstLaunch_pendingResultWaitsForConsent() {
+        RequestQueueProvider rqp = acceptingQueue();
+        FakeReader reader = new FakeReader();
+        Countly countly = new Countly().init(consentConfig(rqp, reader, new String[] { Countly.CountlyFeatureNames.attribution }));
+        verify(rqp, times(1)).sendAttributionSignal("referrer", RAW_REFERRER);
+
+        countly.consent().removeConsent(new String[] { Countly.CountlyFeatureNames.attribution });
+        launch(countly);
+        Assert.assertEquals(0, callbacks.size());
+
+        countly.consent().giveConsent(new String[] { Countly.CountlyFeatureNames.attribution });
+        Assert.assertEquals(1, reader.reads);
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("DEFERRED|/product/42|" + RAW_REFERRER, callbacks.get(0));
+
+        launch(countly);
+        Assert.assertEquals(1, callbacks.size());
+    }
+
+    // ------------------------------------------------------------------ tracking disabled
+
+    /**
+     * With tracking disabled in the SDK behavior settings the queue drops the signals, so nothing is marked sent
+     * (real queue): once tracking is on again, the next launch sends the referrer and the channel.
+     */
+    @Test
+    public void trackingDisabled_signalsSentOnceTrackingIsOn() throws Exception {
+        FakeReader reader = new FakeReader();
+        String trackingOff = new ServerConfigBuilder().tracking(false).build();
+        launch(new Countly().init(config(null, reader).setAttributionChannel("partner_x").setSDKBehaviorSettings(trackingOff)));
+
+        Assert.assertEquals(1, reader.reads);
+        Assert.assertEquals(0, queuedSignals().size());
+        JSONObject state = new JSONObject(countlyStore.getAttributionState());
+        Assert.assertFalse(state.has(ModuleAttribution.STATE_REFERRER_DONE));
+        Assert.assertFalse(state.has(ModuleAttribution.STATE_CHANNEL));
+        //the first launch is still answered, the routing does not wait for tracking
+        Assert.assertEquals(1, callbacks.size());
+        Assert.assertEquals("DEFERRED|/product/42|" + RAW_REFERRER, callbacks.get(0));
+
+        //the server turns tracking on again
+        countlyStore.setServerConfig(new ServerConfigBuilder().tracking(true).build());
+        launch(new Countly().init(config(null, reader).setAttributionChannel("partner_x")));
+        Assert.assertEquals(2, reader.reads);
+        List<JSONObject> signals = queuedSignals();
+        Assert.assertEquals(2, signals.size());
+        Assert.assertEquals("channel", signals.get(0).getString("type"));
+        Assert.assertEquals("partner_x", signals.get(0).getString("value"));
+        Assert.assertEquals("referrer", signals.get(1).getString("type"));
+        Assert.assertEquals(RAW_REFERRER, signals.get(1).getString("value"));
+        Assert.assertEquals(1, callbacks.size());
+
+        //sent: a third launch sends nothing more
+        launch(new Countly().init(config(null, reader).setAttributionChannel("partner_x")));
+        Assert.assertEquals(2, reader.reads);
+        Assert.assertEquals(2, queuedSignals().size());
     }
 
     // ------------------------------------------------------------------ explicit storage mode
@@ -541,7 +638,7 @@ public class ModuleAttributionSignalsTests {
      */
     @Test
     public void consent_gatesEverything() {
-        RequestQueueProvider rqp = mock(RequestQueueProvider.class);
+        RequestQueueProvider rqp = acceptingQueue();
         FakeReader reader = new FakeReader();
         CountlyConfig cc = consentConfig(rqp, reader, new String[] { Countly.CountlyFeatureNames.sessions });
         cc.setAttributionChannel("partner_x");

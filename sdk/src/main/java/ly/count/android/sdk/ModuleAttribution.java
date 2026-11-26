@@ -171,24 +171,33 @@ public class ModuleAttribution extends ModuleBase {
     }
 
     /**
-     * Sends the held signals: with the Play referrer first when there is one, as a list when more than one
+     * Sends the held signals: with the Play referrer first when there is one, as a list when more than one.
+     * The held signals are marked sent only when the request was queued: with tracking disabled the queue drops
+     * it, and a later launch reads them again.
+     *
+     * @return true when the request was queued
      */
-    void sendWithPending(@Nullable JSONObject first) {
+    boolean sendWithPending(@Nullable JSONObject first) {
         List<JSONObject> signals = new ArrayList<>();
         if (first != null) {
             signals.add(first);
         }
         signals.addAll(pendingSignals);
         if (signals.isEmpty()) {
-            return;
+            return true;
         }
         List<String> doneKeys = new ArrayList<>(pendingDoneKeys);
         pendingSignals.clear();
         pendingDoneKeys.clear();
+        boolean queued;
         if (signals.size() == 1) {
-            requestQueueProvider.sendAttributionSignals(signals.get(0).toString());
+            queued = requestQueueProvider.sendAttributionSignals(signals.get(0).toString());
         } else {
-            requestQueueProvider.sendAttributionSignals(new JSONArray(signals).toString());
+            queued = requestQueueProvider.sendAttributionSignals(new JSONArray(signals).toString());
+        }
+        if (!queued) {
+            L.d("[ModuleAttribution] sendWithPending, the request was not queued, the signals are read again on a later launch");
+            return false;
         }
         if (!doneKeys.isEmpty()) {
             JSONObject state = readState();
@@ -200,6 +209,7 @@ public class ModuleAttribution extends ModuleBase {
             }
             writeState(state);
         }
+        return true;
     }
 
     /**
@@ -388,11 +398,13 @@ public class ModuleAttribution extends ModuleBase {
     /**
      * The Play referrer with its timestamps, and the Meta, HUAWEI and Samsung referrers read in this process, in one request.
      * A Play referrer without timestamps alone is sent as before: {"type":"referrer","value":raw}.
+     *
+     * @return false when the request was not queued, so the referrer is read again on a later launch
      */
-    void sendInstallReferrer(@NonNull InstallReferrerReader.Details details) {
+    boolean sendInstallReferrer(@NonNull InstallReferrerReader.Details details) {
         String referrer = details.referrer;
         if (referrer == null || referrer.isEmpty()) {
-            return;
+            return true;
         }
         JSONObject signal = new JSONObject();
         try {
@@ -407,14 +419,13 @@ public class ModuleAttribution extends ModuleBase {
             }
         } catch (JSONException e) {
             L.w("[ModuleAttribution] sendInstallReferrer, could not build the signal: " + e);
-            return;
+            return true;
         }
 
         if (pendingSignals.isEmpty() && signal.length() == 2) {
-            requestQueueProvider.sendAttributionSignal(TYPE_REFERRER, referrer);
-        } else {
-            sendWithPending(signal);
+            return requestQueueProvider.sendAttributionSignal(TYPE_REFERRER, referrer);
         }
+        return sendWithPending(signal);
     }
 
     static void putSeconds(@NonNull JSONObject signal, @NonNull String name, long seconds) throws JSONException {
@@ -433,8 +444,9 @@ public class ModuleAttribution extends ModuleBase {
             return;
         }
         L.d("[ModuleAttribution] sendChannelIfNeeded, sending channel [" + attributionChannel + "]");
-        requestQueueProvider.sendAttributionSignal(TYPE_CHANNEL, attributionChannel);
-        putState(STATE_CHANNEL, attributionChannel);
+        if (requestQueueProvider.sendAttributionSignal(TYPE_CHANNEL, attributionChannel)) {
+            putState(STATE_CHANNEL, attributionChannel);
+        }
     }
 
     void readInstallReferrerIfNeeded() {
@@ -498,9 +510,13 @@ public class ModuleAttribution extends ModuleBase {
                     L.d("[ModuleAttribution] onInstallReferrerResult, 'attribution' consent was removed meanwhile, not sending");
                     return;
                 }
-                sendInstallReferrer(details);
+                if (sendInstallReferrer(details)) {
+                    putState(STATE_REFERRER_DONE, true);
+                }
+            } else {
+                putState(STATE_REFERRER_DONE, true);
             }
-            putState(STATE_REFERRER_DONE, true);
+            //the first launch is answered also when the referrer was not queued: the next launch only sends it
             resolveFirstLaunch(referrer == null ? null : deepLinkFromReferrer(referrer), referrer);
             return;
         }
@@ -546,6 +562,10 @@ public class ModuleAttribution extends ModuleBase {
 
     void deliverFirstLaunchIfReady() {
         if (!launchIntentInspected) {
+            return;
+        }
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            //kept pending: delivered when the consent is given (onConsentChanged)
             return;
         }
         JSONObject state = readState();
@@ -620,7 +640,28 @@ public class ModuleAttribution extends ModuleBase {
         }
 
         linkOpenedThisProcess = true;
+        markFirstLaunchAnswered();
         notifyDeepLink(DeepLinkCallback.Type.OPENED, deepLinkPath(uri), url);
+    }
+
+    /**
+     * A link opened the app: that answers the first launch, so a referrer read in a later process reports no
+     * DEFERRED or NONE. Stored, unlike linkOpenedThisProcess.
+     */
+    void markFirstLaunchAnswered() {
+        firstLaunchPendingInMemory = false;
+        JSONObject state = readState();
+        if (state.optBoolean(STATE_FIRST_LAUNCH_RESOLVED, false)) {
+            return;
+        }
+        state.remove(STATE_FIRST_LAUNCH_PENDING);
+        state.remove(STATE_DEFERRED_PATH);
+        state.remove(STATE_DEFERRED_URL);
+        try {
+            state.put(STATE_FIRST_LAUNCH_RESOLVED, true);
+        } catch (JSONException ignored) {
+        }
+        writeState(state);
     }
 
     void captureLaunchLink(@Nullable Activity activity) {
@@ -899,6 +940,8 @@ public class ModuleAttribution extends ModuleBase {
     void onConsentChanged(@NonNull final List<String> consentChangeDelta, final boolean newConsent, @NonNull final ModuleConsent.ConsentChangeSource changeSource) {
         if (newConsent && consentChangeDelta.contains(Countly.CountlyFeatureNames.attribution)) {
             processInstallSignals();
+            //a first launch result that waited for the consent, also when the referrer was already sent
+            deliverFirstLaunchIfReady();
         }
     }
 

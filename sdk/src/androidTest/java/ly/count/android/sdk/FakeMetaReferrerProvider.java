@@ -24,10 +24,13 @@ public class FakeMetaReferrerProvider extends ContentProvider {
     //authority -> the last path asked for
     static final Map<String, String> asked = new HashMap<>();
     static volatile long delayMs = 0;
+    //authority -> how long that authority alone takes to answer, on top of delayMs
+    static final Map<String, Long> delays = new HashMap<>();
 
     static synchronized void reset() {
         answers.clear();
         asked.clear();
+        delays.clear();
         delayMs = 0;
     }
 
@@ -37,14 +40,16 @@ public class FakeMetaReferrerProvider extends ContentProvider {
 
     @Nullable @Override
     public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
-        if (delayMs > 0) {
+        String authority = uri.getAuthority();
+        Long ownDelay = delays.get(authority);
+        long delay = delayMs + (ownDelay == null ? 0 : ownDelay);
+        if (delay > 0) {
             try {
-                Thread.sleep(delayMs);
+                Thread.sleep(delay);
             } catch (InterruptedException ignored) {
                 Thread.currentThread().interrupt();
             }
         }
-        String authority = uri.getAuthority();
         List<String> segments = uri.getPathSegments();
         asked.put(authority, segments.isEmpty() ? null : segments.get(0));
         Object[] row = answers.get(authority);

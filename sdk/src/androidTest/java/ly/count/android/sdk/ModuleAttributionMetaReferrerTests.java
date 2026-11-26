@@ -420,6 +420,25 @@ public class ModuleAttributionMetaReferrerTests {
     }
 
     /**
+     * One provider answers and the next one hangs: the timeout returns the answer already read instead of none
+     */
+    @Test
+    public void reader_timeout_keepsAnswerReadBefore() throws Exception {
+        FakeMetaReferrerProvider.answers.put(FakeMetaReferrerProvider.AUTHORITY_A, new Object[] { META_RAW, 1, 1_700_000_000L });
+        FakeMetaReferrerProvider.answers.put(FakeMetaReferrerProvider.AUTHORITY_B, new Object[] { "later", 0, 1_700_000_500L });
+        FakeMetaReferrerProvider.delays.put(FakeMetaReferrerProvider.AUTHORITY_B, 3000L);
+        ContentProviderMetaReferrerReader reader = testReader();
+        reader.timeoutMs = 500;
+        long start = System.currentTimeMillis();
+        MetaReferrerReader.Result result = readAndWait(reader);
+        Assert.assertTrue(System.currentTimeMillis() - start < 2000);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(META_RAW, result.installReferrer);
+        Assert.assertEquals(1, result.isCt);
+        Assert.assertEquals(1_700_000_000L, result.actualTimestamp);
+    }
+
+    /**
      * The SDK's own reader asks the three Meta apps
      */
     @Test

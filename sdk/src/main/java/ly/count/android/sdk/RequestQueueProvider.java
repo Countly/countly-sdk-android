@@ -26,10 +26,12 @@ interface RequestQueueProvider {
     void sendDirectAttributionTest(@NonNull String attributionData);
 
     //a raw attribution signal the server parses: attribution={"type":type,"value":value}
-    void sendAttributionSignal(@NonNull String type, @NonNull String value);
+    //returns false when the request was not queued (no consent, tracking disabled), so the caller keeps it for later
+    boolean sendAttributionSignal(@NonNull String type, @NonNull String value);
 
     //signals with fields beyond type and value, or a list of them sent together: attribution=<json>
-    void sendAttributionSignals(@NonNull String signalsJson);
+    //returns false when the request was not queued, as sendAttributionSignal
+    boolean sendAttributionSignals(@NonNull String signalsJson);
 
     void sendCrashReport(@NonNull final String crashData, final boolean nonFatalCrash);
 
