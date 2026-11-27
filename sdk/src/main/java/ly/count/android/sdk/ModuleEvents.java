@@ -35,6 +35,7 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
         consents.put(ModuleViews.ORIENTATION_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.users });
         consents.put(ModulePush.PUSH_EVENT_ACTION, new String[] { Countly.CountlyFeatureNames.push });
         consents.put(ACTION_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.clicks, Countly.CountlyFeatureNames.scrolls });
+        consents.put(ModuleAttribution.AD_REVENUE_EVENT_KEY, new String[] { Countly.CountlyFeatureNames.events });
         internalEventConsents = Collections.unmodifiableMap(consents);
     }
 
@@ -310,6 +311,12 @@ public class ModuleEvents extends ModuleBase implements EventProvider {
                     eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
                     sendEventsIfNeededWhenPossible(true);
                     notifyContentTrigger(ContentTriggers.Trigger.event(key, false));
+                }
+                break;
+            case ModuleAttribution.AD_REVENUE_EVENT_KEY:
+                if (internalEventConsentGiven(key)) {
+                    eventQueueProvider.recordEventToEventQueue(key, segmentation, count, sum, dur, timestamp, hour, dow, eventId, pvid, cvid, null);
+                    sendEventsIfNeededWhenPossible(false);
                 }
                 break;
             case ACTION_EVENT_KEY:

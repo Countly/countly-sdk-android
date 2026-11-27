@@ -521,6 +521,59 @@ class ConnectionQueue implements RequestQueueProvider {
         tick();
     }
 
+    @Override
+    public boolean sendAttributionSignal(@NonNull String type, @NonNull String value) {
+        if (type.isEmpty() || value.isEmpty()) {
+            L.w("[Connection Queue] sendAttributionSignal, attribution not sent, type or value is empty");
+            return false;
+        }
+
+        JSONObject signal = new JSONObject();
+        try {
+            signal.put("type", type);
+            signal.put("value", value);
+        } catch (JSONException e) {
+            L.e("[Connection Queue] sendAttributionSignal, could not build the signal: " + e);
+            return false;
+        }
+        return sendAttributionSignals(signal.toString());
+    }
+
+    @Override
+    public boolean sendAttributionSignals(@NonNull String signalsJson) {
+        if (!checkInternalState()) {
+            return false;
+        }
+        L.d("[Connection Queue] sendAttributionSignals, signals:[" + signalsJson + "]");
+
+        if (!consentProvider.getConsent(Countly.CountlyFeatureNames.attribution)) {
+            L.d("[Connection Queue] request ignored, 'attribution' consent not given");
+            return false;
+        }
+
+        if (signalsJson.isEmpty()) {
+            L.w("[Connection Queue] sendAttributionSignals, attribution not sent, no signal");
+            return false;
+        }
+
+        if (!configProvider.getTrackingEnabled()) {
+            //the store would drop it anyway: tell the caller, so it keeps the signal for a later launch
+            L.d("[Connection Queue] sendAttributionSignals, tracking is disabled, request not queued");
+            return false;
+        }
+
+        String data = prepareCommonRequestData() + "&attribution=" + UtilsNetworking.urlEncodeString(signalsJson);
+        if (consentProvider.consentRequired()) {
+            //the server may store campaign data only with this consent: it reads the request's own value first, so a
+            //signal never depends on the consent request before it having been processed. Unchanged values record nothing.
+            data += "&consent=" + UtilsNetworking.urlEncodeString("{\"" + Countly.CountlyFeatureNames.attribution + "\":true}");
+        }
+        addRequestToQueue(data, false, null);
+
+        tick();
+        return true;
+    }
+
     public void sendDirectAttributionLegacy(@NonNull String campaignID, @Nullable String userID) {
         if (!checkInternalState()) {
             return;

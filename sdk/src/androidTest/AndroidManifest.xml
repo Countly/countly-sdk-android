@@ -24,6 +24,10 @@
         android:name="ly.count.android.sdk.ContentOverlayViewTests$RotatingTestActivity"
         android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
         android:exported="false"/>
+    <provider
+        android:name="ly.count.android.sdk.FakeMetaReferrerProvider"
+        android:authorities="ly.count.android.sdk.test.metareferrer.a;ly.count.android.sdk.test.metareferrer.b"
+        android:exported="false"/>
     <uses-library android:name="android.test.runner"/>
   </application>
 
